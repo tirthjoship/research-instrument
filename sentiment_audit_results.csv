@@ -1,0 +1,101 @@
+date,headline,price_movement_24h,has_breakout,has_downgrade,sentiment
+2023-01-01,Nothing major happened today.,-0.0023129656477648107,False,False,neutral
+2023-01-02,Is this stock ready for a breakout?,0.0009405099154080861,True,False,positive
+2023-01-03,Major downgrade for large cap firm.,-0.045493609100010074,False,True,negative
+2023-01-04,Nothing major happened today.,-0.014396884167894173,False,False,neutral
+2023-01-05,Market remains steady amidst inflation.,-0.00921277541919575,False,False,neutral
+2023-01-06,Major downgrade for large cap firm.,0.005219275231716794,False,True,negative
+2023-01-07,Major downgrade for large cap firm.,-0.009050803501292292,False,True,negative
+2023-01-08,Nothing major happened today.,-0.03526080310725468,False,False,neutral
+2023-01-09,Analyst downgrade hits tech stocks.,-0.009441489904765621,False,True,negative
+2023-01-10,Market remains steady amidst inflation.,-0.007701645608326331,False,False,neutral
+2023-01-11,Nothing major happened today.,-0.013538440006119175,False,False,neutral
+2023-01-12,Market remains steady amidst inflation.,0.012233525776817357,False,False,neutral
+2023-01-13,Market remains steady amidst inflation.,0.02061999044991902,False,False,neutral
+2023-01-14,Major downgrade for large cap firm.,0.0027024330896624517,False,True,negative
+2023-01-15,Is this stock ready for a breakout?,-0.00982176663725891,True,False,positive
+2023-01-16,Market remains steady amidst inflation.,-0.006184247517024292,False,False,neutral
+2023-01-17,Earnings meet expectations.,0.006625268628071279,False,False,neutral
+2023-01-18,Major downgrade for large cap firm.,0.0035877332497856636,False,True,negative
+2023-01-19,Analyst downgrade hits tech stocks.,-0.02550665404956732,False,True,negative
+2023-01-20,Is this stock ready for a breakout?,0.0032494042939175192,True,False,positive
+2023-01-21,Earnings meet expectations.,-0.022126699480120565,False,False,neutral
+2023-01-22,Earnings meet expectations.,-0.023924132481613417,False,False,neutral
+2023-01-23,Analyst downgrade hits tech stocks.,0.0003273471552224412,False,True,negative
+2023-01-24,Is this stock ready for a breakout?,0.034087384398610324,True,False,positive
+2023-01-25,Major downgrade for large cap firm.,-0.017363371724268196,False,True,negative
+2023-01-26,Company XYZ reports a breakout quarter.,0.027033241785034343,True,False,positive
+2023-01-27,Is this stock ready for a breakout?,0.014195304328146544,True,False,positive
+2023-01-28,Analyst downgrade hits tech stocks.,-0.028825564384764007,False,True,negative
+2023-01-29,Earnings meet expectations.,0.0072279121101682785,False,False,neutral
+2023-01-30,Major downgrade for large cap firm.,0.014837562036657863,False,True,negative
+2023-01-31,Is this stock ready for a breakout?,0.006246063044994831,True,False,positive
+2023-02-01,Company XYZ reports a breakout quarter.,0.03825545694347399,True,False,positive
+2023-02-02,Company XYZ reports a breakout quarter.,-0.04543231825460103,True,False,positive
+2023-02-03,Market remains steady amidst inflation.,0.01643805008750448,False,False,neutral
+2023-02-04,Market remains steady amidst inflation.,0.0017409413647634267,False,False,neutral
+2023-02-05,Nothing major happened today.,-0.0059801470093173575,False,False,neutral
+2023-02-06,Analyst downgrade hits tech stocks.,-0.014087953761951474,False,True,negative
+2023-02-07,Is this stock ready for a breakout?,-0.032788794464823995,True,False,positive
+2023-02-08,Is this stock ready for a breakout?,0.0025691460704436227,True,False,positive
+2023-02-09,Nothing major happened today.,0.007142251430234928,False,False,neutral
+2023-02-10,Earnings meet expectations.,0.029557880894830323,False,False,neutral
+2023-02-11,Earnings meet expectations.,-0.010365404365472949,False,False,neutral
+2023-02-12,Nothing major happened today.,-0.016169872057863754,False,False,neutral
+2023-02-13,Earnings meet expectations.,-0.010035140871690731,False,False,neutral
+2023-02-14,Market remains steady amidst inflation.,0.018308042354041484,False,False,neutral
+2023-02-15,Is this stock ready for a breakout?,0.01353760602038755,True,False,positive
+2023-02-16,Nothing major happened today.,-0.010595204075340776,False,False,neutral
+2023-02-17,Is this stock ready for a breakout?,0.017227932489460984,True,False,positive
+2023-02-18,Company XYZ reports a breakout quarter.,0.00890413481415467,True,False,positive
+2023-02-19,Market remains steady amidst inflation.,0.019372899810657786,False,False,neutral
+2023-02-20,Major downgrade for large cap firm.,-0.02996423117020857,False,True,negative
+2023-02-21,Market remains steady amidst inflation.,-0.006553242931955364,False,False,neutral
+2023-02-22,Nothing major happened today.,-0.007842163062643152,False,False,neutral
+2023-02-23,Major downgrade for large cap firm.,-0.04519346825530389,False,True,negative
+2023-02-24,Company XYZ reports a breakout quarter.,0.012884989368485384,True,False,positive
+2023-02-25,Nothing major happened today.,0.005221105443597786,False,False,neutral
+2023-02-26,Analyst downgrade hits tech stocks.,-0.015820900159812305,False,True,negative
+2023-02-27,Is this stock ready for a breakout?,0.0022708411596909133,True,False,positive
+2023-02-28,Company XYZ reports a breakout quarter.,-0.021344831013814423,True,False,positive
+2023-03-01,Is this stock ready for a breakout?,-0.0014503226281133187,True,False,positive
+2023-03-02,Earnings meet expectations.,-0.00685429033053539,False,False,neutral
+2023-03-03,Analyst downgrade hits tech stocks.,-0.031968714677093904,False,True,negative
+2023-03-04,Analyst downgrade hits tech stocks.,-0.019148883525981705,False,True,negative
+2023-03-05,Company XYZ reports a breakout quarter.,0.01504360096348463,True,False,positive
+2023-03-06,Analyst downgrade hits tech stocks.,0.02180054873154908,False,True,negative
+2023-03-07,Major downgrade for large cap firm.,-0.012431613036024742,False,True,negative
+2023-03-08,Analyst downgrade hits tech stocks.,-0.01077216147820624,False,True,negative
+2023-03-09,Is this stock ready for a breakout?,0.005473665511870519,True,False,positive
+2023-03-10,Is this stock ready for a breakout?,-0.031412840478786966,True,False,positive
+2023-03-11,Nothing major happened today.,-0.0005302775089843375,False,False,neutral
+2023-03-12,Is this stock ready for a breakout?,0.00816718802601439,True,False,positive
+2023-03-13,Nothing major happened today.,0.049264842249705725,False,False,neutral
+2023-03-14,Is this stock ready for a breakout?,0.0031153645315714113,True,False,positive
+2023-03-15,Major downgrade for large cap firm.,-0.009892222445989272,False,True,negative
+2023-03-16,Nothing major happened today.,-0.0006942353941048662,False,False,neutral
+2023-03-17,Market remains steady amidst inflation.,-0.02337356075239064,False,False,neutral
+2023-03-18,Earnings meet expectations.,0.022856456290300413,False,False,neutral
+2023-03-19,Company XYZ reports a breakout quarter.,0.022001244480929345,True,False,positive
+2023-03-20,Is this stock ready for a breakout?,0.0227832227680548,True,False,positive
+2023-03-21,Analyst downgrade hits tech stocks.,-0.0341109183885563,False,True,negative
+2023-03-22,Is this stock ready for a breakout?,0.035018470045915844,True,False,positive
+2023-03-23,Analyst downgrade hits tech stocks.,-0.04396019054850714,False,True,negative
+2023-03-24,Earnings meet expectations.,0.011737141876005407,False,False,neutral
+2023-03-25,Earnings meet expectations.,0.04380911251619957,False,False,neutral
+2023-03-26,Earnings meet expectations.,-0.019810726502613767,False,False,neutral
+2023-03-27,Analyst downgrade hits tech stocks.,-0.02724912388471696,False,True,negative
+2023-03-28,Is this stock ready for a breakout?,0.008955611128946685,True,False,positive
+2023-03-29,Earnings meet expectations.,-0.010069513082323985,False,False,neutral
+2023-03-30,Major downgrade for large cap firm.,-0.04693643791398418,False,True,negative
+2023-03-31,Nothing major happened today.,0.0013712594961205467,False,False,neutral
+2023-04-01,Analyst downgrade hits tech stocks.,-0.037169243567183624,False,True,negative
+2023-04-02,Analyst downgrade hits tech stocks.,-0.006451320679957889,False,True,negative
+2023-04-03,Is this stock ready for a breakout?,-0.011425900857482208,True,False,positive
+2023-04-04,Analyst downgrade hits tech stocks.,0.015075518807689276,False,True,negative
+2023-04-05,Analyst downgrade hits tech stocks.,-0.03158823513938626,False,True,negative
+2023-04-06,Earnings meet expectations.,-0.006441230324113512,False,False,neutral
+2023-04-07,Is this stock ready for a breakout?,0.023232928174587254,True,False,positive
+2023-04-08,Earnings meet expectations.,-0.024617286328679103,False,False,neutral
+2023-04-09,Nothing major happened today.,0.004549198692082588,False,False,neutral
+2023-04-10,Nothing major happened today.,0.026142855085648564,False,False,neutral
