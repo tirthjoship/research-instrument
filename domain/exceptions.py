@@ -3,8 +3,9 @@
 All domain-level errors inherit from DomainError.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 
 class DomainError(Exception):
@@ -39,8 +40,8 @@ class LookAheadBiasError(DomainError):
         self,
         message: str = "",
         *,
-        offending_timestamp: Optional[datetime] = None,
-        prediction_time: Optional[datetime] = None,
+        offending_timestamp: datetime | None = None,
+        prediction_time: datetime | None = None,
     ) -> None:
         super().__init__(message)
         self.offending_timestamp = offending_timestamp

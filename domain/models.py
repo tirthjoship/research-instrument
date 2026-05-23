@@ -3,9 +3,10 @@
 Pure Python value objects. No pandas, numpy, or external ML/data imports.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 from .exceptions import InvalidMarketDataError, InvalidPredictionError
 
@@ -53,7 +54,7 @@ class Sentiment:
     timestamp: datetime
     sentiment_score: float
     confidence: float
-    text_snippet: Optional[str] = None
+    text_snippet: str | None = None
 
     def __post_init__(self) -> None:
         if not -1.0 <= self.sentiment_score <= 1.0:
