@@ -13,11 +13,11 @@
 
 ## Naming Conventions
 
-- **Variables and functions**: `snake_case` (e.g., `get_prices`, `compute_sentiment_score`)
-- **Classes**: `PascalCase` (e.g., `StockRecommendation`, `SentimentAdapter`)
-- **Constants**: `UPPER_SNAKE_CASE` (e.g., `MAX_LOOKBACK_DAYS`, `DEFAULT_CONFIDENCE`)
-- **Modules**: `snake_case` (e.g., `market_data_repository.py`, `use_cases.py`)
-- **Test functions**: `test_<description>` (e.g., `test_recommendation_returns_valid_signal`)
+- **Variables and functions**: `snake_case` (e.g., `get_trending_tickers`, `compute_divergence_score`)
+- **Classes**: `PascalCase` (e.g., `YFinanceAdapter`, `WeeklyTournamentUseCase`)
+- **Constants**: `UPPER_SNAKE_CASE` (e.g., `FUTURE_LEAKAGE_COLUMNS`, `RECOMMENDATION_GRADES`)
+- **Modules**: `snake_case` (e.g., `yfinance_adapter.py`, `use_cases.py`)
+- **Test functions**: `test_<description>` (e.g., `test_divergence_bullish_when_sentiment_exceeds_technical`)
 - **Private methods**: prefix with `_` (e.g., `_normalize_score`, `_validate_ticker`)
 
 ## Architecture Rules (NON-NEGOTIABLE)
@@ -29,17 +29,27 @@
 - `application/` orchestrates domain + adapters — it is the composition root
 - New external tool = new adapter. Never put framework code in `domain/`
 - Domain models use `@dataclass(frozen=True)` for immutable entities
+- `config/markets/` contains market-specific YAML configs (not code)
+- Each data source = one adapter implementing one port Protocol
 
 ## Data Integrity Rules (NON-NEGOTIABLE)
 
-- Domain-specific look-ahead bias rules and evaluation metrics to be defined after brainstorming
-- General rule: all features must use only point-in-time data (no future information)
-- Evaluate models appropriately for the prediction task (check class distribution before choosing metrics)
+- NEVER use future-dated features: `next_day_return`, `next_week_return`, `future_earnings_surprise`, `forward_pe_ratio`
+- These are post-prediction data — using them is look-ahead bias
+- `FUTURE_LEAKAGE_COLUMNS` constant is the single source of truth (to be placed in feature engineering module)
+- All adapters must filter data to `timestamp <= prediction_time` before returning
+- `validate_point_in_time_access()` in `domain/services.py` enforces temporal boundaries
+- When adding new data sources, audit every field for temporal leakage before use
+- Evaluate models with Sharpe ratio, precision, recall on directional predictions — NEVER raw returns or accuracy alone
+- Always benchmark against SPY (S&P 500 ETF) for the same time period
 
 ## Testing Rules (NON-NEGOTIABLE)
 
-- Tests use small fixtures — NEVER load the full dataset in tests
+- Tests use small fixtures — NEVER hit real yfinance, Reddit, or news APIs in CI
+- All external adapters have corresponding fakes in `tests/fakes/`
+- Integration tests that hit real APIs are marked `@pytest.mark.slow` — skipped in CI
 - Property-based tests with Hypothesis for domain invariants
+- Every port has a fake implementation for testing
 - pytest with `-v --tb=short` default
 - Test categories to cover:
   - **Happy path**: valid input, expected output
@@ -54,21 +64,58 @@
 ## Project Layout
 
 ```
-domain/                 Pure business logic
-├── models.py           Frozen dataclasses
-├── ports.py            Protocol interfaces
-├── services.py         Business rules
-└── exceptions.py       Domain-specific errors
+domain/                 Pure business logic (ZERO external imports)
+├── models.py           Dataclasses: Signal, Sentiment, BacktestResult, TechnicalIndicators,
+│                       DivergenceSignal, StockRecommendation, RecommendationGrade,
+│                       WeeklyReport, AccuracyRecord
+├── ports.py            Protocols: MarketDataPort, SentimentPort, StockPredictorPort,
+│                       BacktestResultPort, NewsDiscoveryPort, BuzzScorerPort,
+│                       SentimentScorerPort, RecommendationStorePort, TechnicalAnalysisPort
+├── services.py         Business rules: validate_point_in_time_access(),
+│                       compute_divergence_score(), grade_recommendation()
+└── exceptions.py       DomainError, InvalidMarketDataError, InvalidPredictionError,
+                        LookAheadBiasError, InsufficientDataError, StaleDataError
 
 adapters/               External connections
-├── data/               Data source connectors
-├── ml/                 Model adapters
-└── visualization/      Charting adapters
+├── data/
+│   ├── yfinance_adapter.py       MarketDataPort + TechnicalAnalysisPort
+│   ├── reddit_adapter.py         BuzzScorerPort (PRAW)
+│   ├── stocktwits_adapter.py     BuzzScorerPort
+│   ├── rss_adapter.py            NewsDiscoveryPort (6 publisher feeds)
+│   ├── google_search_adapter.py  NewsDiscoveryPort (Custom Search API)
+│   └── sqlite_store.py           RecommendationStorePort
+├── ml/
+│   ├── keyword_scorer.py         SentimentScorerPort (baseline)
+│   ├── flan_t5_scorer.py         SentimentScorerPort (upgraded)
+│   ├── xgboost_predictor.py      StockPredictorPort
+│   ├── lightgbm_predictor.py     StockPredictorPort
+│   └── ensemble_predictor.py     StockPredictorPort (XGB + LGBM)
+└── visualization/                Phase 5 — Streamlit dashboard
 
 application/            Orchestration
-└── use_cases.py        Wires domain + adapters for business workflows
+├── use_cases.py        WeeklyTournamentUseCase, TrackRecommendationsUseCase, BacktestUseCase
+└── cli.py              CLI entry point for pipeline execution
 
-tests/                  Mirrors source layout
+config/markets/         Market-specific configuration
+└── us.yaml             US market: RSS feeds, search targets, subreddits, sector ETFs
+
+tests/                  Test suite with fakes
+├── test_domain_models.py
+├── test_domain_services.py
+├── test_properties.py          Hypothesis property-based tests
+├── test_weekly_tournament.py   Use case tests with fakes
+├── test_track_recommendations.py
+├── test_backtest.py
+├── test_keyword_scorer.py
+├── test_sqlite_store.py
+├── test_rss_adapter.py
+├── test_google_search_adapter.py
+└── fakes/                      Fake adapter implementations
+    ├── fake_market_data.py
+    ├── fake_news_discovery.py
+    ├── fake_buzz_scorer.py
+    ├── fake_sentiment_scorer.py
+    └── fake_store.py
 
 notebooks/              Exploration and EDA only — no production logic
 data/raw/               Untouched source data (gitignored)
@@ -89,6 +136,9 @@ data/processed/         Model-ready data (gitignored)
 ## Commands
 
 ```bash
+# Environment
+conda activate multi-modal-stock-ml
+
 # Test
 pytest -v --tb=short
 pytest -v --cov=domain --cov=adapters --cov=application --tb=short
@@ -111,3 +161,6 @@ These are not hard stops but should be followed unless there is a clear reason n
 - Avoid heavyweight dependencies without justification
 - Prefer `X | None` over `Optional[X]` for modern Python 3.12 annotations
 - Type hints on private functions too when practical
+- Config-driven market selection over hardcoded market logic
+- Progressive NLP sophistication — always measure lift before upgrading (keyword → Flan-T5 → LLM)
+- Every new data source adapter gets a corresponding fake before integration tests
