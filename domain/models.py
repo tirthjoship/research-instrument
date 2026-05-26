@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 
 from .exceptions import InvalidMarketDataError, InvalidPredictionError
 
@@ -89,3 +90,35 @@ class BacktestResult:
 
     def __post_init__(self) -> None:
         pass  # Optional: add bounds on returns if desired
+
+
+class RecommendationGrade(Enum):
+    """5-tier grading system for stock recommendations."""
+
+    STRONG_BUY = "strong_buy"
+    BUY = "buy"
+    HOLD = "hold"
+    MAY_SELL = "may_sell"
+    IMMEDIATE_SELL = "immediate_sell"
+
+
+@dataclass(frozen=True)
+class MultiHorizonPrediction:
+    """Predicted returns at 2-day, 5-day, and 10-day horizons."""
+
+    predicted_return_2d: float
+    predicted_return_5d: float
+    predicted_return_10d: float
+    confidence_2d: float
+    confidence_5d: float
+    confidence_10d: float
+
+    def __post_init__(self) -> None:
+        for field_name in ("confidence_2d", "confidence_5d", "confidence_10d"):
+            value = getattr(self, field_name)
+            if not 0.0 <= value <= 1.0:
+                raise InvalidPredictionError(
+                    f"Confidence must be in [0, 1], got {value}"
+                )
+
+
