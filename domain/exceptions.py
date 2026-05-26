@@ -3,8 +3,9 @@
 All domain-level errors inherit from DomainError.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 
 class DomainError(Exception):
@@ -39,9 +40,35 @@ class LookAheadBiasError(DomainError):
         self,
         message: str = "",
         *,
-        offending_timestamp: Optional[datetime] = None,
-        prediction_time: Optional[datetime] = None,
+        offending_timestamp: datetime | None = None,
+        prediction_time: datetime | None = None,
     ) -> None:
         super().__init__(message)
         self.offending_timestamp = offending_timestamp
         self.prediction_time = prediction_time
+
+
+class InsufficientDataError(DomainError):
+    """Raised when too few qualified tickers or data points for pipeline."""
+
+    pass
+
+
+class StaleDataError(DomainError):
+    """Raised when data exceeds maximum staleness threshold.
+
+    Attributes:
+        staleness_days: How stale the data actually is.
+        max_staleness_days: Maximum allowed staleness.
+    """
+
+    def __init__(
+        self,
+        message: str = "",
+        *,
+        staleness_days: int | None = None,
+        max_staleness_days: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.staleness_days = staleness_days
+        self.max_staleness_days = max_staleness_days

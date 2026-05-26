@@ -1,0 +1,71 @@
+# US Market Configuration — Phase 3A
+market: us
+timezone: America/New_York
+
+trading_hours:
+  open: "09:30"
+  close: "16:00"
+
+universe:
+  source: sp500
+  min_market_cap: 2_000_000_000
+  min_avg_volume: 500_000
+  exclude_penny_stocks: true
+  penny_stock_threshold: 5.0
+
+macro_symbols:
+  vix: "^VIX"
+  treasury_10y: "^TNX"
+  dxy: "DX-Y.NYB"
+  irx: "^IRX"
+  spy: "SPY"
+
+sector_etfs:
+  Technology: "XLK"
+  Healthcare: "XLV"
+  Financials: "XLF"
+  Consumer Discretionary: "XLY"
+  Consumer Staples: "XLP"
+  Energy: "XLE"
+  Industrials: "XLI"
+  Materials: "XLB"
+  Utilities: "XLU"
+  Real Estate: "XLRE"
+  Communication Services: "XLC"
+
+features:
+  price_outlier_cap: 0.30
+  volume_outlier_threshold: 20
+  min_trading_days: 20
+  max_nan_fraction: 0.50
+
+horizons:
+  2d:
+    noise_threshold: 0.015
+  5d:
+    noise_threshold: 0.020
+  10d:
+    noise_threshold: 0.030
+
+quality_gates:
+  min_qualified_tickers: 5
+  degraded_threshold: 15
+  feature_nan_warn: 0.05
+  feature_nan_abort: 0.30
+  max_staleness_days: 3
+
+pretraining:
+  history_years: 3
+  walk_forward_start: "2024-01"
+
+model:
+  ensemble_weights: "accuracy"
+  retrain_frequency: "monthly"
+
+evaluation:
+  permutation_shuffles: 1000
+  significance_threshold: 0.05
+  transaction_cost_pct: 0.001
+  regime_thresholds:
+    bull: 0.10
+    bear: -0.10
