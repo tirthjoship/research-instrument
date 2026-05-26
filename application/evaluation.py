@@ -7,7 +7,7 @@ transaction cost modeling, regime splitting, and drawdown tracking.
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
@@ -152,16 +152,11 @@ class DrawdownTracker:
 
         peak = equity[0]
         max_drawdown = 0.0
-        trough_idx: int | None = None
         worst_trough_idx: int | None = None
         worst_peak_val = peak
-        current_peak_idx = 0
-
         for i in range(1, len(equity)):
             if equity[i] > peak:
                 peak = equity[i]
-                current_peak_idx = i
-                trough_idx = None
             drawdown = (equity[i] - peak) / peak
             if drawdown < max_drawdown:
                 max_drawdown = drawdown

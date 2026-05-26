@@ -1,7 +1,6 @@
 """Tests for ML predictors."""
 
 import random
-from pathlib import Path
 
 import pytest
 

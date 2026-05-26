@@ -12,6 +12,7 @@ from domain.models import (
     AccuracyRecord,
     EvaluationRun,
     MultiHorizonPrediction,
+    Signal,
     StockRecommendation,
     WeeklyReport,
 )
@@ -435,13 +436,13 @@ class TrackRecommendationsUseCase:
 
     @staticmethod
     def _get_return(
-        signals: list,  # type: ignore[type-arg]
+        signals: list[Signal],
         base_price: float,
         days: int,
     ) -> float:
         if len(signals) > days:
-            return signals[days].price / base_price - 1
-        return signals[-1].price / base_price - 1
+            return float(signals[days].price / base_price - 1)
+        return float(signals[-1].price / base_price - 1)
 
     @staticmethod
     def _same_direction(predicted: float, actual: float) -> bool:

@@ -54,3 +54,29 @@ profile = "black"
 [tool.mypy]
 python_version = "3.12"
 strict = true
+exclude = ["tests/"]
+
+[[tool.mypy.overrides]]
+module = [
+    "sklearn.*",
+    "yfinance.*",
+    "xgboost.*",
+    "lightgbm.*",
+    "shap.*",
+    "praw.*",
+    "feedparser.*",
+    "googleapiclient.*",
+]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+omit = [
+    "application/cli.py",
+    "adapters/data/yfinance_adapter.py",
+]
+
+[tool.coverage.report]
+omit = [
+    "application/cli.py",
+    "adapters/data/yfinance_adapter.py",
+]
