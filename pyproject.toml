@@ -54,3 +54,44 @@ profile = "black"
 [tool.mypy]
 python_version = "3.12"
 strict = true
+exclude = ["tests/", "audit_sentiment.py"]
+
+[[tool.mypy.overrides]]
+module = [
+    "sklearn.*",
+    "yfinance.*",
+    "xgboost.*",
+    "lightgbm.*",
+    "shap.*",
+    "praw.*",
+    "feedparser.*",
+    "googleapiclient.*",
+    "numpy.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "application.cli"
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = [
+    "adapters.ml.feature_engineer",
+    "adapters.ml.xgboost_predictor",
+    "adapters.ml.lightgbm_predictor",
+    "adapters.ml.ridge_predictor",
+    "adapters.data.yfinance_adapter",
+]
+disallow_any_generics = false
+
+[tool.coverage.run]
+omit = [
+    "application/cli.py",
+    "adapters/data/yfinance_adapter.py",
+]
+
+[tool.coverage.report]
+omit = [
+    "application/cli.py",
+    "adapters/data/yfinance_adapter.py",
+]

@@ -46,3 +46,29 @@ class LookAheadBiasError(DomainError):
         super().__init__(message)
         self.offending_timestamp = offending_timestamp
         self.prediction_time = prediction_time
+
+
+class InsufficientDataError(DomainError):
+    """Raised when too few qualified tickers or data points for pipeline."""
+
+    pass
+
+
+class StaleDataError(DomainError):
+    """Raised when data exceeds maximum staleness threshold.
+
+    Attributes:
+        staleness_days: How stale the data actually is.
+        max_staleness_days: Maximum allowed staleness.
+    """
+
+    def __init__(
+        self,
+        message: str = "",
+        *,
+        staleness_days: int | None = None,
+        max_staleness_days: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.staleness_days = staleness_days
+        self.max_staleness_days = max_staleness_days
