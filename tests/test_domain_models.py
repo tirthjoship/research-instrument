@@ -325,3 +325,20 @@ def test_ports_importable() -> None:
     assert TechnicalAnalysisPort is not None
     assert RecommendationStorePort is not None
     assert FeatureEngineerPort is not None
+
+
+# --- Task 7: Market configuration ---
+
+
+def test_load_us_market_config() -> None:
+    from config.loader import load_market_config
+    config = load_market_config("us")
+    assert config["market"] == "us"
+    assert config["macro_symbols"]["vix"] == "^VIX"
+    assert config["horizons"]["5d"]["noise_threshold"] == 0.020
+
+
+def test_load_missing_market_raises() -> None:
+    from config.loader import load_market_config
+    with pytest.raises(FileNotFoundError):
+        load_market_config("nonexistent")
