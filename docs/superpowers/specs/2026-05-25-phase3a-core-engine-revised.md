@@ -38,7 +38,7 @@ Grilling session (2026-05-25) produced 10 architectural improvements captured in
 
 A pretrained stock prediction pipeline that:
 - Pulls 2-3 years of historical OHLCV, options, analyst, and macro data via yfinance
-- Computes 46 features across 8 groups per ticker per week
+- Computes 45 features across 8 groups per ticker per week
 - Trains XGBoost + LightGBM + Ridge ensemble via walk-forward validation
 - Predicts return magnitude at 2-day, 5-day, and 10-day horizons
 - Grades predictions using multi-horizon threshold classification
@@ -81,7 +81,7 @@ adapters/
     lightgbm_predictor.py        # StockPredictorPort
     ridge_predictor.py           # StockPredictorPort
     ensemble_predictor.py        # StockPredictorPort (XGB + LGBM + Ridge)
-    feature_engineer.py          # Computes 46 features from raw data
+    feature_engineer.py          # Computes 45 features from raw data
 
 application/
   use_cases.py                   # PretrainingUseCase,
@@ -102,7 +102,7 @@ data/
   recommendations.db             # SQLite store
 ```
 
-## 5. Feature Groups (46 features — Phase 3A)
+## 5. Feature Groups (45 features — Phase 3A)
 
 ### Technical Features (15) — from yfinance OHLCV
 - Price action: return_1d, return_5d, return_20d, volatility_20d, price_vs_sma20, price_vs_sma50, sma20_vs_sma50
@@ -125,8 +125,9 @@ data/
 - iv_skew_25d, iv_rank_percentile
 - institutional_ownership_change
 
-### Sector Context (3) — from sector ETFs via yfinance
-- sector_etf_return_5d, stock_vs_sector, sector_buzz_ratio
+### Sector Context (2) — from sector ETFs via yfinance
+- sector_etf_return_5d, stock_vs_sector
+- (sector_buzz_ratio deferred to Phase 3B — requires buzz data)
 
 ### Options Flow (4) — from yfinance options chain
 - unusual_options_volume, put_call_ratio, options_volume_vs_stock_volume, large_block_trades_count
@@ -134,7 +135,7 @@ data/
 ### Cross-Correlation (2) — computed from yfinance
 - correlation_with_spy, relative_strength_vs_peers
 
-**Phase 3A total: 15 + 10 + 7 + 3 + 4 + 2 + 5 = 46 features**
+**Phase 3A total: 15 + 10 + 7 + 2 + 4 + 2 + 5 = 45 features**
 
 ### Macro Regime (5) — global features, same for all tickers per week
 - vix_level (^VIX)
@@ -146,6 +147,7 @@ data/
 ### Phase 3B additions (not in 3A)
 - 11 sentiment/buzz features
 - 4 divergence features
+- 1 sector_buzz_ratio (deferred from sector context)
 - Total with 3B: 61 features
 
 ## 6. Target Variables — Multi-Horizon Magnitude (ADR-015)
@@ -182,7 +184,7 @@ Hold duration emerges from horizon disagreement:
 
 ```
 Stage 1: Pretrained Technical Model
-  ├── Input:  46 features (all Phase 3A features)
+  ├── Input:  45 features (all Phase 3A features)
   ├── Training: 2-3 years historical data, walk-forward
   ├── Models: XGBoost + LightGBM + Ridge (per horizon)
   ├── Output: predicted_return_{2d,5d,10d}, confidence
@@ -307,9 +309,9 @@ data/cache/
 ### Ablation (Phase 3A baseline for 3B comparison)
 | Variant | Features | Purpose |
 |---------|----------|---------|
-| Technical-only (Phase 3A) | 46 features | Baseline — does price predict? |
-| Technical + sentiment (Phase 3B) | 61 features | Does sentiment add lift? |
-| Technical + sentiment + divergence (Phase 3B) | 66 features | Does divergence add lift over raw sentiment? |
+| Technical-only (Phase 3A) | 45 features | Baseline — does price predict? |
+| Technical + sentiment (Phase 3B) | 57 features (45 + 11 sentiment/buzz + 1 sector_buzz_ratio) | Does sentiment add lift? |
+| Technical + sentiment + divergence (Phase 3B) | 61 features (57 + 4 divergence) | Does divergence add lift over raw sentiment? |
 
 ## 14. Storage Schema (SQLite)
 
@@ -474,7 +476,7 @@ jobs:
 
 | Component | Count/Detail |
 |-----------|-------------|
-| Features | 46 (technical + regime + stronger + sector + options + cross-corr + macro) |
+| Features | 45 (15 technical + 10 regime + 7 stronger + 2 sector + 4 options + 2 cross-corr + 5 macro) |
 | Target variables | 3 horizons × magnitude regression |
 | Model ensemble | XGBoost + LightGBM + Ridge per horizon (9 models total) |
 | Pretraining | 2-3 years walk-forward |
@@ -517,7 +519,7 @@ jobs:
 
 ## 21. Interview Story (updated)
 
-"I hypothesized that sentiment-price divergence predicts short-term stock returns. I built a rigorous quantitative system to test this: 46 features across 8 categories, pretrained on 2-3 years of historical data using walk-forward validation. The model predicts return magnitude at three horizons (2-day, 5-day, 10-day) using an XGBoost+LightGBM+Ridge ensemble, with threshold-based classification to filter noise from actionable signals. Every result is validated with permutation tests for statistical significance, transaction cost modeling, and regime-aware evaluation. I then layered sentiment analysis on top and measured the exact marginal lift — proving whether social/news divergence from technicals adds alpha beyond what price data alone provides. The system runs autonomously via GitHub Actions, caches all raw data for reproducibility, and has three-layer data quality gates for production resilience."
+"I hypothesized that sentiment-price divergence predicts short-term stock returns. I built a rigorous quantitative system to test this: 45 features across 8 categories, pretrained on 2-3 years of historical data using walk-forward validation. The model predicts return magnitude at three horizons (2-day, 5-day, 10-day) using an XGBoost+LightGBM+Ridge ensemble, with threshold-based classification to filter noise from actionable signals. Every result is validated with permutation tests for statistical significance, transaction cost modeling, and regime-aware evaluation. I then layered sentiment analysis on top and measured the exact marginal lift — proving whether social/news divergence from technicals adds alpha beyond what price data alone provides. The system runs autonomously via GitHub Actions, caches all raw data for reproducibility, and has three-layer data quality gates for production resilience."
 
 ---
 

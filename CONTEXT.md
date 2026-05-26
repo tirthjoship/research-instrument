@@ -87,7 +87,7 @@ Persists and retrieves weekly reports and accuracy records. SQLite today, Postgr
 ### TechnicalAnalysisPort
 Computes technical indicators from raw OHLCV data. Returns TechnicalIndicators with composite signal.
 
-## Feature Groups (66 total)
+## Feature Groups (61 total — 45 in Phase 3A, 16 in Phase 3B)
 
 | Group | Count | Source | Phase |
 |-------|-------|--------|-------|
