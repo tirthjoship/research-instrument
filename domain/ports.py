@@ -7,104 +7,95 @@ on these abstractions. Ports support point-in-time access and leakage pruning.
 from datetime import datetime
 from typing import Protocol
 
-from .models import BacktestResult, Sentiment, Signal
+from .models import (
+    AccuracyRecord,
+    BacktestResult,
+    EvaluationRun,
+    Sentiment,
+    Signal,
+    StockRecommendation,
+    WeeklyReport,
+)
 
 
 class MarketDataPort(Protocol):
-    """Port: load market data with point-in-time and leakage prevention.
-
-    Implementations must ensure only data with timestamp <= prediction_time
-    is exposed. Raise LookAheadBiasError if future-dated data is detected.
-    """
+    """Port: load market data with point-in-time and leakage prevention."""
 
     def get_signals(
-        self,
-        symbol: str,
-        prediction_time: datetime,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
-    ) -> list[Signal]:
-        """Return market signals for symbol up to prediction_time only.
+        self, symbol: str, prediction_time: datetime,
+        start_date: datetime | None = None, end_date: datetime | None = None,
+    ) -> list[Signal]: ...
 
-        Args:
-            symbol: Ticker symbol.
-            prediction_time: No data after this time may be included.
-            start_date: Optional start filter.
-            end_date: Optional end filter (must be <= prediction_time).
+    def get_ticker_info(self, symbol: str) -> dict[str, float]: ...
 
-        Returns:
-            List of Signal objects with timestamps <= prediction_time.
+    def get_options_summary(
+        self, symbol: str, prediction_time: datetime
+    ) -> dict[str, float] | None: ...
 
-        Raises:
-            LookAheadBiasError: If any signal has timestamp > prediction_time.
-            InvalidMarketDataError: If data fails validation.
-        """
-        ...
+    def get_analyst_data(
+        self, symbol: str, prediction_time: datetime
+    ) -> dict[str, float] | None: ...
 
-    def validate_point_in_time(self, prediction_time: datetime) -> None:
-        """Validate that no future-dated data is exposed for this prediction time.
-
-        Raises:
-            LookAheadBiasError: If future leakage is detected.
-        """
-        ...
+    def validate_point_in_time(self, prediction_time: datetime) -> None: ...
 
 
 class SentimentPort(Protocol):
-    """Port: extract sentiment signals with temporal alignment.
-
-    Implementations must ensure sentiment timestamps align with market data
-    and never exceed prediction time.
-    """
+    """Port: extract sentiment signals. Phase 3B — not used in Phase 3A."""
 
     def get_sentiment(
-        self,
-        symbol: str,
-        prediction_time: datetime,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
-    ) -> list[Sentiment]:
-        """Return sentiment signals for symbol up to prediction_time only.
+        self, symbol: str, prediction_time: datetime,
+        start_date: datetime | None = None, end_date: datetime | None = None,
+    ) -> list[Sentiment]: ...
 
-        Raises:
-            LookAheadBiasError: If any sentiment has timestamp > prediction_time.
-        """
-        ...
+
+class TechnicalAnalysisPort(Protocol):
+    """Port: compute technical indicators from OHLCV signals."""
+
+    def compute_indicators(self, signals: list[Signal]) -> dict[str, float]: ...
 
 
 class StockPredictorPort(Protocol):
-    """Port: ML model that predicts stock performance.
+    """Port: ML model that predicts stock returns from features."""
 
-    Must use only point-in-time features (signals and sentiment up to prediction time).
-    """
+    def fit(self, features: list[dict[str, float]], targets: list[float]) -> None: ...
+    def predict(self, features: list[dict[str, float]]) -> list[float]: ...
+    def save_model(self, path: str) -> None: ...
+    def load_model(self, path: str) -> None: ...
 
-    def predict(self, symbol: str, signals: list[Signal], sentiments: list[Sentiment]) -> float:
-        """Predict return or score for symbol given point-in-time features.
 
-        Args:
-            symbol: Ticker symbol.
-            signals: Market signals with timestamps <= prediction time.
-            sentiments: Sentiment signals with timestamps <= prediction time.
+class FeatureEngineerPort(Protocol):
+    """Port: compute feature vector from raw market data."""
 
-        Returns:
-            Predicted return or score.
-        """
-        ...
+    def compute(
+        self, signals: list[Signal], indicators: dict[str, float],
+        ticker_info: dict[str, float],
+        options_summary: dict[str, float] | None,
+        analyst_data: dict[str, float] | None,
+        macro_signals: dict[str, list[Signal]],
+        sector_signals: list[Signal] | None,
+    ) -> dict[str, float]: ...
+
+    def get_feature_names(self) -> list[str]: ...
+
+
+class RecommendationStorePort(Protocol):
+    """Port: persist and retrieve recommendations, accuracy, evaluations, reports."""
+
+    def save_recommendation(self, rec: StockRecommendation) -> None: ...
+    def get_recommendations(self, week_start: str | None = None, symbol: str | None = None) -> list[StockRecommendation]: ...
+    def save_accuracy_record(self, record: AccuracyRecord) -> None: ...
+    def get_accuracy_records(self, week_start: str | None = None, symbol: str | None = None) -> list[AccuracyRecord]: ...
+    def save_evaluation_run(self, run: EvaluationRun) -> None: ...
+    def get_evaluation_runs(self, run_date: str | None = None, eval_type: str | None = None) -> list[EvaluationRun]: ...
+    def save_weekly_report(self, report: WeeklyReport) -> None: ...
+    def get_weekly_report(self, report_date: str) -> WeeklyReport | None: ...
 
 
 class BacktestResultPort(Protocol):
     """Port: persist and retrieve backtest results for recursive learning."""
 
-    def save_result(self, result: BacktestResult) -> None:
-        """Persist a backtest result."""
-        ...
-
+    def save_result(self, result: BacktestResult) -> None: ...
     def get_results(
-        self,
-        symbol: str | None = None,
-        model_version: str | None = None,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
-    ) -> list[BacktestResult]:
-        """Retrieve backtest results matching filters."""
-        ...
+        self, symbol: str | None = None, model_version: str | None = None,
+        start_date: datetime | None = None, end_date: datetime | None = None,
+    ) -> list[BacktestResult]: ...
