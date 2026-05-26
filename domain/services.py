@@ -15,22 +15,32 @@ NOISE_THRESHOLDS: dict[str, float] = {
     "10d": 0.030,
 }
 
-FUTURE_LEAKAGE_COLUMNS: frozenset[str] = frozenset({
-    "next_day_return", "next_week_return",
-    "future_earnings_surprise", "forward_pe_ratio",
-})
+FUTURE_LEAKAGE_COLUMNS: frozenset[str] = frozenset(
+    {
+        "next_day_return",
+        "next_week_return",
+        "future_earnings_surprise",
+        "forward_pe_ratio",
+    }
+)
 
 
 def validate_point_in_time_access(
-    prediction_time: datetime, signals: list[Signal], sentiments: list[Sentiment],
+    prediction_time: datetime,
+    signals: list[Signal],
+    sentiments: list[Sentiment],
 ) -> None:
     """Verify all data timestamps are <= prediction_time."""
     for s in signals:
         if s.timestamp > prediction_time:
-            raise LookAheadBiasError(f"Signal timestamp {s.timestamp} > prediction_time {prediction_time}")
+            raise LookAheadBiasError(
+                f"Signal timestamp {s.timestamp} > prediction_time {prediction_time}"
+            )
     for sent in sentiments:
         if sent.timestamp > prediction_time:
-            raise LookAheadBiasError(f"Sentiment timestamp {sent.timestamp} > prediction_time {prediction_time}")
+            raise LookAheadBiasError(
+                f"Sentiment timestamp {sent.timestamp} > prediction_time {prediction_time}"
+            )
 
 
 def classify_horizon(predicted_return: float, threshold: float) -> str:
@@ -57,7 +67,9 @@ def grade_from_horizons(
     signals = {
         "2d": classify_horizon(prediction.predicted_return_2d, NOISE_THRESHOLDS["2d"]),
         "5d": classify_horizon(prediction.predicted_return_5d, NOISE_THRESHOLDS["5d"]),
-        "10d": classify_horizon(prediction.predicted_return_10d, NOISE_THRESHOLDS["10d"]),
+        "10d": classify_horizon(
+            prediction.predicted_return_10d, NOISE_THRESHOLDS["10d"]
+        ),
     }
 
     bullish_count = sum(1 for s in signals.values() if s == "bullish")
@@ -100,12 +112,15 @@ def validate_feature_matrix(feature_names: list[str]) -> None:
 
 
 def validate_data_freshness(
-    data_timestamp: datetime, reference_time: datetime, max_staleness_days: int = 3,
+    data_timestamp: datetime,
+    reference_time: datetime,
+    max_staleness_days: int = 3,
 ) -> None:
     """Verify data is not stale relative to reference time."""
     staleness = reference_time - data_timestamp
     if staleness > timedelta(days=max_staleness_days):
         raise StaleDataError(
             f"Data is {staleness.days} days stale (max: {max_staleness_days})",
-            staleness_days=staleness.days, max_staleness_days=max_staleness_days,
+            staleness_days=staleness.days,
+            max_staleness_days=max_staleness_days,
         )

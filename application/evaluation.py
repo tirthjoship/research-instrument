@@ -16,9 +16,7 @@ class WalkForwardValidator:
 
     min_train_months: int = 12
 
-    def generate_splits(
-        self, months: list[str]
-    ) -> list[tuple[list[str], str]]:
+    def generate_splits(self, months: list[str]) -> list[tuple[list[str], str]]:
         """Return expanding-window splits.
 
         Each split: (training_months, test_month).
@@ -64,15 +62,9 @@ class PermutationTester:
         return count_ge / self.n_shuffles
 
     @staticmethod
-    def _directional_accuracy(
-        predictions: list[float], actuals: list[float]
-    ) -> float:
+    def _directional_accuracy(predictions: list[float], actuals: list[float]) -> float:
         n = len(predictions)
-        matches = sum(
-            1
-            for p, a in zip(predictions, actuals)
-            if (p >= 0) == (a >= 0)
-        )
+        matches = sum(1 for p, a in zip(predictions, actuals) if (p >= 0) == (a >= 0))
         return matches / n
 
 
@@ -91,9 +83,7 @@ class TransactionCostModel:
         total_cost = self.cost_per_trade * n_trades_per_period
         return [r - total_cost for r in gross_returns]
 
-    def total_costs(
-        self, n_periods: int, n_trades_per_period: int = 2
-    ) -> float:
+    def total_costs(self, n_periods: int, n_trades_per_period: int = 2) -> float:
         """Total cumulative cost over all periods."""
         return self.cost_per_trade * n_trades_per_period * n_periods
 
@@ -105,9 +95,7 @@ class RegimeSplitter:
     bull_threshold: float = 0.10
     bear_threshold: float = -0.10
 
-    def classify_monthly(
-        self, spy_monthly_returns: list[float]
-    ) -> list[str]:
+    def classify_monthly(self, spy_monthly_returns: list[float]) -> list[str]:
         """Classify each month using rolling 12-month annualized return.
 
         Returns one label per month (starting from month index 0).

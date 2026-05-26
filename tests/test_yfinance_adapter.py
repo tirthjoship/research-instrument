@@ -1,4 +1,5 @@
 """Tests for yfinance adapter and caching."""
+
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -10,7 +11,6 @@ import pytest
 from adapters.data.cache_mixin import CachingMixin
 from adapters.data.yfinance_adapter import YFinanceAdapter
 from domain.models import Signal
-
 
 # ── CachingMixin tests ──────────────────────────────────────────────
 

@@ -111,7 +111,10 @@ class SQLiteStore:
              reasoning, sources)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                rec.symbol, rec.week_start, rec.grade.value, rec.composite_score,
+                rec.symbol,
+                rec.week_start,
+                rec.grade.value,
+                rec.composite_score,
                 rec.prediction.predicted_return_2d,
                 rec.prediction.predicted_return_5d,
                 rec.prediction.predicted_return_10d,
@@ -119,10 +122,14 @@ class SQLiteStore:
                 rec.prediction.confidence_5d,
                 rec.prediction.confidence_10d,
                 json.dumps(rec.horizon_signals),
-                rec.sentiment_score, rec.divergence_score,
-                rec.divergence_type, rec.technical_signal,
-                rec.rsi_14, rec.macd,
-                rec.reasoning, json.dumps(rec.sources),
+                rec.sentiment_score,
+                rec.divergence_score,
+                rec.divergence_type,
+                rec.technical_signal,
+                rec.rsi_14,
+                rec.macd,
+                rec.reasoning,
+                json.dumps(rec.sources),
             ),
         )
         self._conn.commit()
@@ -153,10 +160,14 @@ class SQLiteStore:
              direction_correct_2d, direction_correct_5d, direction_correct_10d)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                record.symbol, record.week_start, record.predicted_grade,
-                record.predicted_return_2d, record.predicted_return_5d,
+                record.symbol,
+                record.week_start,
+                record.predicted_grade,
+                record.predicted_return_2d,
+                record.predicted_return_5d,
                 record.predicted_return_10d,
-                record.actual_return_2d, record.actual_return_5d,
+                record.actual_return_2d,
+                record.actual_return_5d,
                 record.actual_return_10d,
                 int(record.direction_correct_2d),
                 int(record.direction_correct_5d),
@@ -182,7 +193,8 @@ class SQLiteStore:
         rows = self._conn.execute(query, params).fetchall()
         return [
             AccuracyRecord(
-                symbol=r["symbol"], week_start=r["week_start"],
+                symbol=r["symbol"],
+                week_start=r["week_start"],
                 predicted_grade=r["predicted_grade"],
                 predicted_return_2d=r["predicted_return_2d"],
                 predicted_return_5d=r["predicted_return_5d"],
@@ -204,9 +216,14 @@ class SQLiteStore:
              p_value, regime, details)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                run.run_date, run.eval_type, run.horizon,
-                run.metric_name, run.metric_value,
-                run.p_value, run.regime, run.details,
+                run.run_date,
+                run.eval_type,
+                run.horizon,
+                run.metric_name,
+                run.metric_value,
+                run.p_value,
+                run.regime,
+                run.details,
             ),
         )
         self._conn.commit()
@@ -228,10 +245,14 @@ class SQLiteStore:
         rows = self._conn.execute(query, params).fetchall()
         return [
             EvaluationRun(
-                run_date=r["run_date"], eval_type=r["eval_type"],
-                horizon=r["horizon"], metric_name=r["metric_name"],
-                metric_value=r["metric_value"], p_value=r["p_value"],
-                regime=r["regime"], details=r["details"],
+                run_date=r["run_date"],
+                eval_type=r["eval_type"],
+                horizon=r["horizon"],
+                metric_name=r["metric_name"],
+                metric_value=r["metric_value"],
+                p_value=r["p_value"],
+                regime=r["regime"],
+                details=r["details"],
             )
             for r in rows
         ]
@@ -244,10 +265,12 @@ class SQLiteStore:
              transaction_costs)
             VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
-                report.report_date, report.market,
+                report.report_date,
+                report.market,
                 report.accuracy_vs_last_week,
                 report.spy_return_same_period,
-                report.max_drawdown, report.sharpe_ratio,
+                report.max_drawdown,
+                report.sharpe_ratio,
                 report.transaction_costs,
             ),
         )

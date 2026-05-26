@@ -11,6 +11,7 @@ from domain.models import Signal
 def _make_signals(n: int = 260, base_price: float = 100.0) -> list[Signal]:
     """Generate n days of synthetic OHLCV signals."""
     import random
+
     random.seed(42)
     signals: list[Signal] = []
     price = base_price
@@ -72,19 +73,31 @@ def ticker_info() -> dict[str, float]:
 def macro_signals() -> dict[str, list[Signal]]:
     """Macro symbols with 260 days of data."""
     import random
+
     random.seed(99)
     result: dict[str, list[Signal]] = {}
-    for sym, base in [("^VIX", 20.0), ("^TNX", 4.5), ("DX-Y.NYB", 104.0), ("^IRX", 5.0), ("SPY", 450.0)]:
+    for sym, base in [
+        ("^VIX", 20.0),
+        ("^TNX", 4.5),
+        ("DX-Y.NYB", 104.0),
+        ("^IRX", 5.0),
+        ("SPY", 450.0),
+    ]:
         sigs: list[Signal] = []
         price = base
         for i in range(260):
             price = max(price + random.gauss(0, base * 0.01), 0.1)
-            sigs.append(Signal(
-                symbol=sym,
-                timestamp=datetime(2025, 1, 2) + timedelta(days=i),
-                price=price, volume=1_000_000,
-                open_=price, high=price + 0.1, low=price - 0.1,
-            ))
+            sigs.append(
+                Signal(
+                    symbol=sym,
+                    timestamp=datetime(2025, 1, 2) + timedelta(days=i),
+                    price=price,
+                    volume=1_000_000,
+                    open_=price,
+                    high=price + 0.1,
+                    low=price - 0.1,
+                )
+            )
         result[sym] = sigs
     return result
 
@@ -100,7 +113,11 @@ def test_feature_engineer_returns_45_features(
         signals=signals,
         indicators=indicators,
         ticker_info=ticker_info,
-        options_summary={"put_call_ratio": 0.8, "unusual_options_volume": 50000, "iv_skew_25d": 0.05},
+        options_summary={
+            "put_call_ratio": 0.8,
+            "unusual_options_volume": 50000,
+            "iv_skew_25d": 0.05,
+        },
         analyst_data={"short_interest_ratio": 1.5, "earnings_surprise_last": 0.05},
         macro_signals=macro_signals,
         sector_signals=None,
@@ -123,6 +140,7 @@ def test_feature_names_match_spec(engineer: FeatureEngineer) -> None:
 def test_no_leakage_columns_in_features(engineer: FeatureEngineer) -> None:
     """Feature names must not contain any FUTURE_LEAKAGE_COLUMNS."""
     from domain.services import FUTURE_LEAKAGE_COLUMNS
+
     names = set(engineer.get_feature_names())
     assert names & FUTURE_LEAKAGE_COLUMNS == set()
 
@@ -146,6 +164,7 @@ def test_handles_missing_options(
     )
     assert len(features) == 45
     import math
+
     assert math.isnan(features["put_call_ratio"])
 
 
@@ -154,8 +173,16 @@ def test_handles_short_history(engineer: FeatureEngineer) -> None:
     short_signals = _make_signals(30)
     features = engineer.compute(
         signals=short_signals,
-        indicators={"rsi_14": 50.0, "macd": 0.0, "macd_signal": 0.0, "macd_histogram": 0.0,
-                     "stochastic_k": 50.0, "stochastic_d": 50.0, "sma_20": 100.0, "obv_trend": 0.0},
+        indicators={
+            "rsi_14": 50.0,
+            "macd": 0.0,
+            "macd_signal": 0.0,
+            "macd_histogram": 0.0,
+            "stochastic_k": 50.0,
+            "stochastic_d": 50.0,
+            "sma_20": 100.0,
+            "obv_trend": 0.0,
+        },
         ticker_info={},
         options_summary=None,
         analyst_data=None,
@@ -164,4 +191,5 @@ def test_handles_short_history(engineer: FeatureEngineer) -> None:
     )
     assert len(features) == 45
     import math
+
     assert math.isnan(features["return_12m"])  # not enough history

@@ -23,10 +23,7 @@ from domain.ports import (
     StockPredictorPort,
     TechnicalAnalysisPort,
 )
-from domain.services import (
-    grade_from_horizons,
-    validate_feature_matrix,
-)
+from domain.services import grade_from_horizons, validate_feature_matrix
 
 
 class PretrainingUseCase:
@@ -95,21 +92,18 @@ class PretrainingUseCase:
 
             # Train each horizon
             for horizon in ("2d", "5d", "10d"):
-                self._predictors[horizon].fit(
-                    train_features, train_targets[horizon]
-                )
+                self._predictors[horizon].fit(train_features, train_targets[horizon])
 
             # Evaluate on test month
             test_month = months[i]
             if test_month in all_features and all_features[test_month]:
                 for horizon in ("2d", "5d", "10d"):
-                    preds = self._predictors[horizon].predict(
-                        all_features[test_month]
-                    )
+                    preds = self._predictors[horizon].predict(all_features[test_month])
                     actuals = all_targets[test_month][horizon]
                     if preds and actuals:
                         correct = sum(
-                            1 for p, a in zip(preds, actuals)
+                            1
+                            for p, a in zip(preds, actuals)
                             if (p > 0 and a > 0) or (p < 0 and a < 0)
                         )
                         accuracy = correct / len(preds)
@@ -345,9 +339,7 @@ class WeeklyTournamentUseCase:
         grade, horizon_signals = grade_from_horizons(prediction)
 
         # Composite score for ranking
-        composite = (
-            abs(pred_2d) * 0.2 + abs(pred_5d) * 0.3 + abs(pred_10d) * 0.5
-        )
+        composite = abs(pred_2d) * 0.2 + abs(pred_5d) * 0.3 + abs(pred_10d) * 0.5
 
         return StockRecommendation(
             symbol=ticker,

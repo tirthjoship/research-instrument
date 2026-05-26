@@ -27,9 +27,7 @@ from config.loader import load_market_config
 from domain.models import WeeklyReport
 
 
-def _build_dependencies(
-    market: str, use_cache: bool = False
-) -> dict[str, Any]:
+def _build_dependencies(market: str, use_cache: bool = False) -> dict[str, Any]:
     """Wire adapters to ports — composition root."""
     config = load_market_config(market)
     cache_dir = Path("data/cache")
@@ -100,9 +98,7 @@ def run_tournament(market: str, date: str | None) -> None:
     config = deps["config"]
     tickers = _get_ticker_universe(config)
 
-    prediction_date = (
-        datetime.strptime(date, "%Y-%m-%d") if date else datetime.now()
-    )
+    prediction_date = datetime.strptime(date, "%Y-%m-%d") if date else datetime.now()
 
     use_case = WeeklyTournamentUseCase(
         market_data=deps["market_data"],
@@ -135,9 +131,7 @@ def evaluate_last_week(date: str | None) -> None:
     if records:
         correct_2d = sum(1 for r in records if r.direction_correct_2d) / len(records)
         correct_5d = sum(1 for r in records if r.direction_correct_5d) / len(records)
-        correct_10d = sum(1 for r in records if r.direction_correct_10d) / len(
-            records
-        )
+        correct_10d = sum(1 for r in records if r.direction_correct_10d) / len(records)
         click.echo(f"Evaluated {len(records)} recommendations:")
         click.echo(f"  2-day accuracy: {correct_2d:.1%}")
         click.echo(f"  5-day accuracy: {correct_5d:.1%}")
@@ -165,11 +159,46 @@ def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     """
     # Default S&P 500 subset for Phase 3A
     return [
-        "AAPL", "MSFT", "GOOG", "AMZN", "NVDA", "META", "TSLA", "BRK-B",
-        "UNH", "JNJ", "V", "XOM", "JPM", "PG", "MA", "HD", "CVX", "MRK",
-        "ABBV", "LLY", "PEP", "KO", "COST", "AVGO", "WMT", "MCD", "CSCO",
-        "ACN", "TMO", "ABT", "DHR", "NEE", "LIN", "TXN", "PM", "UPS",
-        "RTX", "HON", "LOW", "QCOM",
+        "AAPL",
+        "MSFT",
+        "GOOG",
+        "AMZN",
+        "NVDA",
+        "META",
+        "TSLA",
+        "BRK-B",
+        "UNH",
+        "JNJ",
+        "V",
+        "XOM",
+        "JPM",
+        "PG",
+        "MA",
+        "HD",
+        "CVX",
+        "MRK",
+        "ABBV",
+        "LLY",
+        "PEP",
+        "KO",
+        "COST",
+        "AVGO",
+        "WMT",
+        "MCD",
+        "CSCO",
+        "ACN",
+        "TMO",
+        "ABT",
+        "DHR",
+        "NEE",
+        "LIN",
+        "TXN",
+        "PM",
+        "UPS",
+        "RTX",
+        "HON",
+        "LOW",
+        "QCOM",
     ]
 
 
@@ -179,9 +208,7 @@ def _print_report(report: WeeklyReport) -> None:
     click.echo(f"Weekly Report: {report.report_date} ({report.market})")
     click.echo(f"{'=' * 60}")
     for i, rec in enumerate(report.recommendations, 1):
-        signals_str = " | ".join(
-            f"{h}:{s}" for h, s in rec.horizon_signals.items()
-        )
+        signals_str = " | ".join(f"{h}:{s}" for h, s in rec.horizon_signals.items())
         click.echo(
             f"  {i:2d}. {rec.symbol:6s} [{rec.grade.value:14s}] "
             f"score={rec.composite_score:.3f} ({signals_str})"

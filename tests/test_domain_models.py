@@ -23,7 +23,6 @@ from domain.models import (
     WeeklyReport,
 )
 
-
 # --- Existing model tests ---
 
 
@@ -318,10 +317,15 @@ def test_weekly_report_valid() -> None:
 
 def test_ports_importable() -> None:
     from domain.ports import (  # noqa: F401
-        BacktestResultPort, FeatureEngineerPort, MarketDataPort,
-        RecommendationStorePort, SentimentPort, StockPredictorPort,
+        BacktestResultPort,
+        FeatureEngineerPort,
+        MarketDataPort,
+        RecommendationStorePort,
+        SentimentPort,
+        StockPredictorPort,
         TechnicalAnalysisPort,
     )
+
     assert BacktestResultPort is not None
     assert MarketDataPort is not None
     assert SentimentPort is not None
@@ -336,6 +340,7 @@ def test_ports_importable() -> None:
 
 def test_load_us_market_config() -> None:
     from config.loader import load_market_config
+
     config = load_market_config("us")
     assert config["market"] == "us"
     assert config["macro_symbols"]["vix"] == "^VIX"
@@ -344,15 +349,20 @@ def test_load_us_market_config() -> None:
 
 def test_load_missing_market_raises() -> None:
     from config.loader import load_market_config
+
     with pytest.raises(FileNotFoundError):
         load_market_config("nonexistent")
 
 
 def test_fakes_implement_protocols() -> None:
     from tests.fakes import (
-        FakeFeatureEngineer, FakeMarketData, FakePredictor,
-        FakeRecommendationStore, FakeTechnicalAnalysis,
+        FakeFeatureEngineer,
+        FakeMarketData,
+        FakePredictor,
+        FakeRecommendationStore,
+        FakeTechnicalAnalysis,
     )
+
     FakeMarketData()
     FakeTechnicalAnalysis()
     FakeRecommendationStore()
