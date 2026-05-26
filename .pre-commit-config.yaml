@@ -27,6 +27,12 @@ repos:
       - id: mypy
         args: ["--strict"]
         exclude: "^tests/"
+        additional_dependencies:
+          - types-PyYAML
+          - types-click
+          - types-requests
+          - pandas-stubs
+          - loguru
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.15
