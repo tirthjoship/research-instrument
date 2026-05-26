@@ -140,9 +140,9 @@ class TestEnsemblePredictor:
         for i in range(5):
             lo = min(preds_xgb[i], preds_lgbm[i], preds_ridge[i]) - margin
             hi = max(preds_xgb[i], preds_lgbm[i], preds_ridge[i]) + margin
-            assert lo <= preds_ens[i] <= hi, (
-                f"Ensemble pred {preds_ens[i]} outside [{lo}, {hi}] at index {i}"
-            )
+            assert (
+                lo <= preds_ens[i] <= hi
+            ), f"Ensemble pred {preds_ens[i]} outside [{lo}, {hi}] at index {i}"
 
     def test_save_and_load(self, training_data, tmp_path):
         features, targets = training_data

@@ -1,6 +1,7 @@
 """Raw data caching mixin for reproducibility (ADR-017).
 Append-only cache keyed by fetch timestamp.
 """
+
 import json
 from datetime import datetime, timezone
 from pathlib import Path

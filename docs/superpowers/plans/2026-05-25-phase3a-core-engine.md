@@ -2263,7 +2263,7 @@ def test_adapter_caches_data(tmp_path: Path) -> None:
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pytest tests/test_yfinance_adapter.py -v -k "not cache_save"` 
+Run: `pytest tests/test_yfinance_adapter.py -v -k "not cache_save"`
 Expected: FAIL — `ModuleNotFoundError: No module named 'adapters.data.yfinance_adapter'`
 
 - [ ] **Step 3: Implement YFinanceAdapter**

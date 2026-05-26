@@ -22,8 +22,11 @@ class MarketDataPort(Protocol):
     """Port: load market data with point-in-time and leakage prevention."""
 
     def get_signals(
-        self, symbol: str, prediction_time: datetime,
-        start_date: datetime | None = None, end_date: datetime | None = None,
+        self,
+        symbol: str,
+        prediction_time: datetime,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> list[Signal]: ...
 
     def get_ticker_info(self, symbol: str) -> dict[str, float]: ...
@@ -43,8 +46,11 @@ class SentimentPort(Protocol):
     """Port: extract sentiment signals. Phase 3B — not used in Phase 3A."""
 
     def get_sentiment(
-        self, symbol: str, prediction_time: datetime,
-        start_date: datetime | None = None, end_date: datetime | None = None,
+        self,
+        symbol: str,
+        prediction_time: datetime,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> list[Sentiment]: ...
 
 
@@ -67,7 +73,9 @@ class FeatureEngineerPort(Protocol):
     """Port: compute feature vector from raw market data."""
 
     def compute(
-        self, signals: list[Signal], indicators: dict[str, float],
+        self,
+        signals: list[Signal],
+        indicators: dict[str, float],
         ticker_info: dict[str, float],
         options_summary: dict[str, float] | None,
         analyst_data: dict[str, float] | None,
@@ -82,11 +90,17 @@ class RecommendationStorePort(Protocol):
     """Port: persist and retrieve recommendations, accuracy, evaluations, reports."""
 
     def save_recommendation(self, rec: StockRecommendation) -> None: ...
-    def get_recommendations(self, week_start: str | None = None, symbol: str | None = None) -> list[StockRecommendation]: ...
+    def get_recommendations(
+        self, week_start: str | None = None, symbol: str | None = None
+    ) -> list[StockRecommendation]: ...
     def save_accuracy_record(self, record: AccuracyRecord) -> None: ...
-    def get_accuracy_records(self, week_start: str | None = None, symbol: str | None = None) -> list[AccuracyRecord]: ...
+    def get_accuracy_records(
+        self, week_start: str | None = None, symbol: str | None = None
+    ) -> list[AccuracyRecord]: ...
     def save_evaluation_run(self, run: EvaluationRun) -> None: ...
-    def get_evaluation_runs(self, run_date: str | None = None, eval_type: str | None = None) -> list[EvaluationRun]: ...
+    def get_evaluation_runs(
+        self, run_date: str | None = None, eval_type: str | None = None
+    ) -> list[EvaluationRun]: ...
     def save_weekly_report(self, report: WeeklyReport) -> None: ...
     def get_weekly_report(self, report_date: str) -> WeeklyReport | None: ...
 
@@ -96,6 +110,9 @@ class BacktestResultPort(Protocol):
 
     def save_result(self, result: BacktestResult) -> None: ...
     def get_results(
-        self, symbol: str | None = None, model_version: str | None = None,
-        start_date: datetime | None = None, end_date: datetime | None = None,
+        self,
+        symbol: str | None = None,
+        model_version: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> list[BacktestResult]: ...

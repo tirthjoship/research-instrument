@@ -22,29 +22,57 @@ _NAN = float("nan")
 
 FEATURE_NAMES: list[str] = [
     # Technical (15)
-    "return_1d", "return_5d", "return_20d", "volatility_20d",
-    "price_vs_sma20", "price_vs_sma50", "sma20_vs_sma50",
-    "rsi_14", "macd", "macd_signal", "macd_histogram",
-    "stochastic_k", "stochastic_d", "volume_ratio_20d", "obv_trend",
+    "return_1d",
+    "return_5d",
+    "return_20d",
+    "volatility_20d",
+    "price_vs_sma20",
+    "price_vs_sma50",
+    "sma20_vs_sma50",
+    "rsi_14",
+    "macd",
+    "macd_signal",
+    "macd_histogram",
+    "stochastic_k",
+    "stochastic_d",
+    "volume_ratio_20d",
+    "obv_trend",
     # Regime (10)
-    "price_vs_52w_high", "price_vs_52w_low", "market_cap_quintile",
-    "return_6m", "return_12m", "volatility_regime",
-    "drawdown_from_ath", "sector_relative_strength_6m",
-    "revenue_growth_yoy", "pe_vs_sector_median",
+    "price_vs_52w_high",
+    "price_vs_52w_low",
+    "market_cap_quintile",
+    "return_6m",
+    "return_12m",
+    "volatility_regime",
+    "drawdown_from_ath",
+    "sector_relative_strength_6m",
+    "revenue_growth_yoy",
+    "pe_vs_sector_median",
     # Stronger signals (7)
-    "short_interest_ratio", "short_interest_change_5d",
-    "earnings_surprise_last", "earnings_surprise_streak",
-    "iv_skew_25d", "iv_rank_percentile", "institutional_ownership_change",
+    "short_interest_ratio",
+    "short_interest_change_5d",
+    "earnings_surprise_last",
+    "earnings_surprise_streak",
+    "iv_skew_25d",
+    "iv_rank_percentile",
+    "institutional_ownership_change",
     # Sector context (2)
-    "sector_etf_return_5d", "stock_vs_sector",
+    "sector_etf_return_5d",
+    "stock_vs_sector",
     # Options flow (4)
-    "unusual_options_volume", "put_call_ratio",
-    "options_volume_vs_stock_volume", "large_block_trades_count",
+    "unusual_options_volume",
+    "put_call_ratio",
+    "options_volume_vs_stock_volume",
+    "large_block_trades_count",
     # Cross-correlation (2)
-    "correlation_with_spy", "relative_strength_vs_peers",
+    "correlation_with_spy",
+    "relative_strength_vs_peers",
     # Macro regime (5)
-    "vix_level", "treasury_10y_direction", "dxy_strength",
-    "yield_curve_slope", "spy_momentum_20d",
+    "vix_level",
+    "treasury_10y_direction",
+    "dxy_strength",
+    "yield_curve_slope",
+    "spy_momentum_20d",
 ]
 
 
@@ -74,9 +102,9 @@ class FeatureEngineer:
         features.update(self._regime_features(closes, highs, ticker_info))
 
         # --- Group 3: Stronger signals (7) ---
-        features.update(self._stronger_signal_features(
-            ticker_info, analyst_data, options_summary
-        ))
+        features.update(
+            self._stronger_signal_features(ticker_info, analyst_data, options_summary)
+        )
 
         # --- Group 4: Sector context (2) ---
         features.update(self._sector_features(closes, sector_signals))
@@ -147,7 +175,9 @@ class FeatureEngineer:
         # Volume
         if n >= 20:
             avg_vol = float(np.mean(volumes[-20:]))
-            f["volume_ratio_20d"] = float(volumes[-1] / avg_vol) if avg_vol > 0 else _NAN
+            f["volume_ratio_20d"] = (
+                float(volumes[-1] / avg_vol) if avg_vol > 0 else _NAN
+            )
         else:
             f["volume_ratio_20d"] = _NAN
 
@@ -168,8 +198,12 @@ class FeatureEngineer:
         if n >= 252:
             high_52w = float(np.max(highs[-252:]))
             low_52w = float(np.min(closes[-252:]))
-            f["price_vs_52w_high"] = float(closes[-1] / high_52w - 1) if high_52w > 0 else _NAN
-            f["price_vs_52w_low"] = float(closes[-1] / low_52w - 1) if low_52w > 0 else _NAN
+            f["price_vs_52w_high"] = (
+                float(closes[-1] / high_52w - 1) if high_52w > 0 else _NAN
+            )
+            f["price_vs_52w_low"] = (
+                float(closes[-1] / low_52w - 1) if low_52w > 0 else _NAN
+            )
         else:
             f["price_vs_52w_high"] = _NAN
             f["price_vs_52w_low"] = _NAN
@@ -229,18 +263,20 @@ class FeatureEngineer:
         ad = analyst_data or {}
         opt = options_summary or {}
 
-        f["short_interest_ratio"] = float(ad.get(
-            "short_interest_ratio",
-            ticker_info.get("short_interest_ratio", _NAN),
-        ))
+        f["short_interest_ratio"] = float(
+            ad.get(
+                "short_interest_ratio",
+                ticker_info.get("short_interest_ratio", _NAN),
+            )
+        )
         f["short_interest_change_5d"] = float(ad.get("short_interest_change_5d", _NAN))
         f["earnings_surprise_last"] = float(ad.get("earnings_surprise_last", _NAN))
         f["earnings_surprise_streak"] = float(ad.get("earnings_surprise_streak", _NAN))
         f["iv_skew_25d"] = float(opt.get("iv_skew_25d", _NAN))
         f["iv_rank_percentile"] = float(opt.get("iv_rank_percentile", _NAN))
-        f["institutional_ownership_change"] = float(ticker_info.get(
-            "institutional_ownership_change", _NAN
-        ))
+        f["institutional_ownership_change"] = float(
+            ticker_info.get("institutional_ownership_change", _NAN)
+        )
 
         return f
 
@@ -252,9 +288,7 @@ class FeatureEngineer:
         f: dict[str, float] = {}
         if sector_signals and len(sector_signals) >= 5 and len(closes) >= 5:
             sector_prices = np.array([s.price for s in sector_signals])
-            f["sector_etf_return_5d"] = float(
-                sector_prices[-1] / sector_prices[-5] - 1
-            )
+            f["sector_etf_return_5d"] = float(sector_prices[-1] / sector_prices[-5] - 1)
             stock_5d = float(closes[-1] / closes[-5] - 1)
             f["stock_vs_sector"] = stock_5d - f["sector_etf_return_5d"]
         else:
@@ -297,9 +331,9 @@ class FeatureEngineer:
             spy_returns = np.diff(spy_closes) / spy_closes[:-1]
             min_len = min(len(stock_returns), len(spy_returns))
             if min_len >= 2:
-                corr = float(np.corrcoef(
-                    stock_returns[-min_len:], spy_returns[-min_len:]
-                )[0, 1])
+                corr = float(
+                    np.corrcoef(stock_returns[-min_len:], spy_returns[-min_len:])[0, 1]
+                )
                 f["correlation_with_spy"] = corr if not math.isnan(corr) else _NAN
 
                 # Relative strength: stock cumulative return vs SPY

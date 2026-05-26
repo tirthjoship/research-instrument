@@ -52,9 +52,7 @@ class YFinanceAdapter(CachingMixin):
         if self._use_cache and self.has_cache(symbol):
             cached = self.load_from_cache(symbol)
             if cached and "history" in cached:
-                return self._dict_to_signals(
-                    symbol, cached["history"], prediction_time
-                )
+                return self._dict_to_signals(symbol, cached["history"], prediction_time)
 
         ticker = yf.Ticker(symbol)
 
@@ -75,8 +73,7 @@ class YFinanceAdapter(CachingMixin):
 
         # Cache raw response
         history_dict: dict[str, Any] = {
-            col: {str(idx): val for idx, val in df[col].items()}
-            for col in df.columns
+            col: {str(idx): val for idx, val in df[col].items()} for col in df.columns
         }
         self.save_to_cache(symbol, {"history": history_dict, "symbol": symbol})
 
@@ -131,13 +128,29 @@ class YFinanceAdapter(CachingMixin):
             calls = chain.calls
             puts = chain.puts
 
-            total_call_oi = float(calls["openInterest"].sum()) if "openInterest" in calls.columns else 0.0
-            total_put_oi = float(puts["openInterest"].sum()) if "openInterest" in puts.columns else 0.0
+            total_call_oi = (
+                float(calls["openInterest"].sum())
+                if "openInterest" in calls.columns
+                else 0.0
+            )
+            total_put_oi = (
+                float(puts["openInterest"].sum())
+                if "openInterest" in puts.columns
+                else 0.0
+            )
 
             put_call_ratio = total_put_oi / total_call_oi if total_call_oi > 0 else 0.0
 
-            call_iv = float(calls["impliedVolatility"].mean()) if "impliedVolatility" in calls.columns else 0.0
-            put_iv = float(puts["impliedVolatility"].mean()) if "impliedVolatility" in puts.columns else 0.0
+            call_iv = (
+                float(calls["impliedVolatility"].mean())
+                if "impliedVolatility" in calls.columns
+                else 0.0
+            )
+            put_iv = (
+                float(puts["impliedVolatility"].mean())
+                if "impliedVolatility" in puts.columns
+                else 0.0
+            )
             iv_skew = put_iv - call_iv
 
             return {
@@ -194,7 +207,11 @@ class YFinanceAdapter(CachingMixin):
         """Ensure prediction_time is not in the future."""
         now = datetime.now(timezone.utc)
         # Allow naive datetimes by comparing without timezone
-        pt = prediction_time.replace(tzinfo=None) if prediction_time.tzinfo else prediction_time
+        pt = (
+            prediction_time.replace(tzinfo=None)
+            if prediction_time.tzinfo
+            else prediction_time
+        )
         now_naive = now.replace(tzinfo=None)
         if pt > now_naive:
             raise LookAheadBiasError(
@@ -294,7 +311,9 @@ class YFinanceAdapter(CachingMixin):
         for idx, row in df.iterrows():
             ts = idx.to_pydatetime() if hasattr(idx, "to_pydatetime") else idx
             # Strip timezone for comparison
-            ts_naive = ts.replace(tzinfo=None) if hasattr(ts, "replace") and ts.tzinfo else ts
+            ts_naive = (
+                ts.replace(tzinfo=None) if hasattr(ts, "replace") and ts.tzinfo else ts
+            )
             pt_naive = (
                 prediction_time.replace(tzinfo=None)
                 if prediction_time.tzinfo
