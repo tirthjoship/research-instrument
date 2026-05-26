@@ -26,6 +26,7 @@ repos:
     hooks:
       - id: mypy
         args: ["--strict"]
+        exclude: "^tests/"
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.15

@@ -317,11 +317,15 @@ def test_weekly_report_valid() -> None:
 
 
 def test_ports_importable() -> None:
-    from domain.ports import (
+    from domain.ports import (  # noqa: F401
         BacktestResultPort, FeatureEngineerPort, MarketDataPort,
         RecommendationStorePort, SentimentPort, StockPredictorPort,
         TechnicalAnalysisPort,
     )
+    assert BacktestResultPort is not None
+    assert MarketDataPort is not None
+    assert SentimentPort is not None
+    assert StockPredictorPort is not None
     assert TechnicalAnalysisPort is not None
     assert RecommendationStorePort is not None
     assert FeatureEngineerPort is not None
