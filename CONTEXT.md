@@ -38,13 +38,28 @@ The disagreement between technical_signal and sentiment_signal for a given stock
 ### StockRecommendation
 A graded pick for a specific stock in a specific week. Contains the grade, composite score, predicted 5-day return, confidence, supporting indicators, and human-readable reasoning.
 
-### RecommendationGrade
-Five-tier grading system:
-- **Strong Buy** — Top 3 picks, high confidence, strong divergence signal
-- **Buy** — Rank 4-8, positive outlook
-- **Hold** — Rank 9-12, mixed signals
-- **May Sell** — Rank 13-15, declining signals
-- **Immediate Sell** — Previously held stock with negative divergence flip
+### RecommendationGrade (updated — ADR-015)
+Five-tier grading system based on multi-horizon magnitude predictions:
+- **Strong Buy** — Bullish on 2+ horizons, magnitude > 5% on longest horizon
+- **Buy** — Bullish on 1+ horizon, magnitude > threshold
+- **Hold** — Neutral on all horizons OR conflicting signals across horizons
+- **May Sell** — Bearish on 1+ horizon
+- **Immediate Sell** — Bearish on 2+ horizons, magnitude > -3%
+
+### Multi-Horizon Prediction (ADR-015)
+Model predicts return magnitude at three timeframes per ticker:
+| Horizon | Noise threshold | Signal type |
+|---------|-----------------|-------------|
+| 2-day | ±1.5% | News reaction, short-term momentum |
+| 5-day | ±2.0% | Divergence signal, trend confirmation |
+| 10-day | ±3.0% | Value recovery, sector rotation |
+
+Predictions below threshold = "no actionable signal" (noise). Model only recommends when magnitude exceeds threshold. This eliminates false positives from tiny moves classified as "up."
+
+Hold duration emerges from horizon disagreement:
+- Bullish at 2d, neutral at 5d → short hold (2-3 days)
+- Neutral at 2d, bullish at 10d → longer hold (5-10 days)
+- Bullish all horizons → strong conviction, hold until flip
 
 ### WeeklyReport
 The complete output of one tournament round: 15 recommendations + carryover updates for last week's picks + accuracy comparison vs previous week + SPY benchmark.
@@ -72,38 +87,84 @@ Persists and retrieves weekly reports and accuracy records. SQLite today, Postgr
 ### TechnicalAnalysisPort
 Computes technical indicators from raw OHLCV data. Returns TechnicalIndicators with composite signal.
 
-## Feature Groups (44 total)
+## Feature Groups (66 total)
 
-| Group | Count | Source |
-|-------|-------|--------|
-| Technical | 15 | yfinance OHLCV data |
-| Sentiment/Buzz | 11 | News + social sources |
-| Divergence | 4 | Computed (technical vs sentiment) |
-| Sector Context | 3 | Sector ETFs via yfinance |
-| Options Flow | 4 | yfinance options chain |
-| Analyst Actions | 4 | yfinance analyst recommendations |
-| Cross-Correlation | 3 | Peer group comparison |
+| Group | Count | Source | Phase |
+|-------|-------|--------|-------|
+| Technical | 15 | yfinance OHLCV data | 3A |
+| Regime Context | 10 | yfinance 2-3yr history | 3A |
+| Stronger Signals | 7 | yfinance (short interest, earnings surprise, IV) | 3A |
+| Sector Context | 3 | Sector ETFs via yfinance | 3A |
+| Options Flow | 4 | yfinance options chain | 3A |
+| Analyst Actions | 4 | yfinance analyst recommendations | 3A |
+| Cross-Correlation | 3 | Peer group comparison | 3A |
+| Macro Regime | 5 | VIX, 10Y yield, DXY, yield curve, SPY momentum | 3A |
+| Sentiment/Buzz | 11 | News + social sources | 3B |
+| Divergence | 4 | Computed (technical vs sentiment) | 3B |
 
-## NLP Progression Ladder
+### Regime Features (new — ADR-010)
+Historical context features computed from 2-3 years of data:
+- `price_vs_52w_high`, `price_vs_52w_low` — position relative to yearly range
+- `market_cap_quintile` — large cap returns compress vs mid/small
+- `return_6m`, `return_12m` — medium-term momentum (strongest documented factor)
+- `volatility_regime` — current vol vs own 1yr history
+- `drawdown_from_ath` — distance from all-time high (mean reversion signal)
+- `sector_relative_strength_6m` — stock vs sector peers
+- `revenue_growth_yoy` — fundamental growth trajectory
+- `pe_vs_sector_median` — relative valuation
 
-| Step | Model | Cost | When to upgrade |
-|------|-------|------|----------------|
-| 1 | Keyword scoring (bullish/bearish word counts) | Free | Baseline — always start here |
-| 2 | Flan-T5 fine-tuned for financial sentiment | Free (local) | When keyword precision plateaus |
-| 3 | Claude/Gemini API | ~$5-15/week | When Flan-T5 plateau, and only if lift > 2% |
+### Stronger Signal Features (new — grilling session)
+Academically-backed features replacing weaker signals:
+- `short_interest_ratio`, `short_interest_change_5d` — crowded short / squeeze potential
+- `earnings_surprise_last`, `earnings_surprise_streak` — PEAD anomaly
+- `iv_skew_25d`, `iv_rank_percentile` — options market pricing directional risk
+- `institutional_ownership_change` — smart money flow
 
-**Upgrade rule:** Never upgrade NLP without measuring lift. If Step N+1 improves precision by < 2%, stay at Step N.
+### Feature Pruning Strategy
+All 61 features ship in Phase 3A/3B. After 4-6 weeks of live data, SHAP importance identifies which 15-20 features carry 80% of signal. Prune the rest in Phase 4. Data-driven pruning, not intuition-based.
 
-## Evaluation Framework
+## NLP Progression Ladder (updated — ADR-008)
 
+| Step | Model | Cost | When |
+|------|-------|------|------|
+| 1+2 (parallel) | Keyword scoring + Flan-T5 zero-shot | Free | Phase 3B — both run simultaneously |
+| 3 | Claude/Gemini as LLM Analyst | ~$5-15/week | Phase 4 — causal reasoning, not just classification |
+
+**Key change (ADR-008):** Steps 1 and 2 run in parallel from day one, not sequentially. This eliminates ambiguity: if both show no divergence signal → thesis problem. If Flan-T5 shows signal but keywords don't → scorer problem.
+
+**Phase 4 reframe:** LLM tier is no longer "better sentiment scorer." It becomes LLM-as-analyst — extracting structured market intelligence with causal chain reasoning (e.g., "Intel layoffs → ASML reduced orders → AMD benefits from talent migration"). This is the 2026-era approach.
+
+**Upgrade rule remains:** Never upgrade NLP without measuring lift. If Step N+1 improves precision by < 2%, stay at Step N.
+
+## Evaluation Framework (expanded — ADR-011)
+
+### Core Metrics
 | Metric | What It Measures | Benchmark |
 |--------|-----------------|-----------|
-| Cumulative return | Business value | SPY ETF same period |
+| Cumulative return (cost-adjusted) | Business value | SPY ETF same period |
 | Sharpe ratio | Risk-adjusted return | SPY Sharpe ratio |
 | Directional accuracy | Prediction quality | 50% (random baseline) |
 | Precision per grade | Grade reliability | Per-grade historical average |
 
+### Statistical Rigor (new)
+| Component | What It Proves |
+|-----------|---------------|
+| Permutation test (1000 shuffles) | Skill vs luck. p < 0.05 required |
+| Walk-forward validation | Results hold across time periods, not just one split |
+| Transaction cost modeling (0.1% default) | Returns are real after trading costs |
+| Regime-aware splits (bull/sideways/bear) | Model works in all conditions, not just bull markets |
+| Maximum drawdown + recovery time | Risk profile for real-money deployment decisions |
+
+### Ablation Study (new — measures each component's value)
+| Model Variant | What It Proves |
+|---------------|---------------|
+| Technical-only | Baseline — does price data alone predict? |
+| Sentiment-only | Does sentiment alone predict? |
+| Combined (divergence) | Does fusion add value over either alone? |
+
 **Never claim "beats the market" without Sharpe ratio comparison.** Raw returns without risk adjustment are misleading.
+
+**Never claim "model has edge" without permutation test p-value.** Directional accuracy alone is anecdote, not evidence.
 
 ## Market Configuration
 
@@ -131,3 +192,97 @@ Adding a new market = adding a YAML file. No code changes required.
 - **Never hardcode stock tickers** — the universe is dynamic, discovered weekly
 - **Never merge sentiment from different time zones without normalization** — US market hours differ from when news publishes
 - **Never trust raw social sentiment** — normalize, aggregate, require minimum source diversity
+- **Never claim statistical significance without permutation test** — p < 0.05 or it's luck
+- **Never report returns without transaction costs** — gross returns are misleading (0.1% per trade default)
+- **Never use yfinance adjusted prices in backtesting** — `auto_adjust=False` to avoid revision bias
+- **Never backtest without known_universe snapshots** — survivorship bias inflates returns 3-5%
+- **Never draw thesis conclusions from a single NLP scorer** — parallel baselines (ADR-008) required
+- **Never run pipeline without caching raw data** — every API response cached at fetch time (ADR-017). Reproducibility is non-negotiable.
+- **Never overwrite cached data** — cache is append-only, keyed by fetch timestamp
+
+## VanEck BUZZ ETF — Competitive Reference
+
+The BUZZ ETF (VanEck Social Sentiment ETF) validates that sentiment data contains signal but demonstrates how NOT to use it:
+- Selects 75 most-positively-discussed large-cap stocks monthly
+- Beta: 1.65 (65% more volatile than S&P 500 for roughly equivalent returns)
+- AUM collapsed from ~$400M to ~$120M — market voted with its feet
+- No divergence signal — just buys popular stocks (popularity contest)
+- Structural tech overweight (36%) from online discussion bias
+
+**Our key differentiator:** We measure sentiment-price *divergence*, not raw positive sentiment. Divergence is inherently contrarian. BUZZ is pro-cyclical. Academic literature (Baker & Wurgler 2006) supports contrarian sentiment signals over momentum sentiment signals.
+
+## Model Architecture — Two-Stage Stacking (ADR-014)
+
+```
+Stage 1: Pretrained Technical Model (FROZEN, retrained monthly)
+  ├── Input:  41 features (technical + regime + macro + options + sector + cross-corr)
+  ├── Training: 2-3 years historical data (3,000-5,000 rows)
+  ├── Output: predicted_return_technical, confidence_technical
+  └── Models: XGBoost + LightGBM + Ridge ensemble
+
+Stage 2: Sentiment Blending Model (warm-started weekly)
+  ├── Input:  Stage 1 outputs (2) + 25 sentiment/buzz/divergence features = 27 features
+  ├── Training: 90-day backfill + live weekly accumulation
+  ├── Output: final_predicted_return, final_confidence
+  └── Models: Shallow XGBoost (max_depth=3) or Ridge
+```
+
+**Decay weighting:** 8-week half-life (configurable). `weight = 0.5 ** (weeks_ago / half_life)`. Tune empirically after 3 months of live data.
+
+**Retrain schedule:** Stage 1 monthly full retrain. Stage 2 weekly warm-start, full retrain monthly or after 3 consecutive weeks of degraded accuracy.
+
+## Production Deployment Path (new)
+
+For real-money deployment, the prediction model is necessary but not sufficient. Required layers:
+1. **Predictions** — Phase 3A/3B (this project)
+2. **Risk management** — stop-loss, position limits, sector caps (Phase 4)
+3. **Position sizing** — Kelly Criterion, confidence-weighted allocation (Phase 4)
+4. **Hold duration** — predicted optimal hold period per pick (Phase 4)
+5. **Paper trading validation** — 6 months minimum before real capital (Phase 5)
+6. **Recursive learning** — decay-weighted retraining from outcomes (Phase 3B)
+
+**6 months of paper trading before real money. Non-negotiable.**
+
+## Future Validation & Backtesting Roadmap
+
+Items to validate, test, and backtest in Phase 4, 5, 6, and future state. These are NOT in scope for Phase 3 but must be tracked for when those phases begin.
+
+### Phase 4: Tracking & Intelligence — Validation Agenda
+- [ ] **Portfolio correlation constraints:** Backtest top-15 with max pairwise correlation 0.7 vs unconstrained. Measure: does diversification improve Sharpe without killing returns?
+- [ ] **Position sizing (Kelly Criterion):** Backtest confidence-weighted allocation vs equal-weight. Measure: does Kelly improve risk-adjusted returns or just increase variance?
+- [ ] **Hold duration optimization:** For each feature profile, compute actual optimal hold period from historical data. Validate: do momentum picks actually peak at day 3-5? Do value picks need 2-4 weeks?
+- [ ] **LLM analyst layer:** Compare Claude/Gemini causal reasoning extraction vs Flan-T5 sentiment classification. Measure: precision lift, cost per prediction, latency impact.
+- [ ] **Risk management rules:** Backtest stop-loss thresholds (-5%, -8%, -10%). Which minimizes drawdown without triggering on normal volatility?
+- [ ] **Cross-stock features:** Validate supply chain propagation signals (TSMC → NVDA/AMD). Do they improve prediction or add noise?
+- [ ] **Sector rotation detection:** Can the model detect money flowing between sectors before it shows up in price?
+- [ ] **Decay half-life tuning:** After 3 months live data, optimize half-life from [4, 6, 8, 10, 12] weeks via walk-forward.
+
+### Phase 5: Dashboard & Polish — Validation Agenda
+- [ ] **Paper trading vs live tracking dashboard:** Real-time comparison of model predictions vs market outcomes, displayed visually.
+- [ ] **Regime detection accuracy:** Validate that bull/sideways/bear classification matches actual market conditions (VIX, drawdown-based).
+- [ ] **Feature importance stability:** Track SHAP feature rankings weekly. If top-10 features change dramatically week-to-week, model is unstable.
+- [ ] **Sector concentration monitoring:** Dashboard alert when >40% of picks are in one sector.
+- [ ] **Canadian market (ca.yaml):** Validate that US-trained model transfers to TSX or needs separate training.
+- [ ] **Indian market (in.yaml):** Different market microstructure — validate sentiment-price lag hypothesis holds in NSE/BSE.
+- [ ] **Confidence calibration:** Plot predicted confidence vs actual accuracy. If model says "80% confident" it should be right ~80% of the time.
+
+### Phase 6: Real Money Pilot — Validation Agenda
+- [ ] **Paper trading minimum 6 months:** No exceptions. Must show statistically significant edge (p < 0.05) before real capital.
+- [ ] **Slippage modeling:** Difference between model's assumed execution price vs actual fill price. Backtest with 0.05%, 0.1%, 0.2% slippage levels.
+- [ ] **Liquidity impact:** For small-cap picks, does our order size move the price? Model position sizes that won't impact the market.
+- [ ] **Tax-loss harvesting:** Can the model identify when to sell losing positions for tax benefit while maintaining portfolio thesis?
+- [ ] **Drawdown circuit breaker:** If portfolio drawdown exceeds -15%, auto-reduce position sizes by 50%. Backtest impact.
+- [ ] **Black swan resilience:** How does the model behave during flash crashes, pandemic-style drops, geopolitical shocks? Backtest on March 2020, Jan 2022 rate shock.
+
+### Future State — Research Backlog
+- [ ] **Full point-in-time mitigation (ADR-010 option C):** Store all raw data with fetch timestamps. Backtest only uses data fetched before prediction_time.
+- [ ] **Survivorship-bias-free backtesting:** Obtain historical delisted stock data. Re-run all backtests including stocks that were later delisted.
+- [ ] **Alternative data sources:** Satellite imagery (parking lots → retail sales), credit card transaction data, web traffic (SimilarWeb), app downloads (Sensor Tower). Cost-benefit analysis for each.
+- [ ] **Graph neural networks:** Model stock-to-stock relationships (supply chain, sector, correlation). Does GNN improve over flat feature vectors?
+- [ ] **Reinforcement learning for dynamic allocation:** RL agent learns to size positions and time entries/exits. Compare vs Kelly Criterion.
+- [ ] **Transformer-based temporal model:** Self-attention over weekly feature sequences. Does temporal context improve over flat snapshot predictions?
+- [ ] **Multi-frequency fusion:** Daily signals for timing, weekly signals for direction, monthly signals for regime. Combine across timeframes.
+- [ ] **Earnings call NLP:** Real-time transcription + LLM analysis of quarterly earnings calls. Measure signal vs cost.
+- [ ] **Dark pool activity:** Institutional block trades as signal. Requires paid data (Quandl/Nasdaq).
+- [ ] **VanEck BUZZ comparison benchmark:** Ongoing comparison — does our divergence approach outperform BUZZ's popularity approach on same universe?
+- [ ] **Ensemble weight optimization:** Bayesian optimization of model weights in ensemble. Compare vs equal-weight and accuracy-weighted.

@@ -5,8 +5,8 @@ LOCAL_PROJECT_STORY.md
 # Internal AI config — keep locally (agent scaffolding is implementation detail)
 .claude/settings.json
 .claude/settings.local.json
-docs/superpowers/plans/
-docs/superpowers/specs/
+# Note: docs/superpowers/plans/ and specs/ are tracked in git
+# They contain design decisions and implementation plans that are project artifacts
 
 # Coverage artifacts
 .coverage
