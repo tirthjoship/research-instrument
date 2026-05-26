@@ -342,3 +342,15 @@ def test_load_missing_market_raises() -> None:
     from config.loader import load_market_config
     with pytest.raises(FileNotFoundError):
         load_market_config("nonexistent")
+
+
+def test_fakes_implement_protocols() -> None:
+    from tests.fakes import (
+        FakeFeatureEngineer, FakeMarketData, FakePredictor,
+        FakeRecommendationStore, FakeTechnicalAnalysis,
+    )
+    FakeMarketData()
+    FakeTechnicalAnalysis()
+    FakeRecommendationStore()
+    FakeFeatureEngineer()
+    FakePredictor()
