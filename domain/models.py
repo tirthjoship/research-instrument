@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 
 from .exceptions import InvalidMarketDataError, InvalidPredictionError
 
@@ -89,3 +90,99 @@ class BacktestResult:
 
     def __post_init__(self) -> None:
         pass  # Optional: add bounds on returns if desired
+
+
+class RecommendationGrade(Enum):
+    """5-tier grading system for stock recommendations."""
+
+    STRONG_BUY = "strong_buy"
+    BUY = "buy"
+    HOLD = "hold"
+    MAY_SELL = "may_sell"
+    IMMEDIATE_SELL = "immediate_sell"
+
+
+@dataclass(frozen=True)
+class MultiHorizonPrediction:
+    """Predicted returns at 2-day, 5-day, and 10-day horizons."""
+
+    predicted_return_2d: float
+    predicted_return_5d: float
+    predicted_return_10d: float
+    confidence_2d: float
+    confidence_5d: float
+    confidence_10d: float
+
+    def __post_init__(self) -> None:
+        for field_name in ("confidence_2d", "confidence_5d", "confidence_10d"):
+            value = getattr(self, field_name)
+            if not 0.0 <= value <= 1.0:
+                raise InvalidPredictionError(
+                    f"Confidence must be in [0, 1], got {value}"
+                )
+
+
+@dataclass(frozen=True)
+class StockRecommendation:
+    """A graded stock recommendation for a given week."""
+
+    symbol: str
+    week_start: str
+    grade: RecommendationGrade
+    composite_score: float
+    prediction: MultiHorizonPrediction
+    horizon_signals: dict[str, str]
+    reasoning: str
+    sources: list[str]
+    sentiment_score: float | None = None
+    divergence_score: float | None = None
+    divergence_type: str | None = None
+    technical_signal: float | None = None
+    rsi_14: float | None = None
+    macd: float | None = None
+
+
+@dataclass(frozen=True)
+class AccuracyRecord:
+    """Historical record comparing predicted vs actual returns."""
+
+    symbol: str
+    week_start: str
+    predicted_grade: str
+    predicted_return_2d: float
+    predicted_return_5d: float
+    predicted_return_10d: float
+    actual_return_2d: float
+    actual_return_5d: float
+    actual_return_10d: float
+    direction_correct_2d: bool
+    direction_correct_5d: bool
+    direction_correct_10d: bool
+
+
+@dataclass(frozen=True)
+class EvaluationRun:
+    """Record of a single evaluation metric from a validation run."""
+
+    run_date: str
+    eval_type: str
+    horizon: str
+    metric_name: str
+    metric_value: float
+    p_value: float | None = None
+    regime: str | None = None
+    details: str | None = None
+
+
+@dataclass(frozen=True)
+class WeeklyReport:
+    """Aggregated weekly report with recommendations and performance."""
+
+    report_date: str
+    market: str
+    recommendations: list[StockRecommendation]
+    accuracy_vs_last_week: float | None = None
+    spy_return_same_period: float | None = None
+    max_drawdown: float | None = None
+    sharpe_ratio: float | None = None
+    transaction_costs: float | None = None

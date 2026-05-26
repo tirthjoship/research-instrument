@@ -26,6 +26,13 @@ repos:
     hooks:
       - id: mypy
         args: ["--strict"]
+        exclude: "^(tests/|audit_sentiment\\.py)"
+        additional_dependencies:
+          - types-PyYAML
+          - types-click
+          - types-requests
+          - pandas-stubs
+          - loguru
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.15
