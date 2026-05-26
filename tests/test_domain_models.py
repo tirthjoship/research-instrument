@@ -314,3 +314,14 @@ def test_weekly_report_valid() -> None:
     assert report.market == "us"
     assert len(report.recommendations) == 1
     assert report.spy_return_same_period is None
+
+
+def test_ports_importable() -> None:
+    from domain.ports import (
+        BacktestResultPort, FeatureEngineerPort, MarketDataPort,
+        RecommendationStorePort, SentimentPort, StockPredictorPort,
+        TechnicalAnalysisPort,
+    )
+    assert TechnicalAnalysisPort is not None
+    assert RecommendationStorePort is not None
+    assert FeatureEngineerPort is not None
