@@ -3,6 +3,7 @@
 Each use case depends only on port interfaces, never on concrete adapters.
 """
 
+import time
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -139,7 +140,7 @@ class PretrainingUseCase:
             # Fetch macro data once per month
             macro_signals = self._fetch_macro(month_end)
 
-            for ticker in self._tickers:
+            for ticker_idx, ticker in enumerate(self._tickers):
                 try:
                     features, targets = self._compute_ticker_features(
                         ticker, month_end, macro_signals
@@ -150,7 +151,12 @@ class PretrainingUseCase:
                             month_targets[h].append(targets.get(h, 0.0))
                 except Exception as e:
                     logger.debug(f"Skipping {ticker} for {month}: {e}")
+                    if "rate" in str(e).lower() or "429" in str(e):
+                        time.sleep(10)
                     continue
+                # Throttle API calls
+                if ticker_idx % 5 == 4:
+                    time.sleep(1)
 
             if month_features:
                 all_features[month] = month_features
@@ -210,9 +216,18 @@ class PretrainingUseCase:
         macro: dict[str, list] = {}  # type: ignore[type-arg]
         start = prediction_time - timedelta(days=365)
         for name, symbol in self._macro_symbols.items():
-            macro[symbol] = self._market_data.get_signals(
-                symbol, prediction_time, start_date=start
-            )
+            for attempt in range(3):
+                try:
+                    macro[symbol] = self._market_data.get_signals(
+                        symbol, prediction_time, start_date=start
+                    )
+                    break
+                except Exception as e:
+                    logger.warning(f"Macro fetch {symbol} attempt {attempt + 1}: {e}")
+                    time.sleep(5 * (attempt + 1))
+            else:
+                logger.warning(f"Macro fetch {symbol} failed after 3 attempts")
+                macro[symbol] = []
         return macro
 
     @staticmethod
@@ -369,9 +384,17 @@ class WeeklyTournamentUseCase:
         macro: dict[str, list] = {}  # type: ignore[type-arg]
         start = prediction_time - timedelta(days=365)
         for name, symbol in self._macro_symbols.items():
-            macro[symbol] = self._market_data.get_signals(
-                symbol, prediction_time, start_date=start
-            )
+            for attempt in range(3):
+                try:
+                    macro[symbol] = self._market_data.get_signals(
+                        symbol, prediction_time, start_date=start
+                    )
+                    break
+                except Exception as e:
+                    logger.warning(f"Macro fetch {symbol} attempt {attempt + 1}: {e}")
+                    time.sleep(5 * (attempt + 1))
+            else:
+                macro[symbol] = []
         return macro
 
 
