@@ -18,15 +18,24 @@ class RidgePredictor:
         self._model = Ridge(alpha=alpha, random_state=random_seed)
         self._scaler = StandardScaler()
         self._feature_names: list[str] = []
+        self._train_medians: dict[str, float] = {}
 
     def fit(self, features: list[dict[str, float]], targets: list[float]) -> None:
         self._feature_names = sorted(features[0].keys())
-        X = self._to_array(features, impute_value=None)
+        X = self._to_array(features)
+        # Compute and store column medians for predict-time imputation
+        for col_idx, name in enumerate(self._feature_names):
+            col = X[:, col_idx]
+            median = float(np.nanmedian(col))
+            self._train_medians[name] = median if not np.isnan(median) else 0.0
+        # Impute training data with computed medians
+        X = self._impute_with_medians(X)
         X_scaled = self._scaler.fit_transform(X)
         self._model.fit(X_scaled, np.array(targets))
 
     def predict(self, features: list[dict[str, float]]) -> list[float]:
-        X = self._to_array(features, impute_value=0.0)
+        X = self._to_array(features)
+        X = self._impute_with_medians(X)
         X_scaled = self._scaler.transform(X)
         preds = self._model.predict(X_scaled)
         return [float(p) for p in preds]
@@ -39,7 +48,13 @@ class RidgePredictor:
             pickle.dump(model_data, f)
         meta_path = p.with_suffix(".meta.json")
         meta_path.write_text(
-            json.dumps({"feature_names": self._feature_names, "alpha": self._alpha})
+            json.dumps(
+                {
+                    "feature_names": self._feature_names,
+                    "alpha": self._alpha,
+                    "train_medians": self._train_medians,
+                }
+            )
         )
 
     def load_model(self, path: str) -> None:
@@ -52,22 +67,21 @@ class RidgePredictor:
         meta = json.loads(meta_path.read_text())
         self._feature_names = meta["feature_names"]
         self._alpha = meta["alpha"]
+        self._train_medians = meta.get("train_medians", {})
 
-    def _to_array(
-        self, features: list[dict[str, float]], impute_value: float | None
-    ) -> np.ndarray:
+    def _to_array(self, features: list[dict[str, float]]) -> np.ndarray:
         rows: list[list[float]] = []
         for row in features:
             vals = [row.get(name, float("nan")) for name in self._feature_names]
             rows.append(vals)
-        arr = np.array(rows, dtype=np.float64)
-        if impute_value is None:
-            for col_idx in range(arr.shape[1]):
-                col = arr[:, col_idx]
-                mask = np.isnan(col)
-                if mask.any():
-                    median = float(np.nanmedian(col))
-                    arr[mask, col_idx] = median if not np.isnan(median) else 0.0
-        else:
-            arr = np.nan_to_num(arr, nan=impute_value)
-        return arr
+        return np.array(rows, dtype=np.float64)
+
+    def _impute_with_medians(self, arr: np.ndarray) -> np.ndarray:
+        result = arr.copy()
+        for col_idx, name in enumerate(self._feature_names):
+            col = result[:, col_idx]
+            mask = np.isnan(col)
+            if mask.any():
+                median = self._train_medians.get(name, 0.0)
+                result[mask, col_idx] = median
+        return result
