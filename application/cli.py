@@ -160,7 +160,7 @@ def show_report(week: str) -> None:
 def backtest(market: str, start: str, end: str) -> None:
     """Run full backtest: pretrain + evaluate + report."""
     click.echo("Step 1/3: Running walk-forward pretraining...")
-    deps = _build_dependencies(market, use_cache=True)
+    deps = _build_dependencies(market, use_cache=False)
     config = deps["config"]
     tickers = _get_ticker_universe(config)
 
