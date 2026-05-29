@@ -2,8 +2,6 @@
 
 import random
 
-import pytest
-
 from application.shap_analysis import compute_shap_importance
 
 
