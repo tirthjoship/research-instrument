@@ -101,3 +101,43 @@ class TestDrawdownTracker:
         tracker = DrawdownTracker()
         result = tracker.compute([-0.5, -0.5])
         assert result["max_drawdown"] < -0.5
+
+
+class TestFullEvaluationSuite:
+    def test_evaluate_walk_forward_results(self) -> None:
+        from application.evaluation import FullEvaluationSuite
+
+        predictions = [0.03, -0.01, 0.05, 0.02, -0.03, 0.01, 0.04, -0.02, 0.03, 0.01]
+        actuals = [0.02, -0.02, 0.03, 0.01, -0.01, -0.01, 0.02, -0.03, 0.01, 0.02]
+        spy_monthly = [0.02, -0.01, 0.03, 0.01, -0.02, 0.01, 0.02, -0.01, 0.01, 0.02]
+
+        suite = FullEvaluationSuite()
+        report = suite.evaluate(
+            predictions=predictions,
+            actuals=actuals,
+            spy_monthly_returns=spy_monthly,
+        )
+
+        assert "directional_accuracy" in report
+        assert "p_value" in report
+        assert "cost_adjusted_returns" in report
+        assert "regime_labels" in report
+        assert "max_drawdown" in report
+
+    def test_evaluate_returns_numeric_values(self) -> None:
+        from application.evaluation import FullEvaluationSuite
+
+        predictions = [0.05] * 20
+        actuals = [0.03] * 20
+        spy_monthly = [0.02] * 20
+
+        suite = FullEvaluationSuite()
+        report = suite.evaluate(
+            predictions=predictions,
+            actuals=actuals,
+            spy_monthly_returns=spy_monthly,
+        )
+
+        assert isinstance(report["directional_accuracy"], float)
+        assert isinstance(report["p_value"], float)
+        assert isinstance(report["max_drawdown"], float)

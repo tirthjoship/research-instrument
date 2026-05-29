@@ -460,11 +460,46 @@ class EvaluationUseCase:
 
     def execute(
         self,
-        eval_type: str = "walk_forward",
+        eval_type: str = "full",
         **kwargs: Any,
     ) -> list[EvaluationRun]:
-        """Run evaluation and store results. Delegates to evaluation module."""
-        # This use case wraps the evaluation module and stores results.
-        # Full implementation coordinates with PretrainingUseCase outputs.
-        logger.info(f"Evaluation type: {eval_type}")
-        return []
+        """Run evaluation on stored walk-forward results."""
+        from application.evaluation import FullEvaluationSuite
+
+        runs = self._store.get_evaluation_runs(eval_type="walk_forward")
+        if not runs:
+            logger.warning("No walk-forward results to evaluate")
+            return []
+
+        predictions = [r.metric_value for r in runs if r.metric_name == "prediction"]
+        actuals = [r.metric_value for r in runs if r.metric_name == "actual"]
+
+        if not predictions or not actuals:
+            logger.warning("No prediction/actual pairs found")
+            return []
+
+        suite = FullEvaluationSuite()
+        report = suite.evaluate(
+            predictions=predictions,
+            actuals=actuals,
+            spy_monthly_returns=kwargs.get(
+                "spy_monthly_returns", [0.01] * len(predictions)
+            ),
+        )
+
+        result_runs: list[EvaluationRun] = []
+        run_date = kwargs.get("run_date", "unknown")
+        for metric_name, value in report.items():
+            if isinstance(value, (int, float)):
+                run = EvaluationRun(
+                    run_date=str(run_date),
+                    eval_type="full_evaluation",
+                    horizon="all",
+                    metric_name=str(metric_name),
+                    metric_value=float(value),
+                )
+                self._store.save_evaluation_run(run)
+                result_runs.append(run)
+
+        logger.info(f"Evaluation complete: {len(result_runs)} metrics computed")
+        return result_runs
