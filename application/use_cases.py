@@ -193,17 +193,22 @@ class PretrainingUseCase:
         )
 
         # Compute target returns (actual future returns)
+        # Use last trading day's price as base (not month_end which may be weekend)
         last_price = signals[-1].price
         targets: dict[str, float] = {}
         for h_label, h_days in [("2d", 2), ("5d", 5), ("10d", 10)]:
-            future_time = prediction_time + timedelta(days=h_days)
+            # Add buffer for weekends/holidays so yfinance window captures enough trading days
+            future_time = prediction_time + timedelta(days=h_days + 5)
             future_signals = self._market_data.get_signals(
                 ticker, future_time, start_date=prediction_time
             )
             future_prices = [
                 s.price for s in future_signals if s.timestamp > prediction_time
             ]
-            if future_prices:
+            if len(future_prices) >= h_days:
+                # Use the h_days-th trading day price (not the last in window)
+                targets[h_label] = (future_prices[h_days - 1] / last_price) - 1
+            elif future_prices:
                 targets[h_label] = (future_prices[-1] / last_price) - 1
             else:
                 targets[h_label] = 0.0
