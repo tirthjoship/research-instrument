@@ -1,5 +1,6 @@
 """Tests for ML predictors."""
 
+import math
 import random
 
 import pytest
@@ -57,6 +58,22 @@ class TestXGBoostPredictor:
         preds_b = model_b.predict(features[:5])
 
         assert preds_a == preds_b
+
+    def test_handles_nan_features(self, training_data):
+        """XGBoost should handle NaN natively without crashing."""
+        features, targets = training_data
+        model = XGBoostPredictor(random_seed=42)
+        model.fit(features, targets)
+
+        nan_features = [dict(f) for f in features[:5]]
+        for f in nan_features:
+            f["f_0"] = float("nan")
+            f["f_10"] = float("nan")
+
+        preds = model.predict(nan_features)
+        assert len(preds) == 5
+        assert all(isinstance(p, float) for p in preds)
+        assert all(not math.isnan(p) for p in preds)
 
 
 class TestLightGBMPredictor:
