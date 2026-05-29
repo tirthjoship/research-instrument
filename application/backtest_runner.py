@@ -8,8 +8,6 @@ from pathlib import Path
 
 from loguru import logger
 
-from application.evaluation import FullEvaluationSuite
-
 
 def run_backtest_report(
     store_path: str = "data/recommendations.db",
@@ -49,7 +47,9 @@ def run_backtest_report(
 
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
-    report_path = out / f"backtest_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    report_path = (
+        out / f"backtest_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    )
     report_path.write_text(json.dumps(report, indent=2, default=str))
     logger.info(f"Report saved to {report_path}")
 

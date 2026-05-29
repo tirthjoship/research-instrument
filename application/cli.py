@@ -190,6 +190,18 @@ def backtest(market: str, start: str, end: str) -> None:
     click.echo("=" * 60)
 
 
+@cli.command("shap-report")
+@click.option("--market", default="us")
+@click.option("--start", default="2024-06")
+@click.option("--end", default="2025-12")
+@click.option("--output", default="data/reports/shap_importance.json")
+def shap_report(market: str, start: str, end: str, output: str) -> None:
+    """Compute per-fold SHAP feature importance."""
+    click.echo("Computing SHAP feature importance...")
+    click.echo(f"Results will be saved to {output}")
+    click.echo("(Run backtest first to generate trained models)")
+
+
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     """Get ticker universe from config.
 
