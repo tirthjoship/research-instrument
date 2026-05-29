@@ -168,6 +168,48 @@ def test_handles_missing_options(
     assert math.isnan(features["put_call_ratio"])
 
 
+def test_sector_relative_strength_computed(
+    engineer: FeatureEngineer,
+    signals: list[Signal],
+    indicators: dict[str, float],
+    ticker_info: dict[str, float],
+    macro_signals: dict[str, list[Signal]],
+) -> None:
+    """sector_relative_strength_6m should be computed when sector signals exist."""
+    import random
+
+    random.seed(77)
+    sector_sigs: list[Signal] = []
+    price = 100.0
+    for i in range(260):
+        price = max(price + random.gauss(0, 1.5), 1.0)
+        sector_sigs.append(
+            Signal(
+                symbol="XLK",
+                timestamp=signals[i].timestamp,
+                price=price,
+                volume=500_000,
+                open_=price - 0.5,
+                high=price + 1.0,
+                low=price - 1.0,
+            )
+        )
+
+    features = engineer.compute(
+        signals=signals,
+        indicators=indicators,
+        ticker_info=ticker_info,
+        options_summary=None,
+        analyst_data=None,
+        macro_signals=macro_signals,
+        sector_signals=sector_sigs,
+    )
+
+    import math
+
+    assert not math.isnan(features["sector_relative_strength_6m"])
+
+
 def test_handles_short_history(engineer: FeatureEngineer) -> None:
     """With only 30 days of data, long-horizon features become NaN."""
     short_signals = _make_signals(30)

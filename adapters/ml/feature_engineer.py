@@ -109,6 +109,13 @@ class FeatureEngineer:
         # --- Group 4: Sector context (2) ---
         features.update(self._sector_features(closes, sector_signals))
 
+        # Compute sector_relative_strength_6m when sector data is available
+        if sector_signals and len(sector_signals) >= 126 and len(closes) >= 126:
+            stock_6m = float(closes[-1] / closes[-126] - 1)
+            sector_prices = np.array([s.price for s in sector_signals])
+            sector_6m = float(sector_prices[-1] / sector_prices[-126] - 1)
+            features["sector_relative_strength_6m"] = stock_6m - sector_6m
+
         # --- Group 5: Options flow (4) ---
         features.update(self._options_features(options_summary, volumes))
 
