@@ -321,19 +321,19 @@ class WeeklyTournamentUseCase:
             sector_signals=None,
         )
 
-        # Predict each horizon
+        # Predict each horizon with confidence
         feature_row = [features]
-        pred_2d = self._predictors["2d"].predict(feature_row)[0]
-        pred_5d = self._predictors["5d"].predict(feature_row)[0]
-        pred_10d = self._predictors["10d"].predict(feature_row)[0]
+        pred_2d, conf_2d = self._predict_with_confidence("2d", feature_row)
+        pred_5d, conf_5d = self._predict_with_confidence("5d", feature_row)
+        pred_10d, conf_10d = self._predict_with_confidence("10d", feature_row)
 
         prediction = MultiHorizonPrediction(
             predicted_return_2d=pred_2d,
             predicted_return_5d=pred_5d,
             predicted_return_10d=pred_10d,
-            confidence_2d=0.5,  # TODO: derive from model uncertainty
-            confidence_5d=0.5,
-            confidence_10d=0.5,
+            confidence_2d=conf_2d,
+            confidence_5d=conf_5d,
+            confidence_10d=conf_10d,
         )
 
         grade, horizon_signals = grade_from_horizons(prediction)
@@ -353,6 +353,17 @@ class WeeklyTournamentUseCase:
             rsi_14=indicators.get("rsi_14"),
             macd=indicators.get("macd"),
         )
+
+    def _predict_with_confidence(
+        self, horizon: str, feature_row: list[dict[str, float]]
+    ) -> tuple[float, float]:
+        """Predict return and confidence for a single horizon."""
+        predictor = self._predictors[horizon]
+        if hasattr(predictor, "predict_with_confidence"):
+            preds, confs = predictor.predict_with_confidence(feature_row)
+            return preds[0], confs[0]
+        preds = predictor.predict(feature_row)
+        return preds[0], 0.5
 
     def _fetch_macro(self, prediction_time: datetime) -> dict[str, list]:  # type: ignore[type-arg]
         macro: dict[str, list] = {}  # type: ignore[type-arg]

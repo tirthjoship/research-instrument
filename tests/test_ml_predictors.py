@@ -220,3 +220,21 @@ class TestEnsemblePredictor:
 
         for a, b in zip(preds_before, preds_after):
             assert abs(a - b) < 1e-6
+
+    def test_predict_with_confidence(self, training_data):
+        """predict_with_confidence returns (predictions, confidences)."""
+        features, targets = training_data
+        model = EnsemblePredictor(random_seed=42)
+        model.fit(features, targets)
+        preds, confidences = model.predict_with_confidence(features[:5])
+        assert len(preds) == 5
+        assert len(confidences) == 5
+        assert all(0.0 <= c <= 1.0 for c in confidences)
+
+    def test_identical_submodel_preds_give_high_confidence(self, training_data):
+        """When all sub-models agree, confidence should be high."""
+        features, targets = training_data
+        model = EnsemblePredictor(random_seed=42)
+        model.fit(features, targets)
+        _, confidences = model.predict_with_confidence(features[:5])
+        assert all(c > 0.3 for c in confidences)

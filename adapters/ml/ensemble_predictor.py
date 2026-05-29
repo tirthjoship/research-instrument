@@ -38,6 +38,36 @@ class EnsemblePredictor:
             result.append(w[0] * px + w[1] * pl + w[2] * pr)
         return result
 
+    def predict_with_confidence(
+        self, features: list[dict[str, float]]
+    ) -> tuple[list[float], list[float]]:
+        """Return (weighted_predictions, confidence_scores).
+
+        Confidence = 1 - normalized_std. When all models agree,
+        std is 0 and confidence is 1.0. When they disagree maximally,
+        confidence approaches 0.
+        """
+        preds_xgb = self._xgb.predict(features)
+        preds_lgbm = self._lgbm.predict(features)
+        preds_ridge = self._ridge.predict(features)
+
+        w = self._weights
+        result: list[float] = []
+        confidences: list[float] = []
+
+        for px, pl, pr in zip(preds_xgb, preds_lgbm, preds_ridge):
+            weighted = w[0] * px + w[1] * pl + w[2] * pr
+            result.append(weighted)
+
+            std = (
+                ((px - weighted) ** 2 + (pl - weighted) ** 2 + (pr - weighted) ** 2) / 3
+            ) ** 0.5
+
+            confidence = max(0.0, min(1.0, 1.0 - std / 0.05))
+            confidences.append(confidence)
+
+        return result, confidences
+
     def set_weights(self, weights: tuple[float, float, float]) -> None:
         self._weights = list(weights)
         self._normalize_weights()
