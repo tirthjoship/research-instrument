@@ -100,6 +100,22 @@ class TestLightGBMPredictor:
         for a, b in zip(preds_before, preds_after):
             assert abs(a - b) < 1e-6
 
+    def test_handles_nan_features(self, training_data):
+        """LightGBM should handle NaN natively without crashing."""
+        features, targets = training_data
+        model = LightGBMPredictor(random_seed=42)
+        model.fit(features, targets)
+
+        nan_features = [dict(f) for f in features[:5]]
+        for f in nan_features:
+            f["f_0"] = float("nan")
+            f["f_10"] = float("nan")
+
+        preds = model.predict(nan_features)
+        assert len(preds) == 5
+        assert all(isinstance(p, float) for p in preds)
+        assert all(not math.isnan(p) for p in preds)
+
 
 class TestRidgePredictor:
     def test_fit_and_predict(self, training_data):
