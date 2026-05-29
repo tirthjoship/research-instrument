@@ -163,3 +163,50 @@ class DrawdownTracker:
             "max_drawdown": max_drawdown,
             "recovery_periods": recovery_periods,
         }
+
+
+@dataclass
+class FullEvaluationSuite:
+    """Wires all 5 evaluation components into a single analysis."""
+
+    permutation_shuffles: int = 1000
+    transaction_cost: float = 0.001
+    bull_threshold: float = 0.10
+    bear_threshold: float = -0.10
+
+    def evaluate(
+        self,
+        predictions: list[float],
+        actuals: list[float],
+        spy_monthly_returns: list[float],
+    ) -> dict[str, object]:
+        """Run full evaluation suite and return structured report."""
+        n = len(predictions)
+        matches = sum(1 for p, a in zip(predictions, actuals) if (p >= 0) == (a >= 0))
+        directional_accuracy = matches / n if n > 0 else 0.0
+
+        perm = PermutationTester(n_shuffles=self.permutation_shuffles, random_seed=42)
+        p_value = perm.test_directional_accuracy(predictions, actuals)
+
+        cost_model = TransactionCostModel(cost_per_trade=self.transaction_cost)
+        cost_adjusted = cost_model.apply_costs(actuals, n_trades_per_period=2)
+
+        regime = RegimeSplitter(
+            bull_threshold=self.bull_threshold,
+            bear_threshold=self.bear_threshold,
+        )
+        regime_labels = regime.classify_monthly(spy_monthly_returns)
+
+        tracker = DrawdownTracker()
+        drawdown_result = tracker.compute(actuals)
+
+        return {
+            "directional_accuracy": directional_accuracy,
+            "p_value": p_value,
+            "cost_adjusted_returns": cost_adjusted,
+            "total_transaction_costs": cost_model.total_costs(n),
+            "regime_labels": regime_labels,
+            "max_drawdown": drawdown_result["max_drawdown"],
+            "recovery_periods": drawdown_result["recovery_periods"],
+            "n_predictions": n,
+        }
