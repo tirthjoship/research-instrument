@@ -339,7 +339,7 @@ class WeeklyTournamentUseCase:
         grade, horizon_signals = grade_from_horizons(prediction)
 
         # Composite score for ranking
-        composite = abs(pred_2d) * 0.2 + abs(pred_5d) * 0.3 + abs(pred_10d) * 0.5
+        composite = pred_2d * 0.2 + pred_5d * 0.3 + pred_10d * 0.5
 
         return StockRecommendation(
             symbol=ticker,
