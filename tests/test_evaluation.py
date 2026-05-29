@@ -141,3 +141,46 @@ class TestFullEvaluationSuite:
         assert isinstance(report["directional_accuracy"], float)
         assert isinstance(report["p_value"], float)
         assert isinstance(report["max_drawdown"], float)
+
+
+class TestBaselineRanker:
+    def test_momentum_baseline(self) -> None:
+        from application.evaluation import BaselineRanker
+
+        features = {
+            "AAPL": {"return_6m": 0.20, "volatility_20d": 0.02},
+            "GOOG": {"return_6m": 0.10, "volatility_20d": 0.03},
+            "MSFT": {"return_6m": 0.30, "volatility_20d": 0.01},
+        }
+        ranker = BaselineRanker()
+        top = ranker.momentum(features, top_n=2)
+        assert top == ["MSFT", "AAPL"]
+
+    def test_low_vol_baseline(self) -> None:
+        from application.evaluation import BaselineRanker
+
+        features = {
+            "AAPL": {"return_6m": 0.20, "volatility_20d": 0.02},
+            "GOOG": {"return_6m": 0.10, "volatility_20d": 0.03},
+            "MSFT": {"return_6m": 0.30, "volatility_20d": 0.01},
+        }
+        ranker = BaselineRanker()
+        top = ranker.low_volatility(features, top_n=2)
+        assert top == ["MSFT", "AAPL"]
+
+    def test_random_baseline(self) -> None:
+        from application.evaluation import BaselineRanker
+
+        features = {f"TICK{i}": {} for i in range(20)}
+        ranker = BaselineRanker()
+        top = ranker.random_selection(features, top_n=5, n_trials=100, seed=42)
+        assert len(top) == 5
+        assert all(t in features for t in top)
+
+    def test_equal_weight_baseline(self) -> None:
+        from application.evaluation import BaselineRanker
+
+        features = {"AAPL": {}, "GOOG": {}, "MSFT": {}}
+        ranker = BaselineRanker()
+        top = ranker.equal_weight(features)
+        assert set(top) == {"AAPL", "GOOG", "MSFT"}

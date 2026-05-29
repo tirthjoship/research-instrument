@@ -6,6 +6,7 @@ transaction cost modeling, regime splitting, and drawdown tracking.
 
 from __future__ import annotations
 
+import math
 import random
 from dataclasses import dataclass
 
@@ -210,3 +211,58 @@ class FullEvaluationSuite:
             "recovery_periods": drawdown_result["recovery_periods"],
             "n_predictions": n,
         }
+
+
+@dataclass
+class BaselineRanker:
+    """Naive stock-selection baselines for validating ML lift (ADR-020)."""
+
+    def momentum(
+        self, features_by_ticker: dict[str, dict[str, float]], top_n: int = 15
+    ) -> list[str]:
+        """Top N by 6-month return (strongest documented equity factor)."""
+        scored = [
+            (ticker, feats.get("return_6m", float("-inf")))
+            for ticker, feats in features_by_ticker.items()
+            if not math.isnan(feats.get("return_6m", float("nan")))
+        ]
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return [t for t, _ in scored[:top_n]]
+
+    def low_volatility(
+        self, features_by_ticker: dict[str, dict[str, float]], top_n: int = 15
+    ) -> list[str]:
+        """Top N by lowest 20-day volatility (defensive selection)."""
+        scored = [
+            (ticker, feats.get("volatility_20d", float("inf")))
+            for ticker, feats in features_by_ticker.items()
+            if not math.isnan(feats.get("volatility_20d", float("nan")))
+        ]
+        scored.sort(key=lambda x: x[1])
+        return [t for t, _ in scored[:top_n]]
+
+    def random_selection(
+        self,
+        features_by_ticker: dict[str, dict[str, float]],
+        top_n: int = 15,
+        n_trials: int = 100,
+        seed: int = 42,
+    ) -> list[str]:
+        """Random N from universe, return most frequently selected across trials."""
+        tickers = list(features_by_ticker.keys())
+        rng = random.Random(seed)
+        counts: dict[str, int] = {t: 0 for t in tickers}
+
+        for _ in range(n_trials):
+            sample = rng.sample(tickers, min(top_n, len(tickers)))
+            for t in sample:
+                counts[t] += 1
+
+        ranked = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+        return [t for t, _ in ranked[:top_n]]
+
+    def equal_weight(
+        self, features_by_ticker: dict[str, dict[str, float]]
+    ) -> list[str]:
+        """All tickers equally weighted (no selection)."""
+        return list(features_by_ticker.keys())
