@@ -1,0 +1,58 @@
+# Private local docs — never push
+LOCAL_PROJECT_STORY.md
+.kiro/
+
+# Internal AI config — keep locally (agent scaffolding is implementation detail)
+.claude/settings.json
+.claude/settings.local.json
+# Note: docs/superpowers/plans/ and specs/ are tracked in git
+# They contain design decisions and implementation plans that are project artifacts
+
+# Coverage artifacts
+.coverage
+
+# Raw data — never commit large files to Git
+data/raw/
+data/interim/
+data/processed/
+
+# SQLite database (contains recommendation history)
+*.db
+
+# Hypothesis
+.hypothesis/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+
+# MLflow
+mlruns/
+mlartifacts/
+mlflow.db
+
+# macOS
+.DS_Store
+
+# Conda env — requirements.txt covers deps
+environment.yml
+
+# Model artifacts
+models/
+*.pkl
+*.joblib
