@@ -82,6 +82,7 @@ module = [
     "adapters.ml.xgboost_predictor",
     "adapters.ml.lightgbm_predictor",
     "adapters.ml.ridge_predictor",
+    "adapters.ml.stage2_predictor",
     "adapters.data.yfinance_adapter",
 ]
 disallow_any_generics = false
