@@ -5,14 +5,16 @@ on these abstractions. Ports support point-in-time access and leakage pruning.
 """
 
 from datetime import datetime
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from .models import (
     AccuracyRecord,
     BacktestResult,
+    BuzzSignal,
     EvaluationRun,
     Sentiment,
     Signal,
+    SourceReliability,
     StockRecommendation,
     WeeklyReport,
 )
@@ -116,3 +118,52 @@ class BacktestResultPort(Protocol):
         start_date: datetime | None = None,
         end_date: datetime | None = None,
     ) -> list[BacktestResult]: ...
+
+
+@runtime_checkable
+class BuzzDiscoveryPort(Protocol):
+    """Discovers buzzing tickers from news/social sources."""
+
+    def scan_sources(
+        self,
+        scan_time: datetime,
+    ) -> list[BuzzSignal]:
+        """Scan all configured sources and return buzz signals."""
+        ...
+
+    def get_buzz_signals(
+        self,
+        ticker: str | None = None,
+        source: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[BuzzSignal]:
+        """Retrieve stored buzz signals with optional filters."""
+        ...
+
+
+@runtime_checkable
+class SourceReliabilityPort(Protocol):
+    """Tracks per-source prediction accuracy over time."""
+
+    def record_outcome(
+        self,
+        source: str,
+        ticker: str,
+        predicted_direction: float,
+        actual_direction: float,
+    ) -> None:
+        """Record whether a source's sentiment predicted direction correctly."""
+        ...
+
+    def get_reliability(
+        self,
+        source: str,
+        ticker: str | None = None,
+    ) -> SourceReliability:
+        """Get reliability stats for a source (optionally per-ticker)."""
+        ...
+
+    def get_all_reliabilities(self) -> list[SourceReliability]:
+        """Get reliability stats for all tracked sources."""
+        ...

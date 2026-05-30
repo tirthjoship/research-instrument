@@ -69,3 +69,21 @@ evaluation:
   regime_thresholds:
     bull: 0.10
     bear: -0.10
+
+sentiment:
+  rss_feeds:
+    reuters: "https://www.reutersagency.com/feed/?best-topics=business-finance"
+    marketwatch: "https://feeds.marketwatch.com/marketwatch/topstories/"
+    cnbc: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"
+    yahoo_finance: "https://finance.yahoo.com/news/rssindex"
+    seeking_alpha: "https://seekingalpha.com/market_currents.xml"
+    investing_com: "https://www.investing.com/rss/news.rss"
+  flan_t5_model: "google/flan-t5-base"
+  flan_t5_device: null
+  source_reliability:
+    min_calls_for_weight: 10
+    default_accuracy: 0.5
+    window_days: 90
+  buzz_discovery:
+    min_acceleration_threshold: 2.0
+    min_mentions_per_week: 3
