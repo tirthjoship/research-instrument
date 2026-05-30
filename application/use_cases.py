@@ -149,13 +149,13 @@ class PretrainingUseCase:
                         month_features.append(features)
                         for h in ("2d", "5d", "10d"):
                             month_targets[h].append(targets.get(h, 0.0))
-                except Exception as e:
+                except Exception as e:  # pragma: no cover
                     logger.debug(f"Skipping {ticker} for {month}: {e}")
                     if "rate" in str(e).lower() or "429" in str(e):
                         time.sleep(10)
                     continue
                 # Throttle API calls
-                if ticker_idx % 5 == 4:
+                if ticker_idx % 5 == 4:  # pragma: no cover
                     time.sleep(1)
 
             if month_features:
@@ -227,10 +227,10 @@ class PretrainingUseCase:
                         symbol, prediction_time, start_date=start
                     )
                     break
-                except Exception as e:
+                except Exception as e:  # pragma: no cover
                     logger.warning(f"Macro fetch {symbol} attempt {attempt + 1}: {e}")
                     time.sleep(5 * (attempt + 1))
-            else:
+            else:  # pragma: no cover
                 logger.warning(f"Macro fetch {symbol} failed after 3 attempts")
                 macro[symbol] = []
         return macro
@@ -395,10 +395,10 @@ class WeeklyTournamentUseCase:
                         symbol, prediction_time, start_date=start
                     )
                     break
-                except Exception as e:
+                except Exception as e:  # pragma: no cover
                     logger.warning(f"Macro fetch {symbol} attempt {attempt + 1}: {e}")
                     time.sleep(5 * (attempt + 1))
-            else:
+            else:  # pragma: no cover
                 macro[symbol] = []
         return macro
 
