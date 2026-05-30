@@ -24,8 +24,8 @@ Stage 1: Pretrained Technical Model
   Training: 2-3 years historical data (3,000-5,000 rows)
   Status: FROZEN after pretraining (retrained monthly)
 
-Stage 2: Sentiment Blending Model
-  Input:  Stage 1 outputs (2 features) + 25 sentiment/buzz/divergence features = 27 features
+Stage 2: Sentiment Blending Model (revised 2026-05-30)
+  Input:  Stage 1 output (1 feature: stage1_pred) + 14 sentiment features = 15 features
   Output: final_predicted_return, final_confidence
   Training: 90-day backfill + live weekly accumulation
   Status: WARM-STARTED weekly, full retrain monthly
@@ -34,7 +34,7 @@ Stage 2: Sentiment Blending Model
 **Why stacking over joint training:**
 - Stage 1 preserves 2-3 years of learned technical patterns
 - Stage 2 only learns marginal lift of sentiment — simpler task, needs less data
-- 27 effective features in Stage 2 (not 66) — healthy ratio with 360-600 initial rows
+- 15 effective features in Stage 2 (not 59) — healthy ratio with 360-600 initial rows
 - Clean ablation: Stage 1 alone vs Stage 1+2 = exact sentiment contribution
 - Standard ML technique (Wolpert 1992 stacked generalization)
 
@@ -70,10 +70,8 @@ Ridge: full retrain always (fast enough, no warm-start needed)
 ### 90-Day Sentiment Backfill
 
 Before Phase 3B goes live, backfill ~90 days of sentiment data:
-- RSS feeds: 30-90 days of archived articles
-- Reddit (PRAW): search history with decent coverage
-- StockTwits: recent posts via API
-- Google CSE: finds articles still on web
+- RSS feeds: 30-90 days of archived articles (6 publishers)
+- Reddit (PRAW): search history with decent coverage (pending API approval)
 
 Produces 12 weekly windows × 30-50 tickers = 360-600 rows with sentiment features.
 
@@ -102,6 +100,25 @@ Produces 12 weekly windows × 30-50 tickers = 360-600 rows with sentiment featur
 - Stage 2 predictions depend on Stage 1 quality — error propagation risk.
 - Mitigated: Stage 1 is trained on 3,000+ rows with walk-forward validation — stable.
 - 90-day backfill has known noise — documented, not hidden.
+
+## Phase 3B Update (2026-05-30)
+
+**Key refinements from grilling session:**
+
+1. **Feature count revised:** Stage 2 uses 15 features (1 stage1_pred + 14 sentiment), down from 27. Original 25 sentiment features reduced to 14 after removing redundancies and adding source reliability features.
+
+2. **Stage 2 model:** XGBoost only (not full ensemble). Rationale: Stage 2's job is learning sentiment-technical interactions, not ensemble diversity — that's Stage 1's job.
+
+3. **Source reliability integration (ADR-021):** `source_weighted_sentiment` feature = sentiment_score × source_accuracy. This allows Stage 2 to learn that high-reliability bearish sentiment + bullish technicals = strong short signal (the core thesis interaction).
+
+4. **14 Stage 2 sentiment features:**
+   - buzz_volume, buzz_acceleration
+   - sentiment_keyword, sentiment_flan_t5, sentiment_agreement
+   - sentiment_momentum_3d, sentiment_momentum_7d
+   - source_weighted_sentiment, top_source_reliability
+   - rss_reddit_divergence
+   - sentiment_price_divergence_flag, sentiment_price_divergence_magnitude
+   - buzz_price_divergence, sector_buzz_ratio
 
 ## Superseded By
 None

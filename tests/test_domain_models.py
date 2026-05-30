@@ -14,11 +14,13 @@ from domain.exceptions import (
 from domain.models import (
     AccuracyRecord,
     BacktestResult,
+    BuzzSignal,
     EvaluationRun,
     MultiHorizonPrediction,
     RecommendationGrade,
     Sentiment,
     Signal,
+    SourceReliability,
     StockRecommendation,
     WeeklyReport,
 )
@@ -352,6 +354,83 @@ def test_load_missing_market_raises() -> None:
 
     with pytest.raises(FileNotFoundError):
         load_market_config("nonexistent")
+
+
+# --- Phase 3B: BuzzSignal and SourceReliability ---
+
+
+def test_buzz_signal_valid_creation() -> None:
+    signal = BuzzSignal(
+        ticker="AAPL",
+        source="reuters_rss",
+        mention_count=5,
+        sentiment_raw=0.6,
+        scorer="keyword",
+        fetched_at=datetime(2026, 5, 29, 12, 0, 0),
+        article_hash="abc123",
+    )
+    assert signal.ticker == "AAPL"
+    assert signal.source == "reuters_rss"
+    assert signal.mention_count == 5
+    assert signal.sentiment_raw == 0.6
+    assert signal.scorer == "keyword"
+    assert signal.article_hash == "abc123"
+
+
+def test_buzz_signal_rejects_negative_mentions() -> None:
+    with pytest.raises(ValueError, match="mention_count"):
+        BuzzSignal(
+            ticker="AAPL",
+            source="reddit_wsb",
+            mention_count=-1,
+            sentiment_raw=0.0,
+            scorer="keyword",
+            fetched_at=datetime(2026, 5, 29, 12, 0, 0),
+            article_hash="def456",
+        )
+
+
+def test_buzz_signal_rejects_invalid_sentiment() -> None:
+    with pytest.raises(ValueError, match="sentiment_raw"):
+        BuzzSignal(
+            ticker="AAPL",
+            source="reuters_rss",
+            mention_count=3,
+            sentiment_raw=1.5,
+            scorer="flan_t5",
+            fetched_at=datetime(2026, 5, 29, 12, 0, 0),
+            article_hash="ghi789",
+        )
+
+
+def test_source_reliability_valid_creation() -> None:
+    rel = SourceReliability(
+        source="reuters_rss",
+        ticker="AAPL",
+        correct_calls=7,
+        total_calls=10,
+    )
+    assert rel.accuracy == 0.7
+
+
+def test_source_reliability_zero_calls_defaults_half() -> None:
+    rel = SourceReliability(
+        source="reuters_rss",
+        ticker=None,
+        correct_calls=0,
+        total_calls=0,
+    )
+    assert rel.accuracy == 0.5
+
+
+def test_source_reliability_rejects_negative_calls() -> None:
+    with pytest.raises(ValueError, match="correct_calls"):
+        SourceReliability(
+            source="reuters_rss",
+            ticker=None,
+            correct_calls=-1,
+            total_calls=10,
+        )
 
 
 def test_fakes_implement_protocols() -> None:

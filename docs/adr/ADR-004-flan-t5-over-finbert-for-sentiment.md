@@ -26,5 +26,14 @@ Replace FinBERT with fine-tuned Flan-T5 as Step 2 in NLP ladder.
 - Still may miss modern financial slang ("diamond hands").
 - LLM tier (Claude/Gemini) remains available as Step 3 escalation.
 
+## Phase 3B Update (2026-05-30)
+
+**Deployment decision:** Run Flan-T5-base (250M params) locally on M2 MacBook Air via MPS (Metal Performance Shaders) backend. ~0.3s/article on Apple Silicon.
+
+- **No fine-tuning for Phase 3B** — zero-shot classification only. Prompt: "Classify the sentiment of this financial news about {ticker} as positive, negative, or neutral: {text}"
+- ~500 articles/day × 0.3s = ~2.5 minutes for daily scan. Acceptable.
+- Model downloaded once (~1GB), cached locally. No API costs.
+- If MPS unavailable, falls back to CPU (~1s/article, still viable).
+
 ## Superseded By
 None

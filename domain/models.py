@@ -186,3 +186,46 @@ class WeeklyReport:
     max_drawdown: float | None = None
     sharpe_ratio: float | None = None
     transaction_costs: float | None = None
+
+
+@dataclass(frozen=True)
+class BuzzSignal:
+    """A single buzz/sentiment observation from a news or social source."""
+
+    ticker: str
+    source: str  # e.g., "reuters_rss", "reddit_wsb"
+    mention_count: int
+    sentiment_raw: float  # [-1, 1] from keyword or Flan-T5 scorer
+    scorer: str  # "keyword" or "flan_t5"
+    fetched_at: datetime
+    article_hash: str  # dedup key
+
+    def __post_init__(self) -> None:
+        if self.mention_count < 0:
+            raise ValueError("mention_count must be >= 0")
+        if not -1.0 <= self.sentiment_raw <= 1.0:
+            raise ValueError("sentiment_raw must be in [-1, 1]")
+
+
+@dataclass(frozen=True)
+class SourceReliability:
+    """Tracks per-source directional accuracy over time."""
+
+    source: str
+    ticker: str | None  # None = aggregate across all tickers
+    correct_calls: int
+    total_calls: int
+
+    def __post_init__(self) -> None:
+        if self.correct_calls < 0:
+            raise ValueError("correct_calls must be >= 0")
+        if self.total_calls < 0:
+            raise ValueError("total_calls must be >= 0")
+        if self.correct_calls > self.total_calls:
+            raise ValueError("correct_calls cannot exceed total_calls")
+
+    @property
+    def accuracy(self) -> float:
+        if self.total_calls < 10:
+            return 0.5
+        return self.correct_calls / self.total_calls
