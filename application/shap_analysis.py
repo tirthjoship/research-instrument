@@ -64,7 +64,11 @@ def compute_per_fold_importance(
                 "std": float(np.std(values)),
                 "min": float(np.min(values)),
                 "max": float(np.max(values)),
-                "cv": float(np.std(values) / np.mean(values)) if np.mean(values) > 0 else 0.0,
+                "cv": (
+                    float(np.std(values) / np.mean(values))
+                    if np.mean(values) > 0
+                    else 0.0
+                ),
             }
 
         sorted_summary = dict(
