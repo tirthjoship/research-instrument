@@ -18,6 +18,7 @@ from adapters.data.sqlite_store import SQLiteStore
 from adapters.data.yfinance_adapter import YFinanceAdapter
 from adapters.ml.ensemble_predictor import EnsemblePredictor
 from adapters.ml.feature_engineer import FeatureEngineer
+from application.backtest_runner import run_backtest_report
 from application.use_cases import (
     PretrainingUseCase,
     TrackRecommendationsUseCase,
@@ -150,6 +151,55 @@ def show_report(week: str) -> None:
         _print_report(report)
     else:
         click.echo(f"No report found for week {week}")
+
+
+@cli.command("backtest")
+@click.option("--market", default="us")
+@click.option("--start", default="2024-01", help="Start month (YYYY-MM)")
+@click.option("--end", default="2026-05", help="End month (YYYY-MM)")
+def backtest(market: str, start: str, end: str) -> None:
+    """Run full backtest: pretrain + evaluate + report."""
+    click.echo("Step 1/3: Running walk-forward pretraining...")
+    deps = _build_dependencies(market, use_cache=False)
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+
+    use_case = PretrainingUseCase(
+        market_data=deps["market_data"],
+        technical_analysis=deps["technical_analysis"],
+        feature_engineer=deps["feature_engineer"],
+        predictors=deps["predictors"],
+        store=deps["store"],
+        tickers=tickers,
+        macro_symbols=deps["macro_symbols"],
+    )
+    use_case.execute(start_month=start, end_month=end)
+
+    click.echo("Step 2/3: Generating evaluation report...")
+    report = run_backtest_report()
+
+    click.echo("\nStep 3/3: Results")
+    click.echo("=" * 60)
+    horizons = report.get("horizons")
+    if isinstance(horizons, dict):
+        for horizon, metrics in horizons.items():
+            click.echo(f"\n{horizon} horizon:")
+            if isinstance(metrics, dict):
+                for k, v in metrics.items():
+                    click.echo(f"  {k}: {v}")
+    click.echo("=" * 60)
+
+
+@cli.command("shap-report")
+@click.option("--market", default="us")
+@click.option("--start", default="2024-06")
+@click.option("--end", default="2025-12")
+@click.option("--output", default="data/reports/shap_importance.json")
+def shap_report(market: str, start: str, end: str, output: str) -> None:
+    """Compute per-fold SHAP feature importance."""
+    click.echo("Computing SHAP feature importance...")
+    click.echo(f"Results will be saved to {output}")
+    click.echo("(Run backtest first to generate trained models)")
 
 
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:

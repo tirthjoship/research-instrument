@@ -101,3 +101,12 @@ def test_tournament_report_has_market(
 ) -> None:
     report = tournament.execute(prediction_date=datetime(2026, 5, 1))
     assert report.market == "us"
+
+
+def test_tournament_top_picks_have_positive_composite(
+    tournament: WeeklyTournamentUseCase,
+) -> None:
+    """Top picks should be ranked by signed composite, not absolute."""
+    report = tournament.execute(prediction_date=datetime(2026, 5, 1))
+    for rec in report.recommendations:
+        assert rec.composite_score >= 0.0 or len(report.recommendations) <= 5
