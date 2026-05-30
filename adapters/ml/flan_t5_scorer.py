@@ -97,7 +97,9 @@ class FlanT5Scorer:
         output_ids = self._model.generate(
             input_ids=input_ids, attention_mask=attention_mask, max_new_tokens=8
         )
-        label = self._tokenizer.decode(output_ids[0], skip_special_tokens=True)
+        label: str = str(
+            self._tokenizer.decode(output_ids[0], skip_special_tokens=True)
+        )
         score = self._label_to_score(label)
 
         sentiment = Sentiment(
