@@ -67,6 +67,8 @@ module = [
     "feedparser.*",
     "googleapiclient.*",
     "numpy.*",
+    "torch.*",
+    "transformers.*",
 ]
 ignore_missing_imports = true
 

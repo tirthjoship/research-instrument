@@ -5,13 +5,16 @@ Schema matches spec section 14 — 4 tables with multi-horizon support.
 
 import json
 import sqlite3
+from datetime import datetime
 from typing import Any
 
 from domain.models import (
     AccuracyRecord,
+    BuzzSignal,
     EvaluationRun,
     MultiHorizonPrediction,
     RecommendationGrade,
+    SourceReliability,
     StockRecommendation,
     WeeklyReport,
 )
@@ -89,6 +92,31 @@ CREATE INDEX IF NOT EXISTS idx_rec_week ON recommendations(week_start);
 CREATE INDEX IF NOT EXISTS idx_rec_symbol ON recommendations(symbol);
 CREATE INDEX IF NOT EXISTS idx_acc_week ON accuracy_records(week_start);
 CREATE INDEX IF NOT EXISTS idx_eval_date ON evaluation_runs(run_date);
+
+CREATE TABLE IF NOT EXISTS buzz_signals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticker TEXT NOT NULL,
+    source TEXT NOT NULL,
+    mention_count INTEGER NOT NULL,
+    sentiment_raw REAL NOT NULL,
+    scorer TEXT NOT NULL,
+    fetched_at TIMESTAMP NOT NULL,
+    article_hash TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_buzz_ticker ON buzz_signals(ticker);
+CREATE INDEX IF NOT EXISTS idx_buzz_fetched ON buzz_signals(fetched_at);
+
+CREATE TABLE IF NOT EXISTS source_reliability (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source TEXT NOT NULL,
+    ticker TEXT,
+    correct_calls INTEGER DEFAULT 0,
+    total_calls INTEGER DEFAULT 0,
+    last_updated TIMESTAMP,
+    UNIQUE(source, ticker)
+);
 """
 
 
@@ -297,6 +325,119 @@ class SQLiteStore:
             sharpe_ratio=row["sharpe_ratio"],
             transaction_costs=row["transaction_costs"],
         )
+
+    def save_buzz_signal(self, signal: BuzzSignal) -> None:
+        self._conn.execute(
+            """INSERT OR IGNORE INTO buzz_signals
+            (ticker, source, mention_count, sentiment_raw, scorer, fetched_at, article_hash)
+            VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (
+                signal.ticker,
+                signal.source,
+                signal.mention_count,
+                signal.sentiment_raw,
+                signal.scorer,
+                signal.fetched_at.isoformat(),
+                signal.article_hash,
+            ),
+        )
+        self._conn.commit()
+
+    def get_buzz_signals(
+        self,
+        ticker: str | None = None,
+        source: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[BuzzSignal]:
+        query = "SELECT * FROM buzz_signals WHERE 1=1"
+        params: list[Any] = []
+        if ticker is not None:
+            query += " AND ticker = ?"
+            params.append(ticker)
+        if source is not None:
+            query += " AND source = ?"
+            params.append(source)
+        if start_date is not None:
+            query += " AND fetched_at >= ?"
+            params.append(start_date.isoformat())
+        if end_date is not None:
+            query += " AND fetched_at <= ?"
+            params.append(end_date.isoformat())
+        query += " ORDER BY fetched_at DESC"
+        rows = self._conn.execute(query, params).fetchall()
+        return [
+            BuzzSignal(
+                ticker=r["ticker"],
+                source=r["source"],
+                mention_count=r["mention_count"],
+                sentiment_raw=r["sentiment_raw"],
+                scorer=r["scorer"],
+                fetched_at=datetime.fromisoformat(r["fetched_at"]),
+                article_hash=r["article_hash"],
+            )
+            for r in rows
+        ]
+
+    def record_source_outcome(
+        self,
+        source: str,
+        ticker: str,
+        predicted_direction: float,
+        actual_direction: float,
+    ) -> None:
+        is_correct = int((predicted_direction >= 0) == (actual_direction >= 0))
+        self._conn.execute(
+            """INSERT INTO source_reliability (source, ticker, correct_calls, total_calls, last_updated)
+            VALUES (?, ?, ?, 1, datetime('now'))
+            ON CONFLICT(source, ticker) DO UPDATE SET
+                correct_calls = correct_calls + excluded.correct_calls,
+                total_calls = total_calls + 1,
+                last_updated = datetime('now')""",
+            (source, ticker, is_correct),
+        )
+        self._conn.commit()
+
+    def get_source_reliability(
+        self, source: str, ticker: str | None = None
+    ) -> SourceReliability:
+        if ticker is not None:
+            row = self._conn.execute(
+                "SELECT correct_calls, total_calls FROM source_reliability WHERE source = ? AND ticker = ?",
+                (source, ticker),
+            ).fetchone()
+            if row is None:
+                return SourceReliability(
+                    source=source, ticker=ticker, correct_calls=0, total_calls=0
+                )
+            return SourceReliability(
+                source=source,
+                ticker=ticker,
+                correct_calls=row["correct_calls"],
+                total_calls=row["total_calls"],
+            )
+        else:
+            row = self._conn.execute(
+                "SELECT SUM(correct_calls) AS correct_calls, SUM(total_calls) AS total_calls FROM source_reliability WHERE source = ?",
+                (source,),
+            ).fetchone()
+            correct = row["correct_calls"] or 0
+            total = row["total_calls"] or 0
+            return SourceReliability(
+                source=source, ticker=None, correct_calls=correct, total_calls=total
+            )
+
+    def get_all_source_reliabilities(self) -> list[SourceReliability]:
+        rows = self._conn.execute("SELECT * FROM source_reliability").fetchall()
+        return [
+            SourceReliability(
+                source=r["source"],
+                ticker=r["ticker"],
+                correct_calls=r["correct_calls"],
+                total_calls=r["total_calls"],
+            )
+            for r in rows
+        ]
 
     def _row_to_recommendation(self, r: sqlite3.Row) -> StockRecommendation:
         pred = MultiHorizonPrediction(
