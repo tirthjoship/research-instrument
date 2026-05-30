@@ -109,7 +109,7 @@ class Stage2Predictor:
         self._feature_names = meta["feature_names"]
         self._is_fitted = meta.get("is_fitted", True)
 
-    def _to_array(self, features: list[dict[str, float]]) -> np.ndarray:  # type: ignore[type-arg]
+    def _to_array(self, features: list[dict[str, float]]) -> np.ndarray:
         """Convert list of feature dicts to numpy array using fixed feature order.
 
         Missing keys are filled with float("nan").
