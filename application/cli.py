@@ -204,12 +204,17 @@ def shap_report(market: str, start: str, end: str, output: str) -> None:
 
 @cli.command("daily-scan")
 @click.option("--market", default="us", help="Market config to use")
-def daily_scan(market: str) -> None:
+@click.option(
+    "--no-flan",
+    is_flag=True,
+    default=True,
+    help="Skip Flan-T5 scorer (avoids torch/XGBoost segfault)",
+)
+def daily_scan(market: str, no_flan: bool) -> None:
     """Run daily buzz discovery scan (RSS feeds -> keyword + Flan-T5 -> SQLite)."""
     from adapters.data.rss_adapter import RSSAdapter
-    from adapters.ml.flan_t5_scorer import FlanT5Scorer
     from adapters.ml.keyword_scorer import KeywordScorer
-    from application.daily_scan import DailyScanUseCase
+    from application.daily_scan import DailyScanUseCase, TextScorer
 
     deps = _build_dependencies(market)
     store = deps["store"]
@@ -217,8 +222,16 @@ def daily_scan(market: str) -> None:
     rss = RSSAdapter()
     keyword = KeywordScorer()
 
-    click.echo("Loading Flan-T5 model (first run downloads ~1GB)...")
-    flan = FlanT5Scorer()
+    flan: TextScorer
+    if no_flan:
+        click.echo("Running keyword-only scan (--no-flan, Flan-T5 disabled)")
+        # Use keyword scorer for both slots — Flan-T5 deferred to Phase 4 subprocess
+        flan = keyword
+    else:
+        from adapters.ml.flan_t5_scorer import FlanT5Scorer
+
+        click.echo("Loading Flan-T5 model (first run downloads ~1GB)...")
+        flan = FlanT5Scorer()
 
     use_case = DailyScanUseCase(
         discovery=rss,
