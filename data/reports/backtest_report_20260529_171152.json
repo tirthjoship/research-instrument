@@ -1,0 +1,22 @@
+{
+  "horizons": {
+    "2d": {
+      "avg_directional_accuracy": 0.47134384544356844,
+      "n_folds": 19,
+      "min_accuracy": 0.2,
+      "max_accuracy": 0.65
+    },
+    "5d": {
+      "avg_directional_accuracy": 0.5160269727963634,
+      "n_folds": 19,
+      "min_accuracy": 0.225,
+      "max_accuracy": 0.925
+    },
+    "10d": {
+      "avg_directional_accuracy": 0.4708049222245898,
+      "n_folds": 19,
+      "min_accuracy": 0.3,
+      "max_accuracy": 0.6
+    }
+  }
+}
