@@ -3,8 +3,8 @@
 Production-grade ML system predicting multi-horizon stock returns using 45 technical, regime, and macro features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Built with hexagonal architecture and strict point-in-time enforcement.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-103%20passing-success)](./tests/)
-[![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-119%20passing-success)](./tests/)
+[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
 
@@ -67,8 +67,12 @@ application/
                                  #   TrackRecommendationsUseCase, EvaluationUseCase
   evaluation.py                  # WalkForwardValidator, PermutationTester,
                                  #   TransactionCostModel, RegimeSplitter,
-                                 #   DrawdownTracker
-  cli.py                         # Click CLI (pretrain, run-tournament, evaluate, show-report)
+                                 #   DrawdownTracker, FullEvaluationSuite,
+                                 #   BaselineRanker
+  backtest_runner.py             # End-to-end backtest report generation
+  shap_analysis.py               # Per-fold SHAP feature importance
+  cli.py                         # Click CLI (pretrain, run-tournament, evaluate,
+                                 #   show-report, backtest, shap-report)
 
 config/markets/us.yaml           # US market configuration
 ```
@@ -143,13 +147,16 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: 103 passed
+# Expected: 119 passed
 ```
 
 ### CLI Usage
 
 ```bash
-# Pretrain on 2-3 years of historical data
+# Full backtest: pretrain + evaluate + report (recommended first run)
+python -m application.cli backtest --market us --start 2024-01 --end 2026-05
+
+# Pretrain on historical data only
 python -m application.cli pretrain --market us --start 2024-01 --end 2026-05
 
 # Run weekly tournament
@@ -160,6 +167,9 @@ python -m application.cli evaluate-last-week --date 2026-05-25
 
 # Show stored report
 python -m application.cli show-report --week 2026-05-19
+
+# SHAP feature importance analysis
+python -m application.cli shap-report --market us
 ```
 
 ---
@@ -188,13 +198,14 @@ ruff check .
 | Domain models | 25 | All models, exceptions, port imports |
 | Domain services | 22 | Grading, leakage detection, freshness |
 | Property tests | 8 | Hypothesis invariants (symmetry, bounds) |
-| Feature engineer | 5 | 45 features, NaN handling, leakage check |
-| ML predictors | 10 | XGB, LGBM, Ridge, Ensemble fit/predict/save/load |
-| Evaluation | 12 | Walk-forward, permutation, costs, regime, drawdown |
+| Feature engineer | 6 | 45 features, NaN handling, leakage check, sector strength |
+| ML predictors | 16 | XGB, LGBM, Ridge, Ensemble — fit/predict/save/load, NaN handling, confidence |
+| Evaluation | 18 | Walk-forward, permutation, costs, regime, drawdown, full suite, baselines |
+| SHAP analysis | 2 | Importance dict structure, signal feature ranking |
 | SQLite store | 7 | CRUD for all 4 tables |
-| Use cases | 7 | Pretraining pipeline, weekly tournament |
+| Use cases | 8 | Pretraining pipeline, weekly tournament, signed composite |
 | yfinance adapter | 7 | Caching, signals, indicators |
-| **Total** | **103** | |
+| **Total** | **119** | |
 
 ---
 
@@ -210,13 +221,47 @@ ruff check .
 
 ---
 
+## Phase 3A Results — Technical-Only Baseline
+
+### Walk-Forward Backtest (40 S&P 500 tickers, Jan 2024 → May 2026, 19 folds)
+
+| Horizon | Directional Accuracy | vs Random (50%) |
+|---------|---------------------|-----------------|
+| 5-day | 51.6% | +1.6% |
+| 2-day | 47.1% | -2.9% |
+| 10-day | 47.1% | -2.9% |
+
+**Finding:** Technical features alone do not beat random on S&P 500 mega-caps. This is consistent with the efficient market hypothesis for highly-analyzed, liquid stocks — and is the expected Phase 3A result. The project thesis posits that **sentiment divergence** (Phase 3B) is the signal, not technicals alone.
+
+### SHAP Feature Importance
+
+Only **3 of 45 features** are both important AND stable across folds:
+
+| Feature | Mean |SHAP| | CV | Stability |
+|---------|-------------|------|-----------|
+| `correlation_with_spy` | 0.0154 | 0.48 | Stable |
+| `macd` | 0.0019 | 0.93 | Stable |
+| `macd_histogram` | 0.0007 | 0.35 | Stable |
+
+32 features have near-zero importance (mostly NaN from sparse yfinance options/analyst data). This informs Phase 3B feature pruning — sentiment features will replace low-value technical features, not add to the pile.
+
+### Naive Baselines (implemented, not yet compared)
+
+Four stock-selection baselines are ready for comparison against the ML model:
+- **Momentum** — top 15 by 6-month return
+- **Low-volatility** — top 15 by lowest 20-day vol
+- **Random** — random 15, averaged over 100 trials
+- **Equal-weight** — hold entire universe
+
+---
+
 ## Project Status
 
 | Phase | Status | Description |
 |-------|--------|-------------|
 | 1 | ✅ Complete | Infrastructure, hexagonal architecture, CI/CD |
 | 2 | ✅ Complete | Domain models, point-in-time validation |
-| 3A | ✅ Complete | **Pretrained technical pipeline** — 45 features, ensemble, walk-forward, CLI |
+| 3A | ✅ Complete | **Pretrained technical pipeline** — 45 features, ensemble, walk-forward, CLI, real-data backtest (~50% baseline), SHAP analysis |
 | 3B | 📋 Planned | Sentiment layer — keyword + Flan-T5 NLP, divergence features, Stage 2 stacking |
 | 4 | 📋 Planned | Tracking & intelligence — accuracy trends, Canadian market, LSTM-Transformer |
 | 5 | 📋 Planned | Dashboard & polish — Streamlit, watchlist, Indian market |
@@ -225,7 +270,7 @@ ruff check .
 
 ## Architecture Decision Records
 
-17 ADRs in `docs/adr/` documenting all major design choices:
+20 ADRs in `docs/adr/` documenting all major design choices:
 
 | ADR | Decision |
 |-----|----------|
@@ -238,12 +283,19 @@ ruff check .
 | 015 | Multi-horizon magnitude targets with noise thresholds |
 | 016 | Three-layer data quality gates |
 | 017 | Raw data caching for reproducibility |
+| 018 | Native NaN for tree models, stored medians for Ridge |
+| 019 | Ensemble disagreement as confidence proxy |
+| 020 | Naive baselines for validating ML lift |
 
 ---
 
 ## Interview Story
 
-> "I hypothesized that sentiment-price divergence predicts short-term stock returns. I built a rigorous quantitative system to test this: 45 features across 8 categories, pretrained on 2-3 years of historical data using walk-forward validation. The model predicts return magnitude at three horizons (2-day, 5-day, 10-day) using an XGBoost+LightGBM+Ridge ensemble, with threshold-based classification to filter noise from actionable signals. Every result is validated with permutation tests for statistical significance, transaction cost modeling, and regime-aware evaluation. I then layer sentiment analysis on top and measure the exact marginal lift — proving whether social/news divergence from technicals adds alpha beyond what price data alone provides. The system runs autonomously via GitHub Actions, caches all raw data for reproducibility, and has three-layer data quality gates for production resilience."
+> "I hypothesized that sentiment-price divergence predicts short-term stock returns. I built a rigorous quantitative system to test this: 45 features across 8 categories, pretrained on 2-3 years of historical data using walk-forward validation. The model predicts return magnitude at three horizons (2-day, 5-day, 10-day) using an XGBoost+LightGBM+Ridge ensemble, with threshold-based classification to filter noise from actionable signals.
+>
+> Phase 3A established the baseline: technical features alone achieve ~50% directional accuracy on S&P 500 mega-caps — indistinguishable from random, which is expected for efficient large-cap markets. SHAP analysis revealed only 3 of 45 features carry stable signal; 32 features are near-zero importance due to sparse data. This honest result is the foundation — Phase 3B layers sentiment analysis on top to test whether news/social divergence from technicals adds the alpha that price data alone cannot provide.
+>
+> Every result is validated with permutation tests for statistical significance, transaction cost modeling, and regime-aware evaluation. The system runs via CLI and GitHub Actions, caches all raw data for reproducibility, and has three-layer data quality gates for production resilience."
 
 ---
 
