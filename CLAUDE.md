@@ -20,6 +20,7 @@ make test-cov      # pytest with --cov-fail-under=90
 make lint          # pre-commit run --all-files
 make typecheck     # mypy strict on domain/ adapters/ application/
 make setup         # pip install + pre-commit install
+make daily-scan    # run daily sentiment scan and update recommendations
 
 # Single test
 pytest tests/test_domain_models.py::test_signal_valid_creation -v
@@ -119,7 +120,7 @@ Five hard stops — see `AGENTS.md` for full details:
 - Wire sector_relative_strength_6m
 - Bug fixes: cache staleness, 2d weekend target bug, rate limit crash retry
 
-**Planned (Phase 3B — Sentiment Layer):**
+**In Progress (Phase 3B — Sentiment Layer):**
 - Keyword + Flan-T5 zero-shot parallel scorers (ADR-008)
 - RSS, Google CSE, Reddit, StockTwits adapters
 - 16 additional features (sentiment/buzz 11 + divergence 4 + sector_buzz_ratio 1)
