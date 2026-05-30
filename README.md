@@ -1,10 +1,10 @@
 # Multi-Modal Stock Recommender
 
-Production-grade ML system predicting multi-horizon stock returns using 45 technical, regime, and macro features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Built with hexagonal architecture and strict point-in-time enforcement.
+Production-grade ML system predicting multi-horizon stock returns using a two-stage stacking architecture: 45 technical features (Stage 1) + 14 sentiment/buzz/divergence features (Stage 2). XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Built with hexagonal architecture and strict point-in-time enforcement.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-119%20passing-success)](./tests/)
-[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-184%20passing-success)](./tests/)
+[![Coverage](https://img.shields.io/badge/coverage-91.88%25-brightgreen)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
 
@@ -16,20 +16,23 @@ Production-grade ML system predicting multi-horizon stock returns using 45 techn
 
 **Phase 3A tests:** Can technical + regime + macro features alone predict multi-horizon stock returns above random baseline with statistical significance?
 
-**Phase 3B will test:** Does adding sentiment/buzz features provide measurable lift over Phase 3A's technical-only model?
+**Phase 3B tests:** Does adding sentiment/buzz features (from RSS news + social media) provide measurable lift (>2%) over Phase 3A's ~50% technical-only baseline?
 
 ---
 
 ## What It Does
 
-1. Pulls 2-3 years of historical OHLCV, options, analyst, and macro data via yfinance
-2. Computes **45 features** across 8 groups per ticker per week
-3. Trains **XGBoost + LightGBM + Ridge** ensemble via walk-forward validation
-4. Predicts return magnitude at **2-day, 5-day, and 10-day** horizons
-5. Grades predictions using multi-horizon threshold classification (Strong Buy → Immediate Sell)
-6. Evaluates with **permutation tests** (p<0.05), transaction costs, regime splits, and drawdown tracking
-7. Stores results in SQLite, caches all raw data for reproducibility
-8. Runs via **CLI** and GitHub Actions (Sunday cron)
+1. **Daily buzz scan** — scans 6 RSS feeds (Reuters, MarketWatch, CNBC, Yahoo Finance, Seeking Alpha, Investing.com), extracts ticker mentions, scores sentiment with keyword + Flan-T5 zero-shot NLP
+2. Pulls 2-3 years of historical OHLCV, options, analyst, and macro data via yfinance
+3. Computes **59 features**: 45 technical (Stage 1) + 14 sentiment/buzz/divergence (Stage 2)
+4. Trains **two-stage stacking**: Stage 1 (XGBoost + LightGBM + Ridge ensemble, frozen) → Stage 2 (XGBoost blending technicals + sentiment)
+5. Predicts return magnitude at **2-day, 5-day, and 10-day** horizons
+6. **Dynamic ticker discovery** via buzz acceleration — finds stocks where mentions are spiking, not just high
+7. Grades predictions using multi-horizon threshold classification (Strong Buy → Immediate Sell)
+8. Evaluates with **permutation tests** (p<0.05), transaction costs, regime splits, drawdown tracking, and **three-way ablation** (tech-only vs +sentiment vs +sentiment+source-weights)
+9. **Source reliability tracking** — learns which news sources are directionally accurate over time
+10. Stores results in SQLite, caches all raw data for reproducibility
+11. Runs via **CLI** (daily-scan + weekly tournament)
 
 ---
 
@@ -39,10 +42,12 @@ Production-grade ML system predicting multi-horizon stock returns using 45 techn
 
 ```
 domain/                          # Pure business logic (stdlib only)
-  models.py                      # Signal, Sentiment, MultiHorizonPrediction,
-                                 #   StockRecommendation, RecommendationGrade,
-                                 #   AccuracyRecord, EvaluationRun, WeeklyReport
-  ports.py                       # MarketDataPort, TechnicalAnalysisPort,
+  models.py                      # Signal, Sentiment, BuzzSignal, SourceReliability,
+                                 #   MultiHorizonPrediction, StockRecommendation,
+                                 #   RecommendationGrade, AccuracyRecord,
+                                 #   EvaluationRun, WeeklyReport
+  ports.py                       # MarketDataPort, SentimentPort, BuzzDiscoveryPort,
+                                 #   SourceReliabilityPort, TechnicalAnalysisPort,
                                  #   StockPredictorPort, FeatureEngineerPort,
                                  #   RecommendationStorePort
   services.py                    # grade_from_horizons(), validate_feature_matrix(),
@@ -53,35 +58,44 @@ domain/                          # Pure business logic (stdlib only)
 adapters/
   data/
     yfinance_adapter.py          # MarketDataPort + TechnicalAnalysisPort
-    sqlite_store.py              # RecommendationStorePort (4 tables)
+    rss_adapter.py               # BuzzDiscoveryPort (6 RSS publishers)
+    sqlite_store.py              # RecommendationStorePort (6 tables)
     cache_mixin.py               # Append-only raw data cache (ADR-017)
   ml/
-    feature_engineer.py          # 45 features across 8 groups
-    xgboost_predictor.py         # StockPredictorPort
-    lightgbm_predictor.py        # StockPredictorPort
-    ridge_predictor.py           # StockPredictorPort
-    ensemble_predictor.py        # Weighted XGB + LGBM + Ridge
+    feature_engineer.py          # 45 technical features
+    sentiment_feature_engineer.py # 14 sentiment/buzz/divergence features
+    keyword_scorer.py            # SentimentPort (rule-based, instant)
+    flan_t5_scorer.py            # SentimentPort (zero-shot NLP, MPS)
+    xgboost_predictor.py         # StockPredictorPort (Stage 1)
+    lightgbm_predictor.py        # StockPredictorPort (Stage 1)
+    ridge_predictor.py           # StockPredictorPort (Stage 1)
+    ensemble_predictor.py        # Weighted XGB + LGBM + Ridge (Stage 1)
+    stage2_predictor.py          # Stage 2 stacking (technicals + sentiment)
 
 application/
   use_cases.py                   # PretrainingUseCase, WeeklyTournamentUseCase,
                                  #   TrackRecommendationsUseCase, EvaluationUseCase
+  daily_scan.py                  # DailyScanUseCase (RSS → scorers → SQLite)
+  ablation.py                    # Three-way ablation runner
   evaluation.py                  # WalkForwardValidator, PermutationTester,
                                  #   TransactionCostModel, RegimeSplitter,
                                  #   DrawdownTracker, FullEvaluationSuite,
                                  #   BaselineRanker
   backtest_runner.py             # End-to-end backtest report generation
   shap_analysis.py               # Per-fold SHAP feature importance
-  cli.py                         # Click CLI (pretrain, run-tournament, evaluate,
-                                 #   show-report, backtest, shap-report)
+  cli.py                         # Click CLI (daily-scan, pretrain, run-tournament,
+                                 #   evaluate, show-report, backtest, shap-report)
 
-config/markets/us.yaml           # US market configuration
+config/markets/us.yaml           # US market + sentiment configuration
 ```
 
 **Dependency rule:** All dependencies point inward. Domain imports nothing from adapters or application. Any data source or ML model can be swapped without touching business logic.
 
 ---
 
-## Feature Groups (45 features)
+## Feature Groups (59 features)
+
+### Stage 1 — Technical (45 features)
 
 | Group | Count | Examples |
 |-------|-------|---------|
@@ -92,6 +106,19 @@ config/markets/us.yaml           # US market configuration
 | Options Flow | 4 | Put/call ratio, unusual volume, large block trades |
 | Cross-Correlation | 2 | SPY correlation, relative strength vs peers |
 | Macro Regime | 5 | VIX, 10Y yield direction, DXY, yield curve slope, SPY momentum |
+
+### Stage 2 — Sentiment (14 features)
+
+| Group | Count | Features |
+|-------|-------|----------|
+| Buzz | 2 | buzz_volume, buzz_acceleration (week-over-week change) |
+| Sentiment Scores | 3 | keyword score, Flan-T5 score, scorer agreement |
+| Sentiment Momentum | 2 | 3-day trend, 7-day trend |
+| Source Reliability | 2 | source-weighted sentiment, top source accuracy |
+| Divergence | 3 | RSS/Reddit divergence, sentiment-price divergence (flag + magnitude) |
+| Cross-Signal | 2 | buzz-price divergence, sector buzz ratio |
+
+The **sentiment-price divergence** features are the core thesis signal: when sentiment is bullish but price is falling (or vice versa), this cross-modal disagreement predicts short-term direction.
 
 ---
 
@@ -121,6 +148,7 @@ config/markets/us.yaml           # US market configuration
 - **Regime-aware splits** — bull/sideways/bear (SPY ±10% annualized)
 - **Drawdown tracking** — max drawdown and recovery time
 - **SPY benchmark** — Sharpe ratio comparison, not raw returns
+- **Three-way ablation** — technical-only vs +sentiment vs +sentiment+source-weights (isolates what drives lift)
 
 ---
 
@@ -170,6 +198,12 @@ python -m application.cli show-report --week 2026-05-19
 
 # SHAP feature importance analysis
 python -m application.cli shap-report --market us
+
+# Daily buzz discovery scan (RSS feeds → keyword scoring → SQLite)
+python -m application.cli daily-scan --market us
+
+# Daily scan with Flan-T5 NLP (requires no torch/XGBoost conflict)
+python -m application.cli daily-scan --market us --no-no-flan
 ```
 
 ---
@@ -191,21 +225,32 @@ mypy domain/ adapters/ application/ config/ --strict
 
 # Lint
 ruff check .
+
+# Full quality check (all of the above)
+make check
 ```
 
 | Test Category | Count | What's Tested |
 |--------------|-------|---------------|
-| Domain models | 25 | All models, exceptions, port imports |
+| Domain models | 31 | All models incl. BuzzSignal, SourceReliability |
 | Domain services | 22 | Grading, leakage detection, freshness |
 | Property tests | 8 | Hypothesis invariants (symmetry, bounds) |
-| Feature engineer | 6 | 45 features, NaN handling, leakage check, sector strength |
-| ML predictors | 16 | XGB, LGBM, Ridge, Ensemble — fit/predict/save/load, NaN handling, confidence |
-| Evaluation | 18 | Walk-forward, permutation, costs, regime, drawdown, full suite, baselines |
+| Feature engineer | 6 | 45 technical features, NaN handling, leakage check |
+| Sentiment features | 8 | 14 sentiment features, divergence, buzz acceleration |
+| ML predictors | 16 | XGB, LGBM, Ridge, Ensemble — fit/predict/save/load |
+| Stage 2 predictor | 4 | Stacking fit/predict, save/load, confidence |
+| Keyword scorer | 7 | Bullish/bearish/neutral text, bounds, SentimentPort |
+| Flan-T5 scorer | 9 | Label mapping, mocked inference, SentimentPort |
+| RSS adapter | 13 | Ticker extraction, blocklist, feed parsing, hashing |
+| Evaluation | 18 | Walk-forward, permutation, costs, regime, drawdown, baselines |
+| Ablation | 3 | Three-way comparison, best variant selection |
+| Daily scan | 3 | Discovery + scoring pipeline, empty feed handling |
 | SHAP analysis | 2 | Importance dict structure, signal feature ranking |
-| SQLite store | 7 | CRUD for all 4 tables |
-| Use cases | 8 | Pretraining pipeline, weekly tournament, signed composite |
+| SQLite store | 14 | CRUD for 6 tables, buzz dedup, source reliability |
+| Use cases | 9 | Pretraining, tournament, sentiment blending |
+| Integration | 3 | Full pipeline: buzz → features → Stage 2 → prediction |
 | yfinance adapter | 7 | Caching, signals, indicators |
-| **Total** | **119** | |
+| **Total** | **184** | |
 
 ---
 
@@ -243,7 +288,14 @@ Only **3 of 45 features** are both important AND stable across folds:
 | `macd` | 0.0019 | 0.93 | Stable |
 | `macd_histogram` | 0.0007 | 0.35 | Stable |
 
-32 features have near-zero importance (mostly NaN from sparse yfinance options/analyst data). This informs Phase 3B feature pruning — sentiment features will replace low-value technical features, not add to the pile.
+32 features have near-zero importance (mostly NaN from sparse yfinance options/analyst data). Phase 3B adds 14 sentiment features on top to test whether divergence signals provide the lift that technicals alone cannot.
+
+### Phase 3B — Sentiment Layer (implemented, accumulating data)
+
+- **Daily buzz scan live** — first run discovered 15 tickers across 32 signals from 6 RSS feeds
+- **Source reliability tracker** — learning which publishers are directionally accurate (needs 10+ outcomes per source)
+- **Three-way ablation ready** — will compare tech-only vs +sentiment vs +sentiment+source-weights once sufficient buzz data accumulates
+- **Known limitation:** Flan-T5 scorer disabled by default (`--no-flan`) due to torch/XGBoost OpenMP conflict on macOS; keyword-only scoring active
 
 ### Naive Baselines (implemented, not yet compared)
 
@@ -262,22 +314,24 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 1 | ✅ Complete | Infrastructure, hexagonal architecture, CI/CD |
 | 2 | ✅ Complete | Domain models, point-in-time validation |
 | 3A | ✅ Complete | **Pretrained technical pipeline** — 45 features, ensemble, walk-forward, CLI, real-data backtest (~50% baseline), SHAP analysis |
-| 3B | 📋 Planned | Sentiment layer — keyword + Flan-T5 NLP, divergence features, Stage 2 stacking |
-| 4 | 📋 Planned | Tracking & intelligence — accuracy trends, Canadian market, LSTM-Transformer |
+| 3B | ✅ Complete | **Sentiment layer** — keyword + Flan-T5 NLP, 14 sentiment features, RSS adapter (6 publishers), Stage 2 stacking, source reliability tracker, daily buzz scan, three-way ablation |
+| 4 | 📋 Planned | Tracking & intelligence — mid-cap universe, Flan-T5 subprocess fix, Reddit adapter, accuracy trends, automation |
 | 5 | 📋 Planned | Dashboard & polish — Streamlit, watchlist, Indian market |
 
 ---
 
 ## Architecture Decision Records
 
-20 ADRs in `docs/adr/` documenting all major design choices:
+22 ADRs in `docs/adr/` documenting all major design choices:
 
 | ADR | Decision |
 |-----|----------|
 | 001 | Combined thesis: sentiment-price lag + cross-modal divergence |
 | 003 | XGBoost + LightGBM ensemble over deep learning |
+| 004 | Flan-T5 over FinBERT for sentiment (MPS on Apple Silicon) |
+| 008 | Parallel NLP baselines from day one (keyword + Flan-T5) |
 | 009 | Ridge classifier in ensemble for model family diversity |
-| 011 | Rigorous 5-component evaluation framework |
+| 011 | Rigorous 6-component evaluation framework (incl. three-way ablation) |
 | 012 | Phase 3A/3B split for clean ablation |
 | 014 | Two-stage stacking (pretrained technical + sentiment blending) |
 | 015 | Multi-horizon magnitude targets with noise thresholds |
@@ -286,16 +340,20 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 018 | Native NaN for tree models, stored medians for Ridge |
 | 019 | Ensemble disagreement as confidence proxy |
 | 020 | Naive baselines for validating ML lift |
+| 021 | Source reliability tracker (per-source accuracy learning) |
+| 022 | Daily discovery scan + weekly full analysis (dual-cadence) |
 
 ---
 
 ## Interview Story
 
-> "I hypothesized that sentiment-price divergence predicts short-term stock returns. I built a rigorous quantitative system to test this: 45 features across 8 categories, pretrained on 2-3 years of historical data using walk-forward validation. The model predicts return magnitude at three horizons (2-day, 5-day, 10-day) using an XGBoost+LightGBM+Ridge ensemble, with threshold-based classification to filter noise from actionable signals.
+> "I hypothesized that sentiment-price divergence predicts short-term stock returns. I built a two-stage stacking system to test this rigorously.
 >
-> Phase 3A established the baseline: technical features alone achieve ~50% directional accuracy on S&P 500 mega-caps — indistinguishable from random, which is expected for efficient large-cap markets. SHAP analysis revealed only 3 of 45 features carry stable signal; 32 features are near-zero importance due to sparse data. This honest result is the foundation — Phase 3B layers sentiment analysis on top to test whether news/social divergence from technicals adds the alpha that price data alone cannot provide.
+> **Stage 1** establishes the baseline: 45 technical features, XGBoost+LightGBM+Ridge ensemble, walk-forward validated on 40 S&P 500 mega-caps. Result: ~50% directional accuracy — indistinguishable from random, exactly as EMH predicts for efficient markets. SHAP revealed only 3 of 45 features carry stable signal. This honest null result is the foundation.
 >
-> Every result is validated with permutation tests for statistical significance, transaction cost modeling, and regime-aware evaluation. The system runs via CLI and GitHub Actions, caches all raw data for reproducibility, and has three-layer data quality gates for production resilience."
+> **Stage 2** layers sentiment on top: daily RSS scanning of 6 publishers, parallel keyword + Flan-T5 zero-shot NLP scoring, 14 new features including the core thesis signal — sentiment-price divergence (when news is bullish but price is falling). A source reliability tracker learns which publishers are directionally accurate over time, weighting sentiment accordingly.
+>
+> The system uses three-way ablation to isolate what drives any observed lift: technical-only vs +sentiment vs +sentiment+source-weights. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic."
 
 ---
 
