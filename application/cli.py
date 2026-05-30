@@ -202,6 +202,39 @@ def shap_report(market: str, start: str, end: str, output: str) -> None:
     click.echo("(Run backtest first to generate trained models)")
 
 
+@cli.command("daily-scan")
+@click.option("--market", default="us", help="Market config to use")
+def daily_scan(market: str) -> None:
+    """Run daily buzz discovery scan (RSS feeds -> keyword + Flan-T5 -> SQLite)."""
+    from adapters.data.rss_adapter import RSSAdapter
+    from adapters.ml.flan_t5_scorer import FlanT5Scorer
+    from adapters.ml.keyword_scorer import KeywordScorer
+    from application.daily_scan import DailyScanUseCase
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+
+    rss = RSSAdapter()
+    keyword = KeywordScorer()
+
+    click.echo("Loading Flan-T5 model (first run downloads ~1GB)...")
+    flan = FlanT5Scorer()
+
+    use_case = DailyScanUseCase(
+        discovery=rss,
+        keyword_scorer=keyword,
+        flan_t5_scorer=flan,
+        store_signal=store.save_buzz_signal,
+    )
+
+    scan_time = datetime.now()
+    click.echo(f"Starting daily scan at {scan_time.isoformat()}")
+    result = use_case.execute(scan_time)
+    click.echo(
+        f"Done: {result['tickers_found']} tickers, {result['signals_stored']} signals stored"
+    )
+
+
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     """Get ticker universe from config.
 
