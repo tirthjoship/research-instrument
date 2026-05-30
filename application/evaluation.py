@@ -1,0 +1,268 @@
+"""Evaluation framework for stock recommendation engine (ADR-011).
+
+Five components: walk-forward validation, permutation testing,
+transaction cost modeling, regime splitting, and drawdown tracking.
+"""
+
+from __future__ import annotations
+
+import math
+import random
+from dataclasses import dataclass
+
+
+@dataclass
+class WalkForwardValidator:
+    """Expanding-window walk-forward validation."""
+
+    min_train_months: int = 12
+
+    def generate_splits(self, months: list[str]) -> list[tuple[list[str], str]]:
+        """Return expanding-window splits.
+
+        Each split: (training_months, test_month).
+        First test month is at index ``min_train_months``.
+        """
+        splits: list[tuple[list[str], str]] = []
+        for i in range(self.min_train_months, len(months)):
+            train = months[:i]
+            test = months[i]
+            splits.append((train, test))
+        return splits
+
+
+@dataclass
+class PermutationTester:
+    """Permutation test for directional accuracy significance."""
+
+    n_shuffles: int = 1000
+    random_seed: int = 42
+
+    def test_directional_accuracy(
+        self, predictions: list[float], actuals: list[float]
+    ) -> float:
+        """Return p-value: fraction of shuffled accuracies >= observed.
+
+        Directional accuracy = fraction of matching signs.
+        """
+        n = len(predictions)
+        if n == 0:
+            return 1.0
+
+        observed = self._directional_accuracy(predictions, actuals)
+
+        rng = random.Random(self.random_seed)
+        count_ge = 0
+        for _ in range(self.n_shuffles):
+            shuffled = actuals[:]
+            rng.shuffle(shuffled)
+            shuffled_acc = self._directional_accuracy(predictions, shuffled)
+            if shuffled_acc >= observed:
+                count_ge += 1
+
+        return count_ge / self.n_shuffles
+
+    @staticmethod
+    def _directional_accuracy(predictions: list[float], actuals: list[float]) -> float:
+        n = len(predictions)
+        matches = sum(1 for p, a in zip(predictions, actuals) if (p >= 0) == (a >= 0))
+        return matches / n
+
+
+@dataclass
+class TransactionCostModel:
+    """Simple proportional transaction cost model."""
+
+    cost_per_trade: float = 0.001
+
+    def apply_costs(
+        self,
+        gross_returns: list[float],
+        n_trades_per_period: int = 2,
+    ) -> list[float]:
+        """Subtract transaction costs from each period's gross return."""
+        total_cost = self.cost_per_trade * n_trades_per_period
+        return [r - total_cost for r in gross_returns]
+
+    def total_costs(self, n_periods: int, n_trades_per_period: int = 2) -> float:
+        """Total cumulative cost over all periods."""
+        return self.cost_per_trade * n_trades_per_period * n_periods
+
+
+@dataclass
+class RegimeSplitter:
+    """Classify market regime from monthly SPY returns."""
+
+    bull_threshold: float = 0.10
+    bear_threshold: float = -0.10
+
+    def classify_monthly(self, spy_monthly_returns: list[float]) -> list[str]:
+        """Classify each month using rolling 12-month annualized return.
+
+        Returns one label per month (starting from month index 0).
+        For months with fewer than 12 prior returns, uses whatever
+        history is available.
+        """
+        labels: list[str] = []
+        for i in range(len(spy_monthly_returns)):
+            # Use up to 12 months ending at current month (inclusive)
+            start = max(0, i - 11)
+            window = spy_monthly_returns[start : i + 1]
+            # Annualize: multiply average monthly return by 12
+            avg_monthly = sum(window) / len(window)
+            annualized = avg_monthly * 12
+            if annualized > self.bull_threshold:
+                labels.append("bull")
+            elif annualized < self.bear_threshold:
+                labels.append("bear")
+            else:
+                labels.append("sideways")
+        return labels
+
+
+@dataclass
+class DrawdownTracker:
+    """Compute max drawdown and recovery periods from a return series."""
+
+    def compute(self, returns: list[float]) -> dict[str, float | int | None]:
+        """Return max_drawdown (negative float) and recovery_periods.
+
+        max_drawdown: worst peak-to-trough decline (0.0 if no decline).
+        recovery_periods: number of periods from trough back to peak,
+            or None if not recovered by end of series.
+        """
+        if not returns:
+            return {"max_drawdown": 0.0, "recovery_periods": None}
+
+        # Build cumulative equity curve (starting at 1.0)
+        equity = [1.0]
+        for r in returns:
+            equity.append(equity[-1] * (1 + r))
+
+        peak = equity[0]
+        max_drawdown = 0.0
+        worst_trough_idx: int | None = None
+        worst_peak_val = peak
+        for i in range(1, len(equity)):
+            if equity[i] > peak:
+                peak = equity[i]
+            drawdown = (equity[i] - peak) / peak
+            if drawdown < max_drawdown:
+                max_drawdown = drawdown
+                worst_trough_idx = i
+                worst_peak_val = peak
+
+        # Recovery: find first index after trough where equity >= peak
+        recovery_periods: int | None = None
+        if worst_trough_idx is not None:
+            for i in range(worst_trough_idx + 1, len(equity)):
+                if equity[i] >= worst_peak_val:
+                    recovery_periods = i - worst_trough_idx
+                    break
+
+        return {
+            "max_drawdown": max_drawdown,
+            "recovery_periods": recovery_periods,
+        }
+
+
+@dataclass
+class FullEvaluationSuite:
+    """Wires all 5 evaluation components into a single analysis."""
+
+    permutation_shuffles: int = 1000
+    transaction_cost: float = 0.001
+    bull_threshold: float = 0.10
+    bear_threshold: float = -0.10
+
+    def evaluate(
+        self,
+        predictions: list[float],
+        actuals: list[float],
+        spy_monthly_returns: list[float],
+    ) -> dict[str, object]:
+        """Run full evaluation suite and return structured report."""
+        n = len(predictions)
+        matches = sum(1 for p, a in zip(predictions, actuals) if (p >= 0) == (a >= 0))
+        directional_accuracy = matches / n if n > 0 else 0.0
+
+        perm = PermutationTester(n_shuffles=self.permutation_shuffles, random_seed=42)
+        p_value = perm.test_directional_accuracy(predictions, actuals)
+
+        cost_model = TransactionCostModel(cost_per_trade=self.transaction_cost)
+        cost_adjusted = cost_model.apply_costs(actuals, n_trades_per_period=2)
+
+        regime = RegimeSplitter(
+            bull_threshold=self.bull_threshold,
+            bear_threshold=self.bear_threshold,
+        )
+        regime_labels = regime.classify_monthly(spy_monthly_returns)
+
+        tracker = DrawdownTracker()
+        drawdown_result = tracker.compute(actuals)
+
+        return {
+            "directional_accuracy": directional_accuracy,
+            "p_value": p_value,
+            "cost_adjusted_returns": cost_adjusted,
+            "total_transaction_costs": cost_model.total_costs(n),
+            "regime_labels": regime_labels,
+            "max_drawdown": drawdown_result["max_drawdown"],
+            "recovery_periods": drawdown_result["recovery_periods"],
+            "n_predictions": n,
+        }
+
+
+@dataclass
+class BaselineRanker:
+    """Naive stock-selection baselines for validating ML lift (ADR-020)."""
+
+    def momentum(
+        self, features_by_ticker: dict[str, dict[str, float]], top_n: int = 15
+    ) -> list[str]:
+        """Top N by 6-month return (strongest documented equity factor)."""
+        scored = [
+            (ticker, feats.get("return_6m", float("-inf")))
+            for ticker, feats in features_by_ticker.items()
+            if not math.isnan(feats.get("return_6m", float("nan")))
+        ]
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return [t for t, _ in scored[:top_n]]
+
+    def low_volatility(
+        self, features_by_ticker: dict[str, dict[str, float]], top_n: int = 15
+    ) -> list[str]:
+        """Top N by lowest 20-day volatility (defensive selection)."""
+        scored = [
+            (ticker, feats.get("volatility_20d", float("inf")))
+            for ticker, feats in features_by_ticker.items()
+            if not math.isnan(feats.get("volatility_20d", float("nan")))
+        ]
+        scored.sort(key=lambda x: x[1])
+        return [t for t, _ in scored[:top_n]]
+
+    def random_selection(
+        self,
+        features_by_ticker: dict[str, dict[str, float]],
+        top_n: int = 15,
+        n_trials: int = 100,
+        seed: int = 42,
+    ) -> list[str]:
+        """Random N from universe, return most frequently selected across trials."""
+        tickers = list(features_by_ticker.keys())
+        rng = random.Random(seed)
+        counts: dict[str, int] = {t: 0 for t in tickers}
+
+        for _ in range(n_trials):
+            sample = rng.sample(tickers, min(top_n, len(tickers)))
+            for t in sample:
+                counts[t] += 1
+
+        ranked = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+        return [t for t, _ in ranked[:top_n]]
+
+    def equal_weight(
+        self, features_by_ticker: dict[str, dict[str, float]]
+    ) -> list[str]:
+        """All tickers equally weighted (no selection)."""
+        return list(features_by_ticker.keys())
