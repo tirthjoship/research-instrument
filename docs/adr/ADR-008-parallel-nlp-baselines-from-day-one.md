@@ -34,5 +34,22 @@ Run keyword scorer AND Flan-T5 zero-shot (no fine-tuning) in parallel from Phase
 ## Relationship to ADR-005
 ADR-005's ladder structure remains valid. This ADR moves Step 2 (Flan-T5) to run alongside Step 1 (keyword) rather than after it. Step 3 (LLM API) still deferred to Phase 4 and reframed as LLM-as-analyst (causal reasoning, not just sentiment classification).
 
+## Phase 3B Update (2026-05-30)
+
+**Implementation refined during grilling session:**
+
+Both scorers produce a `sentiment_agreement` feature (1.0 if both agree on direction, 0.0 if they disagree). This meta-feature itself is predictive — high agreement = higher confidence in sentiment signal.
+
+**Sources:** RSS feeds (6 publishers) + Reddit (PRAW, pending API approval). Google CSE and StockTwits deferred — tight rate limits and unstable API respectively.
+
+**Scoring flow per article:**
+1. RSS adapter extracts article text + ticker mentions
+2. KeywordScorer: instant, rule-based, bullish/bearish keyword counting → score in [-1, 1]
+3. FlanT5Scorer: ~0.3s, zero-shot classification → "positive"/"negative"/"neutral" mapped to score
+4. Both scores stored in `buzz_signals` SQLite table with `scorer` column distinguishing them
+5. `sentiment_agreement` computed at feature engineering time
+
+**Source reliability integration (ADR-021):** Each scorer's directional predictions are tracked per-source. Over time, `source_weighted_sentiment` uses reliability to discount noisy sources.
+
 ## Superseded By
 None

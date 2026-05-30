@@ -262,6 +262,9 @@ class WeeklyTournamentUseCase:
         tickers: list[str],
         macro_symbols: dict[str, str],
         market: str = "us",
+        sentiment_scorer: Any | None = None,
+        stage2_predictor: Any | None = None,
+        buzz_store: Any | None = None,
     ) -> None:
         self._market_data = market_data
         self._tech = technical_analysis
@@ -271,6 +274,9 @@ class WeeklyTournamentUseCase:
         self._tickers = tickers
         self._macro_symbols = macro_symbols
         self._market = market
+        self._sentiment = sentiment_scorer
+        self._stage2 = stage2_predictor
+        self._buzz_store = buzz_store
 
     def execute(self, prediction_date: datetime) -> WeeklyReport:
         """Run weekly tournament and return report."""
@@ -361,6 +367,9 @@ class WeeklyTournamentUseCase:
         # Composite score for ranking
         composite = pred_2d * 0.2 + pred_5d * 0.3 + pred_10d * 0.5
 
+        # Stage 2 sentiment blend (ADR-014)
+        composite = self._blend_with_sentiment(ticker, prediction_time, composite)
+
         return StockRecommendation(
             symbol=ticker,
             week_start=week_start,
@@ -373,6 +382,64 @@ class WeeklyTournamentUseCase:
             rsi_14=indicators.get("rsi_14"),
             macd=indicators.get("macd"),
         )
+
+    def _blend_with_sentiment(
+        self, ticker: str, prediction_time: datetime, stage1_composite: float
+    ) -> float:
+        """Blend Stage 1 composite with sentiment via Stage 2 (ADR-014)."""
+        if self._sentiment is None or self._stage2 is None:
+            return stage1_composite
+
+        from adapters.ml.sentiment_feature_engineer import SentimentFeatureEngineer
+        from domain.models import SourceReliability
+
+        sfe = SentimentFeatureEngineer()
+
+        # Get buzz signals from store
+        buzz_current: list[Any] = []
+        buzz_prior: list[Any] = []
+        if self._buzz_store is not None:
+            week_ago = prediction_time - timedelta(days=7)
+            two_weeks_ago = prediction_time - timedelta(days=14)
+            buzz_current = self._buzz_store.get_buzz_signals(
+                ticker=ticker, start_date=week_ago, end_date=prediction_time
+            )
+            buzz_prior = self._buzz_store.get_buzz_signals(
+                ticker=ticker, start_date=two_weeks_ago, end_date=week_ago
+            )
+
+        # Extract scorer averages from buzz signals
+        kw_scores = [s.sentiment_raw for s in buzz_current if s.scorer == "keyword"]
+        ft_scores = [s.sentiment_raw for s in buzz_current if s.scorer == "flan_t5"]
+        kw_avg = sum(kw_scores) / len(kw_scores) if kw_scores else float("nan")
+        ft_avg = sum(ft_scores) / len(ft_scores) if ft_scores else float("nan")
+
+        # Get sentiments from sentiment scorer
+        sentiments = self._sentiment.get_sentiment(ticker, prediction_time)
+
+        # Get source reliability
+        reliability = SourceReliability(
+            source="aggregate", ticker=ticker, correct_calls=0, total_calls=0
+        )
+        if self._buzz_store is not None and hasattr(
+            self._buzz_store, "get_source_reliability"
+        ):
+            reliability = self._buzz_store.get_source_reliability("aggregate", ticker)
+
+        features = sfe.compute(
+            keyword_sentiment=kw_avg,
+            flan_t5_sentiment=ft_avg,
+            sentiments=sentiments,
+            buzz_signals_current=buzz_current,
+            buzz_signals_prior=buzz_prior,
+            sector_buzz_total=max(len(buzz_current), 1),
+            reliability=reliability,
+            price_return_5d=stage1_composite,
+        )
+        features["stage1_pred"] = stage1_composite
+
+        preds = self._stage2.predict([features])
+        return float(preds[0])
 
     def _predict_with_confidence(
         self, horizon: str, feature_row: list[dict[str, float]]
