@@ -184,6 +184,61 @@ Adding a new market = adding a YAML file. No code changes required.
 | Canada (TSX) | `ca.yaml` | Phase 4 (planned) |
 | India (NSE/BSE) | `in.yaml` | Phase 5 (planned) |
 
+## Phase 3A Backtest Results (2026-05-29)
+
+### Walk-Forward Directional Accuracy (40 tickers, 2024-01 to 2026-05, 19 folds)
+| Horizon | Avg Accuracy | Min | Max | Verdict |
+|---------|-------------|-----|-----|---------|
+| 5d | 51.6% | 22.5% | 92.5% | Marginally above random |
+| 2d | 47.1% | 20.0% | 65.0% | Near random |
+| 10d | 47.1% | 30.0% | 60.0% | Near random |
+
+**Interpretation:** Technical-only model (no sentiment) clusters around 50% on S&P 500 mega-caps. Expected per EMH. This is the clean baseline — Phase 3B sentiment divergence must demonstrate lift above this.
+
+### SHAP Feature Importance (4 folds, 10 tickers, 5d horizon)
+**Top 5 features (by mean |SHAP|):**
+1. `correlation_with_spy` — 0.0154 (CV=0.48, **stable**)
+2. `return_1d` — 0.0106 (CV=1.48, unstable)
+3. `obv_trend` — 0.0089 (CV=1.73, unstable)
+4. `return_5d` — 0.0060 (CV=1.70, unstable)
+5. `drawdown_from_ath` — 0.0048 (CV=1.20, unstable)
+
+**Only 3 features are both important AND stable:** `correlation_with_spy`, `macd`, `macd_histogram`
+
+**32 of 45 features have near-zero importance.** All options, analyst, macro, and most regime features contribute nothing — mostly NaN from sparse yfinance data. Candidates for pruning before Phase 3B.
+
+### Bugs Found and Fixed During Backtest
+1. **Cache staleness** — `use_cache=True` served wrong date ranges. Fix: disabled for backtest.
+2. **2d weekend bug** — month-end on weekends + 2 calendar days = zero trading days. Fix: +5 buffer days, pick h_days-th trading day.
+3. **Rate limit crash** — unhandled `YFRateLimitError` in macro fetch. Fix: retry 3x + throttle.
+
+## Phase 3A Methodology Review Findings (2026-05-29)
+
+### Resolved Decisions
+| Decision | Resolution | ADR |
+|----------|------------|-----|
+| Imputation asymmetry | Native NaN for XGBoost/LightGBM, stored medians for Ridge | ADR-018 |
+| Hardcoded confidence | Ensemble disagreement (inverse variance of sub-model predictions) | ADR-019 |
+| No naive baselines | Momentum, low-vol, random (100 trials), equal-weight | ADR-020 |
+| Composite score uses abs() | Signed values for long-only ranking (long-short deferred Phase 4) | — |
+| sector_relative_strength_6m always NaN | Wire using sector ETF data from us.yaml | — |
+| EvaluationUseCase is a stub | Wire all 5 ADR-011 components; pretraining stores raw data, EvaluationUseCase runs full suite | — |
+| SHAP importance missing | Per-fold TreeExplainer, fallback to final-model-only if slow | — |
+| No real-data backtest | Run pretrain on 40 S&P 500 tickers, 2024-01 to 2026-05 | — |
+
+### Alternative Methodologies Investigated (Not Adopted — Tracked for Future)
+- **Conformal prediction:** Distribution-free prediction intervals. Deferred to Phase 4 (ADR-019).
+- **Online learning / incremental models:** River/VW for non-stationary adaptation. Deferred — monthly batch retraining sufficient for Phase 3A.
+- **Regime-conditional models (Mixture of Experts):** Separate models per bull/bear/sideways. Data-limited with 2-3 years. Revisit Phase 4 with more data.
+- **Direct portfolio optimization:** Markowitz/Black-Litterman. Phase 4 scope with position sizing.
+- **Cross-sectional rank prediction:** Predict relative rank instead of absolute returns. Promising but conflicts with Phase 3B dynamic universe.
+
+### Key References from Review
+- Gu, Kelly & Xiu (2020) — "Empirical Asset Pricing via Machine Learning" — cross-sectional stock prediction benchmark
+- Angelopoulos & Bates (2022) — "Conformal Prediction: A Gentle Introduction" — uncertainty quantification
+- DeMiguel, Garlappi & Uppal (2009) — "Optimal Versus Naive Diversification" — 1/N portfolio often beats optimization
+- Guidolin & Timmermann (2007) — regime-switching models for equity returns
+
 ## Anti-Patterns (Never Do These)
 
 - **Never use future-dated data** — `FUTURE_LEAKAGE_COLUMNS` lists forbidden features
@@ -256,6 +311,8 @@ Items to validate, test, and backtest in Phase 4, 5, 6, and future state. These 
 - [ ] **Cross-stock features:** Validate supply chain propagation signals (TSMC → NVDA/AMD). Do they improve prediction or add noise?
 - [ ] **Sector rotation detection:** Can the model detect money flowing between sectors before it shows up in price?
 - [ ] **Decay half-life tuning:** After 3 months live data, optimize half-life from [4, 6, 8, 10, 12] weeks via walk-forward.
+- [ ] **Long-short composite ranking (Option B):** Separate long and short rankings — top 15 longs by positive composite, top 5 shorts by most negative. Enables long-short portfolio. Requires position sizing + risk management from Phase 4. Phase 3A uses signed composite (long-only).
+- [ ] **Conformal prediction intervals (Option A):** Replace ensemble-disagreement confidence with `mapie` conformal prediction for formal coverage guarantees. Phase 3A uses ensemble variance as proxy confidence.
 
 ### Phase 5: Dashboard & Polish — Validation Agenda
 - [ ] **Paper trading vs live tracking dashboard:** Real-time comparison of model predictions vs market outcomes, displayed visually.

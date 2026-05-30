@@ -101,3 +101,86 @@ class TestDrawdownTracker:
         tracker = DrawdownTracker()
         result = tracker.compute([-0.5, -0.5])
         assert result["max_drawdown"] < -0.5
+
+
+class TestFullEvaluationSuite:
+    def test_evaluate_walk_forward_results(self) -> None:
+        from application.evaluation import FullEvaluationSuite
+
+        predictions = [0.03, -0.01, 0.05, 0.02, -0.03, 0.01, 0.04, -0.02, 0.03, 0.01]
+        actuals = [0.02, -0.02, 0.03, 0.01, -0.01, -0.01, 0.02, -0.03, 0.01, 0.02]
+        spy_monthly = [0.02, -0.01, 0.03, 0.01, -0.02, 0.01, 0.02, -0.01, 0.01, 0.02]
+
+        suite = FullEvaluationSuite()
+        report = suite.evaluate(
+            predictions=predictions,
+            actuals=actuals,
+            spy_monthly_returns=spy_monthly,
+        )
+
+        assert "directional_accuracy" in report
+        assert "p_value" in report
+        assert "cost_adjusted_returns" in report
+        assert "regime_labels" in report
+        assert "max_drawdown" in report
+
+    def test_evaluate_returns_numeric_values(self) -> None:
+        from application.evaluation import FullEvaluationSuite
+
+        predictions = [0.05] * 20
+        actuals = [0.03] * 20
+        spy_monthly = [0.02] * 20
+
+        suite = FullEvaluationSuite()
+        report = suite.evaluate(
+            predictions=predictions,
+            actuals=actuals,
+            spy_monthly_returns=spy_monthly,
+        )
+
+        assert isinstance(report["directional_accuracy"], float)
+        assert isinstance(report["p_value"], float)
+        assert isinstance(report["max_drawdown"], float)
+
+
+class TestBaselineRanker:
+    def test_momentum_baseline(self) -> None:
+        from application.evaluation import BaselineRanker
+
+        features = {
+            "AAPL": {"return_6m": 0.20, "volatility_20d": 0.02},
+            "GOOG": {"return_6m": 0.10, "volatility_20d": 0.03},
+            "MSFT": {"return_6m": 0.30, "volatility_20d": 0.01},
+        }
+        ranker = BaselineRanker()
+        top = ranker.momentum(features, top_n=2)
+        assert top == ["MSFT", "AAPL"]
+
+    def test_low_vol_baseline(self) -> None:
+        from application.evaluation import BaselineRanker
+
+        features = {
+            "AAPL": {"return_6m": 0.20, "volatility_20d": 0.02},
+            "GOOG": {"return_6m": 0.10, "volatility_20d": 0.03},
+            "MSFT": {"return_6m": 0.30, "volatility_20d": 0.01},
+        }
+        ranker = BaselineRanker()
+        top = ranker.low_volatility(features, top_n=2)
+        assert top == ["MSFT", "AAPL"]
+
+    def test_random_baseline(self) -> None:
+        from application.evaluation import BaselineRanker
+
+        features = {f"TICK{i}": {} for i in range(20)}
+        ranker = BaselineRanker()
+        top = ranker.random_selection(features, top_n=5, n_trials=100, seed=42)
+        assert len(top) == 5
+        assert all(t in features for t in top)
+
+    def test_equal_weight_baseline(self) -> None:
+        from application.evaluation import BaselineRanker
+
+        features = {"AAPL": {}, "GOOG": {}, "MSFT": {}}
+        ranker = BaselineRanker()
+        top = ranker.equal_weight(features)
+        assert set(top) == {"AAPL", "GOOG", "MSFT"}

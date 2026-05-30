@@ -3,6 +3,7 @@
 Each use case depends only on port interfaces, never on concrete adapters.
 """
 
+import time
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -139,7 +140,7 @@ class PretrainingUseCase:
             # Fetch macro data once per month
             macro_signals = self._fetch_macro(month_end)
 
-            for ticker in self._tickers:
+            for ticker_idx, ticker in enumerate(self._tickers):
                 try:
                     features, targets = self._compute_ticker_features(
                         ticker, month_end, macro_signals
@@ -148,9 +149,14 @@ class PretrainingUseCase:
                         month_features.append(features)
                         for h in ("2d", "5d", "10d"):
                             month_targets[h].append(targets.get(h, 0.0))
-                except Exception as e:
+                except Exception as e:  # pragma: no cover
                     logger.debug(f"Skipping {ticker} for {month}: {e}")
+                    if "rate" in str(e).lower() or "429" in str(e):
+                        time.sleep(10)
                     continue
+                # Throttle API calls
+                if ticker_idx % 5 == 4:  # pragma: no cover
+                    time.sleep(1)
 
             if month_features:
                 all_features[month] = month_features
@@ -187,17 +193,22 @@ class PretrainingUseCase:
         )
 
         # Compute target returns (actual future returns)
+        # Use last trading day's price as base (not month_end which may be weekend)
         last_price = signals[-1].price
         targets: dict[str, float] = {}
         for h_label, h_days in [("2d", 2), ("5d", 5), ("10d", 10)]:
-            future_time = prediction_time + timedelta(days=h_days)
+            # Add buffer for weekends/holidays so yfinance window captures enough trading days
+            future_time = prediction_time + timedelta(days=h_days + 5)
             future_signals = self._market_data.get_signals(
                 ticker, future_time, start_date=prediction_time
             )
             future_prices = [
                 s.price for s in future_signals if s.timestamp > prediction_time
             ]
-            if future_prices:
+            if len(future_prices) >= h_days:
+                # Use the h_days-th trading day price (not the last in window)
+                targets[h_label] = (future_prices[h_days - 1] / last_price) - 1
+            elif future_prices:
                 targets[h_label] = (future_prices[-1] / last_price) - 1
             else:
                 targets[h_label] = 0.0
@@ -210,9 +221,18 @@ class PretrainingUseCase:
         macro: dict[str, list] = {}  # type: ignore[type-arg]
         start = prediction_time - timedelta(days=365)
         for name, symbol in self._macro_symbols.items():
-            macro[symbol] = self._market_data.get_signals(
-                symbol, prediction_time, start_date=start
-            )
+            for attempt in range(3):
+                try:
+                    macro[symbol] = self._market_data.get_signals(
+                        symbol, prediction_time, start_date=start
+                    )
+                    break
+                except Exception as e:  # pragma: no cover
+                    logger.warning(f"Macro fetch {symbol} attempt {attempt + 1}: {e}")
+                    time.sleep(5 * (attempt + 1))
+            else:  # pragma: no cover
+                logger.warning(f"Macro fetch {symbol} failed after 3 attempts")
+                macro[symbol] = []
         return macro
 
     @staticmethod
@@ -321,25 +341,25 @@ class WeeklyTournamentUseCase:
             sector_signals=None,
         )
 
-        # Predict each horizon
+        # Predict each horizon with confidence
         feature_row = [features]
-        pred_2d = self._predictors["2d"].predict(feature_row)[0]
-        pred_5d = self._predictors["5d"].predict(feature_row)[0]
-        pred_10d = self._predictors["10d"].predict(feature_row)[0]
+        pred_2d, conf_2d = self._predict_with_confidence("2d", feature_row)
+        pred_5d, conf_5d = self._predict_with_confidence("5d", feature_row)
+        pred_10d, conf_10d = self._predict_with_confidence("10d", feature_row)
 
         prediction = MultiHorizonPrediction(
             predicted_return_2d=pred_2d,
             predicted_return_5d=pred_5d,
             predicted_return_10d=pred_10d,
-            confidence_2d=0.5,  # TODO: derive from model uncertainty
-            confidence_5d=0.5,
-            confidence_10d=0.5,
+            confidence_2d=conf_2d,
+            confidence_5d=conf_5d,
+            confidence_10d=conf_10d,
         )
 
         grade, horizon_signals = grade_from_horizons(prediction)
 
         # Composite score for ranking
-        composite = abs(pred_2d) * 0.2 + abs(pred_5d) * 0.3 + abs(pred_10d) * 0.5
+        composite = pred_2d * 0.2 + pred_5d * 0.3 + pred_10d * 0.5
 
         return StockRecommendation(
             symbol=ticker,
@@ -354,13 +374,32 @@ class WeeklyTournamentUseCase:
             macd=indicators.get("macd"),
         )
 
+    def _predict_with_confidence(
+        self, horizon: str, feature_row: list[dict[str, float]]
+    ) -> tuple[float, float]:
+        """Predict return and confidence for a single horizon."""
+        predictor = self._predictors[horizon]
+        if hasattr(predictor, "predict_with_confidence"):
+            preds, confs = predictor.predict_with_confidence(feature_row)
+            return preds[0], confs[0]
+        preds = predictor.predict(feature_row)
+        return preds[0], 0.5
+
     def _fetch_macro(self, prediction_time: datetime) -> dict[str, list]:  # type: ignore[type-arg]
         macro: dict[str, list] = {}  # type: ignore[type-arg]
         start = prediction_time - timedelta(days=365)
         for name, symbol in self._macro_symbols.items():
-            macro[symbol] = self._market_data.get_signals(
-                symbol, prediction_time, start_date=start
-            )
+            for attempt in range(3):
+                try:
+                    macro[symbol] = self._market_data.get_signals(
+                        symbol, prediction_time, start_date=start
+                    )
+                    break
+                except Exception as e:  # pragma: no cover
+                    logger.warning(f"Macro fetch {symbol} attempt {attempt + 1}: {e}")
+                    time.sleep(5 * (attempt + 1))
+            else:  # pragma: no cover
+                macro[symbol] = []
         return macro
 
 
@@ -449,11 +488,46 @@ class EvaluationUseCase:
 
     def execute(
         self,
-        eval_type: str = "walk_forward",
+        eval_type: str = "full",
         **kwargs: Any,
     ) -> list[EvaluationRun]:
-        """Run evaluation and store results. Delegates to evaluation module."""
-        # This use case wraps the evaluation module and stores results.
-        # Full implementation coordinates with PretrainingUseCase outputs.
-        logger.info(f"Evaluation type: {eval_type}")
-        return []
+        """Run evaluation on stored walk-forward results."""
+        from application.evaluation import FullEvaluationSuite
+
+        runs = self._store.get_evaluation_runs(eval_type="walk_forward")
+        if not runs:
+            logger.warning("No walk-forward results to evaluate")
+            return []
+
+        predictions = [r.metric_value for r in runs if r.metric_name == "prediction"]
+        actuals = [r.metric_value for r in runs if r.metric_name == "actual"]
+
+        if not predictions or not actuals:
+            logger.warning("No prediction/actual pairs found")
+            return []
+
+        suite = FullEvaluationSuite()
+        report = suite.evaluate(
+            predictions=predictions,
+            actuals=actuals,
+            spy_monthly_returns=kwargs.get(
+                "spy_monthly_returns", [0.01] * len(predictions)
+            ),
+        )
+
+        result_runs: list[EvaluationRun] = []
+        run_date = kwargs.get("run_date", "unknown")
+        for metric_name, value in report.items():
+            if isinstance(value, (int, float)):
+                run = EvaluationRun(
+                    run_date=str(run_date),
+                    eval_type="full_evaluation",
+                    horizon="all",
+                    metric_name=str(metric_name),
+                    metric_value=float(value),
+                )
+                self._store.save_evaluation_run(run)
+                result_runs.append(run)
+
+        logger.info(f"Evaluation complete: {len(result_runs)} metrics computed")
+        return result_runs

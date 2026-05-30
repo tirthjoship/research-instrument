@@ -23,12 +23,12 @@ class LightGBMPredictor:
 
     def fit(self, features: list[dict[str, float]], targets: list[float]) -> None:
         self._feature_names = sorted(features[0].keys())
-        X = self._to_array(features, impute_value=None)
+        X = self._to_array(features)
         self._model.fit(X, np.array(targets))
         self._booster = self._model.booster_
 
     def predict(self, features: list[dict[str, float]]) -> list[float]:
-        X = self._to_array(features, impute_value=0.0)
+        X = self._to_array(features)
         if self._booster is not None:
             preds = self._booster.predict(X)
         else:
@@ -52,21 +52,9 @@ class LightGBMPredictor:
         meta = json.loads(meta_path.read_text())
         self._feature_names = meta["feature_names"]
 
-    def _to_array(
-        self, features: list[dict[str, float]], impute_value: float | None
-    ) -> np.ndarray:
+    def _to_array(self, features: list[dict[str, float]]) -> np.ndarray:
         rows: list[list[float]] = []
         for row in features:
             vals = [row.get(name, float("nan")) for name in self._feature_names]
             rows.append(vals)
-        arr = np.array(rows, dtype=np.float64)
-        if impute_value is None:
-            for col_idx in range(arr.shape[1]):
-                col = arr[:, col_idx]
-                mask = np.isnan(col)
-                if mask.any():
-                    median = float(np.nanmedian(col))
-                    arr[mask, col_idx] = median if not np.isnan(median) else 0.0
-        else:
-            arr = np.nan_to_num(arr, nan=impute_value)
-        return arr
+        return np.array(rows, dtype=np.float64)

@@ -90,27 +90,42 @@ Five hard stops — see `AGENTS.md` for full details:
 ## Phase Status
 
 **Done:**
-- Domain layer (models, ports, services, exceptions) — Signal, Sentiment, BacktestResult
-- Domain ports — MarketDataPort, SentimentPort, StockPredictorPort, BacktestResultPort
-- Point-in-time validation — validate_point_in_time_access() with LookAheadBiasError
-- Test suite (7 tests passing) — domain models + services
+- Domain layer (models, ports, services, exceptions) — Signal, Sentiment, BacktestResult, RecommendationGrade, MultiHorizonPrediction, StockRecommendation, AccuracyRecord, EvaluationRun, WeeklyReport
+- Domain ports — MarketDataPort, SentimentPort, TechnicalAnalysisPort, StockPredictorPort, FeatureEngineerPort, RecommendationStorePort, BacktestResultPort
+- Domain services — validate_point_in_time_access(), grade_from_horizons(), validate_feature_matrix(), validate_data_freshness()
+- Feature engineering — 45 features across 7 groups (technical, regime, stronger signals, sector, options, cross-correlation, macro)
+- ML models — XGBoost + LightGBM + Ridge ensemble, one per horizon (2d/5d/10d)
+- YFinance adapter — MarketDataPort + TechnicalAnalysisPort with caching mixin (ADR-017)
+- SQLite store — RecommendationStorePort with recommendations, accuracy, evaluations, reports
+- Application use cases — PretrainingUseCase, WeeklyTournamentUseCase, TrackRecommendationsUseCase
+- Evaluation components — WalkForwardValidator, PermutationTester, TransactionCostModel, RegimeSplitter, DrawdownTracker
+- CLI — pretrain, run-tournament, evaluate-last-week, show-report commands
+- Config — us.yaml market config with macro symbols, sector ETFs, quality gates
+- Test suite — 103 tests passing, 90.87% coverage, Hypothesis property tests, full fake suite
 - CI workflows (test + lint + security) — 3 GitHub Actions
 - Pre-commit hooks — black, isort, mypy strict, ruff, gitleaks
 - Makefile — test, lint, typecheck, setup, check targets
-- Agent Development Kit — code-reviewer, test-writer, leakage-auditor agents
+- Design spec + 17 Architecture Decision Records (docs/adr/)
 - CLAUDE.md + AGENTS.md + CONTEXT.md — project orientation and standards
-- Design spec — Phase 3 core engine (docs/superpowers/specs/2026-05-23-stock-recommender-phase3-design.md)
-- 7 Architecture Decision Records (docs/adr/)
 
-**In Progress (Phase 3 — Core Engine):**
-- Data adapters (yfinance, RSS, Google CSE, Reddit, StockTwits, Quiver)
-- Sentiment scoring (keyword baseline → Flan-T5)
-- Feature engineering (44 features across 7 groups)
-- ML models (XGBoost + LightGBM ensemble)
-- Weekly tournament pipeline (GitHub Actions cron)
-- SQLite storage for recommendations + accuracy tracking
-- CLI entry point
+**Done (Phase 3A Completion — methodology gaps closed 2026-05-29):**
+- Real-data backtest — 40 tickers, 2024-01 to 2026-05, 19 walk-forward folds. Result: ~50% accuracy (random baseline).
+- SHAP feature importance — 32/45 features near-zero, only 3 stable+important (correlation_with_spy, macd, macd_histogram)
+- Wire evaluation pipeline — FullEvaluationSuite connecting all 5 ADR-011 components
+- Fix imputation — native NaN for XGBoost/LightGBM, stored medians for Ridge (ADR-018)
+- Fix composite score — signed values for long-only ranking
+- Naive baselines — momentum, low-vol, random, equal-weight (ADR-020)
+- Ensemble disagreement confidence (ADR-019)
+- Wire sector_relative_strength_6m
+- Bug fixes: cache staleness, 2d weekend target bug, rate limit crash retry
 
-**Planned:**
-- Phase 4: Tracking & Intelligence (accuracy trends, Canadian market, LSTM-Transformer)
-- Phase 5: Dashboard & Polish (Streamlit, watchlist, Indian market)
+**Planned (Phase 3B — Sentiment Layer):**
+- Keyword + Flan-T5 zero-shot parallel scorers (ADR-008)
+- RSS, Google CSE, Reddit, StockTwits adapters
+- 16 additional features (sentiment/buzz 11 + divergence 4 + sector_buzz_ratio 1)
+- Ablation: technical-only vs sentiment-only vs combined
+- Recursive learning with decay weighting
+
+**Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
+
+**Planned (Phase 5):** Dashboard & Polish — Streamlit, watchlist, Indian market, paper trading
