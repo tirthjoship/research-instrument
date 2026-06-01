@@ -25,6 +25,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+eval = [
+    "scipy>=1.11",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
@@ -34,6 +37,7 @@ dev = [
     "mypy>=1.8.0",
     "ruff>=0.1.0",
     "pre-commit>=3.0.0",
+    "scipy>=1.11",
 ]
 
 [tool.setuptools.packages.find]
@@ -69,6 +73,7 @@ module = [
     "numpy.*",
     "torch.*",
     "transformers.*",
+    "scipy.*",
 ]
 ignore_missing_imports = true
 
