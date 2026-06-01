@@ -400,8 +400,8 @@ flowchart LR
 | Phase | Scope | Status | Depends On |
 |-------|-------|--------|------------|
 | 3A | Core technical engine (45 features, ensemble, walk-forward, SHAP) | ✅ Complete | — |
-| 3B Validation | Run existing sentiment pipeline end-to-end, fix breaks, ablation with real data | 🔴 Blocked — code-complete but never run | 3A |
-| P0 Completeness | README p-values + Sharpe vs SPY, S3 upload script, fix stale CLAUDE.md | 📋 Planned | 3A |
+| 3B Validation | Run existing sentiment pipeline end-to-end, fix breaks, ablation with real data | ✅ Complete (2026-06-01) | 3A |
+| P0 Completeness | README p-values + Sharpe vs SPY, S3 upload script, fix stale CLAUDE.md | ✅ Complete (2026-06-01) | 3A |
 | 3.5 | Expand sentiment (StockTwits + Google Trends + GDELT historical) + expand universe to 350 tickers | 📋 Planned | 3B Validation |
 | 4A | Fundamental valuation features (PEG, P/E, P/B, FCF, dividends, earnings) | 📋 Planned | 3.5 |
 | 4B | Portfolio holdings tracking + sell signals + stop-loss | 📋 Planned | 4A |
@@ -474,3 +474,4 @@ Honest null result remains valid — rigorous negative finding is equally impres
 1. **P0 Portfolio Completeness** — README p-values + Sharpe, S3 upload script (plan exists: `docs/superpowers/plans/2026-06-01-p0-portfolio-completeness.md`)
 2. **Phase 3B Validation** — run full pipeline end-to-end, fix breaks, document results
 3. **Phase 3.5 Planning** — brainstorm/grill expanded sentiment sources, then write implementation plan
+4. **Phase 3B Validation Results (2026-06-01):** Pipeline proven end-to-end. Technical-only 47.4% → +sentiment 69.7% (in-sample). PR #9 shipped. 152 tests green.
