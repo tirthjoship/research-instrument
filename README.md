@@ -175,7 +175,7 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: 119 passed
+# Expected: 184 passed
 ```
 
 ### CLI Usage
@@ -270,11 +270,13 @@ make check
 
 ### Walk-Forward Backtest (40 S&P 500 tickers, Jan 2024 → May 2026, 19 folds)
 
-| Horizon | Directional Accuracy | vs Random (50%) |
-|---------|---------------------|-----------------|
-| 5-day | 51.6% | +1.6% |
-| 2-day | 47.1% | -2.9% |
-| 10-day | 47.1% | -2.9% |
+| Horizon | Directional Accuracy | vs Random (50%) | p-value (binomial) | Significant? |
+|---------|---------------------|-----------------|-------------------|-------------|
+| 5-day | 51.6% | +1.6% | 0.19 | No (p > 0.05) |
+| 2-day | 47.1% | -2.9% | 0.95 | No |
+| 10-day | 47.1% | -2.9% | 0.95 | No |
+
+**Statistical note:** P-values from one-sided binomial test (H₀: accuracy = 50%, H₁: accuracy > 50%, n ≈ 760 predictions per horizon). None significant at α = 0.05 — technical features alone are indistinguishable from random on S&P 500 mega-caps, consistent with EMH.
 
 **Finding:** Technical features alone do not beat random on S&P 500 mega-caps. This is consistent with the efficient market hypothesis for highly-analyzed, liquid stocks — and is the expected Phase 3A result. The project thesis posits that **sentiment divergence** (Phase 3B) is the signal, not technicals alone.
 
@@ -289,6 +291,15 @@ Only **3 of 45 features** are both important AND stable across folds:
 | `macd_histogram` | 0.0007 | 0.35 | Stable |
 
 32 features have near-zero importance (mostly NaN from sparse yfinance options/analyst data). Phase 3B adds 14 sentiment features on top to test whether divergence signals provide the lift that technicals alone cannot.
+
+### Sharpe Ratio vs SPY Benchmark
+
+| Metric | Model (5d) | SPY (same period) |
+|--------|-----------|-------------------|
+| Annualized Sharpe | ~0.0 | ~1.2 |
+| Mean excess accuracy/fold | +1.6% | — |
+
+**Interpretation:** Model's per-fold excess accuracy (over 50% random baseline) has near-zero Sharpe — high variance across folds, no consistent edge. SPY buy-and-hold dominates. This confirms the technical-only baseline is not tradeable; the thesis requires sentiment divergence (Phase 3B+) for edge.
 
 ### Phase 3B — Sentiment Layer (implemented, accumulating data)
 
@@ -342,6 +353,20 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 020 | Naive baselines for validating ML lift |
 | 021 | Source reliability tracker (per-source accuracy learning) |
 | 022 | Daily discovery scan + weekly full analysis (dual-cadence) |
+
+---
+
+## Orchestration
+
+Three GitHub Actions workflows automate quality gates:
+
+| Workflow | Trigger | What it does |
+|----------|---------|-------------|
+| `test.yml` | Push/PR to develop | Runs 184 tests, enforces 90% coverage |
+| `lint.yml` | Push/PR to develop | black, isort, ruff, mypy strict |
+| `security.yml` | Push/PR to develop | gitleaks secret scanning |
+
+Future: `daily-scan.yml` cron workflow for automated RSS buzz collection.
 
 ---
 
