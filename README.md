@@ -175,7 +175,7 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: 119 passed
+# Expected: 184 passed
 ```
 
 ### CLI Usage
@@ -270,11 +270,13 @@ make check
 
 ### Walk-Forward Backtest (40 S&P 500 tickers, Jan 2024 → May 2026, 19 folds)
 
-| Horizon | Directional Accuracy | vs Random (50%) |
-|---------|---------------------|-----------------|
-| 5-day | 51.6% | +1.6% |
-| 2-day | 47.1% | -2.9% |
-| 10-day | 47.1% | -2.9% |
+| Horizon | Directional Accuracy | vs Random (50%) | p-value (binomial) | Significant? |
+|---------|---------------------|-----------------|-------------------|-------------|
+| 5-day | 51.6% | +1.6% | 0.19 | No (p > 0.05) |
+| 2-day | 47.1% | -2.9% | 0.95 | No |
+| 10-day | 47.1% | -2.9% | 0.95 | No |
+
+**Statistical note:** P-values from one-sided binomial test (H₀: accuracy = 50%, H₁: accuracy > 50%, n ≈ 760 predictions per horizon). None significant at α = 0.05 — technical features alone are indistinguishable from random on S&P 500 mega-caps, consistent with EMH.
 
 **Finding:** Technical features alone do not beat random on S&P 500 mega-caps. This is consistent with the efficient market hypothesis for highly-analyzed, liquid stocks — and is the expected Phase 3A result. The project thesis posits that **sentiment divergence** (Phase 3B) is the signal, not technicals alone.
 
@@ -290,11 +292,32 @@ Only **3 of 45 features** are both important AND stable across folds:
 
 32 features have near-zero importance (mostly NaN from sparse yfinance options/analyst data). Phase 3B adds 14 sentiment features on top to test whether divergence signals provide the lift that technicals alone cannot.
 
-### Phase 3B — Sentiment Layer (implemented, accumulating data)
+### Sharpe Ratio vs SPY Benchmark
 
-- **Daily buzz scan live** — first run discovered 15 tickers across 32 signals from 6 RSS feeds
-- **Source reliability tracker** — learning which publishers are directionally accurate (needs 10+ outcomes per source)
-- **Three-way ablation ready** — will compare tech-only vs +sentiment vs +sentiment+source-weights once sufficient buzz data accumulates
+| Metric | Model (5d) | SPY (same period) |
+|--------|-----------|-------------------|
+| Annualized Sharpe | ~0.0 | ~1.2 |
+| Mean excess accuracy/fold | +1.6% | — |
+
+**Interpretation:** Model's per-fold excess accuracy (over 50% random baseline) has near-zero Sharpe — high variance across folds, no consistent edge. SPY buy-and-hold dominates. This confirms the technical-only baseline is not tradeable; the thesis requires sentiment divergence (Phase 3B+) for edge.
+
+### Phase 3B Validation Results (2026-06-01)
+
+Pipeline validated end-to-end: RSS scan → keyword scoring → 14 sentiment features → Stage 2 stacking → three-way ablation.
+
+| Variant | Directional Accuracy | p-value | Significant? |
+|---------|---------------------|---------|-------------|
+| Technical-only (Stage 1) | 47.4% | 0.8460 | No |
+| + Sentiment (Stage 2) | 69.7% | 0.0000 | YES |
+| + Source weights (Stage 2 full) | 69.7% | 0.0000 | YES |
+
+**Tickers with buzz data:** 7 of 40 (from stored RSS scan)
+**Stage 2 trained:** Yes (350 training samples)
+
+**Interpretation:** Stage 2 sentiment blending shows significant lift over technical-only baseline. However, this is an **in-sample result** — Stage 2 was trained and evaluated on the same data (no holdout split). The 69.7% reflects the model's ability to fit sentiment features to known outcomes, not out-of-sample prediction power. Proper out-of-sample validation requires historical sentiment data (Phase 3.5: Google Trends + GDELT) for walk-forward testing.
+
+**What this proves:** The pipeline works end-to-end without errors. All components (RSS → keyword scoring → sentiment features → Stage 2 XGBoost → ablation → permutation p-values) are wired correctly and produce real numbers.
+
 - **Known limitation:** Flan-T5 scorer disabled by default (`--no-flan`) due to torch/XGBoost OpenMP conflict on macOS; keyword-only scoring active
 
 ### Naive Baselines (implemented, not yet compared)
@@ -342,6 +365,20 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 020 | Naive baselines for validating ML lift |
 | 021 | Source reliability tracker (per-source accuracy learning) |
 | 022 | Daily discovery scan + weekly full analysis (dual-cadence) |
+
+---
+
+## Orchestration
+
+Three GitHub Actions workflows automate quality gates:
+
+| Workflow | Trigger | What it does |
+|----------|---------|-------------|
+| `test.yml` | Push/PR to develop | Runs 184 tests, enforces 90% coverage |
+| `lint.yml` | Push/PR to develop | black, isort, ruff, mypy strict |
+| `security.yml` | Push/PR to develop | gitleaks secret scanning |
+
+Future: `daily-scan.yml` cron workflow for automated RSS buzz collection.
 
 ---
 
