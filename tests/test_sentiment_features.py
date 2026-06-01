@@ -57,8 +57,8 @@ def _make_reliability(correct: int = 9, total: int = 10) -> SourceReliability:
 
 
 def test_feature_count() -> None:
-    """SENTIMENT_FEATURE_NAMES must contain exactly 14 features."""
-    assert len(SENTIMENT_FEATURE_NAMES) == 14
+    """SENTIMENT_FEATURE_NAMES must contain exactly 24 features (14 original + 10 Phase 3.5)."""
+    assert len(SENTIMENT_FEATURE_NAMES) == 24
 
 
 def test_compute_returns_all_features() -> None:
