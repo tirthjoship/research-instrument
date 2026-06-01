@@ -301,11 +301,23 @@ Only **3 of 45 features** are both important AND stable across folds:
 
 **Interpretation:** Model's per-fold excess accuracy (over 50% random baseline) has near-zero Sharpe — high variance across folds, no consistent edge. SPY buy-and-hold dominates. This confirms the technical-only baseline is not tradeable; the thesis requires sentiment divergence (Phase 3B+) for edge.
 
-### Phase 3B — Sentiment Layer (implemented, accumulating data)
+### Phase 3B Validation Results (2026-06-01)
 
-- **Daily buzz scan live** — first run discovered 15 tickers across 32 signals from 6 RSS feeds
-- **Source reliability tracker** — learning which publishers are directionally accurate (needs 10+ outcomes per source)
-- **Three-way ablation ready** — will compare tech-only vs +sentiment vs +sentiment+source-weights once sufficient buzz data accumulates
+Pipeline validated end-to-end: RSS scan → keyword scoring → 14 sentiment features → Stage 2 stacking → three-way ablation.
+
+| Variant | Directional Accuracy | p-value | Significant? |
+|---------|---------------------|---------|-------------|
+| Technical-only (Stage 1) | 47.4% | 0.8460 | No |
+| + Sentiment (Stage 2) | 69.7% | 0.0000 | YES |
+| + Source weights (Stage 2 full) | 69.7% | 0.0000 | YES |
+
+**Tickers with buzz data:** 7 of 40 (from stored RSS scan)
+**Stage 2 trained:** Yes (350 training samples)
+
+**Interpretation:** Stage 2 sentiment blending shows significant lift over technical-only baseline. However, this is an **in-sample result** — Stage 2 was trained and evaluated on the same data (no holdout split). The 69.7% reflects the model's ability to fit sentiment features to known outcomes, not out-of-sample prediction power. Proper out-of-sample validation requires historical sentiment data (Phase 3.5: Google Trends + GDELT) for walk-forward testing.
+
+**What this proves:** The pipeline works end-to-end without errors. All components (RSS → keyword scoring → sentiment features → Stage 2 XGBoost → ablation → permutation p-values) are wired correctly and produce real numbers.
+
 - **Known limitation:** Flan-T5 scorer disabled by default (`--no-flan`) due to torch/XGBoost OpenMP conflict on macOS; keyword-only scoring active
 
 ### Naive Baselines (implemented, not yet compared)

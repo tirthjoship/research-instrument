@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-06-01T13:15:54.997637",
+  "tickers_evaluated": 7,
+  "total_buzz_signals": 22,
+  "ablation_results": [
+    {
+      "variant": "technical_only",
+      "directional_accuracy": 0.4742857142857143,
+      "n": 350,
+      "correct": 166,
+      "p_value": 0.846
+    },
+    {
+      "variant": "technical_plus_sentiment",
+      "directional_accuracy": 0.6971428571428572,
+      "n": 350,
+      "correct": 244,
+      "p_value": 0.0
+    },
+    {
+      "variant": "technical_plus_sentiment_plus_source_weights",
+      "directional_accuracy": 0.6971428571428572,
+      "n": 350,
+      "correct": 244,
+      "p_value": 0.0
+    }
+  ],
+  "stage2_trained": true,
+  "errors": []
+}
