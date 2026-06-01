@@ -90,3 +90,13 @@ sentiment:
   buzz_discovery:
     min_acceleration_threshold: 2.0
     min_mentions_per_week: 3
+  google_trends:
+    rate_limit_seconds: 2.0
+    enabled: true
+  stocktwits:
+    rate_limit_seconds: 1.8
+    enabled: true
+  gdelt:
+    rate_limit_seconds: 1.0
+    enabled: true
+    lookback_days: 7

@@ -247,6 +247,30 @@ def daily_scan(market: str, no_flan: bool) -> None:
         f"Done: {result['tickers_found']} tickers, {result['signals_stored']} signals stored"
     )
 
+    # Phase 3.5: Google Trends scan
+    click.echo("Running Google Trends scan...")
+    from adapters.data.google_trends_adapter import GoogleTrendsAdapter
+
+    gt_adapter = GoogleTrendsAdapter()
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+    gt_signals = gt_adapter.scan_sources(
+        scan_time, tickers=tickers[:50]
+    )  # top 50 to stay under rate limits
+    for sig in gt_signals:
+        store.save_buzz_signal(sig)
+    click.echo(f"  Google Trends: {len(gt_signals)} signals")
+
+    # Phase 3.5: StockTwits scan
+    click.echo("Running StockTwits scan...")
+    from adapters.data.stocktwits_adapter import StockTwitsAdapter
+
+    st_adapter = StockTwitsAdapter()
+    st_signals = st_adapter.scan_sources(scan_time, tickers=tickers[:50])  # top 50
+    for sig in st_signals:
+        store.save_buzz_signal(sig)
+    click.echo(f"  StockTwits: {len(st_signals)} signals")
+
 
 @cli.command("validate-3b")
 @click.option("--market", default="us", help="Market config")
@@ -388,53 +412,35 @@ def validate_3b(market: str, skip_scan: bool, output: str) -> None:
 
 
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
-    """Get ticker universe from config.
-
-    Phase 3A: static list. Phase 3B: dynamic buzz-driven discovery.
-    """
-    # Default S&P 500 subset for Phase 3A
-    return [
-        "AAPL",
-        "MSFT",
-        "GOOG",
-        "AMZN",
-        "NVDA",
-        "META",
-        "TSLA",
-        "BRK-B",
-        "UNH",
-        "JNJ",
-        "V",
-        "XOM",
-        "JPM",
-        "PG",
-        "MA",
-        "HD",
-        "CVX",
-        "MRK",
-        "ABBV",
-        "LLY",
-        "PEP",
-        "KO",
-        "COST",
-        "AVGO",
-        "WMT",
-        "MCD",
-        "CSCO",
-        "ACN",
-        "TMO",
-        "ABT",
-        "DHR",
-        "NEE",
-        "LIN",
-        "TXN",
-        "PM",
-        "UPS",
-        "RTX",
-        "HON",
-        "LOW",
-        "QCOM",
+    """Load ticker universe from config files, with hardcoded fallback."""
+    config_dir = Path(__file__).parent.parent / "config" / "tickers"
+    files = [
+        config_dir / "sp500.txt",
+        config_dir / "nasdaq100.txt",
     ]
+    existing = [f for f in files if f.exists()]
+    if not existing:
+        # Fallback to small list for dev/testing when config files missing
+        return [
+            "AAPL",
+            "MSFT",
+            "GOOG",
+            "AMZN",
+            "META",
+            "TSLA",
+            "NVDA",
+            "JPM",
+            "JNJ",
+            "V",
+            "UNH",
+            "HD",
+            "PG",
+            "MA",
+            "XOM",
+        ]
+    from application.ticker_universe import load_ticker_universe
+
+    return load_ticker_universe(existing)
 
 
 def _print_report(report: WeeklyReport) -> None:
