@@ -64,7 +64,9 @@ class TestSentimentPipelineIntegration:
             price_return_5d=-0.02,
         )
         features["stage1_pred"] = 0.015
-        assert len(features) == 15
+        assert (
+            len(features) == 25
+        )  # 15 original + 10 Phase 3.5 expanded features (Task 6)
 
         stage2 = Stage2Predictor(random_seed=42)
         train_features = [features] * 50
