@@ -114,3 +114,15 @@ def test_validation_report_serializes_to_dict(
     assert "ablation_results" in d
     assert "tickers_evaluated" in d
     assert "timestamp" in d
+
+
+def test_validate_3b_cli_command_exists() -> None:
+    """The validate-3b CLI command should be registered."""
+    from click.testing import CliRunner
+
+    from application.cli import cli
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["validate-3b", "--help"])
+    assert result.exit_code == 0
+    assert "validate" in result.output.lower() or "3b" in result.output.lower()
