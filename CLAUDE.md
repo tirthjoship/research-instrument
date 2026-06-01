@@ -102,7 +102,7 @@ Five hard stops — see `AGENTS.md` for full details:
 - Evaluation components — WalkForwardValidator, PermutationTester, TransactionCostModel, RegimeSplitter, DrawdownTracker
 - CLI — pretrain, run-tournament, evaluate-last-week, show-report commands
 - Config — us.yaml market config with macro symbols, sector ETFs, quality gates
-- Test suite — 103 tests passing, 90.87% coverage, Hypothesis property tests, full fake suite
+- Test suite — 184 tests passing, 91.88% coverage, Hypothesis property tests, full fake suite
 - CI workflows (test + lint + security) — 3 GitHub Actions
 - Pre-commit hooks — black, isort, mypy strict, ruff, gitleaks
 - Makefile — test, lint, typecheck, setup, check targets
@@ -120,7 +120,7 @@ Five hard stops — see `AGENTS.md` for full details:
 - Wire sector_relative_strength_6m
 - Bug fixes: cache staleness, 2d weekend target bug, rate limit crash retry
 
-**In Progress (Phase 3B — Sentiment Layer):**
+**Done (Phase 3B — Code Complete 2026-05-30):**
 - Keyword + Flan-T5 zero-shot parallel scorers (ADR-008)
 - RSS, Google CSE, Reddit, StockTwits adapters
 - 16 additional features (sentiment/buzz 11 + divergence 4 + sector_buzz_ratio 1)
