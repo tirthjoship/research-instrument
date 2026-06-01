@@ -36,7 +36,7 @@ adapters/     →  domain/  ←  application/
 ```
 
 - `domain/` — Business rules, models, port interfaces, exceptions. ZERO external framework imports.
-- `adapters/data/` — yfinance, RSS feeds, Google Custom Search, Reddit (PRAW), StockTwits, Quiver Quantitative, SQLite store.
+- `adapters/data/` — yfinance, RSS feeds, Google Trends, StockTwits, GDELT sentiment, SQLite store.
 - `adapters/ml/` — Keyword scorer, Flan-T5 sentiment, XGBoost predictor, LightGBM predictor, ensemble.
 - `adapters/visualization/` — Streamlit dashboard (Phase 5).
 - `application/` — Use case orchestration (WeeklyTournament, TrackRecommendations, Backtest).
@@ -92,7 +92,7 @@ Five hard stops — see `AGENTS.md` for full details:
 
 **Done:**
 - Domain layer (models, ports, services, exceptions) — Signal, Sentiment, BacktestResult, RecommendationGrade, MultiHorizonPrediction, StockRecommendation, AccuracyRecord, EvaluationRun, WeeklyReport
-- Domain ports — MarketDataPort, SentimentPort, TechnicalAnalysisPort, StockPredictorPort, FeatureEngineerPort, RecommendationStorePort, BacktestResultPort
+- Domain ports — MarketDataPort, SentimentPort, TechnicalAnalysisPort, StockPredictorPort, FeatureEngineerPort, RecommendationStorePort, BacktestResultPort, BuzzDiscoveryPort, SourceReliabilityPort, HistoricalSentimentPort
 - Domain services — validate_point_in_time_access(), grade_from_horizons(), validate_feature_matrix(), validate_data_freshness()
 - Feature engineering — 45 features across 7 groups (technical, regime, stronger signals, sector, options, cross-correlation, macro)
 - ML models — XGBoost + LightGBM + Ridge ensemble, one per horizon (2d/5d/10d)
@@ -102,7 +102,7 @@ Five hard stops — see `AGENTS.md` for full details:
 - Evaluation components — WalkForwardValidator, PermutationTester, TransactionCostModel, RegimeSplitter, DrawdownTracker
 - CLI — pretrain, run-tournament, evaluate-last-week, show-report commands
 - Config — us.yaml market config with macro symbols, sector ETFs, quality gates
-- Test suite — 184 tests passing, 91.88% coverage, Hypothesis property tests, full fake suite
+- Test suite — 262 tests passing, Hypothesis property tests, full fake suite
 - CI workflows (test + lint + security) — 3 GitHub Actions
 - Pre-commit hooks — black, isort, mypy strict, ruff, gitleaks
 - Makefile — test, lint, typecheck, setup, check targets
@@ -126,6 +126,16 @@ Five hard stops — see `AGENTS.md` for full details:
 - 16 additional features (sentiment/buzz 11 + divergence 4 + sector_buzz_ratio 1)
 - Ablation: technical-only vs sentiment-only vs combined
 - Recursive learning with decay weighting
+
+**Done (Phase 3.5 — Expanded Sentiment Sources 2026-06-01):**
+- Google Trends adapter — historical interest back to 2004, weekly granularity, rate-limited (pytrends)
+- StockTwits adapter — free API, message volume + bullish/bearish ratio
+- GDELT historical sentiment adapter — DOC API, V2Tone normalization, 2015-present
+- HistoricalSentimentPort added to domain/ports.py
+- Ticker universe expanded to ~350 (S&P 500 + NASDAQ-100) via config/tickers/ files
+- 10 new sentiment features (24 total): google_trends_current/change/spike, stocktwits_volume/bullish/change, news_avg/volume/momentum/negative_spike
+- Daily scan pipeline wires all three new adapters
+- Test suite — 262 tests passing
 
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
 
