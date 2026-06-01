@@ -7,7 +7,10 @@ trading_hours:
   close: "16:00"
 
 universe:
-  source: sp500
+  source: config_files
+  ticker_files:
+    - config/tickers/sp500.txt
+    - config/tickers/nasdaq100.txt
   min_market_cap: 2_000_000_000
   min_avg_volume: 500_000
   exclude_penny_stocks: true
