@@ -167,3 +167,17 @@ class SourceReliabilityPort(Protocol):
     def get_all_reliabilities(self) -> list[SourceReliability]:
         """Get reliability stats for all tracked sources."""
         ...
+
+
+@runtime_checkable
+class HistoricalSentimentPort(Protocol):
+    """Retrieves historical news/headline sentiment for backtesting."""
+
+    def get_historical_sentiment(
+        self,
+        symbol: str,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> list[Sentiment]:
+        """Return sentiment observations for symbol in date range."""
+        ...

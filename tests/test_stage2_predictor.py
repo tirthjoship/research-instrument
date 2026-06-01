@@ -79,5 +79,7 @@ def test_feature_names_include_stage1_and_sentiment() -> None:
     names = predictor.get_feature_names()
 
     assert "stage1_pred" in names, "stage1_pred must be in feature names"
-    assert len(names) == 15, f"Expected 15 features, got {len(names)}"
+    assert (
+        len(names) == 25
+    ), f"Expected 25 features, got {len(names)}"  # 15 original + 10 Phase 3.5 expanded (Task 6)
     assert names == STAGE2_FEATURE_NAMES

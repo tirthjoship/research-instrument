@@ -1,4 +1,4 @@
-"""Sentiment feature engineer — computes 14 sentiment/buzz/divergence features.
+"""Sentiment feature engineer — computes 24 sentiment/buzz/divergence features.
 
 Zero external framework imports. Only math + stdlib.
 """
@@ -26,6 +26,17 @@ SENTIMENT_FEATURE_NAMES: list[str] = [
     "sentiment_price_divergence_magnitude",
     "buzz_price_divergence",
     "sector_buzz_ratio",
+    # Phase 3.5 features
+    "google_trends_current",
+    "google_trends_change_1w",
+    "google_trends_spike",
+    "stocktwits_volume_24h",
+    "stocktwits_bullish_ratio",
+    "stocktwits_volume_change",
+    "news_sentiment_avg_7d",
+    "news_volume_7d",
+    "news_sentiment_momentum",
+    "news_negative_spike",
 ]
 
 
@@ -49,7 +60,7 @@ def _sign(v: float) -> int:
 
 
 class SentimentFeatureEngineer:
-    """Computes 14 sentiment/buzz/divergence features from raw signal inputs."""
+    """Computes 24 sentiment/buzz/divergence features from raw signal inputs."""
 
     def compute(
         self,
@@ -61,8 +72,19 @@ class SentimentFeatureEngineer:
         sector_buzz_total: int,
         reliability: SourceReliability,
         price_return_5d: float,
+        # Phase 3.5 — optional new source inputs
+        google_trends_signals: list[BuzzSignal] | None = None,
+        google_trends_prior: list[BuzzSignal] | None = None,
+        google_trends_52w_mean: float | None = None,
+        google_trends_52w_std: float | None = None,
+        stocktwits_signals: list[BuzzSignal] | None = None,
+        stocktwits_prior: list[BuzzSignal] | None = None,
+        news_sentiments_7d: list[Sentiment] | None = None,
+        news_sentiments_prior_7d: list[Sentiment] | None = None,
+        news_negative_baseline_mean: float | None = None,
+        news_negative_baseline_std: float | None = None,
     ) -> dict[str, float]:
-        """Compute all 14 sentiment features.
+        """Compute all 24 sentiment features.
 
         Args:
             keyword_sentiment: Keyword-scorer sentiment in [-1, 1] or NaN.
@@ -203,6 +225,98 @@ class SentimentFeatureEngineer:
         else:
             sector_buzz_ratio = current_count / sector_buzz_total
 
+        # --- Phase 3.5: Google Trends features ---
+        gt_signals = google_trends_signals or []
+        gt_prior = google_trends_prior or []
+
+        if gt_signals:
+            gt_current_interest = float(gt_signals[0].mention_count)
+        else:
+            gt_current_interest = _NAN
+
+        if gt_signals and gt_prior:
+            prior_interest = float(gt_prior[0].mention_count)
+            if prior_interest > 0:
+                gt_change_1w = (gt_current_interest - prior_interest) / prior_interest
+            else:
+                gt_change_1w = _NAN
+        else:
+            gt_change_1w = _NAN
+
+        if (
+            gt_signals
+            and google_trends_52w_mean is not None
+            and google_trends_52w_std is not None
+            and google_trends_52w_std > 0
+        ):
+            threshold = google_trends_52w_mean + 2.0 * google_trends_52w_std
+            gt_spike = 1.0 if gt_current_interest > threshold else 0.0
+        else:
+            gt_spike = _NAN
+
+        # --- Phase 3.5: StockTwits features ---
+        st_signals = stocktwits_signals or []
+        st_prior = stocktwits_prior or []
+
+        if st_signals:
+            st_volume_24h = float(st_signals[0].mention_count)
+            # sentiment_raw is (bull-bear)/total in [-1,1]; normalize to [0,1]
+            st_bullish_ratio = (st_signals[0].sentiment_raw + 1.0) / 2.0
+        else:
+            st_volume_24h = _NAN
+            st_bullish_ratio = _NAN
+
+        if st_signals and st_prior:
+            prior_vol = float(st_prior[0].mention_count)
+            if prior_vol > 0:
+                st_volume_change = (st_volume_24h - prior_vol) / prior_vol
+            else:
+                st_volume_change = _NAN
+        else:
+            st_volume_change = _NAN
+
+        # --- Phase 3.5: News headline sentiment features ---
+        news_7d = news_sentiments_7d or []
+        news_prior = news_sentiments_prior_7d or []
+
+        if news_7d:
+            news_scores = [s.sentiment_score for s in news_7d]
+            news_sentiment_avg = _safe_avg(news_scores)
+            news_volume = float(len(news_7d))
+        else:
+            news_sentiment_avg = _NAN
+            news_volume = _NAN
+
+        if news_7d and news_prior:
+            current_avg = _safe_avg([s.sentiment_score for s in news_7d])
+            prior_avg = _safe_avg([s.sentiment_score for s in news_prior])
+            news_sentiment_momentum = current_avg - prior_avg
+        else:
+            news_sentiment_momentum = _NAN
+
+        if news_7d:
+            negative_count = sum(1 for s in news_7d if s.sentiment_score < -0.3)
+            n_baseline_mean = (
+                news_negative_baseline_mean
+                if news_negative_baseline_mean is not None
+                else 2.0
+            )
+            n_baseline_std = (
+                news_negative_baseline_std
+                if news_negative_baseline_std is not None
+                else 1.0
+            )
+            if n_baseline_std > 0:
+                news_neg_spike = (
+                    1.0
+                    if negative_count > n_baseline_mean + 2.0 * n_baseline_std
+                    else 0.0
+                )
+            else:
+                news_neg_spike = _NAN
+        else:
+            news_neg_spike = _NAN
+
         return {
             "buzz_volume": buzz_volume,
             "buzz_acceleration": buzz_acceleration,
@@ -218,4 +332,15 @@ class SentimentFeatureEngineer:
             "sentiment_price_divergence_magnitude": sentiment_price_divergence_magnitude,
             "buzz_price_divergence": buzz_price_divergence,
             "sector_buzz_ratio": sector_buzz_ratio,
+            # Phase 3.5 features
+            "google_trends_current": gt_current_interest,
+            "google_trends_change_1w": gt_change_1w,
+            "google_trends_spike": gt_spike,
+            "stocktwits_volume_24h": st_volume_24h,
+            "stocktwits_bullish_ratio": st_bullish_ratio,
+            "stocktwits_volume_change": st_volume_change,
+            "news_sentiment_avg_7d": news_sentiment_avg,
+            "news_volume_7d": news_volume,
+            "news_sentiment_momentum": news_sentiment_momentum,
+            "news_negative_spike": news_neg_spike,
         }
