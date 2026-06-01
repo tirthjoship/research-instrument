@@ -87,7 +87,7 @@ Persists and retrieves weekly reports and accuracy records. SQLite today, Postgr
 ### TechnicalAnalysisPort
 Computes technical indicators from raw OHLCV data. Returns TechnicalIndicators with composite signal.
 
-## Feature Groups (61 total — 45 in Phase 3A, 16 in Phase 3B)
+## Feature Groups (61 built — 45 in Phase 3A, 16 in Phase 3B; ~92 planned total with Phases 4A/4C/4D)
 
 | Group | Count | Source | Phase |
 |-------|-------|--------|-------|
@@ -343,3 +343,134 @@ Items to validate, test, and backtest in Phase 4, 5, 6, and future state. These 
 - [ ] **Dark pool activity:** Institutional block trades as signal. Requires paid data (Quandl/Nasdaq).
 - [ ] **VanEck BUZZ comparison benchmark:** Ongoing comparison — does our divergence approach outperform BUZZ's popularity approach on same universe?
 - [ ] **Ensemble weight optimization:** Bayesian optimization of model weights in ensemble. Compare vs equal-weight and accuracy-weighted.
+
+---
+
+## Portfolio platform enhancements (2026-05-30)
+
+**Reference:** [`../PORTFOLIO_TOOLS_PLAYBOOK.md`](../PORTFOLIO_TOOLS_PLAYBOOK.md) · Project 2 diagram
+
+These are **separate from** Phase 4–6 quant research above — focused on **employer-visible E2E completion** and light cloud tooling.
+
+### Apply-ready (finish E2E story)
+
+| Priority | Enhancement | Tool | Status |
+|----------|-------------|------|--------|
+| P0 | Publish backtest results in README | `reports/backtest_*.json` | JSON exists — README pending |
+| P0 | Permutation p-value + Sharpe vs SPY in README | evaluation.py output | Document measured numbers only |
+| P1 | Upload backtest + SHAP JSON to S3 | AWS S3 | Add `scripts/upload_artifacts.py` |
+| P1 | Document GitHub Actions cron as orchestration | GitHub Actions | Built — add README section (Airflow-equivalent narrative) |
+
+### Optional layers
+
+| Enhancement | Tool | Notes |
+|-------------|------|-------|
+| `Dockerfile` for reproducible `backtest` CLI | Docker | One-command reproduce for recruiters |
+| Phase 3B sentiment ablation table in README | Existing code | Marginal lift doc — even null result is valuable |
+| EC2 / Kubernetes | — | **Reject** |
+| Databricks | — | **Skip** — not a warehouse problem |
+
+```mermaid
+flowchart LR
+  subgraph done [Mostly built]
+    GHA[GitHub Actions cron]
+    BT[backtest CLI]
+    CACHE[SQLite cache]
+  end
+  subgraph next [Portfolio enhancements]
+    README[README Results section]
+    S3[(AWS S3 reports)]
+    DKR[Docker optional]
+  end
+  BT --> README --> S3
+  GHA --> README
+  BT -.-> DKR
+```
+
+---
+
+## Session 5: Expanded Intelligence Engine — Grilling Outcomes (2026-06-01)
+
+### Vision Expansion
+
+10-question grilling session expanded project from 3-phase sentiment experiment into a 5-signal-layer always-learning stock intelligence engine. Full design spec: `docs/superpowers/specs/2026-06-01-expanded-intelligence-engine-design.md`
+
+### Revised Phase Roadmap
+
+| Phase | Scope | Status | Depends On |
+|-------|-------|--------|------------|
+| 3A | Core technical engine (45 features, ensemble, walk-forward, SHAP) | ✅ Complete | — |
+| 3B Validation | Run existing sentiment pipeline end-to-end, fix breaks, ablation with real data | 🔴 Blocked — code-complete but never run | 3A |
+| P0 Completeness | README p-values + Sharpe vs SPY, S3 upload script, fix stale CLAUDE.md | 📋 Planned | 3A |
+| 3.5 | Expand sentiment (StockTwits + Google Trends + GDELT historical) + expand universe to 350 tickers | 📋 Planned | 3B Validation |
+| 4A | Fundamental valuation features (PEG, P/E, P/B, FCF, dividends, earnings) | 📋 Planned | 3.5 |
+| 4B | Portfolio holdings tracking + sell signals + stop-loss | 📋 Planned | 4A |
+| 4C | Cross-asset intelligence (correlation graph, lead-lag, supply chain, thematic cascades) | 📋 Planned | 4A |
+| 4D | Event-causal learning (news → sector → direction → magnitude → decay) | 📋 Planned | 4C |
+| 5 | Streamlit dashboard + recursive learning + adaptive strategy | 📋 Planned | 4B + 4D |
+
+### Five Signal Layers (updated from 2 to 5)
+
+| Layer | Features | Data Source | Phase |
+|-------|----------|-------------|-------|
+| Technical | 45 | yfinance OHLCV | ✅ 3A |
+| Sentiment | 14 + ~9 new | RSS, StockTwits, Google Trends, GDELT | 3B + 3.5 |
+| Fundamental | ~15 | yfinance ticker_info (PEG, P/E, P/B, FCF, margins, debt) | 4A |
+| Cross-Asset | ~10 | Price correlation matrix + supply chain graph | 4C |
+| Event-Causal | ~8 | LLM news classification + historical sector impact | 4D |
+
+### Key Decisions (ADRs 023-028)
+
+| ADR | Decision | Rationale |
+|-----|----------|-----------|
+| 023 | Expand ticker universe to ~350 (S&P 500 + NASDAQ-100) | 40 was Phase 3A constraint; sentiment discovers tickers with no technical history |
+| 024 | Historical sentiment via Google Trends + GDELT | No 4-week wait for live RSS; years of historical data exist |
+| 025 | Fundamental valuation features from yfinance | Data already fetched via get_ticker_info(), just not in feature matrix |
+| 026 | Portfolio holdings in SQLite + sell signal detection | Local, simple, manual CLI entry; brokerage API deferred to Phase 5/6 |
+| 027 | Hybrid cross-asset graph: auto-correlation + manual supply chain YAML | Discovers unknown correlations, human validates; avoids spurious signals |
+| 028 | Event-causal learning: LLM classification → historical sector impact → decay model | Learns "tariffs → energy+, tech-" with magnitude and duration |
+
+### New Adapters Planned
+
+| Adapter | Port | Phase |
+|---------|------|-------|
+| `adapters/data/google_trends_adapter.py` | BuzzDiscoveryPort | 3.5 |
+| `adapters/data/stocktwits_adapter.py` | BuzzDiscoveryPort | 3.5 |
+| `adapters/data/news_sentiment_adapter.py` | HistoricalSentimentPort (new) | 3.5 |
+| `adapters/ml/fundamental_feature_engineer.py` | FeatureEngineerPort | 4A |
+| `adapters/ml/correlation_analyzer.py` | New (CorrelationAnalyzerPort) | 4C |
+| `adapters/ml/event_classifier.py` | New (EventClassifierPort) | 4D |
+
+### New Domain Models Planned
+
+- `Holding` — symbol, quantity, purchase_price, purchase_date
+- `SellSignal` — symbol, signal_type, urgency, reasoning, confidence
+- `EventCategory` — enum of 10 news event types
+- `EventSectorImpact` — event → sector → direction → magnitude → duration → confidence
+
+### Cross-Asset Supply Chain Graph (Hybrid — ADR-027)
+
+Auto-discovered correlation clusters + manual YAML override in `config/supply_chains.yaml`:
+- semiconductors: AMAT/LRCX/KLAC → MU/WDC/SNDK/AMD/NVDA
+- space_defense: SpaceX catalyst → STM/HXL/IRDM/LUNR/ASTS/RKLB
+- pharma_supply_chain: PFE/JNJ → MCK/ABC/CAH → WMT/CVS/WBA
+- big_tech_ecosystem: AAPL/MSFT/GOOG → TSM/AVGO/QCOM
+- energy_chain: XOM/CVX → WMB/KMI → VLO/MPC (inverse: DAL/UAL/AAL)
+
+### Realistic Targets (agreed during grilling)
+
+| Metric | Target |
+|--------|--------|
+| Sentiment classification accuracy | 65-70% |
+| Stock direction prediction | 52-55% (over 50% random) |
+| Edge over technical-only | 2-5% lift |
+| Cross-asset cascade follow-through | 60-70% |
+| Sell signal precision | >60% |
+
+Honest null result remains valid — rigorous negative finding is equally impressive for portfolio.
+
+### Immediate Next Steps (in order)
+
+1. **P0 Portfolio Completeness** — README p-values + Sharpe, S3 upload script (plan exists: `docs/superpowers/plans/2026-06-01-p0-portfolio-completeness.md`)
+2. **Phase 3B Validation** — run full pipeline end-to-end, fix breaks, document results
+3. **Phase 3.5 Planning** — brainstorm/grill expanded sentiment sources, then write implementation plan
