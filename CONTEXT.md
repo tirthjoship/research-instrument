@@ -87,7 +87,7 @@ Persists and retrieves weekly reports and accuracy records. SQLite today, Postgr
 ### TechnicalAnalysisPort
 Computes technical indicators from raw OHLCV data. Returns TechnicalIndicators with composite signal.
 
-## Feature Groups (85 built — 45 technical, 24 sentiment, 16 fundamental; ~103 planned total with Phases 4C/4D)
+## Feature Groups (93 built — 45 technical, 24 sentiment, 16 fundamental, 8 cross-asset; ~101 planned total with Phase 4D)
 
 | Group | Count | Source | Phase |
 |-------|-------|--------|-------|
@@ -405,7 +405,7 @@ flowchart LR
 | 3.5 | Expand sentiment (StockTwits + Google Trends + GDELT historical) + expand universe to 350 tickers | ✅ Complete | 3B Validation |
 | 4A | Fundamental valuation features (PEG, P/E, P/B, FCF, dividends, earnings) | ✅ Complete | 3.5 |
 | 4B | Portfolio holdings tracking + sell signals + stop-loss | ✅ Complete | 4A |
-| 4C | Cross-asset intelligence (correlation graph, lead-lag, supply chain, thematic cascades) | 📋 Planned | 4A |
+| 4C | Cross-asset intelligence — correlation graph, Granger causality, 10 supply chain groups, 8 features | ✅ Complete | 4A |
 | 4D | Event-causal learning (news → sector → direction → magnitude → decay) | 📋 Planned | 4C |
 | 5 | Streamlit dashboard + recursive learning + adaptive strategy | 📋 Planned | 4B + 4D |
 
@@ -416,7 +416,7 @@ flowchart LR
 | Technical | 45 | yfinance OHLCV | ✅ 3A |
 | Sentiment | 24 | RSS, StockTwits, Google Trends, GDELT | ✅ 3B + 3.5 |
 | Fundamental | 16 | yfinance ticker_info (PEG, P/E, P/B, FCF, margins, debt) | ✅ 4A |
-| Cross-Asset | 8 | Correlation graph + Granger lead-lag + supply chain YAML (10 groups) | 4C |
+| Cross-Asset | 8 | Correlation graph + Granger lead-lag + supply chain YAML (10 groups) | ✅ 4C |
 | Event-Causal | ~8 | LLM news classification + historical sector impact | 4D |
 
 ### Key Decisions (ADRs 023-029)
@@ -478,5 +478,5 @@ Honest null result remains valid — rigorous negative finding is equally impres
 3. ~~Phase 3.5~~ — ✅ Complete. Google Trends + StockTwits + GDELT + 350 tickers. PR #10 merged.
 4. ~~Phase 4A~~ — ✅ Complete. 16 fundamental features. PR #11 merged.
 5. ~~Phase 4B~~ — ✅ Complete. Portfolio tracking + sell signals. PR #12 merged. 334 tests.
-6. **Phase 4C** — Cross-asset intelligence (correlation graph, lead-lag, supply chain, thematic cascades)
+6. ~~Phase 4C~~ — ✅ Complete. Correlation graph + Granger causality + 10 supply chain groups + 8 features. PR #13 merged. 371 tests.
 7. **Phase 4D** — Event-causal learning (news → sector impact mapping with decay)
