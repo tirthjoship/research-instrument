@@ -101,6 +101,10 @@ class YFinanceAdapter(CachingMixin):
             "beta": "beta",
             "dividendYield": "dividend_yield",
             "trailingAnnualDividendYield": "trailing_dividend_yield",
+            "pegRatio": "peg_ratio",
+            "freeCashflow": "free_cashflow",
+            "grossMargins": "gross_margins",
+            "operatingMargins": "operating_margins",
         }
 
         result: dict[str, float] = {}

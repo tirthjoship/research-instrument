@@ -102,7 +102,7 @@ Five hard stops — see `AGENTS.md` for full details:
 - Evaluation components — WalkForwardValidator, PermutationTester, TransactionCostModel, RegimeSplitter, DrawdownTracker
 - CLI — pretrain, run-tournament, evaluate-last-week, show-report commands
 - Config — us.yaml market config with macro symbols, sector ETFs, quality gates
-- Test suite — 262 tests passing, Hypothesis property tests, full fake suite
+- Test suite — 300 tests passing, Hypothesis property tests, full fake suite
 - CI workflows (test + lint + security) — 3 GitHub Actions
 - Pre-commit hooks — black, isort, mypy strict, ruff, gitleaks
 - Makefile — test, lint, typecheck, setup, check targets
@@ -136,6 +136,13 @@ Five hard stops — see `AGENTS.md` for full details:
 - 10 new sentiment features (24 total): google_trends_current/change/spike, stocktwits_volume/bullish/change, news_avg/volume/momentum/negative_spike
 - Daily scan pipeline wires all three new adapters
 - Test suite — 262 tests passing
+
+**Done (Phase 4A — Fundamental Valuation Features 2026-06-01):**
+- FundamentalFeatureEngineer — 16 features (PEG, P/E, P/B, FCF yield, margins, debt, earnings, valuation_z_score)
+- YFinance field_map expanded with pegRatio, freeCashflow, grossMargins, operatingMargins
+- Sector-relative metrics (pe_vs_sector, valuation_z_score) — sector context wired with empty list (sector batching in future phase)
+- Wired into pretraining and tournament pipelines (optional, backward compatible)
+- Test suite — 300 tests passing
 
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
 
