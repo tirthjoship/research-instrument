@@ -276,3 +276,33 @@ class SellSignal:
             )
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence must be in [0, 1]")
+
+
+_VALID_RELATIONSHIP_TYPES = frozenset(
+    {"auto_correlation", "supply_chain", "granger_causal"}
+)
+_VALID_EDGE_SOURCES = frozenset({"computed", "manual_yaml"})
+
+
+@dataclass(frozen=True)
+class CorrelationEdge:
+    """A directed relationship between two tickers."""
+
+    leader: str
+    follower: str
+    correlation: float  # [-1.0, 1.0]
+    lag_days: int  # 0-5
+    relationship_type: str  # auto_correlation | supply_chain | granger_causal
+    source: str  # computed | manual_yaml
+
+    def __post_init__(self) -> None:
+        if not -1.0 <= self.correlation <= 1.0:
+            raise ValueError("correlation must be in [-1.0, 1.0]")
+        if not 0 <= self.lag_days <= 5:
+            raise ValueError("lag_days must be in [0, 5]")
+        if self.relationship_type not in _VALID_RELATIONSHIP_TYPES:
+            raise ValueError(
+                f"relationship_type must be one of {_VALID_RELATIONSHIP_TYPES}"
+            )
+        if self.source not in _VALID_EDGE_SOURCES:
+            raise ValueError(f"source must be one of {_VALID_EDGE_SOURCES}")
