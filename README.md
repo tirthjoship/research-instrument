@@ -1,9 +1,9 @@
 # Multi-Modal Stock Recommender
 
-Production-grade ML system predicting multi-horizon stock returns using a multi-layer feature architecture: 45 technical features (Stage 1) + 24 sentiment/buzz/divergence features (Stage 2) + 16 fundamental valuation features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Portfolio tracking with automated sell signal detection (stop-loss, sentiment, technical breakdown). Built with hexagonal architecture and strict point-in-time enforcement.
+Production-grade ML system predicting multi-horizon stock returns using a 4-layer feature architecture: 45 technical (Stage 1) + 24 sentiment/buzz/divergence (Stage 2) + 16 fundamental valuation + 8 cross-asset intelligence features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Cross-asset correlation graph with Granger causality and supply chain propagation. Portfolio tracking with automated sell signal detection. Built with hexagonal architecture and strict point-in-time enforcement.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-334%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-371%20passing-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25+-brightgreen)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
@@ -24,11 +24,12 @@ Production-grade ML system predicting multi-horizon stock returns using a multi-
 
 1. **Multi-source buzz scan** — scans 6 RSS feeds, Google Trends (historical back to 2004), StockTwits (bullish/bearish ratio), and GDELT news sentiment (2015-present)
 2. Pulls 2-3 years of historical OHLCV, options, analyst, and macro data via yfinance
-3. Computes **85 features**: 45 technical (Stage 1) + 24 sentiment/buzz/divergence (Stage 2) + 16 fundamental valuation (Phase 4A)
+3. Computes **93 features**: 45 technical (Stage 1) + 24 sentiment/buzz/divergence (Stage 2) + 16 fundamental valuation + 8 cross-asset intelligence
 4. Trains **two-stage stacking**: Stage 1 (XGBoost + LightGBM + Ridge ensemble, frozen) → Stage 2 (XGBoost blending technicals + sentiment + fundamentals)
 5. Predicts return magnitude at **2-day, 5-day, and 10-day** horizons
 6. **Dynamic ticker discovery** via buzz acceleration — finds stocks where mentions are spiking, not just high
-7. Covers **~350 tickers** (S&P 500 + NASDAQ-100) via config-driven universe
+7. **Cross-asset intelligence** — correlation graph with Granger causality, supply chain propagation (10 groups, 80+ tickers), lead-lag signal detection
+8. Covers **~350 tickers** (S&P 500 + NASDAQ-100) via config-driven universe
 8. Grades predictions using multi-horizon threshold classification (Strong Buy → Immediate Sell)
 9. Evaluates with **permutation tests** (p<0.05), transaction costs, regime splits, drawdown tracking, and **three-way ablation** (tech-only vs +sentiment vs +sentiment+source-weights)
 10. **Source reliability tracking** — learns which news sources are directionally accurate over time
@@ -47,12 +48,13 @@ domain/                          # Pure business logic (stdlib only)
   models.py                      # Signal, Sentiment, BuzzSignal, SourceReliability,
                                  #   MultiHorizonPrediction, StockRecommendation,
                                  #   RecommendationGrade, AccuracyRecord,
-                                 #   EvaluationRun, WeeklyReport, Holding, SellSignal
+                                 #   EvaluationRun, WeeklyReport, Holding,
+                                 #   SellSignal, CorrelationEdge
   ports.py                       # MarketDataPort, SentimentPort, BuzzDiscoveryPort,
                                  #   SourceReliabilityPort, HistoricalSentimentPort,
-                                 #   HoldingsPort, TechnicalAnalysisPort,
-                                 #   StockPredictorPort, FeatureEngineerPort,
-                                 #   RecommendationStorePort
+                                 #   HoldingsPort, CrossAssetPort,
+                                 #   TechnicalAnalysisPort, StockPredictorPort,
+                                 #   FeatureEngineerPort, RecommendationStorePort
   services.py                    # grade_from_horizons(), validate_feature_matrix(),
                                  #   validate_data_freshness(), classify_horizon()
   exceptions.py                  # LookAheadBiasError, InsufficientDataError,
@@ -71,6 +73,8 @@ adapters/
     feature_engineer.py          # 45 technical features
     sentiment_feature_engineer.py # 24 sentiment/buzz/divergence features
     fundamental_feature_engineer.py # 16 valuation/financial health features
+    correlation_analyzer.py        # CrossAssetPort (NetworkX graph, Granger)
+    cross_asset_features.py        # 8 cross-asset intelligence features
     keyword_scorer.py            # SentimentPort (rule-based, instant)
     flan_t5_scorer.py            # SentimentPort (zero-shot NLP, MPS)
     xgboost_predictor.py         # StockPredictorPort (Stage 1)
@@ -100,6 +104,7 @@ application/
 
 config/
   markets/us.yaml                  # US market + sentiment configuration
+  relationships/supply_chain.yaml  # 10 supply chain groups (80+ tickers)
   tickers/sp500.txt                # ~503 S&P 500 constituents
   tickers/nasdaq100.txt            # ~101 NASDAQ-100 constituents
 ```
@@ -108,7 +113,7 @@ config/
 
 ---
 
-## Feature Groups (85 features)
+## Feature Groups (93 features)
 
 ### Layer 1 — Technical (45 features)
 
@@ -149,6 +154,19 @@ The **sentiment-price divergence** features are the core thesis signal: when sen
 | Earnings | 2 | last earnings surprise %, surprise streak |
 | Smart Money | 2 | institutional ownership change, insider net purchases (future) |
 | Composite | 1 | valuation_z_score (PEG + P/B + FCF yield vs sector) |
+
+### Layer 4 — Cross-Asset Intelligence (8 features)
+
+| Group | Count | Features |
+|-------|-------|----------|
+| Upstream Signal | 2 | upstream_leader_return_1d, upstream_leader_return_5d |
+| Cluster | 1 | cluster_momentum_1w (mean 5d return of correlation cluster peers) |
+| Lead-Lag | 2 | leader_follower_lag_signal, granger_lead_signal |
+| Divergence | 1 | supply_chain_divergence (ticker vs supply chain group) |
+| Regime | 1 | correlation_regime_shift (20d vs 60d avg pairwise correlation) |
+| Activation | 1 | thematic_activation (>3 peers moved same direction >1%) |
+
+Supply chain relationships (10 groups): semiconductors, big tech, energy (upstream/downstream/inverse), pharma, space/defense, retail, AI infrastructure/consumers, cloud/SaaS, financials, housing. Auto-discovered via hierarchical clustering + Granger causality, with manual YAML overrides.
 
 ---
 
@@ -205,7 +223,7 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: 334 passed
+# Expected: 371 passed
 ```
 
 ### CLI Usage
@@ -293,9 +311,12 @@ make check
 | Holdings models | 14 | Holding/SellSignal validation, immutability |
 | Holdings store | 7 | SQLite CRUD: add/get/list/remove/duplicate/notes |
 | Monitor holdings | 12 | Stop-loss, sentiment, technical, multi-signal, empty |
-| Integration | 9 | Multi-source pipeline, fundamental compose, Phase 3B validation, holdings E2E |
+| Correlation edge | 11 | CorrelationEdge validation, bounds, immutability |
+| Correlation analyzer | 11 | Correlation matrix, clustering, Granger, YAML merge |
+| Cross-asset features | 12 | 8 features, NaN handling, thematic activation |
+| Integration | 12 | Multi-source, fundamental, Phase 3B, holdings, cross-asset E2E |
 | yfinance adapter | 12 | Caching, signals, indicators, expanded field_map |
-| **Total** | **334** | |
+| **Total** | **371** | |
 
 ---
 
@@ -386,7 +407,7 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 3.5 | ✅ Complete | **Expanded sentiment sources** — Google Trends (2004+), StockTwits, GDELT (2015+), 10 new features (24 total), ticker universe expanded to ~350 (S&P 500 + NASDAQ-100) |
 | 4A | ✅ Complete | **Fundamental valuation** — 16 features (PEG, P/E, P/B, FCF yield, margins, earnings, valuation_z_score), wired into pipelines |
 | 4B | ✅ Complete | **Portfolio tracking + sell signals** — Holding/SellSignal models, HoldingsPort, MonitorHoldingsUseCase (stop-loss/sentiment/technical), 4 CLI commands, risk config |
-| 4C | 📋 Planned | Cross-asset intelligence — lead-lag correlations, sector contagion |
+| 4C | ✅ Complete | **Cross-asset intelligence** — CorrelationAnalyzer (correlation matrix, Ward clustering, Granger causality w/ BH correction), 8 features, 10 supply chain groups, CrossAssetPort |
 | 4D | 📋 Planned | Event-causal learning — news→sector impact mapping with decay |
 | 5 | 📋 Planned | Dashboard & polish — Streamlit, watchlist, paper trading |
 
@@ -394,7 +415,7 @@ Four stock-selection baselines are ready for comparison against the ML model:
 
 ## Architecture Decision Records
 
-28 ADRs in `docs/adr/` documenting all major design choices:
+29 ADRs in `docs/adr/` documenting all major design choices:
 
 | ADR | Decision |
 |-----|----------|
@@ -420,6 +441,7 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 026 | Portfolio holdings SQLite schema + sell signal detection |
 | 027 | Hybrid cross-asset graph correlation + supply chain |
 | 028 | Event-causal learning: news → sector impact with decay |
+| 029 | Cross-asset feature architecture: dual adapter + Granger pre-filter |
 
 ---
 
@@ -429,7 +451,7 @@ Three GitHub Actions workflows automate quality gates:
 
 | Workflow | Trigger | What it does |
 |----------|---------|-------------|
-| `test.yml` | Push/PR to develop | Runs 334 tests, enforces 90% coverage |
+| `test.yml` | Push/PR to develop | Runs 371 tests, enforces 90% coverage |
 | `lint.yml` | Push/PR to develop | black, isort, ruff, mypy strict |
 | `security.yml` | Push/PR to develop | gitleaks secret scanning |
 
@@ -447,9 +469,11 @@ Future: `daily-scan.yml` cron workflow for automated RSS buzz collection.
 >
 > **Layer 3 (Fundamental)** adds 16 valuation features: PEG, P/E vs sector median, FCF yield, margins, earnings surprises, and a composite valuation z-score. These capture whether a stock is cheap/expensive relative to its sector — a different signal from momentum or sentiment.
 >
+> **Layer 4 (Cross-Asset)** adds 8 features from a correlation graph built with Granger causality. The system auto-discovers which stocks move together using hierarchical clustering, then tests for lead-lag relationships. Manual supply chain overrides (10 groups, 80+ tickers) capture domain knowledge like 'semiconductor equipment makers lead chip producers by 1-2 days.' Features include upstream leader returns, cluster momentum, and supply chain divergence.
+>
 > **Portfolio Management** layer adds holdings tracking with automated sell signal detection — stop-loss triggers, negative sentiment spikes, and technical breakdowns. The system doesn't just predict what to buy; it monitors what you hold and tells you when to sell.
 >
-> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 334 tests, mypy strict, full CI/CD."
+> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 371 tests, mypy strict, full CI/CD."
 
 ---
 
