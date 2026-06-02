@@ -169,6 +169,14 @@ Five hard stops — see `AGENTS.md` for full details:
 - Wired into pretraining and tournament pipelines (optional, backward compatible)
 - Test suite — 410+ tests passing
 
-**Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
+**Done (Phase 5 — Decision Dashboard 2026-06-02):**
+- 6-tab Streamlit dashboard (Command Center, Model Confidence, Signal Breakdown, Positions, Opportunities, Market Pulse)
+- Shared Plotly chart builders (accuracy line, grade donut, sector heatmap, decay curve, SHAP bar, ablation bar)
+- Dashboard formatters (grade colors, direction icons, urgency badges, percentages, freshness)
+- Data loader with graceful degradation (empty states, missing DB/files)
+- Watchlist SQLite table + 3 CLI commands (add-watchlist, list-watchlist, remove-watchlist)
+- Metric card and action card Streamlit components
+- Smoke + integration tests, all pre-commit hooks pass
+- Test suite — 470+ tests passing
 
-**Planned (Phase 5):** Dashboard & Polish — Streamlit, watchlist, Indian market, paper trading
+**Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
