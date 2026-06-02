@@ -45,6 +45,7 @@ class PretrainingUseCase:
         store: RecommendationStorePort,
         tickers: list[str],
         macro_symbols: dict[str, str],
+        fundamental_engineer: Any | None = None,  # Phase 4A
     ) -> None:
         self._market_data = market_data
         self._tech = technical_analysis
@@ -53,6 +54,7 @@ class PretrainingUseCase:
         self._store = store
         self._tickers = tickers
         self._macro_symbols = macro_symbols
+        self._fundamental = fundamental_engineer
 
     def execute(
         self,
@@ -192,6 +194,15 @@ class PretrainingUseCase:
             sector_signals=None,
         )
 
+        # Phase 4A: Add fundamental features
+        if self._fundamental is not None:
+            fundamental_features = self._fundamental.compute(
+                ticker_info=ticker_info,
+                sector_ticker_infos=[],  # Sector context added in future phase
+                analyst_data=analyst,
+            )
+            features.update(fundamental_features)
+
         # Compute target returns (actual future returns)
         # Use last trading day's price as base (not month_end which may be weekend)
         last_price = signals[-1].price
@@ -265,6 +276,7 @@ class WeeklyTournamentUseCase:
         sentiment_scorer: Any | None = None,
         stage2_predictor: Any | None = None,
         buzz_store: Any | None = None,
+        fundamental_engineer: Any | None = None,  # Phase 4A
     ) -> None:
         self._market_data = market_data
         self._tech = technical_analysis
@@ -277,6 +289,7 @@ class WeeklyTournamentUseCase:
         self._sentiment = sentiment_scorer
         self._stage2 = stage2_predictor
         self._buzz_store = buzz_store
+        self._fundamental = fundamental_engineer
 
     def execute(self, prediction_date: datetime) -> WeeklyReport:
         """Run weekly tournament and return report."""
@@ -346,6 +359,15 @@ class WeeklyTournamentUseCase:
             macro_signals=macro_signals,
             sector_signals=None,
         )
+
+        # Phase 4A: Add fundamental features
+        if self._fundamental is not None:
+            fundamental_features = self._fundamental.compute(
+                ticker_info=ticker_info,
+                sector_ticker_infos=[],  # Sector context added in future phase
+                analyst_data=analyst,
+            )
+            features.update(fundamental_features)
 
         # Predict each horizon with confidence
         feature_row = [features]

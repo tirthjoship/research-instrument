@@ -18,6 +18,7 @@ from adapters.data.sqlite_store import SQLiteStore
 from adapters.data.yfinance_adapter import YFinanceAdapter
 from adapters.ml.ensemble_predictor import EnsemblePredictor
 from adapters.ml.feature_engineer import FeatureEngineer
+from adapters.ml.fundamental_feature_engineer import FundamentalFeatureEngineer
 from application.backtest_runner import run_backtest_report
 from application.use_cases import (
     PretrainingUseCase,
@@ -51,6 +52,7 @@ def _build_dependencies(market: str, use_cache: bool = False) -> dict[str, Any]:
         "market_data": adapter,
         "technical_analysis": adapter,  # same adapter, implements both ports
         "feature_engineer": fe,
+        "fundamental_engineer": FundamentalFeatureEngineer(),
         "predictors": predictors,
         "store": store,
         "macro_symbols": macro_symbols,
@@ -83,6 +85,7 @@ def pretrain(market: str, start: str, end: str) -> None:
         store=deps["store"],
         tickers=tickers,
         macro_symbols=deps["macro_symbols"],
+        fundamental_engineer=deps["fundamental_engineer"],
     )
 
     logger.info(f"Starting pretraining: {start} to {end}, {len(tickers)} tickers")
@@ -110,6 +113,7 @@ def run_tournament(market: str, date: str | None) -> None:
         tickers=tickers,
         macro_symbols=deps["macro_symbols"],
         market=market,
+        fundamental_engineer=deps["fundamental_engineer"],
     )
 
     report = use_case.execute(prediction_date=prediction_date)
@@ -172,6 +176,7 @@ def backtest(market: str, start: str, end: str) -> None:
         store=deps["store"],
         tickers=tickers,
         macro_symbols=deps["macro_symbols"],
+        fundamental_engineer=deps["fundamental_engineer"],
     )
     use_case.execute(start_month=start, end_month=end)
 
