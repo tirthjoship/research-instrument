@@ -407,7 +407,7 @@ flowchart LR
 | 4B | Portfolio holdings tracking + sell signals + stop-loss | ✅ Complete | 4A |
 | 4C | Cross-asset intelligence — correlation graph, Granger causality, 10 supply chain groups, 8 features | ✅ Complete | 4A |
 | 4D | Event-causal learning — Gemini classification, exponential decay impact, 8 features | ✅ Complete | 4C |
-| 5 | Decision dashboard — 6-tab Streamlit (Command Center, Model Confidence, Signal Breakdown, Positions, Opportunities, Market Pulse) | 📋 Spec Written | 4D |
+| 5 | Decision dashboard — 6-tab Streamlit (Command Center, Model Confidence, Signal Breakdown, Positions, Opportunities, Market Pulse) | ✅ Complete | 4D |
 
 ### Five Signal Layers (updated from 2 to 5)
 
@@ -442,8 +442,10 @@ flowchart LR
 | `adapters/data/gdelt_sentiment_adapter.py` | HistoricalSentimentPort | ✅ Phase 3.5 |
 | `adapters/ml/fundamental_feature_engineer.py` | FeatureEngineerPort | ✅ Phase 4A |
 | `application/monitor_holdings.py` | MonitorHoldingsUseCase | ✅ Phase 4B |
-| `adapters/ml/correlation_analyzer.py` | CorrelationAnalyzerPort (new) | 📋 Phase 4C |
-| `adapters/ml/event_classifier.py` | EventClassifierPort (new) | 📋 Phase 4D |
+| `adapters/ml/correlation_analyzer.py` | CorrelationAnalyzerPort | ✅ Phase 4C |
+| `adapters/ml/gemini_event_classifier.py` | EventClassifierPort | ✅ Phase 4D |
+| `adapters/visualization/dashboard.py` | Streamlit dashboard (6 tabs) | ✅ Phase 5 |
+| `adapters/visualization/data_loader.py` | SQLite + JSON loading | ✅ Phase 5 |
 
 ### New Domain Models
 
@@ -482,4 +484,4 @@ Honest null result remains valid — rigorous negative finding is equally impres
 5. ~~Phase 4B~~ — ✅ Complete. Portfolio tracking + sell signals. PR #12 merged. 334 tests.
 6. ~~Phase 4C~~ — ✅ Complete. Correlation graph + Granger causality + 10 supply chain groups + 8 features. PR #13 merged. 371 tests.
 7. ~~Phase 4D~~ — ✅ Complete. Gemini event classification + exponential decay impact + 8 features. PR #14 merged. 410 tests.
-8. **Phase 5** — Dashboard & polish (Streamlit, watchlist, paper trading)
+8. ~~Phase 5~~ — ✅ Complete. 6-tab Streamlit dashboard, Plotly charts, watchlist, 472 tests. PR #15 merged.

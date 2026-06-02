@@ -1,9 +1,9 @@
 # Multi-Modal Stock Recommender
 
-Production-grade ML system predicting multi-horizon stock returns using a 5-layer feature architecture: 45 technical (Stage 1) + 24 sentiment/buzz/divergence (Stage 2) + 16 fundamental valuation + 8 cross-asset intelligence + 8 event-causal features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Cross-asset correlation graph with Granger causality. Event-causal learning with Gemini-classified news and exponential decay impact modeling. Portfolio tracking with automated sell signal detection. Built with hexagonal architecture and strict point-in-time enforcement.
+Production-grade ML system predicting multi-horizon stock returns using a 5-layer feature architecture: 45 technical (Stage 1) + 24 sentiment/buzz/divergence (Stage 2) + 16 fundamental valuation + 8 cross-asset intelligence + 8 event-causal features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Cross-asset correlation graph with Granger causality. Event-causal learning with Gemini-classified news and exponential decay impact modeling. Portfolio tracking with automated sell signal detection. 6-tab Streamlit decision dashboard with interactive Plotly charts. Built with hexagonal architecture and strict point-in-time enforcement.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-410%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-472%20passing-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25+-brightgreen)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
@@ -35,7 +35,8 @@ Production-grade ML system predicting multi-horizon stock returns using a 5-laye
 10. **Source reliability tracking** — learns which news sources are directionally accurate over time
 11. Stores results in SQLite, caches all raw data for reproducibility
 12. **Portfolio tracking** — add/remove holdings, automated sell signal detection (stop-loss, negative sentiment, technical breakdown)
-13. Runs via **CLI** (daily-scan + weekly tournament + portfolio management)
+13. **Decision dashboard** — 6-tab Streamlit app (Command Center, Model Confidence, Signal Breakdown, Positions, Opportunities, Market Pulse) with interactive Plotly charts
+14. Runs via **CLI** (daily-scan + weekly tournament + portfolio management + dashboard)
 
 ---
 
@@ -67,7 +68,7 @@ adapters/
     google_trends_adapter.py     # BuzzDiscoveryPort (pytrends, historical)
     stocktwits_adapter.py        # BuzzDiscoveryPort (free API, bull/bear)
     gdelt_sentiment_adapter.py   # HistoricalSentimentPort (GDELT DOC API)
-    sqlite_store.py              # RecommendationStorePort + HoldingsPort (7 tables)
+    sqlite_store.py              # RecommendationStorePort + HoldingsPort (8 tables)
     cache_mixin.py               # Append-only raw data cache (ADR-017)
   ml/
     feature_engineer.py          # 45 technical features
@@ -85,6 +86,20 @@ adapters/
     ridge_predictor.py           # StockPredictorPort (Stage 1)
     ensemble_predictor.py        # Weighted XGB + LGBM + Ridge (Stage 1)
     stage2_predictor.py          # Stage 2 stacking (technicals + sentiment)
+  visualization/
+    dashboard.py                 # Streamlit entry point (6-tab router)
+    data_loader.py               # SQLite + JSON loading with graceful defaults
+    components/
+      charts.py                  # 7 Plotly builders (accuracy, donut, heatmap, decay, SHAP, ablation)
+      formatters.py              # Grade colors, icons, urgency badges, freshness
+      metrics.py                 # Metric card + action card components
+    pages/
+      command_center.py          # Tab 1: Today's actions, alerts, freshness
+      model_confidence.py        # Tab 2: Backtest metrics, SHAP, ablation, limitations
+      signal_breakdown.py        # Tab 3: Per-ticker 5-layer signal view
+      positions.py               # Tab 4: Holdings, sell signals
+      opportunities.py           # Tab 5: Ranked picks, watchlist
+      market_pulse.py            # Tab 6: Events, sector momentum, cascades
 
 application/
   use_cases.py                   # PretrainingUseCase, WeeklyTournamentUseCase,
@@ -101,7 +116,8 @@ application/
   cli.py                         # Click CLI (daily-scan, pretrain, run-tournament,
                                  #   evaluate, show-report, backtest, shap-report,
                                  #   add-holding, list-holdings, remove-holding,
-                                 #   monitor-holdings)
+                                 #   monitor-holdings, add-watchlist, list-watchlist,
+                                 #   remove-watchlist)
 
   ticker_universe.py               # Config-driven ticker loader (S&P 500 + NASDAQ-100)
 
@@ -231,7 +247,7 @@ cd multi-modal-stock-recommender
 conda create -n multi-modal-stock-ml python=3.12 -y
 conda activate multi-modal-stock-ml
 
-pip install -e ".[dev]"
+pip install -e ".[dev,dashboard]"
 pre-commit install
 ```
 
@@ -239,7 +255,7 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: 410 passed
+# Expected: 472 passed
 ```
 
 ### CLI Usage
@@ -276,6 +292,14 @@ python -m application.cli remove-holding NVDA
 
 # Monitor holdings for sell signals (stop-loss, sentiment, technical breakdown)
 python -m application.cli monitor-holdings --market us
+
+# Watchlist management
+python -m application.cli add-watchlist TSLA --notes="earnings play"
+python -m application.cli list-watchlist
+python -m application.cli remove-watchlist TSLA
+
+# Launch decision dashboard (requires dashboard extras)
+streamlit run adapters/visualization/dashboard.py
 ```
 
 ---
@@ -334,9 +358,14 @@ make check
 | Gemini classifier | 6 | Mocked API, batch, error handling, prompt content |
 | Event impact analyzer | 9 | Learning, decay computation, YAML loading |
 | Event-causal features | 10 | 8 features, edge cases |
-| Integration | 15 | Multi-source, fundamental, Phase 3B, holdings, cross-asset, event E2E |
+| Integration | 16 | Multi-source, fundamental, Phase 3B, holdings, cross-asset, event, dashboard E2E |
 | yfinance adapter | 12 | Caching, signals, indicators, expanded field_map |
-| **Total** | **410** | |
+| Dashboard formatters | 22 | Grade colors, icons, urgency badges, percentages, freshness |
+| Dashboard charts | 14 | Plotly builders: accuracy, donut, heatmap, decay, SHAP, ablation |
+| Dashboard data loader | 15 | SQLite + JSON loading, graceful defaults, missing DB handling |
+| Dashboard smoke | 4 | Import verification for all visualization modules |
+| Watchlist | 6 | SQLite CRUD: add, upsert dedup, remove, empty, dict structure |
+| **Total** | **472** | |
 
 ---
 
@@ -429,7 +458,7 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 4B | ✅ Complete | **Portfolio tracking + sell signals** — Holding/SellSignal models, HoldingsPort, MonitorHoldingsUseCase (stop-loss/sentiment/technical), 4 CLI commands, risk config |
 | 4C | ✅ Complete | **Cross-asset intelligence** — CorrelationAnalyzer (correlation matrix, Ward clustering, Granger causality w/ BH correction), 8 features, 10 supply chain groups, CrossAssetPort |
 | 4D | ✅ Complete | **Event-causal learning** — Gemini event classification (10 categories), exponential decay impact learning, 8 features, event-sector mapping |
-| 5 | 📋 Planned | Dashboard & polish — Streamlit, watchlist, paper trading |
+| 5 | ✅ Complete | **Decision dashboard** — 6-tab Streamlit (Command Center, Model Confidence, Signal Breakdown, Positions, Opportunities, Market Pulse), Plotly charts, watchlist, graceful empty states |
 
 ---
 
@@ -473,7 +502,7 @@ Three GitHub Actions workflows automate quality gates:
 
 | Workflow | Trigger | What it does |
 |----------|---------|-------------|
-| `test.yml` | Push/PR to develop | Runs 410 tests, enforces 90% coverage |
+| `test.yml` | Push/PR to develop | Runs 472 tests, enforces 90% coverage |
 | `lint.yml` | Push/PR to develop | black, isort, ruff, mypy strict |
 | `security.yml` | Push/PR to develop | gitleaks secret scanning |
 
@@ -497,7 +526,9 @@ Future: `daily-scan.yml` cron workflow for automated RSS buzz collection.
 >
 > **Portfolio Management** layer adds holdings tracking with automated sell signal detection — stop-loss triggers, negative sentiment spikes, and technical breakdowns. The system doesn't just predict what to buy; it monitors what you hold and tells you when to sell.
 >
-> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 410 tests, mypy strict, full CI/CD."
+> **Decision Dashboard** ties it all together — a 6-tab Streamlit app that synthesizes all 5 signal layers into actionable decisions. The Command Center shows 'what should I do today' with prioritized actions. Model Confidence displays honest backtest results with SHAP importance and ablation charts. Signal Breakdown lets you drill into any ticker across all 5 layers. Every tab degrades gracefully when data is missing, showing CLI commands to populate it.
+>
+> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 472 tests, mypy strict, full CI/CD."
 
 ---
 
