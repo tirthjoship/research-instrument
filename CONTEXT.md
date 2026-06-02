@@ -87,7 +87,7 @@ Persists and retrieves weekly reports and accuracy records. SQLite today, Postgr
 ### TechnicalAnalysisPort
 Computes technical indicators from raw OHLCV data. Returns TechnicalIndicators with composite signal.
 
-## Feature Groups (93 built — 45 technical, 24 sentiment, 16 fundamental, 8 cross-asset; ~101 planned total with Phase 4D)
+## Feature Groups (101 built — 45 technical, 24 sentiment, 16 fundamental, 8 cross-asset, 8 event-causal)
 
 | Group | Count | Source | Phase |
 |-------|-------|--------|-------|
@@ -406,7 +406,7 @@ flowchart LR
 | 4A | Fundamental valuation features (PEG, P/E, P/B, FCF, dividends, earnings) | ✅ Complete | 3.5 |
 | 4B | Portfolio holdings tracking + sell signals + stop-loss | ✅ Complete | 4A |
 | 4C | Cross-asset intelligence — correlation graph, Granger causality, 10 supply chain groups, 8 features | ✅ Complete | 4A |
-| 4D | Event-causal learning (news → sector → direction → magnitude → decay) | 📋 Planned | 4C |
+| 4D | Event-causal learning — Gemini classification, exponential decay impact, 8 features | ✅ Complete | 4C |
 | 5 | Streamlit dashboard + recursive learning + adaptive strategy | 📋 Planned | 4B + 4D |
 
 ### Five Signal Layers (updated from 2 to 5)
@@ -417,7 +417,7 @@ flowchart LR
 | Sentiment | 24 | RSS, StockTwits, Google Trends, GDELT | ✅ 3B + 3.5 |
 | Fundamental | 16 | yfinance ticker_info (PEG, P/E, P/B, FCF, margins, debt) | ✅ 4A |
 | Cross-Asset | 8 | Correlation graph + Granger lead-lag + supply chain YAML (10 groups) | ✅ 4C |
-| Event-Causal | ~8 | LLM news classification + historical sector impact | 4D |
+| Event-Causal | 8 | Gemini event classification + exponential decay impact learning | ✅ 4D |
 
 ### Key Decisions (ADRs 023-029)
 
@@ -480,4 +480,5 @@ Honest null result remains valid — rigorous negative finding is equally impres
 4. ~~Phase 4A~~ — ✅ Complete. 16 fundamental features. PR #11 merged.
 5. ~~Phase 4B~~ — ✅ Complete. Portfolio tracking + sell signals. PR #12 merged. 334 tests.
 6. ~~Phase 4C~~ — ✅ Complete. Correlation graph + Granger causality + 10 supply chain groups + 8 features. PR #13 merged. 371 tests.
-7. **Phase 4D** — Event-causal learning (news → sector impact mapping with decay)
+7. ~~Phase 4D~~ — ✅ Complete. Gemini event classification + exponential decay impact + 8 features. PR #14 merged. 410 tests.
+8. **Phase 5** — Dashboard & polish (Streamlit, watchlist, paper trading)
