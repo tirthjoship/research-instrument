@@ -128,6 +128,14 @@ CREATE TABLE IF NOT EXISTS holdings (
     notes TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS watchlist (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol TEXT NOT NULL UNIQUE,
+    added_date TEXT NOT NULL,
+    notes TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 
@@ -498,6 +506,35 @@ class SQLiteStore:
             purchase_date=row[3],
             notes=row[4] or "",
         )
+
+    def add_watchlist(self, symbol: str, notes: str = "") -> None:
+        """Add or update a symbol on the watchlist."""
+        self._conn.execute(
+            """INSERT INTO watchlist (symbol, added_date, notes)
+               VALUES (?, date('now'), ?)
+               ON CONFLICT(symbol) DO UPDATE SET notes = excluded.notes""",
+            (symbol.upper(), notes),
+        )
+        self._conn.commit()
+
+    def remove_watchlist(self, symbol: str) -> None:
+        """Remove a symbol from the watchlist."""
+        self._conn.execute("DELETE FROM watchlist WHERE symbol = ?", (symbol.upper(),))
+        self._conn.commit()
+
+    def get_watchlist(self) -> list[dict[str, str]]:
+        """Return all watchlist items as dicts."""
+        rows = self._conn.execute(
+            "SELECT symbol, added_date, notes FROM watchlist ORDER BY symbol"
+        ).fetchall()
+        return [
+            {
+                "symbol": r["symbol"],
+                "added_date": r["added_date"],
+                "notes": r["notes"] or "",
+            }
+            for r in rows
+        ]
 
     def _row_to_recommendation(self, r: sqlite3.Row) -> StockRecommendation:
         pred = MultiHorizonPrediction(
