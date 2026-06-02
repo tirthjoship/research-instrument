@@ -534,6 +534,42 @@ def monitor_holdings(market: str) -> None:
         click.echo(f"     {s.reasoning} (confidence: {s.confidence:.0%})")
 
 
+@cli.command("add-watchlist")
+@click.argument("symbol")
+@click.option("--notes", default="", help="Optional notes")
+def add_watchlist(symbol: str, notes: str) -> None:
+    """Add a symbol to the watchlist."""
+    deps = _build_dependencies("us")
+    store = deps["store"]
+    store.add_watchlist(symbol.upper(), notes=notes)
+    click.echo(f"Added to watchlist: {symbol.upper()}")
+
+
+@cli.command("list-watchlist")
+def list_watchlist() -> None:
+    """List all watchlist symbols."""
+    deps = _build_dependencies("us")
+    store = deps["store"]
+    items = store.get_watchlist()
+    if not items:
+        click.echo("Watchlist is empty.")
+        return
+    click.echo(f"\n{'Symbol':<8} {'Added':<12} {'Notes'}")
+    click.echo("-" * 40)
+    for item in items:
+        click.echo(f"{item['symbol']:<8} {item['added_date']:<12} {item['notes']}")
+
+
+@cli.command("remove-watchlist")
+@click.argument("symbol")
+def remove_watchlist_cmd(symbol: str) -> None:
+    """Remove a symbol from the watchlist."""
+    deps = _build_dependencies("us")
+    store = deps["store"]
+    store.remove_watchlist(symbol.upper())
+    click.echo(f"Removed from watchlist: {symbol.upper()}")
+
+
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     """Load ticker universe from config files, with hardcoded fallback."""
     config_dir = Path(__file__).parent.parent / "config" / "tickers"
