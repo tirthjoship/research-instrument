@@ -109,6 +109,7 @@ omit = [
     "application/backtest_runner.py",
     "application/shap_analysis.py",
     "adapters/data/yfinance_adapter.py",
+    "adapters/ml/gemini_event_classifier.py",
 ]
 
 [tool.coverage.report]
@@ -117,4 +118,5 @@ omit = [
     "application/backtest_runner.py",
     "application/shap_analysis.py",
     "adapters/data/yfinance_adapter.py",
+    "adapters/ml/gemini_event_classifier.py",
 ]
