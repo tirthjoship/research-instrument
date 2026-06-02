@@ -32,6 +32,10 @@ eval = []
 s3 = [
     "boto3>=1.28",
 ]
+dashboard = [
+    "streamlit>=1.30.0",
+    "plotly>=5.18.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
@@ -84,6 +88,8 @@ module = [
     "statsmodels.*",
     "boto3.*",
     "botocore.*",
+    "streamlit.*",
+    "plotly.*",
 ]
 ignore_missing_imports = true
 
@@ -108,8 +114,11 @@ omit = [
     "application/cli.py",
     "application/backtest_runner.py",
     "application/shap_analysis.py",
+    "application/use_cases.py",
+    "application/validate_phase3b.py",
     "adapters/data/yfinance_adapter.py",
     "adapters/ml/gemini_event_classifier.py",
+    "adapters/visualization/*",
 ]
 
 [tool.coverage.report]
@@ -117,6 +126,9 @@ omit = [
     "application/cli.py",
     "application/backtest_runner.py",
     "application/shap_analysis.py",
+    "application/use_cases.py",
+    "application/validate_phase3b.py",
     "adapters/data/yfinance_adapter.py",
     "adapters/ml/gemini_event_classifier.py",
+    "adapters/visualization/*",
 ]
