@@ -430,6 +430,7 @@ flowchart LR
 | 027 | Hybrid cross-asset graph: auto-correlation + manual supply chain YAML | Discovers unknown correlations, human validates; avoids spurious signals |
 | 028 | Event-causal learning: LLM classification → historical sector impact → decay model | Learns "tariffs → energy+, tech-" with magnitude and duration |
 | 029 | Cross-asset feature architecture: CrossAssetPort + dual adapter + Granger pre-filter | Correlation >0.65 pre-filter → Granger causality. 10 supply chain groups. Separate CorrelationAnalyzer + CrossAssetFeatureEngineer |
+| 030 | Event-causal learning: Gemini free tier + empirical impact + exponential decay | 10 event categories, bootstrap impact table from GDELT, learned half-life per category×sector |
 
 ### Adapters
 
