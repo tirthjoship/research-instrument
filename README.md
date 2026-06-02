@@ -435,7 +435,7 @@ Four stock-selection baselines are ready for comparison against the ML model:
 
 ## Architecture Decision Records
 
-30 ADRs in `docs/adr/` documenting all major design choices:
+31 ADRs in `docs/adr/` documenting all major design choices:
 
 | ADR | Decision |
 |-----|----------|
@@ -463,6 +463,7 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 028 | Event-causal learning: news → sector impact with decay |
 | 029 | Cross-asset feature architecture: dual adapter + Granger pre-filter |
 | 030 | Event-causal learning: Gemini free tier + empirical impact + exponential decay |
+| 031 | Decision dashboard: 6-tab Streamlit + Plotly, command center first |
 
 ---
 
