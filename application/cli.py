@@ -56,12 +56,21 @@ def _build_dependencies(market: str, use_cache: bool = False) -> dict[str, Any]:
     )
     cross_asset_engineer = CrossAssetFeatureEngineer(cross_asset=analyzer)
 
+    from adapters.ml.event_causal_features import EventCausalFeatureEngineer
+    from adapters.ml.event_impact_analyzer import EventImpactAnalyzer
+
+    impact_analyzer = EventImpactAnalyzer(
+        sector_mapping_path=str(Path("config/events/sector_mapping.yaml"))
+    )
+    event_causal_engineer = EventCausalFeatureEngineer(impact_analyzer=impact_analyzer)
+
     return {
         "market_data": adapter,
         "technical_analysis": adapter,  # same adapter, implements both ports
         "feature_engineer": fe,
         "fundamental_engineer": FundamentalFeatureEngineer(),
         "cross_asset_engineer": cross_asset_engineer,
+        "event_causal_engineer": event_causal_engineer,
         "predictors": predictors,
         "store": store,
         "macro_symbols": macro_symbols,
@@ -96,6 +105,7 @@ def pretrain(market: str, start: str, end: str) -> None:
         macro_symbols=deps["macro_symbols"],
         fundamental_engineer=deps["fundamental_engineer"],
         cross_asset_engineer=deps["cross_asset_engineer"],
+        event_causal_engineer=deps["event_causal_engineer"],
     )
 
     logger.info(f"Starting pretraining: {start} to {end}, {len(tickers)} tickers")
@@ -125,6 +135,7 @@ def run_tournament(market: str, date: str | None) -> None:
         market=market,
         fundamental_engineer=deps["fundamental_engineer"],
         cross_asset_engineer=deps["cross_asset_engineer"],
+        event_causal_engineer=deps["event_causal_engineer"],
     )
 
     report = use_case.execute(prediction_date=prediction_date)
@@ -189,6 +200,7 @@ def backtest(market: str, start: str, end: str) -> None:
         macro_symbols=deps["macro_symbols"],
         fundamental_engineer=deps["fundamental_engineer"],
         cross_asset_engineer=deps["cross_asset_engineer"],
+        event_causal_engineer=deps["event_causal_engineer"],
     )
     use_case.execute(start_month=start, end_month=end)
 

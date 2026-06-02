@@ -47,6 +47,7 @@ class PretrainingUseCase:
         macro_symbols: dict[str, str],
         fundamental_engineer: Any | None = None,  # Phase 4A
         cross_asset_engineer: Any | None = None,  # Phase 4C
+        event_causal_engineer: Any | None = None,  # Phase 4D
     ) -> None:
         self._market_data = market_data
         self._tech = technical_analysis
@@ -57,6 +58,7 @@ class PretrainingUseCase:
         self._macro_symbols = macro_symbols
         self._fundamental = fundamental_engineer
         self._cross_asset = cross_asset_engineer
+        self._event_causal = event_causal_engineer
 
     def execute(
         self,
@@ -232,6 +234,18 @@ class PretrainingUseCase:
             )
             features.update(cross_features)
 
+        # Phase 4D: Add event-causal features
+        if self._event_causal is not None:
+            sector = ticker_info.get("sector", "") if ticker_info else ""
+            if sector:
+                event_features = self._event_causal.compute(
+                    sector=sector,
+                    current_date=prediction_time.strftime("%Y-%m-%d"),
+                    recent_events=getattr(self, "_recent_events", []),
+                    actual_sector_return_5d=0.0,
+                )
+                features.update(event_features)
+
         # Compute target returns (actual future returns)
         # Use last trading day's price as base (not month_end which may be weekend)
         last_price = signals[-1].price
@@ -307,6 +321,7 @@ class WeeklyTournamentUseCase:
         buzz_store: Any | None = None,
         fundamental_engineer: Any | None = None,  # Phase 4A
         cross_asset_engineer: Any | None = None,  # Phase 4C
+        event_causal_engineer: Any | None = None,  # Phase 4D
     ) -> None:
         self._market_data = market_data
         self._tech = technical_analysis
@@ -321,6 +336,7 @@ class WeeklyTournamentUseCase:
         self._buzz_store = buzz_store
         self._fundamental = fundamental_engineer
         self._cross_asset = cross_asset_engineer
+        self._event_causal = event_causal_engineer
 
     def execute(self, prediction_date: datetime) -> WeeklyReport:
         """Run weekly tournament and return report."""
@@ -424,6 +440,18 @@ class WeeklyTournamentUseCase:
                 signals_by_ticker=getattr(self, "_signals_cache", {}),
             )
             features.update(cross_features)
+
+        # Phase 4D: Add event-causal features
+        if self._event_causal is not None:
+            sector = ticker_info.get("sector", "") if ticker_info else ""
+            if sector:
+                event_features = self._event_causal.compute(
+                    sector=sector,
+                    current_date=prediction_time.strftime("%Y-%m-%d"),
+                    recent_events=getattr(self, "_recent_events", []),
+                    actual_sector_return_5d=0.0,
+                )
+                features.update(event_features)
 
         # Predict each horizon with confidence
         feature_row = [features]
