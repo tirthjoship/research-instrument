@@ -306,3 +306,53 @@ class CorrelationEdge:
             )
         if self.source not in _VALID_EDGE_SOURCES:
             raise ValueError(f"source must be one of {_VALID_EDGE_SOURCES}")
+
+
+class EventCategory(Enum):
+    """News event categories for causal impact analysis."""
+
+    EARNINGS_SURPRISE = "earnings_surprise"
+    TARIFF_TRADE = "tariff_trade"
+    FDA_APPROVAL = "fda_approval"
+    INTEREST_RATE = "interest_rate"
+    ANTITRUST_REGULATION = "antitrust_regulation"
+    GEOPOLITICAL = "geopolitical"
+    LABOR_LAYOFFS = "labor_layoffs"
+    SUPPLY_CHAIN_DISRUPTION = "supply_chain_disruption"
+    PRODUCT_LAUNCH = "product_launch"
+    MACRO_DATA = "macro_data"
+
+
+@dataclass(frozen=True)
+class ClassifiedEvent:
+    """A news event classified into a category with direction."""
+
+    headline: str
+    event_date: str  # YYYY-MM-DD
+    category: EventCategory
+    direction: int  # -1, 0, 1 (bearish, neutral, bullish)
+    confidence: float  # 0-1
+    source: str  # "gdelt", "rss", etc.
+
+    def __post_init__(self) -> None:
+        if self.direction not in (-1, 0, 1):
+            raise ValueError("direction must be -1, 0, or 1")
+        if not 0.0 <= self.confidence <= 1.0:
+            raise ValueError("confidence must be in [0, 1]")
+
+
+@dataclass(frozen=True)
+class EventSectorImpact:
+    """Learned impact of an event category on a sector."""
+
+    category: EventCategory
+    sector: str
+    magnitude: float  # avg absolute return impact
+    half_life_days: float  # exponential decay half-life
+    sample_count: int  # number of historical events used to learn this
+
+    def __post_init__(self) -> None:
+        if self.half_life_days <= 0:
+            raise ValueError("half_life_days must be positive")
+        if self.sample_count < 0:
+            raise ValueError("sample_count must be non-negative")
