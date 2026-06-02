@@ -48,11 +48,20 @@ def _build_dependencies(market: str, use_cache: bool = False) -> dict[str, Any]:
 
     macro_symbols = config.get("macro_symbols", {})
 
+    from adapters.ml.correlation_analyzer import CorrelationAnalyzer
+    from adapters.ml.cross_asset_features import CrossAssetFeatureEngineer
+
+    analyzer = CorrelationAnalyzer(
+        supply_chain_path=str(Path("config/relationships/supply_chain.yaml"))
+    )
+    cross_asset_engineer = CrossAssetFeatureEngineer(cross_asset=analyzer)
+
     return {
         "market_data": adapter,
         "technical_analysis": adapter,  # same adapter, implements both ports
         "feature_engineer": fe,
         "fundamental_engineer": FundamentalFeatureEngineer(),
+        "cross_asset_engineer": cross_asset_engineer,
         "predictors": predictors,
         "store": store,
         "macro_symbols": macro_symbols,
@@ -86,6 +95,7 @@ def pretrain(market: str, start: str, end: str) -> None:
         tickers=tickers,
         macro_symbols=deps["macro_symbols"],
         fundamental_engineer=deps["fundamental_engineer"],
+        cross_asset_engineer=deps["cross_asset_engineer"],
     )
 
     logger.info(f"Starting pretraining: {start} to {end}, {len(tickers)} tickers")
@@ -114,6 +124,7 @@ def run_tournament(market: str, date: str | None) -> None:
         macro_symbols=deps["macro_symbols"],
         market=market,
         fundamental_engineer=deps["fundamental_engineer"],
+        cross_asset_engineer=deps["cross_asset_engineer"],
     )
 
     report = use_case.execute(prediction_date=prediction_date)
@@ -177,6 +188,7 @@ def backtest(market: str, start: str, end: str) -> None:
         tickers=tickers,
         macro_symbols=deps["macro_symbols"],
         fundamental_engineer=deps["fundamental_engineer"],
+        cross_asset_engineer=deps["cross_asset_engineer"],
     )
     use_case.execute(start_month=start, end_month=end)
 
