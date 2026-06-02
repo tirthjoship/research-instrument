@@ -12,6 +12,7 @@ from .models import (
     BacktestResult,
     BuzzSignal,
     EvaluationRun,
+    Holding,
     Sentiment,
     Signal,
     SourceReliability,
@@ -181,3 +182,13 @@ class HistoricalSentimentPort(Protocol):
     ) -> list[Sentiment]:
         """Return sentiment observations for symbol in date range."""
         ...
+
+
+@runtime_checkable
+class HoldingsPort(Protocol):
+    """Manages portfolio holdings."""
+
+    def add_holding(self, holding: Holding) -> None: ...
+    def remove_holding(self, symbol: str) -> None: ...
+    def get_holdings(self) -> list[Holding]: ...
+    def get_holding(self, symbol: str) -> Holding | None: ...

@@ -416,6 +416,100 @@ def validate_3b(market: str, skip_scan: bool, output: str) -> None:
     click.echo(f"{'=' * 60}")
 
 
+@cli.command("add-holding")
+@click.argument("symbol")
+@click.argument("quantity", type=float)
+@click.option("--price", required=True, type=float, help="Purchase price per share")
+@click.option("--date", default=None, help="Purchase date (YYYY-MM-DD)")
+@click.option("--notes", default="", help="Optional notes")
+def add_holding(
+    symbol: str, quantity: float, price: float, date: str | None, notes: str
+) -> None:
+    """Add a holding to the portfolio."""
+    from domain.models import Holding
+
+    deps = _build_dependencies("us")
+    store = deps["store"]
+    purchase_date = date or datetime.now().strftime("%Y-%m-%d")
+    holding = Holding(
+        symbol=symbol.upper(),
+        quantity=quantity,
+        purchase_price=price,
+        purchase_date=purchase_date,
+        notes=notes,
+    )
+    store.add_holding(holding)
+    click.echo(f"Added: {symbol.upper()} x{quantity} @ ${price:.2f} ({purchase_date})")
+
+
+@cli.command("list-holdings")
+def list_holdings() -> None:
+    """List all portfolio holdings."""
+    deps = _build_dependencies("us")
+    store = deps["store"]
+    holdings = store.get_holdings()
+    if not holdings:
+        click.echo("No holdings in portfolio.")
+        return
+    click.echo(f"\n{'Symbol':<8} {'Qty':<8} {'Price':<10} {'Date':<12} {'Notes'}")
+    click.echo("-" * 50)
+    for h in holdings:
+        click.echo(
+            f"{h.symbol:<8} {h.quantity:<8.1f} ${h.purchase_price:<9.2f} "
+            f"{h.purchase_date:<12} {h.notes}"
+        )
+
+
+@cli.command("remove-holding")
+@click.argument("symbol")
+def remove_holding(symbol: str) -> None:
+    """Remove a holding from the portfolio."""
+    deps = _build_dependencies("us")
+    store = deps["store"]
+    store.remove_holding(symbol.upper())
+    click.echo(f"Removed: {symbol.upper()}")
+
+
+@cli.command("monitor-holdings")
+@click.option("--market", default="us")
+def monitor_holdings(market: str) -> None:
+    """Check all holdings for sell signals."""
+    from application.monitor_holdings import MonitorHoldingsUseCase
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+    config = deps["config"]
+    adapter = deps["market_data"]
+
+    risk_config = config.get("risk", {})
+    stop_loss = risk_config.get("stop_loss_threshold", -0.08)
+
+    def get_price(symbol: str) -> float:
+        signals = adapter.get_signals(symbol, datetime.now())
+        return float(signals[-1].price) if signals else 0.0
+
+    use_case = MonitorHoldingsUseCase(
+        holdings=store,
+        get_current_price=get_price,
+        stop_loss_threshold=stop_loss,
+    )
+
+    signals = use_case.execute(datetime.now())
+    if not signals:
+        click.echo("All holdings healthy. No sell signals.")
+        return
+
+    click.echo(f"\n{len(signals)} sell signal(s) detected:\n")
+    for s in signals:
+        urgency_label = (
+            "[IMMEDIATE]"
+            if s.urgency == "immediate"
+            else "[THIS WEEK]" if s.urgency == "this_week" else "[WATCH]"
+        )
+        click.echo(f"  {s.symbol} {urgency_label} [{s.signal_type}]")
+        click.echo(f"     {s.reasoning} (confidence: {s.confidence:.0%})")
+
+
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     """Load ticker universe from config files, with hardcoded fallback."""
     config_dir = Path(__file__).parent.parent / "config" / "tickers"

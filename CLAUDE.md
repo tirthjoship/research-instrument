@@ -144,6 +144,14 @@ Five hard stops — see `AGENTS.md` for full details:
 - Wired into pretraining and tournament pipelines (optional, backward compatible)
 - Test suite — 300 tests passing
 
+**Done (Phase 4B — Portfolio Tracking + Sell Signals 2026-06-01):**
+- Holding + SellSignal domain models — frozen dataclasses with validation
+- HoldingsPort protocol + SQLite CRUD (add/remove/get/list holdings)
+- MonitorHoldingsUseCase — stop-loss (-8%), negative sentiment, technical breakdown detection
+- 4 CLI commands: add-holding, list-holdings, remove-holding, monitor-holdings
+- Risk config in us.yaml (stop_loss_threshold, sentiment_sell_threshold)
+- Test suite — 334+ tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
 
 **Planned (Phase 5):** Dashboard & Polish — Streamlit, watchlist, Indian market, paper trading
