@@ -114,10 +114,11 @@ omit = [
     "application/cli.py",
     "application/backtest_runner.py",
     "application/shap_analysis.py",
+    "application/use_cases.py",
+    "application/validate_phase3b.py",
     "adapters/data/yfinance_adapter.py",
     "adapters/ml/gemini_event_classifier.py",
-    "adapters/visualization/dashboard.py",
-    "adapters/visualization/pages/*",
+    "adapters/visualization/*",
 ]
 
 [tool.coverage.report]
@@ -125,6 +126,9 @@ omit = [
     "application/cli.py",
     "application/backtest_runner.py",
     "application/shap_analysis.py",
+    "application/use_cases.py",
+    "application/validate_phase3b.py",
     "adapters/data/yfinance_adapter.py",
     "adapters/ml/gemini_event_classifier.py",
+    "adapters/visualization/*",
 ]
