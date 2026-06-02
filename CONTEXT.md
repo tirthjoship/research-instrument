@@ -416,10 +416,10 @@ flowchart LR
 | Technical | 45 | yfinance OHLCV | ✅ 3A |
 | Sentiment | 24 | RSS, StockTwits, Google Trends, GDELT | ✅ 3B + 3.5 |
 | Fundamental | 16 | yfinance ticker_info (PEG, P/E, P/B, FCF, margins, debt) | ✅ 4A |
-| Cross-Asset | ~10 | Price correlation matrix + supply chain graph | 4C |
+| Cross-Asset | 8 | Correlation graph + Granger lead-lag + supply chain YAML (10 groups) | 4C |
 | Event-Causal | ~8 | LLM news classification + historical sector impact | 4D |
 
-### Key Decisions (ADRs 023-028)
+### Key Decisions (ADRs 023-029)
 
 | ADR | Decision | Rationale |
 |-----|----------|-----------|
@@ -429,6 +429,7 @@ flowchart LR
 | 026 | Portfolio holdings in SQLite + sell signal detection | Local, simple, manual CLI entry; brokerage API deferred to Phase 5/6 |
 | 027 | Hybrid cross-asset graph: auto-correlation + manual supply chain YAML | Discovers unknown correlations, human validates; avoids spurious signals |
 | 028 | Event-causal learning: LLM classification → historical sector impact → decay model | Learns "tariffs → energy+, tech-" with magnitude and duration |
+| 029 | Cross-asset feature architecture: CrossAssetPort + dual adapter + Granger pre-filter | Correlation >0.65 pre-filter → Granger causality. 10 supply chain groups. Separate CorrelationAnalyzer + CrossAssetFeatureEngineer |
 
 ### Adapters
 
