@@ -1,0 +1,182 @@
+"""Tests for dashboard data loader — SQLite + JSON loading with graceful defaults."""
+
+from __future__ import annotations
+
+import json
+import pathlib
+
+from adapters.data.sqlite_store import SQLiteStore
+
+
+class TestLoadBacktestReports:
+    def test_loads_json_files(self, tmp_path: pathlib.Path) -> None:
+        from adapters.visualization.data_loader import load_backtest_reports
+
+        report = {"horizons": {"5d": {"avg_directional_accuracy": 0.52}}}
+        (tmp_path / "backtest_report_20260601.json").write_text(json.dumps(report))
+        results = load_backtest_reports(str(tmp_path))
+        assert len(results) == 1
+        assert results[0]["horizons"]["5d"]["avg_directional_accuracy"] == 0.52
+
+    def test_empty_dir_returns_empty_list(self, tmp_path: pathlib.Path) -> None:
+        from adapters.visualization.data_loader import load_backtest_reports
+
+        results = load_backtest_reports(str(tmp_path))
+        assert results == []
+
+    def test_missing_dir_returns_empty_list(self) -> None:
+        from adapters.visualization.data_loader import load_backtest_reports
+
+        results = load_backtest_reports("/nonexistent/path")
+        assert results == []
+
+
+class TestLoadRecommendations:
+    def test_loads_from_sqlite(self, tmp_path: pathlib.Path) -> None:
+        from adapters.visualization.data_loader import load_recommendations
+
+        db_path = str(tmp_path / "test.db")
+        store = SQLiteStore(db_path)
+        from domain.models import (
+            MultiHorizonPrediction,
+            RecommendationGrade,
+            StockRecommendation,
+        )
+
+        rec = StockRecommendation(
+            symbol="NVDA",
+            week_start="2026-06-01",
+            grade=RecommendationGrade.STRONG_BUY,
+            composite_score=0.85,
+            prediction=MultiHorizonPrediction(
+                predicted_return_2d=0.01,
+                predicted_return_5d=0.03,
+                predicted_return_10d=0.05,
+                confidence_2d=0.7,
+                confidence_5d=0.8,
+                confidence_10d=0.75,
+            ),
+            horizon_signals={"2d": "bullish", "5d": "bullish", "10d": "bullish"},
+            reasoning="Strong momentum",
+            sources=["yfinance"],
+            sentiment_score=0.6,
+            divergence_score=0.3,
+            divergence_type="bullish_divergence",
+            technical_signal=0.5,
+            rsi_14=45.0,
+            macd=0.5,
+        )
+        store.save_recommendation(rec)
+        results = load_recommendations(db_path)
+        assert len(results) == 1
+        assert results[0].symbol == "NVDA"
+
+    def test_missing_db_returns_empty(self) -> None:
+        from adapters.visualization.data_loader import load_recommendations
+
+        results = load_recommendations("/nonexistent/test.db")
+        assert results == []
+
+
+class TestLoadHoldings:
+    def test_loads_from_sqlite(self, tmp_path: pathlib.Path) -> None:
+        from adapters.visualization.data_loader import load_holdings
+        from domain.models import Holding
+
+        db_path = str(tmp_path / "test.db")
+        store = SQLiteStore(db_path)
+        store.add_holding(
+            Holding(
+                symbol="AAPL",
+                quantity=10,
+                purchase_price=150.0,
+                purchase_date="2026-01-01",
+                notes="",
+            )
+        )
+        results = load_holdings(db_path)
+        assert len(results) == 1
+        assert results[0].symbol == "AAPL"
+
+    def test_missing_db_returns_empty(self) -> None:
+        from adapters.visualization.data_loader import load_holdings
+
+        results = load_holdings("/nonexistent/test.db")
+        assert results == []
+
+
+class TestLoadWatchlist:
+    def test_loads_from_sqlite(self, tmp_path: pathlib.Path) -> None:
+        from adapters.visualization.data_loader import load_watchlist
+
+        db_path = str(tmp_path / "test.db")
+        store = SQLiteStore(db_path)
+        store.add_watchlist("TSLA", notes="watch momentum")
+        results = load_watchlist(db_path)
+        assert len(results) == 1
+        assert results[0]["symbol"] == "TSLA"
+
+    def test_missing_db_returns_empty(self) -> None:
+        from adapters.visualization.data_loader import load_watchlist
+
+        results = load_watchlist("/nonexistent/test.db")
+        assert results == []
+
+
+class TestLoadShapImportance:
+    def test_loads_json(self, tmp_path: pathlib.Path) -> None:
+        from adapters.visualization.data_loader import load_shap_importance
+
+        data = {"correlation_with_spy": {"mean": 0.015, "std": 0.007}}
+        (tmp_path / "shap.json").write_text(json.dumps(data))
+        result = load_shap_importance(str(tmp_path / "shap.json"))
+        assert "correlation_with_spy" in result
+
+    def test_missing_returns_empty(self) -> None:
+        from adapters.visualization.data_loader import load_shap_importance
+
+        result = load_shap_importance("/nonexistent/shap.json")
+        assert result == {}
+
+
+class TestLoadAblationResults:
+    def test_loads_from_validation_json(self, tmp_path: pathlib.Path) -> None:
+        from adapters.visualization.data_loader import load_ablation_results
+
+        data = {
+            "ablation_results": [
+                {"variant": "technical_only", "directional_accuracy": 0.474}
+            ]
+        }
+        (tmp_path / "phase3b_validation_20260601.json").write_text(json.dumps(data))
+        results = load_ablation_results(str(tmp_path))
+        assert len(results) == 1
+        assert results[0]["variant"] == "technical_only"
+
+    def test_missing_returns_empty(self) -> None:
+        from adapters.visualization.data_loader import load_ablation_results
+
+        results = load_ablation_results("/nonexistent/path")
+        assert results == []
+
+
+class TestLoadSupplyChains:
+    def test_loads_yaml(self, tmp_path: pathlib.Path) -> None:
+        import yaml
+
+        from adapters.visualization.data_loader import load_supply_chains
+
+        chains = {
+            "relationships": [
+                {"group": "semiconductors", "leaders": ["AMAT"], "followers": ["NVDA"]}
+            ]
+        }
+        (tmp_path / "supply_chain.yaml").write_text(yaml.dump(chains))
+        result = load_supply_chains(str(tmp_path / "supply_chain.yaml"))
+        assert "relationships" in result
+
+    def test_missing_file_returns_empty(self) -> None:
+        from adapters.visualization.data_loader import load_supply_chains
+
+        result = load_supply_chains("/nonexistent/supply_chain.yaml")
+        result == {}
