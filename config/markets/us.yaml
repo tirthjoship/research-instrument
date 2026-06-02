@@ -100,3 +100,7 @@ sentiment:
     rate_limit_seconds: 1.0
     enabled: true
     lookback_days: 7
+
+risk:
+  stop_loss_threshold: -0.08
+  sentiment_sell_threshold: -0.5
