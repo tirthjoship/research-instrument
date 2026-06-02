@@ -407,7 +407,7 @@ flowchart LR
 | 4B | Portfolio holdings tracking + sell signals + stop-loss | ✅ Complete | 4A |
 | 4C | Cross-asset intelligence — correlation graph, Granger causality, 10 supply chain groups, 8 features | ✅ Complete | 4A |
 | 4D | Event-causal learning — Gemini classification, exponential decay impact, 8 features | ✅ Complete | 4C |
-| 5 | Streamlit dashboard + recursive learning + adaptive strategy | 📋 Planned | 4B + 4D |
+| 5 | Decision dashboard — 6-tab Streamlit (Command Center, Model Confidence, Signal Breakdown, Positions, Opportunities, Market Pulse) | 📋 Spec Written | 4D |
 
 ### Five Signal Layers (updated from 2 to 5)
 
@@ -431,6 +431,7 @@ flowchart LR
 | 028 | Event-causal learning: LLM classification → historical sector impact → decay model | Learns "tariffs → energy+, tech-" with magnitude and duration |
 | 029 | Cross-asset feature architecture: CrossAssetPort + dual adapter + Granger pre-filter | Correlation >0.65 pre-filter → Granger causality. 10 supply chain groups. Separate CorrelationAnalyzer + CrossAssetFeatureEngineer |
 | 030 | Event-causal learning: Gemini free tier + empirical impact + exponential decay | 10 event categories, bootstrap impact table from GDELT, learned half-life per category×sector |
+| 031 | Decision dashboard: 6-tab Streamlit + Plotly, command center first | Decision-oriented (not data viewer), Plotly interactive charts, watchlist feature, graceful empty states |
 
 ### Adapters
 
