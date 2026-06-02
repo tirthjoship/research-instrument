@@ -11,6 +11,7 @@ from .models import (
     AccuracyRecord,
     BacktestResult,
     BuzzSignal,
+    ClassifiedEvent,
     CorrelationEdge,
     EvaluationRun,
     Holding,
@@ -210,3 +211,14 @@ class CrossAssetPort(Protocol):
     def get_cluster_peers(self, ticker: str) -> list[str]: ...
 
     def get_correlation(self, ticker_a: str, ticker_b: str) -> float: ...
+
+
+@runtime_checkable
+class EventClassifierPort(Protocol):
+    """Classifies news headlines into event categories."""
+
+    def classify(self, headline: str, date: str) -> ClassifiedEvent | None: ...
+
+    def classify_batch(
+        self, headlines: list[tuple[str, str]]
+    ) -> list[ClassifiedEvent]: ...
