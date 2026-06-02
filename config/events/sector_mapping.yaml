@@ -1,0 +1,84 @@
+# Event category → affected sectors with expected direction.
+# direction: 1 = bullish, -1 = bearish, 0 = mixed/uncertain
+# Used by EventImpactAnalyzer to know which sectors to measure after an event.
+
+mappings:
+  earnings_surprise:
+    - sector: Technology
+      direction: 1
+    - sector: Healthcare
+      direction: 1
+    - sector: Financials
+      direction: 1
+    - sector: Consumer Discretionary
+      direction: 1
+
+  tariff_trade:
+    - sector: Energy
+      direction: 1
+    - sector: Technology
+      direction: -1
+    - sector: Consumer Discretionary
+      direction: -1
+    - sector: Industrials
+      direction: -1
+    - sector: Materials
+      direction: -1
+
+  fda_approval:
+    - sector: Healthcare
+      direction: 1
+
+  interest_rate:
+    - sector: Financials
+      direction: -1
+    - sector: Real Estate
+      direction: -1
+    - sector: Utilities
+      direction: -1
+    - sector: Consumer Discretionary
+      direction: -1
+
+  antitrust_regulation:
+    - sector: Technology
+      direction: -1
+    - sector: Communication Services
+      direction: -1
+
+  geopolitical:
+    - sector: Energy
+      direction: 1
+    - sector: Technology
+      direction: -1
+    - sector: Industrials
+      direction: -1
+
+  labor_layoffs:
+    - sector: Technology
+      direction: 0
+    - sector: Industrials
+      direction: -1
+
+  supply_chain_disruption:
+    - sector: Technology
+      direction: -1
+    - sector: Industrials
+      direction: -1
+    - sector: Consumer Discretionary
+      direction: -1
+
+  product_launch:
+    - sector: Technology
+      direction: 1
+    - sector: Consumer Discretionary
+      direction: 1
+
+  macro_data:
+    - sector: Financials
+      direction: 0
+    - sector: Technology
+      direction: 0
+    - sector: Consumer Discretionary
+      direction: 0
+    - sector: Energy
+      direction: 0
