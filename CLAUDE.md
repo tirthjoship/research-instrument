@@ -160,6 +160,15 @@ Five hard stops — see `AGENTS.md` for full details:
 - Wired into pretraining and tournament pipelines (optional, backward compatible)
 - Test suite — 370+ tests passing
 
+**Done (Phase 4D — Event-Causal Learning 2026-06-02):**
+- EventCategory enum (10 types) + ClassifiedEvent + EventSectorImpact domain models
+- EventClassifierPort protocol + GeminiEventClassifier adapter (Gemini free tier, structured output)
+- EventImpactAnalyzer — learns magnitude + half-life per category×sector from historical data
+- EventCausalFeatureEngineer — 8 features (impact score/max, event count, sentiment direction, half-life avg, surprise factor, dominant category, decay phase)
+- Event-sector mapping YAML (10 categories × affected sectors)
+- Wired into pretraining and tournament pipelines (optional, backward compatible)
+- Test suite — 410+ tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
 
 **Planned (Phase 5):** Dashboard & Polish — Streamlit, watchlist, Indian market, paper trading
