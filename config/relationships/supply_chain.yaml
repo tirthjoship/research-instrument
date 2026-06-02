@@ -1,0 +1,113 @@
+# Manual supply chain and sector relationships.
+# These edges are always included in the cross-asset graph
+# regardless of statistical correlation threshold.
+#
+# Schema:
+#   group: string — group name
+#   leaders: list[str] — tickers that lead
+#   followers: list[str] — tickers that follow
+#   typical_lag_days: int — expected lag (0-5)
+#   inverse: bool (optional) — true if negatively correlated
+#   notes: string — rationale for relationship
+
+relationships:
+  # --- Semiconductors ---
+  - group: semiconductors
+    leaders: [AMAT, LRCX, KLAC, ASML]
+    followers: [MU, WDC, INTC, AMD, NVDA]
+    typical_lag_days: 2
+    notes: "Equipment makers lead chip producers"
+
+  # --- Big Tech Ecosystem ---
+  - group: big_tech_ecosystem
+    leaders: [AAPL, MSFT, GOOG, AMZN, META]
+    followers: [TSM, AVGO, QCOM, TXN, ADI]
+    typical_lag_days: 1
+    notes: "Big tech demand drives semiconductor suppliers"
+
+  # --- Energy Chain ---
+  - group: energy_chain
+    leaders: [XOM, CVX, COP, SLB]
+    followers: [WMB, KMI, ET]
+    typical_lag_days: 1
+    notes: "Upstream oil drives midstream"
+
+  - group: energy_downstream
+    leaders: [XOM, CVX, COP]
+    followers: [VLO, MPC, PSX]
+    typical_lag_days: 1
+    notes: "Crude prices drive refiners"
+
+  - group: energy_inverse
+    leaders: [XOM, CVX]
+    followers: [DAL, UAL, AAL]
+    inverse: true
+    typical_lag_days: 2
+    notes: "High oil prices hurt airlines (fuel costs)"
+
+  # --- Pharma Supply Chain ---
+  - group: pharma_supply_chain
+    leaders: [PFE, JNJ, ABBV, MRK, LLY]
+    followers: [MCK, ABC, CAH]
+    typical_lag_days: 2
+    notes: "Pharma production drives distribution"
+
+  - group: pharma_retail
+    leaders: [MCK, ABC, CAH]
+    followers: [WMT, CVS, WBA]
+    typical_lag_days: 2
+    notes: "Distribution drives pharmacy retail"
+
+  # --- Space & Defense ---
+  - group: space_defense
+    leaders: [LMT, RTX, NOC]
+    followers: [HXL, IRDM, LUNR, ASTS, RKLB]
+    typical_lag_days: 3
+    notes: "Prime contractors lead subcontractors and space startups"
+
+  # --- Retail / Consumer ---
+  - group: retail_consumer
+    leaders: [WMT, AMZN, COST]
+    followers: [TGT, DG, DLTR]
+    typical_lag_days: 1
+    notes: "Big box retail leads discount retail"
+
+  # --- AI Supply Chain ---
+  - group: ai_infrastructure
+    leaders: [NVDA]
+    followers: [SMCI, DELL, HPE]
+    typical_lag_days: 1
+    notes: "GPU maker leads AI server builders"
+
+  - group: ai_consumers
+    leaders: [NVDA, SMCI]
+    followers: [MSFT, GOOG, META]
+    typical_lag_days: 2
+    notes: "AI hardware signals drive cloud AI spenders"
+
+  # --- Cloud / SaaS ---
+  - group: cloud_saas
+    leaders: [MSFT, AMZN, GOOG]
+    followers: [SNOW, DDOG, NET, MDB, CRWD]
+    typical_lag_days: 1
+    notes: "Cloud platform health drives SaaS ecosystem"
+
+  # --- Financials ---
+  - group: financials_banks
+    leaders: [JPM, GS, MS]
+    followers: [SCHW, IBKR]
+    typical_lag_days: 1
+    notes: "Major banks lead brokerages"
+
+  - group: financials_payments
+    leaders: [JPM, GS]
+    followers: [V, MA, AXP]
+    typical_lag_days: 1
+    notes: "Bank health signals payment network outlook"
+
+  # --- Housing / Rates Sensitive ---
+  - group: housing_rates
+    leaders: [LEN, DHI, PHM]
+    followers: [HD, LOW]
+    typical_lag_days: 2
+    notes: "Homebuilder activity drives home improvement retail"
