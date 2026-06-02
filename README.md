@@ -1,9 +1,9 @@
 # Multi-Modal Stock Recommender
 
-Production-grade ML system predicting multi-horizon stock returns using a multi-layer feature architecture: 45 technical features (Stage 1) + 24 sentiment/buzz/divergence features (Stage 2) + 16 fundamental valuation features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Built with hexagonal architecture and strict point-in-time enforcement.
+Production-grade ML system predicting multi-horizon stock returns using a multi-layer feature architecture: 45 technical features (Stage 1) + 24 sentiment/buzz/divergence features (Stage 2) + 16 fundamental valuation features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Portfolio tracking with automated sell signal detection (stop-loss, sentiment, technical breakdown). Built with hexagonal architecture and strict point-in-time enforcement.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-300%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-334%20passing-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25+-brightgreen)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
@@ -33,7 +33,8 @@ Production-grade ML system predicting multi-horizon stock returns using a multi-
 9. Evaluates with **permutation tests** (p<0.05), transaction costs, regime splits, drawdown tracking, and **three-way ablation** (tech-only vs +sentiment vs +sentiment+source-weights)
 10. **Source reliability tracking** — learns which news sources are directionally accurate over time
 11. Stores results in SQLite, caches all raw data for reproducibility
-12. Runs via **CLI** (daily-scan + weekly tournament)
+12. **Portfolio tracking** — add/remove holdings, automated sell signal detection (stop-loss, negative sentiment, technical breakdown)
+13. Runs via **CLI** (daily-scan + weekly tournament + portfolio management)
 
 ---
 
@@ -46,11 +47,12 @@ domain/                          # Pure business logic (stdlib only)
   models.py                      # Signal, Sentiment, BuzzSignal, SourceReliability,
                                  #   MultiHorizonPrediction, StockRecommendation,
                                  #   RecommendationGrade, AccuracyRecord,
-                                 #   EvaluationRun, WeeklyReport
+                                 #   EvaluationRun, WeeklyReport, Holding, SellSignal
   ports.py                       # MarketDataPort, SentimentPort, BuzzDiscoveryPort,
                                  #   SourceReliabilityPort, HistoricalSentimentPort,
-                                 #   TechnicalAnalysisPort, StockPredictorPort,
-                                 #   FeatureEngineerPort, RecommendationStorePort
+                                 #   HoldingsPort, TechnicalAnalysisPort,
+                                 #   StockPredictorPort, FeatureEngineerPort,
+                                 #   RecommendationStorePort
   services.py                    # grade_from_horizons(), validate_feature_matrix(),
                                  #   validate_data_freshness(), classify_horizon()
   exceptions.py                  # LookAheadBiasError, InsufficientDataError,
@@ -63,7 +65,7 @@ adapters/
     google_trends_adapter.py     # BuzzDiscoveryPort (pytrends, historical)
     stocktwits_adapter.py        # BuzzDiscoveryPort (free API, bull/bear)
     gdelt_sentiment_adapter.py   # HistoricalSentimentPort (GDELT DOC API)
-    sqlite_store.py              # RecommendationStorePort (6 tables)
+    sqlite_store.py              # RecommendationStorePort + HoldingsPort (7 tables)
     cache_mixin.py               # Append-only raw data cache (ADR-017)
   ml/
     feature_engineer.py          # 45 technical features
@@ -80,6 +82,7 @@ adapters/
 application/
   use_cases.py                   # PretrainingUseCase, WeeklyTournamentUseCase,
                                  #   TrackRecommendationsUseCase, EvaluationUseCase
+  monitor_holdings.py            # MonitorHoldingsUseCase (sell signal detection)
   daily_scan.py                  # DailyScanUseCase (RSS → scorers → SQLite)
   ablation.py                    # Three-way ablation runner
   evaluation.py                  # WalkForwardValidator, PermutationTester,
@@ -89,7 +92,9 @@ application/
   backtest_runner.py             # End-to-end backtest report generation
   shap_analysis.py               # Per-fold SHAP feature importance
   cli.py                         # Click CLI (daily-scan, pretrain, run-tournament,
-                                 #   evaluate, show-report, backtest, shap-report)
+                                 #   evaluate, show-report, backtest, shap-report,
+                                 #   add-holding, list-holdings, remove-holding,
+                                 #   monitor-holdings)
 
   ticker_universe.py               # Config-driven ticker loader (S&P 500 + NASDAQ-100)
 
@@ -200,7 +205,7 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: 300 passed
+# Expected: 334 passed
 ```
 
 ### CLI Usage
@@ -229,6 +234,14 @@ python -m application.cli daily-scan --market us
 
 # Daily scan with Flan-T5 NLP (requires no torch/XGBoost conflict)
 python -m application.cli daily-scan --market us --no-no-flan
+
+# Portfolio management
+python -m application.cli add-holding NVDA 10 --price=950.00 --date=2026-04-01 --notes="AI play"
+python -m application.cli list-holdings
+python -m application.cli remove-holding NVDA
+
+# Monitor holdings for sell signals (stop-loss, sentiment, technical breakdown)
+python -m application.cli monitor-holdings --market us
 ```
 
 ---
@@ -277,9 +290,12 @@ make check
 | SHAP analysis | 2 | Importance dict structure, signal feature ranking |
 | SQLite store | 14 | CRUD for 6 tables, buzz dedup, source reliability |
 | Use cases | 9 | Pretraining, tournament, sentiment blending |
-| Integration | 8 | Multi-source pipeline, fundamental compose, Phase 3B validation |
+| Holdings models | 14 | Holding/SellSignal validation, immutability |
+| Holdings store | 7 | SQLite CRUD: add/get/list/remove/duplicate/notes |
+| Monitor holdings | 12 | Stop-loss, sentiment, technical, multi-signal, empty |
+| Integration | 9 | Multi-source pipeline, fundamental compose, Phase 3B validation, holdings E2E |
 | yfinance adapter | 12 | Caching, signals, indicators, expanded field_map |
-| **Total** | **300** | |
+| **Total** | **334** | |
 
 ---
 
@@ -369,7 +385,7 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 3B | ✅ Complete | **Sentiment layer** — keyword + Flan-T5 NLP, 14 sentiment features, RSS adapter (6 publishers), Stage 2 stacking, source reliability tracker, daily buzz scan, three-way ablation |
 | 3.5 | ✅ Complete | **Expanded sentiment sources** — Google Trends (2004+), StockTwits, GDELT (2015+), 10 new features (24 total), ticker universe expanded to ~350 (S&P 500 + NASDAQ-100) |
 | 4A | ✅ Complete | **Fundamental valuation** — 16 features (PEG, P/E, P/B, FCF yield, margins, earnings, valuation_z_score), wired into pipelines |
-| 4B | 📋 Planned | Portfolio tracking + sell signals — holdings SQLite, crash risk detection |
+| 4B | ✅ Complete | **Portfolio tracking + sell signals** — Holding/SellSignal models, HoldingsPort, MonitorHoldingsUseCase (stop-loss/sentiment/technical), 4 CLI commands, risk config |
 | 4C | 📋 Planned | Cross-asset intelligence — lead-lag correlations, sector contagion |
 | 4D | 📋 Planned | Event-causal learning — news→sector impact mapping with decay |
 | 5 | 📋 Planned | Dashboard & polish — Streamlit, watchlist, paper trading |
@@ -413,7 +429,7 @@ Three GitHub Actions workflows automate quality gates:
 
 | Workflow | Trigger | What it does |
 |----------|---------|-------------|
-| `test.yml` | Push/PR to develop | Runs 300 tests, enforces 90% coverage |
+| `test.yml` | Push/PR to develop | Runs 334 tests, enforces 90% coverage |
 | `lint.yml` | Push/PR to develop | black, isort, ruff, mypy strict |
 | `security.yml` | Push/PR to develop | gitleaks secret scanning |
 
@@ -431,7 +447,9 @@ Future: `daily-scan.yml` cron workflow for automated RSS buzz collection.
 >
 > **Layer 3 (Fundamental)** adds 16 valuation features: PEG, P/E vs sector median, FCF yield, margins, earnings surprises, and a composite valuation z-score. These capture whether a stock is cheap/expensive relative to its sector — a different signal from momentum or sentiment.
 >
-> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 300 tests, mypy strict, full CI/CD."
+> **Portfolio Management** layer adds holdings tracking with automated sell signal detection — stop-loss triggers, negative sentiment spikes, and technical breakdowns. The system doesn't just predict what to buy; it monitors what you hold and tells you when to sell.
+>
+> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 334 tests, mypy strict, full CI/CD."
 
 ---
 

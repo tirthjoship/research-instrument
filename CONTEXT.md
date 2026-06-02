@@ -87,7 +87,7 @@ Persists and retrieves weekly reports and accuracy records. SQLite today, Postgr
 ### TechnicalAnalysisPort
 Computes technical indicators from raw OHLCV data. Returns TechnicalIndicators with composite signal.
 
-## Feature Groups (61 built — 45 in Phase 3A, 16 in Phase 3B; ~92 planned total with Phases 4A/4C/4D)
+## Feature Groups (85 built — 45 technical, 24 sentiment, 16 fundamental; ~103 planned total with Phases 4C/4D)
 
 | Group | Count | Source | Phase |
 |-------|-------|--------|-------|
@@ -290,7 +290,7 @@ Stage 2: Sentiment Blending Model (warm-started weekly)
 
 For real-money deployment, the prediction model is necessary but not sufficient. Required layers:
 1. **Predictions** — Phase 3A/3B (this project)
-2. **Risk management** — stop-loss, position limits, sector caps (Phase 4)
+2. **Risk management** — stop-loss, position limits, sector caps (✅ Phase 4B: stop-loss + sell signals implemented)
 3. **Position sizing** — Kelly Criterion, confidence-weighted allocation (Phase 4)
 4. **Hold duration** — predicted optimal hold period per pick (Phase 4)
 5. **Paper trading validation** — 6 months minimum before real capital (Phase 5)
@@ -402,9 +402,9 @@ flowchart LR
 | 3A | Core technical engine (45 features, ensemble, walk-forward, SHAP) | ✅ Complete | — |
 | 3B Validation | Run existing sentiment pipeline end-to-end, fix breaks, ablation with real data | ✅ Complete (2026-06-01) | 3A |
 | P0 Completeness | README p-values + Sharpe vs SPY, S3 upload script, fix stale CLAUDE.md | ✅ Complete (2026-06-01) | 3A |
-| 3.5 | Expand sentiment (StockTwits + Google Trends + GDELT historical) + expand universe to 350 tickers | 📋 Planned | 3B Validation |
-| 4A | Fundamental valuation features (PEG, P/E, P/B, FCF, dividends, earnings) | 📋 Planned | 3.5 |
-| 4B | Portfolio holdings tracking + sell signals + stop-loss | 📋 Planned | 4A |
+| 3.5 | Expand sentiment (StockTwits + Google Trends + GDELT historical) + expand universe to 350 tickers | ✅ Complete | 3B Validation |
+| 4A | Fundamental valuation features (PEG, P/E, P/B, FCF, dividends, earnings) | ✅ Complete | 3.5 |
+| 4B | Portfolio holdings tracking + sell signals + stop-loss | ✅ Complete | 4A |
 | 4C | Cross-asset intelligence (correlation graph, lead-lag, supply chain, thematic cascades) | 📋 Planned | 4A |
 | 4D | Event-causal learning (news → sector → direction → magnitude → decay) | 📋 Planned | 4C |
 | 5 | Streamlit dashboard + recursive learning + adaptive strategy | 📋 Planned | 4B + 4D |
@@ -414,8 +414,8 @@ flowchart LR
 | Layer | Features | Data Source | Phase |
 |-------|----------|-------------|-------|
 | Technical | 45 | yfinance OHLCV | ✅ 3A |
-| Sentiment | 14 + ~9 new | RSS, StockTwits, Google Trends, GDELT | 3B + 3.5 |
-| Fundamental | ~15 | yfinance ticker_info (PEG, P/E, P/B, FCF, margins, debt) | 4A |
+| Sentiment | 24 | RSS, StockTwits, Google Trends, GDELT | ✅ 3B + 3.5 |
+| Fundamental | 16 | yfinance ticker_info (PEG, P/E, P/B, FCF, margins, debt) | ✅ 4A |
 | Cross-Asset | ~10 | Price correlation matrix + supply chain graph | 4C |
 | Event-Causal | ~8 | LLM news classification + historical sector impact | 4D |
 
@@ -430,23 +430,24 @@ flowchart LR
 | 027 | Hybrid cross-asset graph: auto-correlation + manual supply chain YAML | Discovers unknown correlations, human validates; avoids spurious signals |
 | 028 | Event-causal learning: LLM classification → historical sector impact → decay model | Learns "tariffs → energy+, tech-" with magnitude and duration |
 
-### New Adapters Planned
+### Adapters
 
-| Adapter | Port | Phase |
-|---------|------|-------|
-| `adapters/data/google_trends_adapter.py` | BuzzDiscoveryPort | 3.5 |
-| `adapters/data/stocktwits_adapter.py` | BuzzDiscoveryPort | 3.5 |
-| `adapters/data/news_sentiment_adapter.py` | HistoricalSentimentPort (new) | 3.5 |
-| `adapters/ml/fundamental_feature_engineer.py` | FeatureEngineerPort | 4A |
-| `adapters/ml/correlation_analyzer.py` | New (CorrelationAnalyzerPort) | 4C |
-| `adapters/ml/event_classifier.py` | New (EventClassifierPort) | 4D |
+| Adapter | Port | Status |
+|---------|------|--------|
+| `adapters/data/google_trends_adapter.py` | BuzzDiscoveryPort | ✅ Phase 3.5 |
+| `adapters/data/stocktwits_adapter.py` | BuzzDiscoveryPort | ✅ Phase 3.5 |
+| `adapters/data/gdelt_sentiment_adapter.py` | HistoricalSentimentPort | ✅ Phase 3.5 |
+| `adapters/ml/fundamental_feature_engineer.py` | FeatureEngineerPort | ✅ Phase 4A |
+| `application/monitor_holdings.py` | MonitorHoldingsUseCase | ✅ Phase 4B |
+| `adapters/ml/correlation_analyzer.py` | CorrelationAnalyzerPort (new) | 📋 Phase 4C |
+| `adapters/ml/event_classifier.py` | EventClassifierPort (new) | 📋 Phase 4D |
 
-### New Domain Models Planned
+### New Domain Models
 
-- `Holding` — symbol, quantity, purchase_price, purchase_date
-- `SellSignal` — symbol, signal_type, urgency, reasoning, confidence
-- `EventCategory` — enum of 10 news event types
-- `EventSectorImpact` — event → sector → direction → magnitude → duration → confidence
+- `Holding` — symbol, quantity, purchase_price, purchase_date, notes (✅ Phase 4B)
+- `SellSignal` — symbol, signal_date, signal_type, urgency, reasoning, confidence (✅ Phase 4B)
+- `EventCategory` — enum of 10 news event types (Phase 4D planned)
+- `EventSectorImpact` — event → sector → direction → magnitude → duration → confidence (Phase 4D planned)
 
 ### Cross-Asset Supply Chain Graph (Hybrid — ADR-027)
 
@@ -471,7 +472,10 @@ Honest null result remains valid — rigorous negative finding is equally impres
 
 ### Immediate Next Steps (in order)
 
-1. **P0 Portfolio Completeness** — README p-values + Sharpe, S3 upload script (plan exists: `docs/superpowers/plans/2026-06-01-p0-portfolio-completeness.md`)
-2. **Phase 3B Validation** — run full pipeline end-to-end, fix breaks, document results
-3. **Phase 3.5 Planning** — brainstorm/grill expanded sentiment sources, then write implementation plan
-4. **Phase 3B Validation Results (2026-06-01):** Pipeline proven end-to-end. Technical-only 47.4% → +sentiment 69.7% (in-sample). PR #9 shipped. 152 tests green.
+1. ~~P0 Portfolio Completeness~~ — ✅ Complete
+2. ~~Phase 3B Validation~~ — ✅ Complete (2026-06-01). Technical-only 47.4% → +sentiment 69.7% (in-sample). PR #9 shipped.
+3. ~~Phase 3.5~~ — ✅ Complete. Google Trends + StockTwits + GDELT + 350 tickers. PR #10 merged.
+4. ~~Phase 4A~~ — ✅ Complete. 16 fundamental features. PR #11 merged.
+5. ~~Phase 4B~~ — ✅ Complete. Portfolio tracking + sell signals. PR #12 merged. 334 tests.
+6. **Phase 4C** — Cross-asset intelligence (correlation graph, lead-lag, supply chain, thematic cascades)
+7. **Phase 4D** — Event-causal learning (news → sector impact mapping with decay)
