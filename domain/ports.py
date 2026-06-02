@@ -11,6 +11,7 @@ from .models import (
     AccuracyRecord,
     BacktestResult,
     BuzzSignal,
+    CorrelationEdge,
     EvaluationRun,
     Holding,
     Sentiment,
@@ -192,3 +193,20 @@ class HoldingsPort(Protocol):
     def remove_holding(self, symbol: str) -> None: ...
     def get_holdings(self) -> list[Holding]: ...
     def get_holding(self, symbol: str) -> Holding | None: ...
+
+
+@runtime_checkable
+class CrossAssetPort(Protocol):
+    """Builds and queries cross-asset correlation graph."""
+
+    def build_graph(
+        self,
+        signals_by_ticker: dict[str, list[Signal]],
+        window_days: int = 60,
+    ) -> None: ...
+
+    def get_upstream_signals(self, ticker: str) -> list[CorrelationEdge]: ...
+
+    def get_cluster_peers(self, ticker: str) -> list[str]: ...
+
+    def get_correlation(self, ticker_a: str, ticker_b: str) -> float: ...
