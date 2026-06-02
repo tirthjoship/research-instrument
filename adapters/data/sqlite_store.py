@@ -12,6 +12,7 @@ from domain.models import (
     AccuracyRecord,
     BuzzSignal,
     EvaluationRun,
+    Holding,
     MultiHorizonPrediction,
     RecommendationGrade,
     SourceReliability,
@@ -116,6 +117,16 @@ CREATE TABLE IF NOT EXISTS source_reliability (
     total_calls INTEGER DEFAULT 0,
     last_updated TIMESTAMP,
     UNIQUE(source, ticker)
+);
+
+CREATE TABLE IF NOT EXISTS holdings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol TEXT NOT NULL UNIQUE,
+    quantity REAL NOT NULL,
+    purchase_price REAL NOT NULL,
+    purchase_date TEXT NOT NULL,
+    notes TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """
 
@@ -438,6 +449,55 @@ class SQLiteStore:
             )
             for r in rows
         ]
+
+    def add_holding(self, holding: Holding) -> None:
+        self._conn.execute(
+            """INSERT OR REPLACE INTO holdings
+               (symbol, quantity, purchase_price, purchase_date, notes)
+               VALUES (?, ?, ?, ?, ?)""",
+            (
+                holding.symbol,
+                holding.quantity,
+                holding.purchase_price,
+                holding.purchase_date,
+                holding.notes,
+            ),
+        )
+        self._conn.commit()
+
+    def remove_holding(self, symbol: str) -> None:
+        self._conn.execute("DELETE FROM holdings WHERE symbol = ?", (symbol,))
+        self._conn.commit()
+
+    def get_holdings(self) -> list[Holding]:
+        rows = self._conn.execute(
+            "SELECT symbol, quantity, purchase_price, purchase_date, notes FROM holdings"
+        ).fetchall()
+        return [
+            Holding(
+                symbol=r[0],
+                quantity=r[1],
+                purchase_price=r[2],
+                purchase_date=r[3],
+                notes=r[4] or "",
+            )
+            for r in rows
+        ]
+
+    def get_holding(self, symbol: str) -> Holding | None:
+        row = self._conn.execute(
+            "SELECT symbol, quantity, purchase_price, purchase_date, notes FROM holdings WHERE symbol = ?",
+            (symbol,),
+        ).fetchone()
+        if row is None:
+            return None
+        return Holding(
+            symbol=row[0],
+            quantity=row[1],
+            purchase_price=row[2],
+            purchase_date=row[3],
+            notes=row[4] or "",
+        )
 
     def _row_to_recommendation(self, r: sqlite3.Row) -> StockRecommendation:
         pred = MultiHorizonPrediction(
