@@ -229,3 +229,50 @@ class SourceReliability:
         if self.total_calls < 10:
             return 0.5
         return self.correct_calls / self.total_calls
+
+
+_VALID_SIGNAL_TYPES = frozenset(
+    {"crash_risk", "negative_sentiment", "technical_breakdown", "stop_loss"}
+)
+_VALID_URGENCIES = frozenset({"immediate", "this_week", "watch"})
+
+
+@dataclass(frozen=True)
+class Holding:
+    """A portfolio holding."""
+
+    symbol: str
+    quantity: float
+    purchase_price: float
+    purchase_date: str  # YYYY-MM-DD
+    notes: str = ""
+
+    def __post_init__(self) -> None:
+        if self.quantity <= 0:
+            raise ValueError("quantity must be positive")
+        if self.purchase_price <= 0:
+            raise ValueError("purchase_price must be positive")
+
+
+@dataclass(frozen=True)
+class SellSignal:
+    """A sell signal for a held stock."""
+
+    symbol: str
+    signal_date: str
+    signal_type: str
+    urgency: str
+    reasoning: str
+    confidence: float
+
+    def __post_init__(self) -> None:
+        if self.signal_type not in _VALID_SIGNAL_TYPES:
+            raise ValueError(
+                f"signal_type must be one of {_VALID_SIGNAL_TYPES}, got '{self.signal_type}'"
+            )
+        if self.urgency not in _VALID_URGENCIES:
+            raise ValueError(
+                f"urgency must be one of {_VALID_URGENCIES}, got '{self.urgency}'"
+            )
+        if not 0.0 <= self.confidence <= 1.0:
+            raise ValueError("confidence must be in [0, 1]")
