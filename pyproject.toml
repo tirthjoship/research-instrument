@@ -77,6 +77,8 @@ module = [
     "torch.*",
     "transformers.*",
     "scipy.*",
+    "networkx.*",
+    "statsmodels.*",
     "boto3.*",
     "botocore.*",
 ]
@@ -93,6 +95,7 @@ module = [
     "adapters.ml.lightgbm_predictor",
     "adapters.ml.ridge_predictor",
     "adapters.ml.stage2_predictor",
+    "adapters.ml.correlation_analyzer",
     "adapters.data.yfinance_adapter",
 ]
 disallow_any_generics = false

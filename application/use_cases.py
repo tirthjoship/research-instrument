@@ -46,6 +46,7 @@ class PretrainingUseCase:
         tickers: list[str],
         macro_symbols: dict[str, str],
         fundamental_engineer: Any | None = None,  # Phase 4A
+        cross_asset_engineer: Any | None = None,  # Phase 4C
     ) -> None:
         self._market_data = market_data
         self._tech = technical_analysis
@@ -55,6 +56,7 @@ class PretrainingUseCase:
         self._tickers = tickers
         self._macro_symbols = macro_symbols
         self._fundamental = fundamental_engineer
+        self._cross_asset = cross_asset_engineer
 
     def execute(
         self,
@@ -142,6 +144,24 @@ class PretrainingUseCase:
             # Fetch macro data once per month
             macro_signals = self._fetch_macro(month_end)
 
+            # Cache signals for cross-asset features
+            if self._cross_asset is not None:
+                self._signals_cache: dict[str, list] = {}  # type: ignore[type-arg]
+                for t in self._tickers:
+                    try:
+                        start = month_end - timedelta(days=365)
+                        sigs = self._market_data.get_signals(
+                            t, month_end, start_date=start
+                        )
+                        if len(sigs) >= 20:
+                            self._signals_cache[t] = sigs
+                    except Exception:
+                        continue
+                # Build graph with cached signals
+                self._cross_asset._graph.build_graph(
+                    self._signals_cache, window_days=60
+                )
+
             for ticker_idx, ticker in enumerate(self._tickers):
                 try:
                     features, targets = self._compute_ticker_features(
@@ -202,6 +222,15 @@ class PretrainingUseCase:
                 analyst_data=analyst,
             )
             features.update(fundamental_features)
+
+        # Phase 4C: Add cross-asset features
+        if self._cross_asset is not None:
+            cross_features = self._cross_asset.compute(
+                ticker=ticker,
+                signals=signals,
+                signals_by_ticker=getattr(self, "_signals_cache", {}),
+            )
+            features.update(cross_features)
 
         # Compute target returns (actual future returns)
         # Use last trading day's price as base (not month_end which may be weekend)
@@ -277,6 +306,7 @@ class WeeklyTournamentUseCase:
         stage2_predictor: Any | None = None,
         buzz_store: Any | None = None,
         fundamental_engineer: Any | None = None,  # Phase 4A
+        cross_asset_engineer: Any | None = None,  # Phase 4C
     ) -> None:
         self._market_data = market_data
         self._tech = technical_analysis
@@ -290,6 +320,7 @@ class WeeklyTournamentUseCase:
         self._stage2 = stage2_predictor
         self._buzz_store = buzz_store
         self._fundamental = fundamental_engineer
+        self._cross_asset = cross_asset_engineer
 
     def execute(self, prediction_date: datetime) -> WeeklyReport:
         """Run weekly tournament and return report."""
@@ -297,6 +328,22 @@ class WeeklyTournamentUseCase:
 
         # Fetch macro once
         macro_signals = self._fetch_macro(prediction_date)
+
+        # Cache signals for cross-asset features
+        if self._cross_asset is not None:
+            self._signals_cache: dict[str, list] = {}  # type: ignore[type-arg]
+            for t in self._tickers:
+                try:
+                    start = prediction_date - timedelta(days=365)
+                    sigs = self._market_data.get_signals(
+                        t, prediction_date, start_date=start
+                    )
+                    if len(sigs) >= 20:
+                        self._signals_cache[t] = sigs
+                except Exception:
+                    continue
+            # Build graph with cached signals
+            self._cross_asset._graph.build_graph(self._signals_cache, window_days=60)
 
         # Score all tickers
         candidates: list[StockRecommendation] = []
@@ -368,6 +415,15 @@ class WeeklyTournamentUseCase:
                 analyst_data=analyst,
             )
             features.update(fundamental_features)
+
+        # Phase 4C: Add cross-asset features
+        if self._cross_asset is not None:
+            cross_features = self._cross_asset.compute(
+                ticker=ticker,
+                signals=signals,
+                signals_by_ticker=getattr(self, "_signals_cache", {}),
+            )
+            features.update(cross_features)
 
         # Predict each horizon with confidence
         feature_row = [features]

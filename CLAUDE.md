@@ -152,6 +152,14 @@ Five hard stops — see `AGENTS.md` for full details:
 - Risk config in us.yaml (stop_loss_threshold, sentiment_sell_threshold)
 - Test suite — 334+ tests passing
 
+**Done (Phase 4C — Cross-Asset Intelligence 2026-06-02):**
+- CorrelationEdge domain model + CrossAssetPort protocol
+- CorrelationAnalyzer adapter — rolling correlation matrix, hierarchical clustering, Granger causality with BH correction
+- CrossAssetFeatureEngineer — 8 features (upstream leader returns, cluster momentum, lag signal, supply chain divergence, correlation regime shift, thematic activation, Granger lead signal)
+- Supply chain YAML config — 10 groups (semiconductors, big tech, energy, pharma, space/defense, retail, AI, cloud/SaaS, financials, housing)
+- Wired into pretraining and tournament pipelines (optional, backward compatible)
+- Test suite — 370+ tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
 
 **Planned (Phase 5):** Dashboard & Polish — Streamlit, watchlist, Indian market, paper trading
