@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from domain.conviction import ActionType, FreshnessLevel
+
 _GRADE_COLORS: dict[str, str] = {
     "Strong Buy": "#00C853",
     "Buy": "#69F0AE",
@@ -160,6 +162,57 @@ def urgency_pill_html(urgency: str) -> str:
     }
     css_class, label = mapping.get(urgency, ("pill-watch-priority", "WATCH"))
     return f'<span class="status-pill {css_class}">{label}</span>'
+
+
+def conviction_badge_html(score: float) -> str:
+    """Return colored HTML badge for a conviction score.
+
+    Green >= 7, amber >= 4, red < 4. Formatted as "8.5/10" in a rounded pill.
+    """
+    if score >= 7:
+        bg, color = "#DCFCE7", "#166534"
+    elif score >= 4:
+        bg, color = "#FEF9C3", "#854D0E"
+    else:
+        bg, color = "#FEE2E2", "#991B1B"
+    return (
+        f'<span style="display:inline-block; background:{bg}; color:{color};'
+        f' padding:3px 12px; border-radius:12px; font-size:13px; font-weight:700;">'
+        f"{score:.1f}/10</span>"
+    )
+
+
+def action_badge_html(action: ActionType) -> str:
+    """Return colored HTML badge for an ActionType.
+
+    BUY=green, SELL=red, WATCH=amber, HOLD=gray.
+    """
+    mapping: dict[ActionType, tuple[str, str]] = {
+        ActionType.BUY: ("#DCFCE7", "#166534"),
+        ActionType.SELL: ("#FEE2E2", "#991B1B"),
+        ActionType.WATCH: ("#FEF9C3", "#854D0E"),
+        ActionType.HOLD: ("#F3F4F6", "#4B5563"),
+    }
+    bg, color = mapping.get(action, ("#F3F4F6", "#4B5563"))
+    return (
+        f'<span style="display:inline-block; background:{bg}; color:{color};'
+        f' padding:3px 12px; border-radius:12px; font-size:13px; font-weight:700;">'
+        f"{action.value}</span>"
+    )
+
+
+def freshness_indicator_html(level: FreshnessLevel) -> str:
+    """Return "● Fresh" / "● Recent" / "● Stale" with a colored dot."""
+    mapping: dict[FreshnessLevel, tuple[str, str]] = {
+        FreshnessLevel.FRESH: ("#059669", "Fresh"),
+        FreshnessLevel.RECENT: ("#D97706", "Recent"),
+        FreshnessLevel.STALE: ("#DC2626", "Stale"),
+    }
+    dot_color, label = mapping[level]
+    return (
+        f'<span style="color:{dot_color}; font-size:14px;">●</span>'
+        f'<span style="font-size:13px; color:#6B7280; margin-left:4px;">{label}</span>'
+    )
 
 
 def freshness_dot_html(timestamp: datetime | None) -> str:
