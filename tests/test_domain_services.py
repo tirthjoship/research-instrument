@@ -246,3 +246,42 @@ def test_validate_point_in_time_future_signal_raises() -> None:
     ]
     with pytest.raises(LookAheadBiasError):
         validate_point_in_time_access(pt, signals, [])
+
+
+# --- validate_smart_money_signals ---
+
+
+from domain.conviction import SmartMoneySignal, SmartMoneyType  # noqa: E402
+from domain.services import validate_smart_money_signals  # noqa: E402
+
+
+def _make_signal(filed_date: str) -> SmartMoneySignal:
+    return SmartMoneySignal(
+        ticker="AAPL",
+        signal_type=SmartMoneyType.FORM_13D,
+        filer_name="Berkshire Hathaway",
+        stake_pct=5.1,
+        transaction_value=1_000_000.0,
+        filed_date=filed_date,
+        is_activist=False,
+    )
+
+
+class TestValidateSmartMoneySignals:
+    def test_valid_signals_pass(self) -> None:
+        pt = datetime(2026, 6, 1, 12, 0)
+        signals = [
+            _make_signal("2026-05-30"),
+            _make_signal("2026-06-01"),
+        ]
+        # Should not raise
+        validate_smart_money_signals(pt, signals)
+
+    def test_future_filing_raises(self) -> None:
+        pt = datetime(2026, 6, 1, 12, 0)
+        signals = [
+            _make_signal("2026-05-30"),
+            _make_signal("2026-06-02"),  # filed after prediction_time
+        ]
+        with pytest.raises(LookAheadBiasError, match="2026-06-02"):
+            validate_smart_money_signals(pt, signals)
