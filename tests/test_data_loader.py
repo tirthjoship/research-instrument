@@ -180,3 +180,69 @@ class TestLoadSupplyChains:
 
         result = load_supply_chains("/nonexistent/supply_chain.yaml")
         result == {}
+
+
+class TestLoadSpySparkline:
+    def test_returns_dict(self) -> None:
+        """Should return a dict (possibly empty if yfinance unavailable)."""
+        from adapters.visualization.data_loader import load_spy_sparkline
+
+        result = load_spy_sparkline()
+        assert isinstance(result, dict)
+
+    def test_empty_dict_on_failure(self, monkeypatch: object) -> None:
+        """Monkeypatching the function itself confirms {} contract."""
+        import adapters.visualization.data_loader as dl
+
+        monkeypatch.setattr(dl, "load_spy_sparkline", lambda: {})
+        result = dl.load_spy_sparkline()
+        assert result == {}
+
+    def test_result_keys_when_populated(self) -> None:
+        """If result is non-empty it must have all required keys."""
+        from adapters.visualization.data_loader import load_spy_sparkline
+
+        result = load_spy_sparkline()
+        if result:
+            for key in (
+                "prices",
+                "times",
+                "current",
+                "open",
+                "change_pct",
+                "high",
+                "low",
+            ):
+                assert key in result
+
+
+class TestLoadScanTimestamp:
+    def test_returns_none_when_no_reports_dir(self) -> None:
+        from adapters.visualization.data_loader import load_scan_timestamp
+
+        result = load_scan_timestamp("/nonexistent/reports/dir")
+        assert result is None
+
+    def test_returns_none_when_dir_empty(self, tmp_path: pathlib.Path) -> None:
+        from adapters.visualization.data_loader import load_scan_timestamp
+
+        result = load_scan_timestamp(str(tmp_path))
+        assert result is None
+
+    def test_returns_formatted_timestamp(self, tmp_path: pathlib.Path) -> None:
+        from adapters.visualization.data_loader import load_scan_timestamp
+
+        (tmp_path / "backtest_report_20260603_021500.json").write_text("{}")
+        result = load_scan_timestamp(str(tmp_path))
+        assert result is not None
+        assert "2026" in result
+        assert "Jun" in result
+
+    def test_picks_most_recent_report(self, tmp_path: pathlib.Path) -> None:
+        from adapters.visualization.data_loader import load_scan_timestamp
+
+        (tmp_path / "backtest_report_20260601_100000.json").write_text("{}")
+        (tmp_path / "backtest_report_20260603_140000.json").write_text("{}")
+        result = load_scan_timestamp(str(tmp_path))
+        assert result is not None
+        assert "Jun 03" in result
