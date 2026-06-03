@@ -6,8 +6,11 @@ from typing import Any
 
 import streamlit as st
 
-from adapters.visualization.components.formatters import pct
-from adapters.visualization.components.metrics import render_signal_layer_card
+from adapters.visualization.components.formatters import grade_badge_html, pct
+from adapters.visualization.components.metrics import (
+    render_info_section,
+    render_signal_layer_card,
+)
 from adapters.visualization.data_loader import load_recommendations
 
 DB_PATH = "data/recommendations.db"
@@ -15,14 +18,25 @@ DB_PATH = "data/recommendations.db"
 
 def render(db_path: str = DB_PATH) -> None:
     """Render the Signal Breakdown tab."""
-    st.header("Signal Breakdown")
+    render_info_section(
+        st,
+        "Signal Breakdown",
+        "Deep dive into any ticker — see what each of the 5 signal layers is saying.",
+        "Select a ticker to view its signal profile across all 5 layers: "
+        "Technical (price/volume patterns), Sentiment (news/social buzz), "
+        "Fundamental (valuation metrics), Cross-Asset (correlation/supply chain), "
+        "and Event-Causal (news event impact). When layers agree, conviction is higher.",
+    )
 
     recs = load_recommendations(db_path)
 
     if not recs:
-        st.info(
-            "No recommendation data. Run a tournament first:\n\n"
-            "```\npython -m application.cli run-tournament --market us\n```"
+        st.markdown(
+            '<div class="dashboard-card card-info">'
+            "<strong>No Signal Data</strong><br>"
+            '<span style="color: #6B7280;">Run a tournament to generate signal data for tickers.</span>'
+            "</div>",
+            unsafe_allow_html=True,
         )
         return
 
@@ -39,42 +53,61 @@ def render(db_path: str = DB_PATH) -> None:
 
 
 def _render_convergence(rec: Any) -> None:
-    """Show signal convergence indicator."""
+    """Show signal convergence with styled cards."""
     signals = rec.horizon_signals or {}
     bullish = sum(1 for v in signals.values() if v == "bullish")
     bearish = sum(1 for v in signals.values() if v == "bearish")
     total = len(signals) if signals else 1
 
-    st.subheader(f"{rec.symbol} — {rec.grade.value}")
+    grade_html = grade_badge_html(rec.grade.value)
+    st.markdown(
+        f'<div class="dashboard-card">'
+        f'<div style="font-size: 20px; font-weight: 600;">{rec.symbol} {grade_html}</div>'
+        f"</div>",
+        unsafe_allow_html=True,
+    )
 
     cols = st.columns(3)
-    cols[0].metric("Grade", rec.grade.value)
-    cols[1].metric("Composite Score", f"{rec.composite_score:.3f}")
-    cols[2].metric("5d Prediction", pct(rec.prediction.predicted_return_5d))
+    cols[0].metric("Composite Score", f"{rec.composite_score:.3f}")
+    cols[1].metric("5d Prediction", pct(rec.prediction.predicted_return_5d))
+    cols[2].metric(
+        "Confidence",
+        f"{rec.prediction.confidence_5d:.0%}" if rec.prediction.confidence_5d else "—",
+    )
 
+    # Convergence bar
     if bullish > bearish:
-        st.success(f"{bullish}/{total} horizons BULLISH")
+        bg = "#E8F5E9"
+        text = f"{bullish}/{total} horizons bullish"
     elif bearish > bullish:
-        st.error(f"{bearish}/{total} horizons BEARISH")
+        bg = "#FFEBEE"
+        text = f"{bearish}/{total} horizons bearish"
     else:
-        st.warning(f"MIXED: {bullish} bull, {bearish} bear")
+        bg = "#FFF8E1"
+        text = f"Mixed: {bullish} bullish, {bearish} bearish"
+
+    st.markdown(
+        f'<div style="background: {bg}; padding: 8px 16px; border-radius: 8px; '
+        f'font-weight: 600; font-size: 14px; text-align: center;">{text}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_layers(rec: Any) -> None:
-    """Render 5 signal layer cards."""
+    """Render 5 signal layer cards with colored borders."""
     cols = st.columns(3)
 
     with cols[0]:
-        tech_signal = (
-            "BULLISH"
+        tech_dir = (
+            "bullish"
             if (rec.technical_signal or 0) > 0.2
-            else ("BEARISH" if (rec.technical_signal or 0) < -0.2 else "NEUTRAL")
+            else "bearish" if (rec.technical_signal or 0) < -0.2 else "neutral"
         )
         render_signal_layer_card(
             st,
             "Technical",
-            "📊",
-            tech_signal,
+            "technical",
+            tech_dir,
             {
                 "RSI(14)": f"{rec.rsi_14:.1f}" if rec.rsi_14 else "N/A",
                 "MACD": f"{rec.macd:.4f}" if rec.macd else "N/A",
@@ -85,22 +118,22 @@ def _render_layers(rec: Any) -> None:
         )
 
     with cols[1]:
-        sent_signal = (
-            "BULLISH"
+        sent_dir = (
+            "bullish"
             if (rec.sentiment_score or 0) > 0.2
-            else ("BEARISH" if (rec.sentiment_score or 0) < -0.2 else "NEUTRAL")
+            else "bearish" if (rec.sentiment_score or 0) < -0.2 else "neutral"
         )
         render_signal_layer_card(
             st,
             "Sentiment",
-            "💬",
-            sent_signal,
+            "sentiment",
+            sent_dir,
             {
                 "Score": f"{rec.sentiment_score:.2f}" if rec.sentiment_score else "N/A",
                 "Divergence": (
                     f"{rec.divergence_score:.2f}" if rec.divergence_score else "N/A"
                 ),
-                "Type": rec.divergence_type or "N/A",
+                "Type": rec.divergence_type or "aligned",
             },
         )
 
@@ -108,9 +141,9 @@ def _render_layers(rec: Any) -> None:
         render_signal_layer_card(
             st,
             "Fundamental",
-            "💰",
+            "fundamental",
             "—",
-            {"Note": "Run tournament with --fundamental for details"},
+            {"Status": "Available after tournament with fundamental features"},
         )
 
     cols2 = st.columns(2)
@@ -119,16 +152,16 @@ def _render_layers(rec: Any) -> None:
         render_signal_layer_card(
             st,
             "Cross-Asset",
-            "🔗",
+            "cross-asset",
             "—",
-            {"Note": "Run tournament with cross-asset features for details"},
+            {"Status": "Available after tournament with cross-asset features"},
         )
 
     with cols2[1]:
         render_signal_layer_card(
             st,
             "Event-Causal",
-            "⚡",
+            "event-causal",
             "—",
-            {"Note": "Run event classification pipeline for details"},
+            {"Status": "Available after event classification"},
         )
