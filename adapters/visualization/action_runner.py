@@ -6,6 +6,7 @@ Each function wraps a use case with stage-based progress reporting.
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from typing import Callable
 
 from domain.models import SellSignal
@@ -93,3 +94,188 @@ def run_add_watchlist(
 
     store = SQLiteStore(db_path)
     store.add_watchlist(symbol.upper(), notes=notes)
+
+
+def run_full_cycle(
+    db_path: str = "data/recommendations.db",
+    market: str = "us",
+    progress_callback: Callable[[float, str], None] | None = None,
+) -> dict[str, str]:
+    """Run the complete daily cycle: scan -> tournament -> track accuracy.
+
+    Stages: Scan (0-40%) -> Tournament (40-80%) -> Track (80-100%).
+    """
+    _update = progress_callback or (lambda p, m: None)
+    results: dict[str, str] = {}
+
+    # Stage 1: Daily Scan
+    _update(0.05, "Stage 1/3: Initializing daily scan...")
+
+    from adapters.data.rss_adapter import RSSAdapter
+    from adapters.data.sqlite_store import SQLiteStore
+    from adapters.ml.keyword_scorer import KeywordScorer
+    from application.daily_scan import DailyScanUseCase
+
+    store = SQLiteStore(db_path)
+    rss = RSSAdapter()
+    keyword = KeywordScorer()
+
+    scan_uc = DailyScanUseCase(
+        discovery=rss,
+        keyword_scorer=keyword,
+        flan_t5_scorer=keyword,  # keyword-only (avoid torch segfault)
+        store_signal=store.save_buzz_signal,
+    )
+
+    _update(0.10, "Stage 1/3: Scanning RSS feeds...")
+    scan_result = scan_uc.execute(datetime.now())
+    results["scan"] = (
+        f"{scan_result['tickers_found']} tickers, "
+        f"{scan_result['signals_stored']} signals"
+    )
+
+    # Google Trends
+    _update(0.20, "Stage 1/3: Scanning Google Trends...")
+    tickers: list[str] = []
+    try:
+        from adapters.data.google_trends_adapter import GoogleTrendsAdapter
+        from config.loader import load_market_config
+
+        config = load_market_config(market)
+        tickers = config.get("tickers", [])
+        if not tickers:
+            ticker_path = Path("config/tickers")
+            if ticker_path.exists():
+                for f in ticker_path.glob("*.txt"):
+                    tickers.extend(f.read_text().strip().split("\n"))
+        gt = GoogleTrendsAdapter()
+        gt_signals = gt.scan_sources(datetime.now(), tickers=tickers[:10])
+        for sig in gt_signals:
+            store.save_buzz_signal(sig)
+        results["google_trends"] = f"{len(gt_signals)} signals"
+    except Exception as e:
+        results["google_trends"] = f"skipped ({e})"
+
+    # StockTwits
+    _update(0.30, "Stage 1/3: Scanning StockTwits...")
+    try:
+        from adapters.data.stocktwits_adapter import StockTwitsAdapter
+
+        st_adapter = StockTwitsAdapter()
+        st_signals = st_adapter.scan_sources(datetime.now(), tickers=tickers[:10])
+        for sig in st_signals:
+            store.save_buzz_signal(sig)
+        results["stocktwits"] = f"{len(st_signals)} signals"
+    except Exception as e:
+        results["stocktwits"] = f"skipped ({e})"
+
+    _update(0.40, "Stage 1/3: Scan complete.")
+
+    # Stage 2: Tournament
+    _update(0.45, "Stage 2/3: Running tournament...")
+    try:
+        run_tournament(db_path=db_path, market=market)
+        results["tournament"] = "complete"
+    except Exception as e:
+        results["tournament"] = f"failed ({e})"
+
+    _update(0.80, "Stage 2/3: Tournament complete.")
+
+    # Stage 3: Track accuracy
+    _update(0.85, "Stage 3/3: Tracking prediction accuracy...")
+    try:
+        from adapters.data.yfinance_adapter import YFinanceAdapter
+        from application.use_cases import TrackRecommendationsUseCase
+
+        adapter = YFinanceAdapter(cache_dir=Path("data/cache"))
+        track_uc = TrackRecommendationsUseCase(
+            market_data=adapter,
+            store=store,
+        )
+        records = track_uc.execute(evaluation_date=datetime.now())
+        results["tracking"] = f"{len(records)} records evaluated"
+    except Exception as e:
+        results["tracking"] = f"skipped ({e})"
+
+    _update(1.0, "Full cycle complete.")
+    return results
+
+
+def run_tournament(
+    db_path: str = "data/recommendations.db",
+    market: str = "us",
+    progress_callback: Callable[[float, str], None] | None = None,
+) -> None:
+    """Run weekly tournament to rank tickers and produce Top 15."""
+    _update = progress_callback or (lambda p, m: None)
+
+    _update(0.1, "Loading dependencies...")
+
+    from application.cli import _build_dependencies, _get_ticker_universe
+
+    deps = _build_dependencies(market)
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+
+    _update(0.3, f"Scoring {len(tickers)} tickers...")
+
+    from application.use_cases import WeeklyTournamentUseCase
+
+    use_case = WeeklyTournamentUseCase(
+        market_data=deps["market_data"],
+        technical_analysis=deps["technical_analysis"],
+        feature_engineer=deps["feature_engineer"],
+        predictors=deps["predictors"],
+        store=deps["store"],
+        tickers=tickers,
+        macro_symbols=deps["macro_symbols"],
+        market=market,
+        fundamental_engineer=deps["fundamental_engineer"],
+        cross_asset_engineer=deps["cross_asset_engineer"],
+        event_causal_engineer=deps["event_causal_engineer"],
+    )
+
+    _update(0.5, "Running tournament...")
+    use_case.execute(prediction_date=datetime.now())
+    _update(1.0, "Tournament complete.")
+
+
+def run_backtest(
+    market: str = "us",
+    start: str = "2024-01",
+    end: str = "2026-05",
+    progress_callback: Callable[[float, str], None] | None = None,
+) -> None:
+    """Run full backtest with progress tracking."""
+    _update = progress_callback or (lambda p, m: None)
+
+    _update(0.1, "Loading dependencies...")
+    from application.cli import _build_dependencies, _get_ticker_universe
+
+    deps = _build_dependencies(market, use_cache=False)
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+
+    _update(0.2, f"Pretraining on {len(tickers)} tickers ({start} to {end})...")
+
+    from application.use_cases import PretrainingUseCase
+
+    use_case = PretrainingUseCase(
+        market_data=deps["market_data"],
+        technical_analysis=deps["technical_analysis"],
+        feature_engineer=deps["feature_engineer"],
+        predictors=deps["predictors"],
+        store=deps["store"],
+        tickers=tickers,
+        macro_symbols=deps["macro_symbols"],
+        fundamental_engineer=deps["fundamental_engineer"],
+        cross_asset_engineer=deps["cross_asset_engineer"],
+        event_causal_engineer=deps["event_causal_engineer"],
+    )
+    use_case.execute(start_month=start, end_month=end)
+
+    _update(0.8, "Generating evaluation report...")
+    from application.backtest_runner import run_backtest_report
+
+    run_backtest_report()
+    _update(1.0, "Backtest complete.")
