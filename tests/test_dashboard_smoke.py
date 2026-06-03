@@ -6,6 +6,7 @@ from __future__ import annotations
 def test_formatters_importable() -> None:
     from adapters.visualization.components.formatters import (
         confidence_bar_html,
+        freshness_dot_html,
         freshness_status,
         freshness_status_html,
         grade_badge_html,
@@ -15,6 +16,7 @@ def test_formatters_importable() -> None:
         signal_pill_html,
         status_pill_html,
         urgency_badge,
+        urgency_pill_html,
     )
 
     assert callable(grade_color)
@@ -24,7 +26,9 @@ def test_formatters_importable() -> None:
     assert callable(signal_pill_html)
     assert callable(confidence_bar_html)
     assert callable(freshness_status_html)
+    assert callable(freshness_dot_html)
     assert callable(urgency_badge)
+    assert callable(urgency_pill_html)
     assert callable(pct)
     assert callable(freshness_status)
 
@@ -74,13 +78,19 @@ def test_data_loader_importable() -> None:
 def test_metrics_importable() -> None:
     from adapters.visualization.components.metrics import (
         render_action_card,
-        render_info_section,
+        render_hero_banner,
+        render_inline_context,
+        render_pick_card,
         render_signal_layer_card,
+        render_verdict_card,
     )
 
     assert callable(render_action_card)
     assert callable(render_signal_layer_card)
-    assert callable(render_info_section)
+    assert callable(render_hero_banner)
+    assert callable(render_verdict_card)
+    assert callable(render_inline_context)
+    assert callable(render_pick_card)
 
 
 def test_styles_importable() -> None:
@@ -88,16 +98,39 @@ def test_styles_importable() -> None:
 
     assert callable(inject_global_css)
     assert isinstance(GLOBAL_CSS, str)
-    assert "dashboard-card" in GLOBAL_CSS
+    assert "Inter" in GLOBAL_CSS
+    assert "#2563EB" in GLOBAL_CSS
 
 
 def test_action_runner_importable() -> None:
     from adapters.visualization.action_runner import (
         run_add_holding,
         run_add_watchlist,
+        run_backtest,
+        run_full_cycle,
         run_monitor_holdings,
+        run_tournament,
     )
 
     assert callable(run_monitor_holdings)
     assert callable(run_add_holding)
     assert callable(run_add_watchlist)
+    assert callable(run_full_cycle)
+    assert callable(run_tournament)
+    assert callable(run_backtest)
+
+
+def test_verdicts_importable() -> None:
+    from adapters.visualization.components.verdicts import (
+        ablation_verdict,
+        command_center_verdict,
+        model_confidence_verdict,
+        pick_verdict,
+        signal_layer_verdict,
+    )
+
+    assert callable(command_center_verdict)
+    assert callable(model_confidence_verdict)
+    assert callable(signal_layer_verdict)
+    assert callable(pick_verdict)
+    assert callable(ablation_verdict)
