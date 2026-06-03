@@ -179,4 +179,14 @@ Five hard stops — see `AGENTS.md` for full details:
 - Smoke + integration tests, all pre-commit hooks pass
 - Test suite — 470+ tests passing
 
+**Done (Phase 5.1 — Dashboard UI Overhaul 2026-06-02):**
+- Renamed `pages/` → `tabs/` to fix Streamlit sidebar auto-discovery bug
+- Global CSS module (`styles.py`) — Modern SaaS styling with cards, pills, badges, layer colors
+- 6 HTML formatters: grade badges, status pills, signal pills, confidence bars, freshness pills, grade display names
+- Fixed grade donut colors (enum → display name), human-readable ablation labels, SHAP layer-colored bars
+- Styled metric cards with HTML containers, signal layer cards with colored borders, info sections with tooltips
+- Action runner with progress-tracked `run_monitor_holdings`, `run_add_holding`, `run_add_watchlist`
+- All 6 tabs rewritten: styled cards, convergence bars, inline forms, expanders
+- Test suite — 496 tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing

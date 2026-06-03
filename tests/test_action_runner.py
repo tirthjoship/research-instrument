@@ -46,3 +46,34 @@ class TestRunMonitorHoldings:
             SQLiteStore(db_path)  # create empty DB
             signals = run_monitor_holdings(db_path=db_path)
             assert signals == []
+
+
+class TestRunFullCycle:
+    def test_importable_and_callable(self) -> None:
+        from adapters.visualization.action_runner import run_full_cycle
+
+        assert callable(run_full_cycle)
+
+    def test_signature_accepts_progress_callback(self) -> None:
+        import inspect
+
+        from adapters.visualization.action_runner import run_full_cycle
+
+        sig = inspect.signature(run_full_cycle)
+        assert "progress_callback" in sig.parameters
+        assert "db_path" in sig.parameters
+        assert "market" in sig.parameters
+
+
+class TestRunTournament:
+    def test_importable_and_callable(self) -> None:
+        from adapters.visualization.action_runner import run_tournament
+
+        assert callable(run_tournament)
+
+
+class TestRunBacktest:
+    def test_importable_and_callable(self) -> None:
+        from adapters.visualization.action_runner import run_backtest
+
+        assert callable(run_backtest)

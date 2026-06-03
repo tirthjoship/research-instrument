@@ -5,7 +5,7 @@ from __future__ import annotations
 import streamlit as st
 
 from adapters.visualization.action_runner import run_add_holding, run_monitor_holdings
-from adapters.visualization.components.metrics import render_info_section
+from adapters.visualization.components.metrics import render_inline_context
 from adapters.visualization.data_loader import load_holdings
 
 DB_PATH = "data/recommendations.db"
@@ -13,14 +13,11 @@ DB_PATH = "data/recommendations.db"
 
 def render(db_path: str = DB_PATH) -> None:
     """Render the Positions tab."""
-    render_info_section(
+    st.markdown("### My Positions")
+    render_inline_context(
         st,
-        "My Positions",
-        "Portfolio overview — holdings, risk, and sell signal monitoring.",
-        "Track your holdings and monitor for sell signals. The system checks "
-        "three conditions: stop-loss breach (-8%), negative sentiment spike, "
-        "and technical breakdown (price below SMA-50). Click 'Check Holdings' "
-        "to run the analysis.",
+        "Track your holdings and monitor for sell signals. "
+        "Checks stop-loss (-8%), negative sentiment, and technical breakdown.",
     )
 
     holdings = load_holdings(db_path)
