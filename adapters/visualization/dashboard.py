@@ -14,15 +14,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Inject global CSS before any content
 from adapters.visualization.components.styles import inject_global_css  # noqa: E402
 
 inject_global_css()
 
 # Branding header
 st.markdown(
-    '<h1 style="margin-bottom: 0;">📈 Multi-Modal Stock Recommender</h1>'
-    '<p style="color: #6B7280; font-size: 15px; margin-top: 4px;">'
+    '<h1 style="margin-bottom: 0;">Multi-Modal Stock Recommender</h1>'
+    '<p style="color: #6B7280; font-size: 14px; margin-top: 4px;">'
     "Decision dashboard — 5 signal layers · 101 features · hexagonal architecture"
     "</p>",
     unsafe_allow_html=True,
@@ -69,3 +68,11 @@ with tab6:
     from adapters.visualization.tabs.market_pulse import render as render_mp
 
     render_mp()
+
+# Footer
+st.markdown(
+    '<div class="dashboard-footer">'
+    "Multi-Modal Stock Recommender · Hexagonal Architecture · Built by Tirth Joshi"
+    "</div>",
+    unsafe_allow_html=True,
+)
