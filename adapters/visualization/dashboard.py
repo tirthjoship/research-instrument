@@ -14,9 +14,21 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-st.title("📈 Multi-Modal Stock Recommender")
-st.caption("Decision dashboard — 5 signal layers, 101 features, hexagonal architecture")
+# Inject global CSS before any content
+from adapters.visualization.components.styles import inject_global_css  # noqa: E402
 
+inject_global_css()
+
+# Branding header
+st.markdown(
+    '<h1 style="margin-bottom: 0;">📈 Multi-Modal Stock Recommender</h1>'
+    '<p style="color: #6B7280; font-size: 15px; margin-top: 4px;">'
+    "Decision dashboard — 5 signal layers · 101 features · hexagonal architecture"
+    "</p>",
+    unsafe_allow_html=True,
+)
+
+# Tab router
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "🎯 Command Center",
