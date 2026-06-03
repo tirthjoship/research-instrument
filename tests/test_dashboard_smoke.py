@@ -1,19 +1,29 @@
-"""Smoke test — dashboard module imports without Streamlit server."""
+"""Smoke test — dashboard modules import without Streamlit server."""
 
 from __future__ import annotations
 
 
 def test_formatters_importable() -> None:
     from adapters.visualization.components.formatters import (
-        direction_icon,
+        confidence_bar_html,
         freshness_status,
+        freshness_status_html,
+        grade_badge_html,
         grade_color,
+        grade_display_name,
         pct,
+        signal_pill_html,
+        status_pill_html,
         urgency_badge,
     )
 
     assert callable(grade_color)
-    assert callable(direction_icon)
+    assert callable(grade_display_name)
+    assert callable(grade_badge_html)
+    assert callable(status_pill_html)
+    assert callable(signal_pill_html)
+    assert callable(confidence_bar_html)
+    assert callable(freshness_status_html)
     assert callable(urgency_badge)
     assert callable(pct)
     assert callable(freshness_status)
@@ -64,10 +74,30 @@ def test_data_loader_importable() -> None:
 def test_metrics_importable() -> None:
     from adapters.visualization.components.metrics import (
         render_action_card,
-        render_metric,
+        render_info_section,
         render_signal_layer_card,
     )
 
-    assert callable(render_metric)
     assert callable(render_action_card)
     assert callable(render_signal_layer_card)
+    assert callable(render_info_section)
+
+
+def test_styles_importable() -> None:
+    from adapters.visualization.components.styles import GLOBAL_CSS, inject_global_css
+
+    assert callable(inject_global_css)
+    assert isinstance(GLOBAL_CSS, str)
+    assert "dashboard-card" in GLOBAL_CSS
+
+
+def test_action_runner_importable() -> None:
+    from adapters.visualization.action_runner import (
+        run_add_holding,
+        run_add_watchlist,
+        run_monitor_holdings,
+    )
+
+    assert callable(run_monitor_holdings)
+    assert callable(run_add_holding)
+    assert callable(run_add_watchlist)
