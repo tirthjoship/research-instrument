@@ -408,6 +408,8 @@ flowchart LR
 | 4C | Cross-asset intelligence — correlation graph, Granger causality, 10 supply chain groups, 8 features | ✅ Complete | 4A |
 | 4D | Event-causal learning — Gemini classification, exponential decay impact, 8 features | ✅ Complete | 4C |
 | 5 | Decision dashboard — 6-tab Streamlit (Command Center, Model Confidence, Signal Breakdown, Positions, Opportunities, Market Pulse) | ✅ Complete | 4D |
+| 5.1 | Dashboard UI polish — CSS cards/pills/badges, pages→tabs rename, grade donut fix, SHAP layer colors | ✅ Complete | 5 |
+| 5.2 | Dashboard UX overhaul — Inter font, verdict-first layout, Run Full Cycle/Tournament/Backtest, emoji-free, pick cards | ✅ Complete | 5.1 |
 
 ### Five Signal Layers (updated from 2 to 5)
 
@@ -485,3 +487,6 @@ Honest null result remains valid — rigorous negative finding is equally impres
 6. ~~Phase 4C~~ — ✅ Complete. Correlation graph + Granger causality + 10 supply chain groups + 8 features. PR #13 merged. 371 tests.
 7. ~~Phase 4D~~ — ✅ Complete. Gemini event classification + exponential decay impact + 8 features. PR #14 merged. 410 tests.
 8. ~~Phase 5~~ — ✅ Complete. 6-tab Streamlit dashboard, Plotly charts, watchlist, 472 tests. PR #15 merged.
+9. ~~Phase 5.1~~ — ✅ Complete. CSS cards/pills/badges, pages→tabs, grade donut fix. 496 tests. PR #16 merged.
+10. ~~Phase 5.2~~ — ✅ Complete. Inter font, verdict-first, Run Full Cycle, emoji-free content. 518 tests. PR #17 merged.
+11. Full universe backtest — 350+ tickers, 29 months. Result: ~49% accuracy, no edge (all p>0.05). Confirms EMH on mega-caps without sentiment.

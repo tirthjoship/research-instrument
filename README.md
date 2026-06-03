@@ -3,7 +3,7 @@
 Production-grade ML system predicting multi-horizon stock returns using a 5-layer feature architecture: 45 technical (Stage 1) + 24 sentiment/buzz/divergence (Stage 2) + 16 fundamental valuation + 8 cross-asset intelligence + 8 event-causal features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Cross-asset correlation graph with Granger causality. Event-causal learning with Gemini-classified news and exponential decay impact modeling. Portfolio tracking with automated sell signal detection. 6-tab Streamlit decision dashboard with interactive Plotly charts. Built with hexagonal architecture and strict point-in-time enforcement.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-472%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-518%20passing-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25+-brightgreen)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
@@ -93,13 +93,20 @@ adapters/
       charts.py                  # 7 Plotly builders (accuracy, donut, heatmap, decay, SHAP, ablation)
       formatters.py              # Grade colors, icons, urgency badges, freshness
       metrics.py                 # Metric card + action card components
-    pages/
-      command_center.py          # Tab 1: Today's actions, alerts, freshness
-      model_confidence.py        # Tab 2: Backtest metrics, SHAP, ablation, limitations
-      signal_breakdown.py        # Tab 3: Per-ticker 5-layer signal view
-      positions.py               # Tab 4: Holdings, sell signals
-      opportunities.py           # Tab 5: Ranked picks, watchlist
-      market_pulse.py            # Tab 6: Events, sector momentum, cascades
+    components/
+      styles.py                  # Global CSS (Inter font, #2563EB accent, hover effects)
+      formatters.py              # Grade badges, status pills, freshness dots (CSS, no emoji)
+      metrics.py                 # Hero banner, verdict card, inline context, pick card
+      verdicts.py                # Plain-English verdict generators (5 functions)
+      charts.py                  # 7 Plotly builders (accuracy, donut, heatmap, decay, SHAP, ablation)
+    tabs/
+      command_center.py          # Tab 1: Hero banner, Run Full Cycle, priority actions
+      model_confidence.py        # Tab 2: Verdict card, Run Backtest, SHAP, ablation
+      signal_breakdown.py        # Tab 3: Per-ticker 5-layer signal view with verdicts
+      positions.py               # Tab 4: Holdings, sell signals, add holding form
+      opportunities.py           # Tab 5: Top 5 pick cards, Run Tournament, watchlist
+      market_pulse.py            # Tab 6: Data pipeline status, supply chains, event decay
+    action_runner.py             # Progress-tracked: Run Full Cycle, Tournament, Backtest
 
 application/
   use_cases.py                   # PretrainingUseCase, WeeklyTournamentUseCase,
@@ -255,7 +262,7 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: 472 passed
+# Expected: 518 passed
 ```
 
 ### CLI Usage
@@ -365,7 +372,7 @@ make check
 | Dashboard data loader | 15 | SQLite + JSON loading, graceful defaults, missing DB handling |
 | Dashboard smoke | 4 | Import verification for all visualization modules |
 | Watchlist | 6 | SQLite CRUD: add, upsert dedup, remove, empty, dict structure |
-| **Total** | **472** | |
+| **Total** | **518** | |
 
 ---
 
@@ -435,6 +442,18 @@ Pipeline validated end-to-end: RSS scan → keyword scoring → 14 sentiment fea
 
 - **Known limitation:** Flan-T5 scorer disabled by default (`--no-flan`) due to torch/XGBoost OpenMP conflict on macOS; keyword-only scoring active
 
+### Full Universe Backtest (2026-06-03)
+
+Walk-forward on S&P 500 + NASDAQ-100 (~350 tickers), all 5 feature layers active:
+
+| Horizon | Accuracy | p-value | Folds | Predictions | Verdict |
+|---------|----------|---------|-------|-------------|---------|
+| 2d | 46.7% | 0.9945 | 38 | 1,520 | Worse than random |
+| 5d | 49.4% | 0.7282 | 57 | 2,280 | Indistinguishable from random |
+| 10d | 48.2% | 0.9281 | 38 | 1,520 | Worse than random |
+
+**Interpretation:** Confirms Phase 3A finding at full scale. Technical + fundamental + cross-asset + event-causal features together do not predict direction on mega-caps. Sentiment features (which require live data, not historical backtest) are the potential differentiator — Phase 3B in-sample showed 69.7% with sentiment, but that result is not yet out-of-sample validated.
+
 ### Naive Baselines (implemented, not yet compared)
 
 Four stock-selection baselines are ready for comparison against the ML model:
@@ -459,6 +478,8 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 4C | ✅ Complete | **Cross-asset intelligence** — CorrelationAnalyzer (correlation matrix, Ward clustering, Granger causality w/ BH correction), 8 features, 10 supply chain groups, CrossAssetPort |
 | 4D | ✅ Complete | **Event-causal learning** — Gemini event classification (10 categories), exponential decay impact learning, 8 features, event-sector mapping |
 | 5 | ✅ Complete | **Decision dashboard** — 6-tab Streamlit (Command Center, Model Confidence, Signal Breakdown, Positions, Opportunities, Market Pulse), Plotly charts, watchlist, graceful empty states |
+| 5.1 | ✅ Complete | **Dashboard UI polish** — CSS cards/pills/badges, pages→tabs rename, grade donut fix, SHAP layer colors |
+| 5.2 | ✅ Complete | **Dashboard UX overhaul** — Inter font, verdict-first layout, Run Full Cycle/Tournament/Backtest buttons, emoji-free content, pick cards, data pipeline panel |
 
 ---
 
@@ -502,7 +523,7 @@ Three GitHub Actions workflows automate quality gates:
 
 | Workflow | Trigger | What it does |
 |----------|---------|-------------|
-| `test.yml` | Push/PR to develop | Runs 472 tests, enforces 90% coverage |
+| `test.yml` | Push/PR to develop | Runs 518 tests, enforces 90% coverage |
 | `lint.yml` | Push/PR to develop | black, isort, ruff, mypy strict |
 | `security.yml` | Push/PR to develop | gitleaks secret scanning |
 
@@ -526,9 +547,11 @@ Future: `daily-scan.yml` cron workflow for automated RSS buzz collection.
 >
 > **Portfolio Management** layer adds holdings tracking with automated sell signal detection — stop-loss triggers, negative sentiment spikes, and technical breakdowns. The system doesn't just predict what to buy; it monitors what you hold and tells you when to sell.
 >
-> **Decision Dashboard** ties it all together — a 6-tab Streamlit app that synthesizes all 5 signal layers into actionable decisions. The Command Center shows 'what should I do today' with prioritized actions. Model Confidence displays honest backtest results with SHAP importance and ablation charts. Signal Breakdown lets you drill into any ticker across all 5 layers. Every tab degrades gracefully when data is missing, showing CLI commands to populate it.
+> **Decision Dashboard** ties it all together — a 6-tab Streamlit app designed like Wealthsimple/SimplyWallSt. Every section explains itself in plain English first ('The model doesn't have a proven edge yet'), then shows the evidence. One-click 'Run Full Cycle' button chains scan→tournament→accuracy tracking — no terminal needed. The Command Center shows prioritized actions (urgent/this week/watch). Model Confidence is brutally honest about what works and what doesn't. Opportunities tab shows top 5 picks as full detail cards with layer convergence and source attribution.
 >
-> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 472 tests, mypy strict, full CI/CD."
+> **Full-universe backtest** (350+ tickers, 29 months, 2024-2026) confirms: technical + fundamental + cross-asset + event-causal features alone achieve ~49% accuracy — indistinguishable from random on mega-caps. This honest null result is the foundation. The thesis posits that live sentiment divergence is the edge — Phase 3B in-sample showed 69.7% with sentiment, but out-of-sample validation is pending.
+>
+> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 518 tests, mypy strict, full CI/CD."
 
 ---
 
