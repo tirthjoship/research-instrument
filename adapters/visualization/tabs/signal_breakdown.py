@@ -8,9 +8,10 @@ import streamlit as st
 
 from adapters.visualization.components.formatters import grade_badge_html, pct
 from adapters.visualization.components.metrics import (
-    render_info_section,
+    render_inline_context,
     render_signal_layer_card,
 )
+from adapters.visualization.components.verdicts import signal_layer_verdict
 from adapters.visualization.data_loader import load_recommendations
 
 DB_PATH = "data/recommendations.db"
@@ -18,14 +19,11 @@ DB_PATH = "data/recommendations.db"
 
 def render(db_path: str = DB_PATH) -> None:
     """Render the Signal Breakdown tab."""
-    render_info_section(
+    st.markdown("### Signal Breakdown")
+    render_inline_context(
         st,
-        "Signal Breakdown",
-        "Deep dive into any ticker — see what each of the 5 signal layers is saying.",
-        "Select a ticker to view its signal profile across all 5 layers: "
-        "Technical (price/volume patterns), Sentiment (news/social buzz), "
-        "Fundamental (valuation metrics), Cross-Asset (correlation/supply chain), "
-        "and Event-Causal (news event impact). When layers agree, conviction is higher.",
+        "Select a ticker to see what each of the 5 signal layers is saying. "
+        "When layers agree, conviction is higher.",
     )
 
     recs = load_recommendations(db_path)
@@ -33,8 +31,8 @@ def render(db_path: str = DB_PATH) -> None:
     if not recs:
         st.markdown(
             '<div class="dashboard-card card-info">'
-            "<strong>No Signal Data</strong><br>"
-            '<span style="color: #6B7280;">Run a tournament to generate signal data for tickers.</span>'
+            "<strong>No signal data</strong><br>"
+            '<span style="color: #6B7280;">Run a tournament to generate signal data.</span>'
             "</div>",
             unsafe_allow_html=True,
         )
@@ -53,7 +51,7 @@ def render(db_path: str = DB_PATH) -> None:
 
 
 def _render_convergence(rec: Any) -> None:
-    """Show signal convergence with styled cards."""
+    """Show signal convergence summary."""
     signals = rec.horizon_signals or {}
     bullish = sum(1 for v in signals.values() if v == "bullish")
     bearish = sum(1 for v in signals.values() if v == "bearish")
@@ -75,15 +73,14 @@ def _render_convergence(rec: Any) -> None:
         f"{rec.prediction.confidence_5d:.0%}" if rec.prediction.confidence_5d else "—",
     )
 
-    # Convergence bar
     if bullish > bearish:
-        bg = "#E8F5E9"
+        bg = "#DCFCE7"
         text = f"{bullish}/{total} horizons bullish"
     elif bearish > bullish:
-        bg = "#FFEBEE"
+        bg = "#FEE2E2"
         text = f"{bearish}/{total} horizons bearish"
     else:
-        bg = "#FFF8E1"
+        bg = "#FEF9C3"
         text = f"Mixed: {bullish} bullish, {bearish} bearish"
 
     st.markdown(
@@ -94,20 +91,22 @@ def _render_convergence(rec: Any) -> None:
 
 
 def _render_layers(rec: Any) -> None:
-    """Render 5 signal layer cards with colored borders."""
+    """Render 5 signal layer cards with verdicts."""
     cols = st.columns(3)
 
     with cols[0]:
+        tech_signal = rec.technical_signal or 0
         tech_dir = (
             "bullish"
-            if (rec.technical_signal or 0) > 0.2
-            else "bearish" if (rec.technical_signal or 0) < -0.2 else "neutral"
+            if tech_signal > 0.2
+            else "bearish" if tech_signal < -0.2 else "neutral"
         )
         render_signal_layer_card(
             st,
             "Technical",
             "technical",
             tech_dir,
+            signal_layer_verdict("technical", rec.technical_signal),
             {
                 "RSI(14)": f"{rec.rsi_14:.1f}" if rec.rsi_14 else "N/A",
                 "MACD": f"{rec.macd:.4f}" if rec.macd else "N/A",
@@ -118,16 +117,18 @@ def _render_layers(rec: Any) -> None:
         )
 
     with cols[1]:
+        sent_signal = rec.sentiment_score or 0
         sent_dir = (
             "bullish"
-            if (rec.sentiment_score or 0) > 0.2
-            else "bearish" if (rec.sentiment_score or 0) < -0.2 else "neutral"
+            if sent_signal > 0.2
+            else "bearish" if sent_signal < -0.2 else "neutral"
         )
         render_signal_layer_card(
             st,
             "Sentiment",
             "sentiment",
             sent_dir,
+            signal_layer_verdict("sentiment", rec.sentiment_score),
             {
                 "Score": f"{rec.sentiment_score:.2f}" if rec.sentiment_score else "N/A",
                 "Divergence": (
@@ -142,8 +143,9 @@ def _render_layers(rec: Any) -> None:
             st,
             "Fundamental",
             "fundamental",
-            "—",
-            {"Status": "Available after tournament with fundamental features"},
+            "not_run",
+            signal_layer_verdict("fundamental", None),
+            {},
         )
 
     cols2 = st.columns(2)
@@ -153,8 +155,9 @@ def _render_layers(rec: Any) -> None:
             st,
             "Cross-Asset",
             "cross-asset",
-            "—",
-            {"Status": "Available after tournament with cross-asset features"},
+            "not_run",
+            signal_layer_verdict("cross-asset", None),
+            {},
         )
 
     with cols2[1]:
@@ -162,6 +165,7 @@ def _render_layers(rec: Any) -> None:
             st,
             "Event-Causal",
             "event-causal",
-            "—",
-            {"Status": "Available after event classification"},
+            "not_run",
+            signal_layer_verdict("event-causal", None),
+            {},
         )
