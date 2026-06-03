@@ -252,3 +252,47 @@ class TestFreshnessStatusHtml:
         html = freshness_status_html(None)
         assert "pill-critical" in html
         assert "Never" in html
+
+
+class TestUrgencyPillHtml:
+    def test_urgent(self) -> None:
+        from adapters.visualization.components.formatters import urgency_pill_html
+
+        html = urgency_pill_html("immediate")
+        assert "pill-urgent" in html
+        assert "URGENT" in html
+        assert "🔴" not in html
+
+    def test_this_week(self) -> None:
+        from adapters.visualization.components.formatters import urgency_pill_html
+
+        html = urgency_pill_html("this_week")
+        assert "pill-this-week" in html
+        assert "THIS WEEK" in html
+        assert "🟡" not in html
+
+    def test_watch(self) -> None:
+        from adapters.visualization.components.formatters import urgency_pill_html
+
+        html = urgency_pill_html("watch")
+        assert "pill-watch-priority" in html
+        assert "WATCH" in html
+        assert "⚪" not in html
+
+
+class TestFreshnessDotHtml:
+    def test_fresh(self) -> None:
+        from adapters.visualization.components.formatters import freshness_dot_html
+
+        html = freshness_dot_html(datetime.now() - timedelta(hours=2))
+        assert "dot-fresh" in html
+        assert "2h ago" in html
+        assert "✅" not in html
+
+    def test_none(self) -> None:
+        from adapters.visualization.components.formatters import freshness_dot_html
+
+        html = freshness_dot_html(None)
+        assert "dot-critical" in html
+        assert "Never" in html
+        assert "❌" not in html

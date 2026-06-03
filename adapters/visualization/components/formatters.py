@@ -149,3 +149,36 @@ def freshness_status_html(timestamp: datetime | None) -> str:
         return status_pill_html("warning", f"{hours_ago / 24:.0f}d ago")
     else:
         return status_pill_html("critical", f"{hours_ago / 24:.0f}d ago")
+
+
+def urgency_pill_html(urgency: str) -> str:
+    """Return HTML pill for urgency level — no emoji."""
+    mapping: dict[str, tuple[str, str]] = {
+        "immediate": ("pill-urgent", "URGENT"),
+        "this_week": ("pill-this-week", "THIS WEEK"),
+        "watch": ("pill-watch-priority", "WATCH"),
+    }
+    css_class, label = mapping.get(urgency, ("pill-watch-priority", "WATCH"))
+    return f'<span class="status-pill {css_class}">{label}</span>'
+
+
+def freshness_dot_html(timestamp: datetime | None) -> str:
+    """Return HTML freshness indicator with colored dot — no emoji."""
+    if timestamp is None:
+        return '<span class="freshness-dot dot-critical"></span>Never run'
+
+    hours_ago = (datetime.now() - timestamp).total_seconds() / 3600
+
+    if hours_ago < 6:
+        label = f"{hours_ago:.0f}h ago" if hours_ago >= 1 else "just now"
+        return f'<span class="freshness-dot dot-fresh"></span>{label}'
+    elif hours_ago < 24:
+        return f'<span class="freshness-dot dot-stale"></span>{hours_ago:.0f}h ago'
+    elif hours_ago < 72:
+        return (
+            f'<span class="freshness-dot dot-warning"></span>{hours_ago / 24:.0f}d ago'
+        )
+    else:
+        return (
+            f'<span class="freshness-dot dot-critical"></span>{hours_ago / 24:.0f}d ago'
+        )
