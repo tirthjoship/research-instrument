@@ -189,4 +189,17 @@ Five hard stops — see `AGENTS.md` for full details:
 - All 6 tabs rewritten: styled cards, convergence bars, inline forms, expanders
 - Test suite — 496 tests passing
 
+**Done (Phase 5.2 — Dashboard UX Overhaul 2026-06-03):**
+- CSS overhaul: Inter font (Google Fonts CDN), `#2563EB` accent blue, hover lift effects, styled buttons/inputs
+- Footer watermark: "Multi-Modal Stock Recommender · Hexagonal Architecture · Built by Tirth Joshi"
+- Verdict-first pattern: every section answers a question in plain English before showing numbers
+- 5 verdict generators: command center, model confidence, signal layer, pick, ablation
+- Hero banner + verdict card + inline context components (replaces all `st.expander("Learn more")`)
+- One-click actions: Run Full Cycle (chains scan→tournament→track), Run Tournament, Run Backtest
+- Emoji-free content: urgency pills + freshness dots use CSS classes, no emoji in content areas
+- Top 5 pick cards on Opportunities tab (no expanders for important data)
+- Data pipeline status panel on Market Pulse (shows all 7 connected data sources)
+- Supply chain groups expanded by default (no click to reveal)
+- Test suite — 518 tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
