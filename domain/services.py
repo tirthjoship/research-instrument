@@ -6,6 +6,7 @@ feature matrix validation, and data freshness checks.
 
 from datetime import datetime, timedelta
 
+from .conviction import SmartMoneySignal
 from .exceptions import LookAheadBiasError, StaleDataError
 from .models import MultiHorizonPrediction, RecommendationGrade, Sentiment, Signal
 
@@ -109,6 +110,19 @@ def validate_feature_matrix(feature_names: list[str]) -> None:
     leaked = set(feature_names) & FUTURE_LEAKAGE_COLUMNS
     if leaked:
         raise LookAheadBiasError(f"Future leakage columns detected: {sorted(leaked)}")
+
+
+def validate_smart_money_signals(
+    prediction_time: datetime,
+    signals: list[SmartMoneySignal],
+) -> None:
+    """Verify all filing dates are <= prediction_time."""
+    for signal in signals:
+        filed_dt = datetime.strptime(signal.filed_date, "%Y-%m-%d")
+        if filed_dt > prediction_time:
+            raise LookAheadBiasError(
+                f"SmartMoneySignal filed_date {signal.filed_date} > prediction_time {prediction_time}"
+            )
 
 
 def validate_data_freshness(
