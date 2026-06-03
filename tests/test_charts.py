@@ -139,3 +139,30 @@ class TestAblationBarChart:
         import plotly.graph_objects as go
 
         assert isinstance(fig, go.Figure)
+
+
+class TestGradeDonutWithEnumValues:
+    def test_enum_values_get_correct_colors(self) -> None:
+        from adapters.visualization.components.charts import grade_donut
+
+        fig = grade_donut(
+            {"strong_buy": 2, "buy": 5, "hold": 4, "may_sell": 2, "immediate_sell": 1}
+        )
+        import plotly.graph_objects as go
+
+        assert isinstance(fig, go.Figure)
+        if fig.data:
+            colors = fig.data[0].marker.colors
+            assert "#9E9E9E" not in colors  # no gray fallback
+
+
+class TestAblationHumanReadable:
+    def test_human_readable_labels(self) -> None:
+        from adapters.visualization.components.charts import ablation_bar_chart
+
+        fig = ablation_bar_chart(
+            variants=["technical_only", "technical_plus_sentiment"],
+            accuracies=[0.474, 0.697],
+        )
+        assert fig.data[0].x[0] == "Technical Only"
+        assert fig.data[0].x[1] == "Technical + Sentiment"

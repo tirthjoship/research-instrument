@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import plotly.graph_objects as go
 
+from adapters.visualization.components.formatters import grade_display_name
+
 COLOR_PALETTE: dict[str, str] = {
     "green": "#00C853",
     "red": "#FF1744",
@@ -22,8 +24,8 @@ _GRADE_CHART_COLORS: dict[str, str] = {
 
 _LAYOUT_DEFAULTS: dict[str, object] = {
     "template": "plotly_white",
-    "margin": {"l": 40, "r": 20, "t": 40, "b": 40},
-    "font": {"size": 12},
+    "margin": {"l": 40, "r": 20, "t": 50, "b": 40},
+    "font": {"size": 14},
 }
 
 
@@ -73,8 +75,9 @@ def grade_donut(grade_counts: dict[str, int]) -> go.Figure:
     fig = go.Figure()
 
     if grade_counts:
-        labels = list(grade_counts.keys())
-        values = list(grade_counts.values())
+        normalized = {grade_display_name(k): v for k, v in grade_counts.items()}
+        labels = list(normalized.keys())
+        values = list(normalized.values())
         colors = [_GRADE_CHART_COLORS.get(g, COLOR_PALETTE["gray"]) for g in labels]
         fig.add_trace(
             go.Pie(
@@ -143,22 +146,70 @@ def decay_curve(magnitude: float, half_life: float, days: int = 10) -> go.Figure
     return fig
 
 
+_FEATURE_LAYER_COLORS: dict[str, str] = {
+    "rsi_14": "#2979FF",
+    "macd": "#2979FF",
+    "macd_histogram": "#2979FF",
+    "macd_signal": "#2979FF",
+    "stochastic_k": "#2979FF",
+    "stochastic_d": "#2979FF",
+    "obv_trend": "#2979FF",
+    "return_1d": "#2979FF",
+    "return_5d": "#2979FF",
+    "price_vs_sma20": "#2979FF",
+    "sma20_vs_sma50": "#2979FF",
+    "volume_ratio_20d": "#2979FF",
+    "price_vs_sma50": "#2979FF",
+    "bollinger_pct_b": "#2979FF",
+    "atr_14": "#2979FF",
+    "price_vs_52w_high": "#2979FF",
+    "price_vs_52w_low": "#2979FF",
+    "return_6m": "#2979FF",
+    "return_12m": "#2979FF",
+    "volatility_regime": "#2979FF",
+    "drawdown_from_ath": "#2979FF",
+    "correlation_with_spy": "#2979FF",
+    "relative_strength_vs_peers": "#2979FF",
+    "vix_level": "#2979FF",
+    "yield_curve_slope": "#2979FF",
+    "buzz_volume": "#7C4DFF",
+    "buzz_acceleration": "#7C4DFF",
+    "sentiment_keyword": "#7C4DFF",
+    "sentiment_flan_t5": "#7C4DFF",
+    "google_trends_current": "#7C4DFF",
+    "stocktwits_bullish_ratio": "#7C4DFF",
+    "peg_ratio": "#00C853",
+    "pe_ratio": "#00C853",
+    "price_to_book": "#00C853",
+    "fcf_yield": "#00C853",
+    "debt_to_equity": "#00C853",
+    "upstream_leader_return_1d": "#FF9100",
+    "cluster_momentum_1w": "#FF9100",
+    "granger_lead_signal": "#FF9100",
+    "event_impact_score": "#FF1744",
+    "event_count_7d": "#FF1744",
+}
+
+
 def shap_bar_chart(
     features: list[str],
     importances: list[float],
 ) -> go.Figure:
-    """Horizontal bar chart of SHAP feature importance."""
+    """Horizontal bar chart of SHAP feature importance, colored by layer."""
     fig = go.Figure()
 
     if features and importances:
         paired = sorted(zip(importances, features), reverse=True)[:20]
         vals, names = zip(*paired) if paired else ([], [])
+        bar_colors = [
+            _FEATURE_LAYER_COLORS.get(n, COLOR_PALETTE["gray"]) for n in names
+        ]
         fig.add_trace(
             go.Bar(
                 x=list(vals),
                 y=list(names),
                 orientation="h",
-                marker={"color": COLOR_PALETTE["blue"]},
+                marker={"color": bar_colors},
             )
         )
 
@@ -166,9 +217,17 @@ def shap_bar_chart(
         title="SHAP Feature Importance (Top 20)",
         xaxis_title="Mean |SHAP|",
         yaxis={"autorange": "reversed"},
+        height=500,
         **_LAYOUT_DEFAULTS,
     )
     return fig
+
+
+_ABLATION_DISPLAY_NAMES: dict[str, str] = {
+    "technical_only": "Technical Only",
+    "technical_plus_sentiment": "Technical + Sentiment",
+    "technical_plus_sentiment_plus_source_weights": "All Features",
+}
 
 
 def ablation_bar_chart(
@@ -179,11 +238,15 @@ def ablation_bar_chart(
     fig = go.Figure()
 
     if variants and accuracies:
+        display_names = [
+            _ABLATION_DISPLAY_NAMES.get(v, v.replace("_", " ").title())
+            for v in variants
+        ]
         colors = [COLOR_PALETTE["blue"], COLOR_PALETTE["amber"], COLOR_PALETTE["green"]]
         bar_colors = [colors[i % len(colors)] for i in range(len(variants))]
         fig.add_trace(
             go.Bar(
-                x=variants,
+                x=display_names,
                 y=accuracies,
                 marker={"color": bar_colors},
                 text=[f"{a:.1%}" for a in accuracies],
