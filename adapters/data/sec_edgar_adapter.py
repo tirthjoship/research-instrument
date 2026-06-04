@@ -99,16 +99,18 @@ class SECEdgarAdapter:
             )
             return None
 
-    def get_13d_filings(self, ticker: str, since_date: str) -> list[SmartMoneySignal]:
+    def get_13d_filings(
+        self, ticker: str | None = None, since_date: str | None = None
+    ) -> list[SmartMoneySignal]:
         """Return SC 13D activist filings for *ticker* since *since_date* (YYYY-MM-DD).
 
         Returns an empty list on any network or parse error.
         """
-        params = {
-            "q": ticker,
-            "forms": "SC 13D",
-            "startdt": since_date,
-        }
+        params: dict[str, str] = {"forms": "SC 13D"}
+        if ticker:
+            params["q"] = ticker
+        if since_date:
+            params["startdt"] = since_date
         hits = self._fetch(params)
         signals: list[SmartMoneySignal] = []
         for hit in hits:
@@ -123,16 +125,18 @@ class SECEdgarAdapter:
         )
         return signals
 
-    def get_form4_filings(self, ticker: str, since_date: str) -> list[SmartMoneySignal]:
+    def get_form4_filings(
+        self, ticker: str | None = None, since_date: str | None = None
+    ) -> list[SmartMoneySignal]:
         """Return Form 4 insider transaction filings for *ticker* since *since_date*.
 
         Returns an empty list on any network or parse error.
         """
-        params = {
-            "q": ticker,
-            "forms": "4",
-            "startdt": since_date,
-        }
+        params: dict[str, str] = {"forms": "4"}
+        if ticker:
+            params["q"] = ticker
+        if since_date:
+            params["startdt"] = since_date
         hits = self._fetch(params)
         signals: list[SmartMoneySignal] = []
         for hit in hits:
@@ -147,8 +151,10 @@ class SECEdgarAdapter:
         )
         return signals
 
-    def get_all_signals(self, ticker: str, since_date: str) -> list[SmartMoneySignal]:
-        """Return combined 13D + Form 4 signals for *ticker* since *since_date*.
+    def get_all_signals(
+        self, ticker: str | None = None, since_date: str | None = None
+    ) -> list[SmartMoneySignal]:
+        """Return combined 13D + Form 4 signals.
 
         Convenience method that calls both underlying methods and concatenates results.
         """
