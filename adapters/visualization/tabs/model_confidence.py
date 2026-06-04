@@ -25,9 +25,12 @@ from adapters.visualization.components.verdicts import (
 from adapters.visualization.data_loader import (
     load_ablation_results,
     load_backtest_reports,
+    load_learned_rules,
     load_outcomes,
     load_shap_importance,
+    load_weight_history,
 )
+from domain.conviction import ConvictionWeights
 
 REPORTS_DIR = "data/reports"
 SHAP_PATH = "data/reports/shap_importance.json"
@@ -42,6 +45,11 @@ def render(
     """Render the System Intelligence tab."""
     # ── Signal Report Card ────────────────────────────────────────────────────
     _render_signal_report_card(db_path)
+
+    st.divider()
+
+    # ── Learning Dashboard ────────────────────────────────────────────────────
+    _render_learning_dashboard(db_path)
 
     st.divider()
 
@@ -255,3 +263,83 @@ def _render_signal_report_card(db_path: str) -> None:
     st.caption(
         f"Learning progress: {len(outcomes)} outcome{'s' if len(outcomes) != 1 else ''} tracked"
     )
+
+
+def _render_learning_dashboard(db_path: str) -> None:
+    """Render weight history, learned rules, and Run Learning Cycle button."""
+    st.markdown("#### Adaptive Learning")
+
+    # ── Run Learning Cycle button ─────────────────────────────────────────────
+    if st.button("Run Learning Cycle", type="primary", key="run_learning_cycle"):
+        try:
+            from adapters.data.sqlite_store import SQLiteStore
+            from application.learning_use_case import LearningUseCase
+
+            store = SQLiteStore(db_path)
+            weights = ConvictionWeights()
+            use_case = LearningUseCase(store=store, current_weights=weights)
+            result = use_case.learn()
+            n_adj = len(result.get("adjustments", []))
+            n_rules = len(result.get("rules", []))
+            n_patterns = len(result.get("patterns", []))
+            st.success(
+                f"Learning cycle complete — {n_patterns} patterns, "
+                f"{n_adj} weight adjustments, {n_rules} rules discovered."
+            )
+        except Exception as exc:  # noqa: BLE001
+            st.warning(f"Learning cycle unavailable: {exc}")
+
+    st.divider()
+
+    # ── Weight History ────────────────────────────────────────────────────────
+    st.markdown("#### Weight History")
+    weight_history = load_weight_history(db_path)
+
+    if weight_history:
+        import pandas as pd
+
+        rows = [
+            {
+                "Dimension": adj.dimension,
+                "Old Weight": f"{adj.old_weight:.4f}",
+                "New Weight": f"{adj.new_weight:.4f}",
+                "Change": f"{adj.change:+.4f}",
+                "Direction": adj.direction,
+                "Reason": adj.reason,
+                "Date": adj.adjusted_date,
+            }
+            for adj in weight_history
+        ]
+        st.dataframe(pd.DataFrame(rows), use_container_width=True)
+    else:
+        render_inline_context(
+            st,
+            "No weight adjustments recorded yet — run the learning cycle after tracking outcomes.",
+        )
+
+    st.divider()
+
+    # ── Learned Rules ─────────────────────────────────────────────────────────
+    st.markdown("#### Learned Rules")
+    rules = load_learned_rules(db_path)
+
+    if rules:
+        for rule in rules:
+            action_color = "#059669" if rule.action == "boost" else "#DC2626"
+            st.markdown(
+                f'<div class="dashboard-card" style="border-left: 4px solid {action_color}; '
+                f'padding: 0.75rem 1rem; margin-bottom: 0.75rem;">'
+                f"<strong>{rule.description}</strong><br>"
+                f'<span style="color:{action_color}; font-weight:600;">'
+                f"{rule.action.upper()}</span> &nbsp;|&nbsp; "
+                f"Confidence: {rule.confidence:.0%} &nbsp;|&nbsp; "
+                f"Supporting outcomes: {rule.supporting_outcomes} &nbsp;|&nbsp; "
+                f"Learned: {rule.learned_date}"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+    else:
+        render_inline_context(
+            st,
+            "No rules discovered yet — rules emerge after sufficient outcome data is accumulated.",
+        )
