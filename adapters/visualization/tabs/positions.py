@@ -1,4 +1,4 @@
-"""Tab 4: Outcome Tracker — trade recording form and P&L display."""
+"""Tab 4: My Portfolio — trade recording form and P&L display."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ import datetime
 import streamlit as st
 
 from adapters.visualization.action_runner import run_record_buy, run_record_sell
-from adapters.visualization.components.metrics import render_inline_context
 from adapters.visualization.components.verdicts import outcome_tracker_verdict
 from adapters.visualization.data_loader import load_outcomes, load_trades
 
@@ -15,12 +14,13 @@ DB_PATH = "data/recommendations.db"
 
 
 def render(db_path: str = DB_PATH) -> None:
-    """Render the Outcome Tracker tab."""
-    st.markdown("### Outcome Tracker")
-    render_inline_context(
-        st,
-        "Record your trades (buys and sells) to track real P&L. "
-        "Closing a position by logging a sell triggers automatic round-trip outcome calculation.",
+    """Render the My Portfolio tab."""
+    st.markdown("### My Portfolio")
+    st.markdown(
+        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        "Record trades and track your performance. The system learns from every trade."
+        "</div>",
+        unsafe_allow_html=True,
     )
 
     trades = load_trades(db_path)
@@ -39,13 +39,15 @@ def render(db_path: str = DB_PATH) -> None:
         total_return=total_return,
         win_rate=win_rate,
     )
-    card_class = (
-        "card-buy"
+    card_color = (
+        "#16A34A"
         if total_return > 0
-        else ("card-sell" if total_return < 0 else "card-info")
+        else ("#DC2626" if total_return < 0 else "#2563EB")
     )
     st.markdown(
-        f'<div class="dashboard-card {card_class}">{verdict}</div>',
+        f'<div class="ws-card" style="border-left:4px solid {card_color};">'
+        f"{verdict}"
+        f"</div>",
         unsafe_allow_html=True,
     )
 
@@ -54,7 +56,9 @@ def render(db_path: str = DB_PATH) -> None:
     # ── Trade Recording Form ──────────────────────────────────────────
     st.markdown("#### Record a Trade")
     st.markdown(
-        '<p class="section-subtitle">Log a buy or sell to start tracking outcomes.</p>',
+        '<p style="color:#64748B;font-size:13px;margin-top:-8px;margin-bottom:12px;">'
+        "Log a buy or sell to start tracking your outcomes."
+        "</p>",
         unsafe_allow_html=True,
     )
     with st.form("record_trade_form"):
@@ -65,8 +69,14 @@ def render(db_path: str = DB_PATH) -> None:
             "Price ($)", min_value=0.01, value=100.0, step=1.0
         )
         quantity = fcols[2].number_input("Quantity", min_value=1, value=10, step=1)
-        trade_date = fcols[3].date_input("Date", value=datetime.date.today())
-        submitted = st.form_submit_button("Record Trade", type="primary")
+        trade_date = fcols[3].date_input(
+            "Date (EST)", value=datetime.date.today(), help="Enter date in EST timezone"
+        )
+        submitted = st.form_submit_button(
+            "Record Trade",
+            type="primary",
+            use_container_width=False,
+        )
         if submitted and ticker:
             date_str = trade_date.strftime("%Y-%m-%d")
             if action == "Buy":
@@ -78,7 +88,7 @@ def render(db_path: str = DB_PATH) -> None:
                     db_path=db_path,
                 )
                 st.success(
-                    f"BUY recorded: {ticker.upper()} x{quantity} @ ${price:.2f} on {date_str}"
+                    f"BUY recorded: {ticker.upper()} x{quantity} @ ${price:.2f} on {date_str} EST"
                 )
             else:
                 run_record_sell(
@@ -89,60 +99,108 @@ def render(db_path: str = DB_PATH) -> None:
                     db_path=db_path,
                 )
                 st.success(
-                    f"SELL recorded: {ticker.upper()} x{quantity} @ ${price:.2f} on {date_str}"
+                    f"SELL recorded: {ticker.upper()} x{quantity} @ ${price:.2f} on {date_str} EST"
                 )
             st.rerun()
 
     st.divider()
 
-    # ── Summary metrics ───────────────────────────────────────────────
-    st.markdown("#### Summary")
-    mcols = st.columns(3)
-    mcols[0].metric("Total Trades", str(len(trades)))
-    mcols[1].metric(
-        "Win Rate",
-        f"{win_rate:.0f}%" if outcomes else "—",
-    )
-    sign = "+" if total_return >= 0 else ""
-    mcols[2].metric(
-        "Total Return",
-        f"{sign}${total_return:,.2f}" if outcomes else "—",
-    )
-
-    st.divider()
-
-    # ── Outcomes table ────────────────────────────────────────────────
-    if outcomes:
-        st.markdown("#### Closed Positions")
-        import pandas as pd
-
-        outcome_df = pd.DataFrame(
-            [
-                {
-                    "Ticker": o.ticker,
-                    "Buy Price": f"${o.buy_price:.2f}",
-                    "Sell Price": f"${o.sell_price:.2f}",
-                    "Return %": f"{'+' if o.return_pct >= 0 else ''}{o.return_pct:.1f}%",
-                    "Return $": f"{'+' if o.return_dollar >= 0 else ''}${o.return_dollar:,.2f}",
-                    "Holding Days": o.holding_days,
-                    "Buy Date": o.buy_date,
-                    "Sell Date": o.sell_date,
-                }
-                for o in outcomes
-            ]
+    # ── Summary metrics (only shown when there is data) ───────────────
+    if trades or outcomes:
+        st.markdown("#### Summary")
+        st.markdown(
+            '<div class="ws-card">',
+            unsafe_allow_html=True,
         )
-        st.dataframe(outcome_df, use_container_width=True, hide_index=True)
+        metric_cols = st.columns(
+            3 if (outcomes and trades) else (2 if outcomes or trades else 1)
+        )
+        col_idx = 0
+        if trades:
+            metric_cols[col_idx].metric("Total Trades", str(len(trades)))
+            col_idx += 1
+        if outcomes:
+            metric_cols[col_idx].metric("Win Rate", f"{win_rate:.0f}%")
+            col_idx += 1
+            sign = "+" if total_return >= 0 else ""
+            metric_cols[col_idx].metric("Total Return", f"{sign}${total_return:,.2f}")
+        st.markdown("</div>", unsafe_allow_html=True)
         st.divider()
 
-    # ── All trades list ───────────────────────────────────────────────
-    if trades:
-        st.markdown("#### All Recorded Trades")
+    # ── Closed Positions table ────────────────────────────────────────
+    if outcomes:
         import pandas as pd
 
+        st.markdown("#### Closed Positions")
+
+        def _pct_cell(val: float) -> str:
+            color = "#16A34A" if val > 0 else ("#DC2626" if val < 0 else "#374151")
+            sign = "+" if val >= 0 else ""
+            return (
+                f'<span style="color:{color};font-weight:600;">'
+                f"{sign}{val:.1f}%</span>"
+            )
+
+        def _dollar_cell(val: float) -> str:
+            color = "#16A34A" if val > 0 else ("#DC2626" if val < 0 else "#374151")
+            sign = "+" if val >= 0 else ""
+            return (
+                f'<span style="color:{color};font-weight:600;">'
+                f"{sign}${val:,.2f}</span>"
+            )
+
+        outcome_rows = [
+            {
+                "Ticker": o.ticker,
+                "Buy Date (EST)": o.buy_date,
+                "Sell Date (EST)": o.sell_date,
+                "Buy Price": f"${o.buy_price:.2f}",
+                "Sell Price": f"${o.sell_price:.2f}",
+                "Return %": _pct_cell(o.return_pct),
+                "Return $": _dollar_cell(o.return_dollar),
+                "Holding Days": o.holding_days,
+            }
+            for o in outcomes
+        ]
+        outcome_df = pd.DataFrame(outcome_rows)
+        st.write(outcome_df.to_html(escape=False, index=False), unsafe_allow_html=True)
+        st.divider()
+
+    # ── Open Positions (buys without matching sell) ───────────────────
+    if trades:
+        import pandas as pd
+
+        closed_buy_dates = {(o.ticker, o.buy_date) for o in outcomes}
+        open_trades = [
+            t
+            for t in trades
+            if t.action.value.upper() == "BUY"
+            and (t.ticker, t.trade_date) not in closed_buy_dates
+        ]
+
+        if open_trades:
+            st.markdown("#### Open Positions")
+            open_rows = [
+                {
+                    "Ticker": t.ticker,
+                    "Buy Date (EST)": t.trade_date,
+                    "Buy Price": f"${t.price:.2f}",
+                    "Quantity": t.quantity,
+                    "Value": f"${t.total_value:,.2f}",
+                    "Action": "Record Sell when ready",
+                }
+                for t in open_trades
+            ]
+            st.dataframe(
+                pd.DataFrame(open_rows), use_container_width=True, hide_index=True
+            )
+            st.divider()
+
+        st.markdown("#### All Recorded Trades")
         trades_df = pd.DataFrame(
             [
                 {
-                    "Date": t.trade_date,
+                    "Date (EST)": t.trade_date,
                     "Ticker": t.ticker,
                     "Action": t.action.value,
                     "Price": f"${t.price:.2f}",
@@ -157,10 +215,14 @@ def render(db_path: str = DB_PATH) -> None:
         )
         st.dataframe(trades_df, use_container_width=True, hide_index=True)
     else:
+        # ── Empty state ───────────────────────────────────────────────
         st.markdown(
-            '<div class="dashboard-card card-info">'
-            "<strong>No trades yet</strong><br>"
-            '<span style="color: #6B7280;">Use the form above to record your first trade.</span>'
+            '<div class="ws-card" style="text-align:center;padding:2rem;">'
+            '<div style="font-size:15px;font-weight:500;color:#1A202C;">No trades recorded yet</div>'
+            '<div style="font-size:13px;color:#64748B;margin-top:6px;">'
+            "When you spot an opportunity, click 'Track Trade' on the card to log it here. "
+            "The system learns from every trade you make."
+            "</div>"
             "</div>",
             unsafe_allow_html=True,
         )
