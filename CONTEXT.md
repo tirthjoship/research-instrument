@@ -402,6 +402,25 @@ Dashboard tab (renamed from Positions) for manual trade logging. Records buy/sel
 ### System Intelligence
 Dashboard tab (renamed from Model Confidence) showing the learning state of the system. Displays: signal report card, conviction weight history chart, learned rules table, and overall learning progress (number of patterns, rules discovered, weeks of data).
 
+### Signal Radar
+6-axis radar chart visualizing signal strength per dimension: Technical, Sentiment, Fundamental, Cross-Asset, Event-Causal, Smart Money. Our equivalent of SimplyWallSt's Snowflake chart. Each axis scored 0-10. Displayed on Stock Analysis tab and opportunity cards.
+
+### Criteria Card
+SWST-inspired component showing a scored checklist (e.g., "Valuation Score 4/6 ●●●●○○") with a plain English summary. Used across all tabs for every analysis section.
+
+### Verdict Bullet
+Green check (pass), amber warning (warn), or red X (fail) with a plain English finding. Follows every criteria card and chart.
+
+### Hold Duration
+Recommendation derived from multi-horizon signals:
+- All horizons bullish: "Hold until flip" (10+ days)
+- 2d bullish, 5d/10d neutral: "Short hold (2-3 days)"
+- 2d neutral, 5d/10d bullish: "Position hold (5-10 days)"
+- Mixed signals: "Monitor daily"
+
+### Market Overview Mode
+Landing page fallback when conviction scan data is thin (<5 results). Shows the 15 tournament recommendations ranked by composite score, plus a market heatmap treemap. Banner encourages fresh scan.
+
 ---
 
 ## Portfolio platform enhancements (2026-05-30)
