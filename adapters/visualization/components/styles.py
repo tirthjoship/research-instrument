@@ -534,6 +534,61 @@ header [data-testid="stToolbar"] { visibility: hidden; }
     border-top: 1px solid var(--border);
     margin-top: 3rem;
 }
+
+/* ===== Phase 5.4 — Missing CSS fixes ===== */
+.hero-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+.hero-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 4px;
+}
+.hero-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+.verdict-card {
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin: 12px 0;
+}
+.verdict-positive { border-left: 4px solid var(--success); }
+.verdict-negative { border-left: 4px solid var(--danger); }
+.verdict-neutral { border-left: 4px solid var(--accent); }
+.dashboard-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+}
+.ticker-bar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 8px 16px;
+    background: #0F172A;
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    overflow: hidden;
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+}
+.ticker-bar-item { display: inline-flex; align-items: center; gap: 6px; }
+.ticker-bar-up { color: #4ADE80; }
+.ticker-bar-down { color: #F87171; }
 </style>
 """
 
