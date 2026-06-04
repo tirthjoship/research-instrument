@@ -202,4 +202,18 @@ Five hard stops — see `AGENTS.md` for full details:
 - Supply chain groups expanded by default (no click to reveal)
 - Test suite — 518 tests passing
 
+**Done (Phase 7 — Opportunity Intelligence Foundation 2026-06-03):**
+- ConvictionScore, ConvictionWeights, OpportunityCard, SmartMoneySignal domain models
+- SmartMoneyPort protocol + validate_smart_money_signals temporal guard
+- Conviction scoring service — weighted multi-signal aggregation, freshness decay, ranking
+- SEC EDGAR adapter — 13D activist filings + Form 4 insider trades (free, no API key)
+- Smart money feature engineer — 8 features (13D count, insider cluster, stake %, buy/sell counts)
+- ConvictionScoringUseCase — orchestrates signal gathering → scoring → card generation
+- Opportunity card HTML components — conviction badges, action badges, evidence/risk rendering
+- Dashboard freshness header — last scan timestamp, market status, S&P 500 sparkline
+- Command Center → Opportunity Feed tab with conviction-ranked cards
+- Conviction weights + SEC EDGAR config in us.yaml
+- ADR-032 documenting the reframe from direction prediction to opportunity surfacing
+- Test suite — 660+ tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
