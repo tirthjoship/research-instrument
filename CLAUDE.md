@@ -238,4 +238,19 @@ Five hard stops — see `AGENTS.md` for full details:
 - ADR-034 documenting adaptive intelligence architecture
 - Test suite — 785+ tests passing
 
+**Done (Phase 5.3 — Dashboard Redesign 2026-06-03):**
+- Complete CSS theme rewrite — DM Sans headings, Inter body, JetBrains Mono numbers, WealthSimple palette
+- Smart scan cache — 15min market hours, 60min after hours, auto-scan on page load
+- 3-panel hero section — Market Status (EST), Your Portfolio, Today's Signal
+- Compact opportunity cards with conviction bars, action badges, freshness dots
+- Guided 3-step onboarding for first-run experience
+- Learning progress bar with milestone gamification
+- 5-tab layout: Today's Opportunities, Watchlist, My Portfolio, How It Works, Market Context
+- Killed tournament tab and signal breakdown tab (merged into card expand)
+- Watchlist tab with add/remove and historical view
+- How It Works tab — collapsible sections (Signal Performance, System Learning, Model Baseline)
+- Market Context — data pipeline grid with 8 sources including SEC EDGAR
+- ADR-035 documenting dashboard redesign decisions
+- Test suite — 838+ tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing

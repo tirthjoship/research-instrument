@@ -13,10 +13,10 @@ SUPPLY_CHAIN_PATH = "config/relationships/supply_chain.yaml"
 
 def render(supply_chain_path: str = SUPPLY_CHAIN_PATH) -> None:
     """Render the Market Pulse tab."""
-    st.markdown("### Market Pulse")
+    st.markdown("### Market Context")
     render_inline_context(
         st,
-        "Market-wide context — data sources, supply chain relationships, "
+        "Background intelligence — data sources, supply chain relationships, "
         "and event impact modeling.",
     )
 
@@ -28,31 +28,46 @@ def render(supply_chain_path: str = SUPPLY_CHAIN_PATH) -> None:
 
 
 def _render_data_sources() -> None:
-    """Show data pipeline status."""
+    """Show data pipeline status as a styled grid."""
     st.markdown("#### Data Pipeline")
     render_inline_context(st, "What data sources are connected and when they last ran.")
 
     sources = [
-        ("RSS Feeds", "connected", "15 feeds configured"),
-        ("Google Trends", "connected", "350 tickers tracked"),
-        ("StockTwits", "connected", "Live sentiment"),
-        ("GDELT", "not configured", "Available in future phase"),
-        ("Fundamental", "connected", "Via yfinance (real-time)"),
-        ("Cross-Asset", "connected", "Correlation matrix (daily)"),
-        ("Event-Causal", "connected", "Gemini classifier (10 categories)"),
+        ("RSS Feeds", True, "15 feeds configured"),
+        ("Google Trends", True, "350 tickers tracked"),
+        ("StockTwits", True, "Live sentiment"),
+        ("GDELT", False, "Available in future phase"),
+        ("Fundamental", True, "Via yfinance (real-time)"),
+        ("Cross-Asset", True, "Correlation matrix (daily)"),
+        ("Event-Causal", True, "Gemini classifier (10 categories)"),
+        ("SEC EDGAR", True, "13D activist filings + Form 4 insider trades"),
     ]
 
-    for name, status, detail in sources:
-        if status == "connected":
-            dot = '<span class="freshness-dot dot-fresh"></span>'
-        else:
-            dot = '<span class="freshness-dot dot-critical"></span>'
-
-        st.markdown(
-            f"{dot}<strong>{name}</strong> — "
-            f'<span style="color: #6B7280; font-size: 13px;">{detail}</span>',
-            unsafe_allow_html=True,
+    cards_html = ""
+    for name, active, detail in sources:
+        dot_color = "#22C55E" if active else "#EF4444"
+        dot_html = (
+            f'<span style="display:inline-block; width:8px; height:8px; '
+            f"border-radius:50%; background:{dot_color}; "
+            f'margin-right:6px; flex-shrink:0; margin-top:3px;"></span>'
         )
+        cards_html += (
+            f'<div class="ws-card" style="padding:12px 14px;">'
+            f'<div style="display:flex; align-items:flex-start; margin-bottom:4px;">'
+            f"{dot_html}"
+            f'<strong style="font-size:13px;">{name}</strong>'
+            f"</div>"
+            f'<span style="color:#6B7280; font-size:12px;">{detail}</span>'
+            f"</div>"
+        )
+
+    grid_html = (
+        f'<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); '
+        f'gap:12px; margin-top:8px;">'
+        f"{cards_html}"
+        f"</div>"
+    )
+    st.markdown(grid_html, unsafe_allow_html=True)
 
 
 def _render_supply_chains(supply_chain_path: str) -> None:
@@ -78,7 +93,7 @@ def _render_supply_chains(supply_chain_path: str) -> None:
         notes = rel.get("notes", "")
 
         st.markdown(
-            f'<div class="dashboard-card">'
+            f'<div class="ws-card">'
             f"<strong>{group_name}</strong> — {corr_type} · {lag}d lag",
             unsafe_allow_html=True,
         )

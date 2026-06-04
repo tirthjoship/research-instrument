@@ -1,4 +1,4 @@
-"""Tab 2: System Intelligence — Signal performance and model confidence."""
+"""Tab: How It Works — Signal performance, adaptive learning, and model baseline."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from adapters.visualization.components.metrics import (
     render_inline_context,
     render_verdict_card,
 )
+from adapters.visualization.components.progress import render_learning_progress_html
 from adapters.visualization.components.verdicts import (
     ablation_verdict,
     model_confidence_verdict,
@@ -42,18 +43,164 @@ def render(
     shap_path: str = SHAP_PATH,
     db_path: str = DB_PATH,
 ) -> None:
-    """Render the System Intelligence tab."""
-    # ── Signal Report Card ────────────────────────────────────────────────────
-    _render_signal_report_card(db_path)
+    """Render the How It Works tab."""
+    st.markdown("### How It Works")
+    st.markdown(
+        "See how the system makes decisions and how it's learning from your trades."
+    )
+
+    # ── Learning Progress Bar (always visible) ────────────────────────────────
+    outcomes = load_outcomes(db_path)
+    st.markdown(render_learning_progress_html(len(outcomes)), unsafe_allow_html=True)
+
+    # ── Expander 1: Signal Performance ───────────────────────────────────────
+    with st.expander("Signal Performance", expanded=True):
+        if not outcomes:
+            st.markdown("Track trades to see which signals make you money.")
+        else:
+            _render_signal_report_card_content(outcomes)
+
+    # ── Expander 2: System Learning ───────────────────────────────────────────
+    with st.expander("System Learning", expanded=False):
+        weight_history = load_weight_history(db_path)
+        rules = load_learned_rules(db_path)
+        if not weight_history and not rules:
+            st.markdown("The system adjusts its strategy as you track more trades.")
+        _render_learning_dashboard_content(db_path, weight_history, rules)
+
+    # ── Expander 3: Model Baseline ────────────────────────────────────────────
+    with st.expander("Model Baseline", expanded=False):
+        render_inline_context(
+            st,
+            "Historical validation — the honest baseline. The system uses conviction "
+            "scoring for recommendations, not this model directly.",
+        )
+        _render_model_baseline(reports_dir, shap_path)
+
+
+# ── Private helpers ────────────────────────────────────────────────────────────
+
+
+def _render_signal_report_card_content(outcomes: list[Any]) -> None:
+    """Render signal report card body (outcomes already loaded and non-empty)."""
+    signal_wins: dict[str, int] = {}
+    signal_totals: dict[str, int] = {}
+    for outcome in outcomes:
+        signals = getattr(outcome, "signals_used", None) or []
+        won = getattr(outcome, "was_correct", False)
+        for sig in signals:
+            signal_totals[sig] = signal_totals.get(sig, 0) + 1
+            if won:
+                signal_wins[sig] = signal_wins.get(sig, 0) + 1
+
+    best_signal: str | None = None
+    worst_signal: str | None = None
+    if signal_totals:
+        win_rates = {s: signal_wins.get(s, 0) / signal_totals[s] for s in signal_totals}
+        best_signal = max(win_rates, key=lambda s: win_rates[s])
+        worst_signal = min(win_rates, key=lambda s: win_rates[s])
+
+    verdict = system_intelligence_verdict(
+        n_outcomes=len(outcomes),
+        best_signal=best_signal,
+        worst_signal=worst_signal,
+    )
+    render_verdict_card(st, verdict, tone="neutral")
+
+    if signal_totals:
+        st.markdown("**Signal performance breakdown:**")
+        rows = []
+        for sig, total in sorted(signal_totals.items(), key=lambda x: -x[1]):
+            wins = signal_wins.get(sig, 0)
+            rate = wins / total
+            rows.append(f"- **{sig}**: {wins}/{total} correct ({rate:.0%})")
+        st.markdown("\n".join(rows))
+
+    st.caption(
+        f"Learning progress: {len(outcomes)} outcome{'s' if len(outcomes) != 1 else ''} tracked"
+    )
+
+
+def _render_learning_dashboard_content(
+    db_path: str,
+    weight_history: list[Any],
+    rules: list[Any],
+) -> None:
+    """Render weight history, learned rules, and Run Learning Cycle button."""
+    # ── Run Learning Cycle button ─────────────────────────────────────────────
+    if st.button("Run Learning Cycle", type="primary", key="run_learning_cycle"):
+        try:
+            from adapters.data.sqlite_store import SQLiteStore
+            from application.learning_use_case import LearningUseCase
+
+            store = SQLiteStore(db_path)
+            weights = ConvictionWeights()
+            use_case = LearningUseCase(store=store, current_weights=weights)
+            result = use_case.learn()
+            n_adj = len(result.get("adjustments", []))
+            n_rules = len(result.get("rules", []))
+            n_patterns = len(result.get("patterns", []))
+            st.success(
+                f"Learning cycle complete — {n_patterns} patterns, "
+                f"{n_adj} weight adjustments, {n_rules} rules discovered."
+            )
+        except Exception as exc:  # noqa: BLE001
+            st.warning(f"Learning cycle unavailable: {exc}")
 
     st.divider()
 
-    # ── Learning Dashboard ────────────────────────────────────────────────────
-    _render_learning_dashboard(db_path)
+    # ── Weight History ────────────────────────────────────────────────────────
+    st.markdown("#### Weight History")
+    if weight_history:
+        import pandas as pd
+
+        rows = [
+            {
+                "Dimension": adj.dimension,
+                "Old Weight": f"{adj.old_weight:.4f}",
+                "New Weight": f"{adj.new_weight:.4f}",
+                "Change": f"{adj.change:+.4f}",
+                "Direction": adj.direction,
+                "Reason": adj.reason,
+                "Date": adj.adjusted_date,
+            }
+            for adj in weight_history
+        ]
+        st.dataframe(pd.DataFrame(rows), use_container_width=True)
+    else:
+        render_inline_context(
+            st,
+            "No weight adjustments recorded yet — run the learning cycle after tracking outcomes.",
+        )
 
     st.divider()
 
-    # ── Existing backtest / SHAP / ablation content ───────────────────────────
+    # ── Learned Rules ─────────────────────────────────────────────────────────
+    st.markdown("#### Learned Rules")
+    if rules:
+        for rule in rules:
+            action_color = "#059669" if rule.action == "boost" else "#DC2626"
+            st.markdown(
+                f'<div class="dashboard-card" style="border-left: 4px solid {action_color}; '
+                f'padding: 0.75rem 1rem; margin-bottom: 0.75rem;">'
+                f"<strong>{rule.description}</strong><br>"
+                f'<span style="color:{action_color}; font-weight:600;">'
+                f"{rule.action.upper()}</span> &nbsp;|&nbsp; "
+                f"Confidence: {rule.confidence:.0%} &nbsp;|&nbsp; "
+                f"Supporting outcomes: {rule.supporting_outcomes} &nbsp;|&nbsp; "
+                f"Learned: {rule.learned_date}"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+    else:
+        render_inline_context(
+            st,
+            "No rules discovered yet — rules emerge after sufficient outcome data is accumulated.",
+        )
+
+
+def _render_model_baseline(reports_dir: str, shap_path: str) -> None:
+    """Render backtest, SHAP, and ablation content."""
     reports = load_backtest_reports(reports_dir)
 
     if not reports:
@@ -212,134 +359,25 @@ def _render_shap(shap_path: str) -> None:
         st.caption("No SHAP data available. Run SHAP analysis to populate.")
 
 
+# ── Legacy helpers kept for backward compatibility ─────────────────────────────
+
+
 def _render_signal_report_card(db_path: str) -> None:
-    """Render signal report card from tracked trade outcomes."""
+    """Render signal report card from tracked trade outcomes (legacy entry point)."""
     st.markdown("#### Signal Report Card")
-
     outcomes = load_outcomes(db_path)
-
     if not outcomes:
         render_inline_context(
             st,
             "No outcome data yet — start tracking trades to build signal intelligence.",
         )
         return
-
-    # Compute per-signal win rates from outcome objects
-    signal_wins: dict[str, int] = {}
-    signal_totals: dict[str, int] = {}
-    for outcome in outcomes:
-        signals = getattr(outcome, "signals_used", None) or []
-        won = getattr(outcome, "was_correct", False)
-        for sig in signals:
-            signal_totals[sig] = signal_totals.get(sig, 0) + 1
-            if won:
-                signal_wins[sig] = signal_wins.get(sig, 0) + 1
-
-    best_signal: str | None = None
-    worst_signal: str | None = None
-    if signal_totals:
-        win_rates = {s: signal_wins.get(s, 0) / signal_totals[s] for s in signal_totals}
-        best_signal = max(win_rates, key=lambda s: win_rates[s])
-        worst_signal = min(win_rates, key=lambda s: win_rates[s])
-
-    verdict = system_intelligence_verdict(
-        n_outcomes=len(outcomes),
-        best_signal=best_signal,
-        worst_signal=worst_signal,
-    )
-    render_verdict_card(st, verdict, tone="neutral")
-
-    # Report card table
-    if signal_totals:
-        st.markdown("**Signal performance breakdown:**")
-        rows = []
-        for sig, total in sorted(signal_totals.items(), key=lambda x: -x[1]):
-            wins = signal_wins.get(sig, 0)
-            rate = wins / total
-            rows.append(f"- **{sig}**: {wins}/{total} correct ({rate:.0%})")
-        st.markdown("\n".join(rows))
-
-    st.caption(
-        f"Learning progress: {len(outcomes)} outcome{'s' if len(outcomes) != 1 else ''} tracked"
-    )
+    _render_signal_report_card_content(outcomes)
 
 
 def _render_learning_dashboard(db_path: str) -> None:
-    """Render weight history, learned rules, and Run Learning Cycle button."""
+    """Render weight history, learned rules, and Run Learning Cycle button (legacy entry point)."""
     st.markdown("#### Adaptive Learning")
-
-    # ── Run Learning Cycle button ─────────────────────────────────────────────
-    if st.button("Run Learning Cycle", type="primary", key="run_learning_cycle"):
-        try:
-            from adapters.data.sqlite_store import SQLiteStore
-            from application.learning_use_case import LearningUseCase
-
-            store = SQLiteStore(db_path)
-            weights = ConvictionWeights()
-            use_case = LearningUseCase(store=store, current_weights=weights)
-            result = use_case.learn()
-            n_adj = len(result.get("adjustments", []))
-            n_rules = len(result.get("rules", []))
-            n_patterns = len(result.get("patterns", []))
-            st.success(
-                f"Learning cycle complete — {n_patterns} patterns, "
-                f"{n_adj} weight adjustments, {n_rules} rules discovered."
-            )
-        except Exception as exc:  # noqa: BLE001
-            st.warning(f"Learning cycle unavailable: {exc}")
-
-    st.divider()
-
-    # ── Weight History ────────────────────────────────────────────────────────
-    st.markdown("#### Weight History")
     weight_history = load_weight_history(db_path)
-
-    if weight_history:
-        import pandas as pd
-
-        rows = [
-            {
-                "Dimension": adj.dimension,
-                "Old Weight": f"{adj.old_weight:.4f}",
-                "New Weight": f"{adj.new_weight:.4f}",
-                "Change": f"{adj.change:+.4f}",
-                "Direction": adj.direction,
-                "Reason": adj.reason,
-                "Date": adj.adjusted_date,
-            }
-            for adj in weight_history
-        ]
-        st.dataframe(pd.DataFrame(rows), use_container_width=True)
-    else:
-        render_inline_context(
-            st,
-            "No weight adjustments recorded yet — run the learning cycle after tracking outcomes.",
-        )
-
-    st.divider()
-
-    # ── Learned Rules ─────────────────────────────────────────────────────────
-    st.markdown("#### Learned Rules")
     rules = load_learned_rules(db_path)
-
-    if rules:
-        for rule in rules:
-            action_color = "#059669" if rule.action == "boost" else "#DC2626"
-            st.markdown(
-                f'<div class="dashboard-card" style="border-left: 4px solid {action_color}; '
-                f'padding: 0.75rem 1rem; margin-bottom: 0.75rem;">'
-                f"<strong>{rule.description}</strong><br>"
-                f'<span style="color:{action_color}; font-weight:600;">'
-                f"{rule.action.upper()}</span> &nbsp;|&nbsp; "
-                f"Confidence: {rule.confidence:.0%} &nbsp;|&nbsp; "
-                f"Supporting outcomes: {rule.supporting_outcomes} &nbsp;|&nbsp; "
-                f"Learned: {rule.learned_date}"
-                f"</div>",
-                unsafe_allow_html=True,
-            )
-    else:
-        render_inline_context(
-            st,
-            "No rules discovered yet — rules emerge after sufficient outcome data is accumulated.",
-        )
+    _render_learning_dashboard_content(db_path, weight_history, rules)
