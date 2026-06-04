@@ -213,6 +213,32 @@ def load_outcomes(db_path: str, ticker: str | None = None) -> list[Any]:
         return []
 
 
+def load_weight_history(db_path: str) -> list[Any]:
+    """Load weight adjustment history from SQLite. Returns empty list if DB missing."""
+    if not Path(db_path).exists():
+        return []
+    try:
+        from adapters.data.sqlite_store import SQLiteStore
+
+        return SQLiteStore(db_path).get_weight_history()
+    except Exception as e:
+        logger.warning("Failed to load weight history: %s", e)
+        return []
+
+
+def load_learned_rules(db_path: str) -> list[Any]:
+    """Load learned rules from SQLite. Returns empty list if DB missing."""
+    if not Path(db_path).exists():
+        return []
+    try:
+        from adapters.data.sqlite_store import SQLiteStore
+
+        return SQLiteStore(db_path).get_learned_rules()
+    except Exception as e:
+        logger.warning("Failed to load learned rules: %s", e)
+        return []
+
+
 def load_scan_timestamp(reports_dir: str = "data/reports") -> str | None:
     """Find most recent backtest report and return formatted timestamp string.
 
