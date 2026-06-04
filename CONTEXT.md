@@ -344,6 +344,64 @@ Items to validate, test, and backtest in Phase 4, 5, 6, and future state. These 
 - [ ] **VanEck BUZZ comparison benchmark:** Ongoing comparison — does our divergence approach outperform BUZZ's popularity approach on same universe?
 - [ ] **Ensemble weight optimization:** Bayesian optimization of model weights in ensemble. Compare vs equal-weight and accuracy-weighted.
 
+## Glossary — Phase 7-9 Terms
+
+### Conviction Score
+Weighted multi-signal score (1-10) measuring confidence in an opportunity. Aggregates 6 dimensions: signal agreement (technical + sentiment alignment), smart money activity, sentiment momentum, fundamental basis, temporal freshness, and ML direction. Higher = stronger conviction. Scores below 4 are suppressed.
+
+### Opportunity Card
+4-part structured output for a single opportunity:
+- **Alert** — headline (what is happening and why it matters)
+- **Evidence** — plain English facts from each signal layer
+- **Suggestion** — one of: Buy / Watch / Hold / Sell
+- **Risk** — what could invalidate the thesis
+
+### Smart Money Signal
+SEC filing indicating institutional or insider activity. Two types:
+- **13D** — activist investor acquired 5%+ stake (bullish catalyst signal)
+- **Form 4** — insider buy or sell transaction (directional signal; insider buys weighted positive)
+
+### Conviction Weights
+Tunable per-dimension weights applied during conviction score computation. Stored in `us.yaml`. Defaults:
+| Dimension | Default Weight | Rationale |
+|-----------|---------------|-----------|
+| smart_money | 1.5 | Highest — SEC filings are high-signal, rare |
+| signal_agreement | 1.2 | Multi-modal alignment is strong confirmation |
+| sentiment_momentum | 1.0 | Core thesis signal |
+| fundamental_basis | 1.0 | Valuation context |
+| temporal_freshness | 0.8 | Decays older signals |
+| ml_direction | 0.3 | Lowest — model unproven, not trusted yet |
+
+Weights evolve automatically via Phase 9 adaptive intelligence.
+
+### Pattern Memory
+Historical record mapping `signal_combination → outcome`. Groups completed trades by which signals fired at entry time, then tracks hit rate (% profitable) and average return per pattern. Powers adaptive weight adjustment and rule discovery.
+
+### Weight Adjustment
+Automatic change to a conviction weight dimension based on accumulated outcome data. Triggered when a dimension has sufficient history (≥10 trades). Rules:
+- **Boost** — hit rate > 65%: increase weight by up to +0.2
+- **Reduce** — hit rate < 50%: decrease weight by up to -0.2
+- **Guardrails** — floor 0.05, ceiling 3.0, max single adjustment ±0.2
+
+### Learned Rule
+Emergent rule extracted from pattern analysis. Two types:
+- **Suppress** — pattern has < 40% hit rate; system down-weights or skips this combination
+- **Boost** — pattern has > 70% hit rate; system up-weights and highlights this combination
+
+Each rule carries a confidence score (0.0–1.0) and minimum sample count before activation.
+
+### Signal Report Card
+Monthly performance summary per signal dimension. Shows: hit rate, average return, best/worst signal combination, trend direction, and concrete recommendation (e.g., "smart_money weight is performing — consider increasing"). Displayed on System Intelligence dashboard tab.
+
+### Historical Bootstrap
+Cold-start mechanism that simulates past recommendations using historical price data. Runs once on system initialization to populate outcome history so pattern memory and weight adjustments have data to work with from day one. Avoids the "new system is blind" problem.
+
+### Outcome Tracker
+Dashboard tab (renamed from Positions) for manual trade logging. Records buy/sell with date + price. Computes realized P&L, signals active at time of entry, and outcome attribution. Feeds pattern memory and signal report card.
+
+### System Intelligence
+Dashboard tab (renamed from Model Confidence) showing the learning state of the system. Displays: signal report card, conviction weight history chart, learned rules table, and overall learning progress (number of patterns, rules discovered, weeks of data).
+
 ---
 
 ## Portfolio platform enhancements (2026-05-30)
@@ -434,6 +492,9 @@ flowchart LR
 | 029 | Cross-asset feature architecture: CrossAssetPort + dual adapter + Granger pre-filter | Correlation >0.65 pre-filter → Granger causality. 10 supply chain groups. Separate CorrelationAnalyzer + CrossAssetFeatureEngineer |
 | 030 | Event-causal learning: Gemini free tier + empirical impact + exponential decay | 10 event categories, bootstrap impact table from GDELT, learned half-life per category×sector |
 | 031 | Decision dashboard: 6-tab Streamlit + Plotly, command center first | Decision-oriented (not data viewer), Plotly interactive charts, watchlist feature, graceful empty states |
+| 032 | Reframe from direction prediction to opportunity surfacing with conviction scoring | Direction accuracy ~50% on mega-caps (EMH); actionable opportunities with multi-signal conviction score (1-10) are more useful than probability labels |
+| 033 | Outcome tracking with trade logging, signal report card, and historical bootstrap | System needs memory of what it recommended and what happened to learn; bootstrap solves cold-start; report card makes signal quality visible |
+| 034 | Adaptive intelligence with pattern memory, weight evolution, and rule discovery | Conviction weights should update based on evidence, not intuition; pattern memory links signal combinations to outcomes; guardrails prevent overcorrection |
 
 ### Adapters
 
