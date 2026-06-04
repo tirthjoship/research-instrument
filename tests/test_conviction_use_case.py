@@ -240,3 +240,66 @@ def test_form4_evidence_buy_sell_label() -> None:
     evidence_text = " ".join(cards[0].evidence) if cards else ""
     if cards:
         assert "sell" in evidence_text.lower() or "sale" in evidence_text.lower()
+
+
+def test_compute_sub_scores_uses_real_data_when_available():
+    from datetime import datetime
+    from unittest.mock import MagicMock
+
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    use_case = ConvictionScoringUseCase(
+        smart_money=MagicMock(), tickers=["NVDA"], weights=WEIGHTS
+    )
+    features = {
+        "sm_13d_count": 0,
+        "sm_form4_buy_count": 0,
+        "sm_activist_count": 0,
+        "sm_insider_cluster": 0,
+    }
+    mock_buzz = MagicMock()
+    mock_buzz.sentiment_raw = 0.6
+    mock_buzz.fetched_at = datetime(2026, 6, 3)
+    ticker_info = {
+        "pegRatio": 0.66,
+        "freeCashflow": 46e9,
+        "marketCap": 5.3e12,
+        "returnOnEquity": 1.14,
+    }
+    mock_rec = MagicMock()
+    mock_rec.grade = "strong_buy"
+
+    sub_scores = use_case._compute_sub_scores(
+        features=features,
+        ticker_signals=[],
+        scan_time=datetime(2026, 6, 4),
+        buzz_signals=[mock_buzz],
+        ticker_info=ticker_info,
+        recommendation=mock_rec,
+    )
+    assert sub_scores["sentiment_momentum"] != 5.0
+    assert sub_scores["fundamental_basis"] != 5.0
+    assert sub_scores["ml_direction"] == 9
+
+
+def test_compute_sub_scores_falls_back_without_data():
+    from datetime import datetime
+    from unittest.mock import MagicMock
+
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    use_case = ConvictionScoringUseCase(
+        smart_money=MagicMock(), tickers=["NVDA"], weights=WEIGHTS
+    )
+    features = {
+        "sm_13d_count": 0,
+        "sm_form4_buy_count": 0,
+        "sm_activist_count": 0,
+        "sm_insider_cluster": 0,
+    }
+    sub_scores = use_case._compute_sub_scores(
+        features=features, ticker_signals=[], scan_time=datetime(2026, 6, 4)
+    )
+    assert sub_scores["sentiment_momentum"] == 5.0
+    assert sub_scores["fundamental_basis"] == 5.0
+    assert sub_scores["ml_direction"] == 5.0

@@ -5,7 +5,7 @@ and OpportunityCard generation.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Callable
+from typing import Any, Callable
 
 from loguru import logger
 
@@ -43,12 +43,14 @@ class ConvictionScoringUseCase:
         smart_money: object,  # duck-typed SmartMoneyPort
         tickers: list[str],
         weights: ConvictionWeights,
+        store: object | None = None,
         pinned: set[str] | None = None,
         top_n: int = 15,
     ) -> None:
         self._smart_money = smart_money
         self._tickers = tickers
         self._weights = weights
+        self._store = store
         self._pinned = pinned or set()
         self._top_n = top_n
         self._engineer = SmartMoneyFeatureEngineer()
@@ -139,7 +141,38 @@ class ConvictionScoringUseCase:
         )
 
         ticker_signals = [s for s in signals if s.ticker == ticker]
-        sub_scores = self._compute_sub_scores(features, ticker_signals, scan_time)
+
+        buzz_signals = None
+        recommendation = None
+        ticker_info = None
+
+        if self._store is not None:
+            try:
+                buzz_signals = self._store.get_buzz_signals(ticker=ticker)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+            try:
+                recs = self._store.get_recommendations()  # type: ignore[attr-defined]
+                ticker_recs = [r for r in recs if r.symbol == ticker]
+                recommendation = ticker_recs[0] if ticker_recs else None
+            except Exception:
+                pass
+
+        try:
+            from adapters.visualization.price_cache import _fetch_ticker_info_impl
+
+            ticker_info = _fetch_ticker_info_impl(ticker)
+        except Exception:
+            pass
+
+        sub_scores = self._compute_sub_scores(
+            features=features,
+            ticker_signals=ticker_signals,
+            scan_time=scan_time,
+            buzz_signals=buzz_signals,
+            ticker_info=ticker_info,
+            recommendation=recommendation,
+        )
 
         conviction = compute_conviction(sub_scores, self._weights)
 
@@ -165,9 +198,12 @@ class ConvictionScoringUseCase:
         features: dict[str, float],
         ticker_signals: list[SmartMoneySignal],
         scan_time: datetime,
+        buzz_signals: list[Any] | None = None,
+        ticker_info: dict[str, Any] | None = None,
+        recommendation: object | None = None,
     ) -> dict[str, float]:
-        """Compute the six sub-score dimensions."""
-        # smart_money sub-score
+        """Compute the six sub-score dimensions using real data when available."""
+        # smart_money (existing logic)
         sm_raw = (
             features.get("sm_13d_count", 0.0) * 3
             + features.get("sm_insider_cluster", 0.0) * 7
@@ -175,18 +211,75 @@ class ConvictionScoringUseCase:
         )
         sm_score = min(sm_raw, 10.0)
 
-        # signal_agreement: fraction of 4 key features that are non-zero
-        agreement_features = [
-            features.get("sm_13d_count", 0.0),
-            features.get("sm_form4_buy_count", 0.0),
-            features.get("sm_activist_count", 0.0),
-            features.get("sm_insider_cluster", 0.0),
-        ]
-        non_zero = sum(1 for v in agreement_features if v != 0.0)
-        signal_agreement = min(non_zero / 4.0 * 10.0, 10.0)
+        # signal_agreement: cross-layer check
+        layers_firing = 0
+        if sm_score > 2:
+            layers_firing += 1
+        if buzz_signals and any(
+            getattr(b, "sentiment_raw", 0) > 0 for b in buzz_signals
+        ):
+            layers_firing += 1
+        if ticker_info and float(ticker_info.get("pegRatio") or 99) < 2:
+            layers_firing += 1
+        if recommendation and getattr(recommendation, "grade", "") in (
+            "strong_buy",
+            "buy",
+        ):
+            layers_firing += 1
+        signal_agreement = min(layers_firing / 4.0 * 10.0, 10.0)
 
-        # freshness: best score from filed_dates
-        freshness = 2.0  # default (stale)
+        # sentiment_momentum from buzz_signals
+        sentiment_momentum = 5.0
+        if buzz_signals:
+            recent_sentiments: list[float] = []
+            for b in buzz_signals:
+                fetched = getattr(b, "fetched_at", None)
+                raw = float(getattr(b, "sentiment_raw", 0.0))
+                if fetched is not None:
+                    try:
+                        age_days = (scan_time - fetched).total_seconds() / 86400
+                        if age_days < 7:
+                            recent_sentiments.append(raw)
+                    except (TypeError, AttributeError):
+                        recent_sentiments.append(raw)
+                else:
+                    recent_sentiments.append(raw)
+            if recent_sentiments:
+                avg = sum(recent_sentiments) / len(recent_sentiments)
+                sentiment_momentum = max(1.0, min(10.0, 5.0 + avg * 5.0))
+
+        # fundamental_basis from yfinance ticker_info
+        fundamental_basis = 5.0
+        if ticker_info:
+            peg = float(ticker_info.get("pegRatio") or 99)
+            mcap = float(ticker_info.get("marketCap") or 1)
+            fcf = float(ticker_info.get("freeCashflow") or 0)
+            fcf_yield = fcf / max(mcap, 1.0)
+            roe = float(ticker_info.get("returnOnEquity") or 0)
+            peg_s = 3 if peg < 1 else (2 if peg < 2 else (1 if peg < 3 else 0))
+            fcf_s = (
+                3
+                if fcf_yield > 0.05
+                else (2 if fcf_yield > 0.02 else (1 if fcf_yield > 0 else 0))
+            )
+            roe_s = 4 if roe > 0.2 else (3 if roe > 0.15 else (2 if roe > 0.1 else 1))
+            fundamental_basis = max(1.0, min(10.0, float(peg_s + fcf_s + roe_s)))
+
+        # ml_direction from stored recommendation
+        ml_direction = 5.0
+        if recommendation:
+            grade = getattr(recommendation, "grade", "hold")
+            grade_map = {
+                "strong_buy": 9,
+                "buy": 7,
+                "hold": 5,
+                "may_sell": 3,
+                "immediate_sell": 1,
+            }
+            ml_direction = float(grade_map.get(grade, 5))
+
+        # temporal_freshness (existing logic)
+        freshness = 2.0
         for sig in ticker_signals:
             try:
                 filed_dt = datetime.strptime(sig.filed_date, "%Y-%m-%d")
@@ -199,9 +292,9 @@ class ConvictionScoringUseCase:
             "smart_money": sm_score,
             "signal_agreement": signal_agreement,
             "temporal_freshness": freshness,
-            "sentiment_momentum": 5.0,  # placeholder — wired in later phase
-            "fundamental_basis": 5.0,  # placeholder
-            "ml_direction": 5.0,  # placeholder
+            "sentiment_momentum": sentiment_momentum,
+            "fundamental_basis": fundamental_basis,
+            "ml_direction": ml_direction,
         }
 
     @staticmethod
