@@ -225,6 +225,10 @@ header [data-testid="stToolbar"] {visibility: hidden;}
     padding-right: 1rem !important;
 }
 
+/* ===== Opportunity cards ===== */
+.opportunity-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.opportunity-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
 /* ===== Footer ===== */
 .dashboard-footer {
     text-align: center;

@@ -104,3 +104,24 @@ sentiment:
 risk:
   stop_loss_threshold: -0.08
   sentiment_sell_threshold: -0.5
+
+# Conviction scoring weights — tunable per market
+conviction:
+  weights:
+    signal_agreement: 1.0
+    smart_money: 1.5
+    sentiment_momentum: 1.0
+    fundamental_basis: 1.0
+    temporal_freshness: 1.2
+    ml_direction: 0.3
+  top_n: 15
+  min_score: 3.0
+  scan_schedule:
+    full_scan: "06:00"
+    filing_check: "12:00"
+    post_market: "18:00"
+
+# SEC EDGAR configuration
+sec_edgar:
+  user_agent: "StockRecommender research@example.com"
+  rate_limit_seconds: 1.0

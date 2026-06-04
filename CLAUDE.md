@@ -189,4 +189,53 @@ Five hard stops — see `AGENTS.md` for full details:
 - All 6 tabs rewritten: styled cards, convergence bars, inline forms, expanders
 - Test suite — 496 tests passing
 
+**Done (Phase 5.2 — Dashboard UX Overhaul 2026-06-03):**
+- CSS overhaul: Inter font (Google Fonts CDN), `#2563EB` accent blue, hover lift effects, styled buttons/inputs
+- Footer watermark: "Multi-Modal Stock Recommender · Hexagonal Architecture · Built by Tirth Joshi"
+- Verdict-first pattern: every section answers a question in plain English before showing numbers
+- 5 verdict generators: command center, model confidence, signal layer, pick, ablation
+- Hero banner + verdict card + inline context components (replaces all `st.expander("Learn more")`)
+- One-click actions: Run Full Cycle (chains scan→tournament→track), Run Tournament, Run Backtest
+- Emoji-free content: urgency pills + freshness dots use CSS classes, no emoji in content areas
+- Top 5 pick cards on Opportunities tab (no expanders for important data)
+- Data pipeline status panel on Market Pulse (shows all 7 connected data sources)
+- Supply chain groups expanded by default (no click to reveal)
+- Test suite — 518 tests passing
+
+**Done (Phase 7 — Opportunity Intelligence Foundation 2026-06-03):**
+- ConvictionScore, ConvictionWeights, OpportunityCard, SmartMoneySignal domain models
+- SmartMoneyPort protocol + validate_smart_money_signals temporal guard
+- Conviction scoring service — weighted multi-signal aggregation, freshness decay, ranking
+- SEC EDGAR adapter — 13D activist filings + Form 4 insider trades (free, no API key)
+- Smart money feature engineer — 8 features (13D count, insider cluster, stake %, buy/sell counts)
+- ConvictionScoringUseCase — orchestrates signal gathering → scoring → card generation
+- Opportunity card HTML components — conviction badges, action badges, evidence/risk rendering
+- Dashboard freshness header — last scan timestamp, market status, S&P 500 sparkline
+- Command Center → Opportunity Feed tab with conviction-ranked cards
+- Conviction weights + SEC EDGAR config in us.yaml
+- ADR-032 documenting the reframe from direction prediction to opportunity surfacing
+- Test suite — 660+ tests passing
+
+**Done (Phase 8 — Outcome Tracking & Memory 2026-06-03):**
+- TrackedTrade, TradeOutcome, SignalPerformance domain models
+- Outcome tracking service — compute_outcome, compute_signal_performance, generate_report_card
+- SQLite persistence — tracked_trades + trade_outcomes tables with CRUD
+- OutcomeTrackingUseCase — record_buy, record_sell, get_signal_report, get_outcomes_summary
+- Dashboard data loaders — load_trades, load_outcomes with graceful defaults
+- Outcome Tracker tab (was Positions) — trade recording form, P&L display, outcomes table
+- System Intelligence tab (was Model Confidence) — signal report card + learning progress
+- Historical bootstrap engine — simulates past outcomes for cold-start learning
+- ADR-033 documenting outcome tracking and signal learning
+- Test suite — 735+ tests passing
+
+**Done (Phase 9 — Adaptive Intelligence 2026-06-03):**
+- PatternEntry, WeightAdjustment, LearnedRule domain models
+- Pattern memory service — build_patterns_from_outcomes, compute_weight_adjustments, discover_rules
+- SQLite persistence — weight_history + learned_rules tables
+- LearningUseCase — orchestrates pattern analysis, weight adjustment, rule discovery
+- System Intelligence tab — Run Learning Cycle button, weight history table, learned rules display
+- Data loaders — load_weight_history, load_learned_rules
+- ADR-034 documenting adaptive intelligence architecture
+- Test suite — 785+ tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing

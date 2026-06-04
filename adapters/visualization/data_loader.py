@@ -149,3 +149,118 @@ def load_event_sector_mapping(yaml_path: str) -> dict[str, Any]:
     except Exception as e:
         logger.warning("Failed to load event mapping: %s", e)
         return {}
+
+
+def load_spy_sparkline() -> dict[str, Any]:
+    """Fetch SPY intraday 1d/5m data for header sparkline.
+
+    Returns dict with keys: prices, times, current, open, change_pct, high, low.
+    Returns {} on any failure (network, missing yfinance, market closed).
+    """
+    try:
+        import yfinance as yf
+
+        ticker = yf.Ticker("SPY")
+        hist = ticker.history(period="1d", interval="5m")
+        if hist.empty:
+            return {}
+        prices = hist["Close"].tolist()
+        times = [str(t) for t in hist.index.tolist()]
+        current = float(prices[-1])
+        open_price = float(hist["Open"].iloc[0])
+        high = float(hist["High"].max())
+        low = float(hist["Low"].min())
+        change_pct = ((current - open_price) / open_price) * 100 if open_price else 0.0
+        return {
+            "prices": prices,
+            "times": times,
+            "current": current,
+            "open": open_price,
+            "change_pct": change_pct,
+            "high": high,
+            "low": low,
+        }
+    except Exception as e:
+        logger.warning("Failed to load SPY sparkline: %s", e)
+        return {}
+
+
+def load_trades(db_path: str, ticker: str | None = None) -> list[Any]:
+    """Load tracked trades. Returns empty list if DB missing."""
+    if not Path(db_path).exists():
+        return []
+    try:
+        from adapters.data.sqlite_store import SQLiteStore
+
+        store = SQLiteStore(db_path)
+        return store.get_trades(ticker=ticker)
+    except Exception as e:
+        logger.warning("Failed to load trades: %s", e)
+        return []
+
+
+def load_outcomes(db_path: str, ticker: str | None = None) -> list[Any]:
+    """Load trade outcomes. Returns empty list if DB missing."""
+    if not Path(db_path).exists():
+        return []
+    try:
+        from adapters.data.sqlite_store import SQLiteStore
+
+        store = SQLiteStore(db_path)
+        return store.get_outcomes(ticker=ticker)
+    except Exception as e:
+        logger.warning("Failed to load outcomes: %s", e)
+        return []
+
+
+def load_weight_history(db_path: str) -> list[Any]:
+    """Load weight adjustment history from SQLite. Returns empty list if DB missing."""
+    if not Path(db_path).exists():
+        return []
+    try:
+        from adapters.data.sqlite_store import SQLiteStore
+
+        return SQLiteStore(db_path).get_weight_history()
+    except Exception as e:
+        logger.warning("Failed to load weight history: %s", e)
+        return []
+
+
+def load_learned_rules(db_path: str) -> list[Any]:
+    """Load learned rules from SQLite. Returns empty list if DB missing."""
+    if not Path(db_path).exists():
+        return []
+    try:
+        from adapters.data.sqlite_store import SQLiteStore
+
+        return SQLiteStore(db_path).get_learned_rules()
+    except Exception as e:
+        logger.warning("Failed to load learned rules: %s", e)
+        return []
+
+
+def load_scan_timestamp(reports_dir: str = "data/reports") -> str | None:
+    """Find most recent backtest report and return formatted timestamp string.
+
+    Extracts timestamp from filename: backtest_report_YYYYMMDD_HHMMSS.json
+    Returns formatted string like "Jun 03, 2026 at 02:15 PM", or None if no reports.
+    """
+    import datetime
+
+    path = Path(reports_dir)
+    if not path.exists():
+        return None
+    files = sorted(path.glob("backtest_report_*.json"))
+    if not files:
+        return None
+    latest = files[-1]
+    stem = latest.stem  # e.g. "backtest_report_20260603_021500"
+    parts = stem.split("_", 2)  # ["backtest", "report", "20260603_021500"]
+    if len(parts) < 3:
+        return None
+    ts_str = parts[2]  # "20260603_021500"
+    try:
+        dt = datetime.datetime.strptime(ts_str, "%Y%m%d_%H%M%S")
+        return dt.strftime("%b %d, %Y at %I:%M %p")
+    except ValueError:
+        return None
