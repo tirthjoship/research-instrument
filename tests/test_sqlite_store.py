@@ -226,3 +226,203 @@ def test_get_all_source_reliabilities(tmp_path: pytest.TempPathFactory) -> None:
     store.record_source_outcome("reddit_wsb", "TSLA", -0.2, -0.1)
     all_rels = store.get_all_source_reliabilities()
     assert len(all_rels) == 2
+
+
+# ---------------------------------------------------------------------------
+# TrackedTrade + TradeOutcome persistence
+# ---------------------------------------------------------------------------
+
+from domain.outcome import TrackedTrade, TradeAction, TradeOutcome  # noqa: E402
+
+
+def _make_trade(trade_id: str = "t1", ticker: str = "AAPL") -> TrackedTrade:
+    return TrackedTrade(
+        trade_id=trade_id,
+        ticker=ticker,
+        action=TradeAction.BUY,
+        price=150.0,
+        quantity=10,
+        trade_date="2026-06-03",
+        conviction_at_trade=0.82,
+        signals_at_trade=["rsi_oversold", "macd_cross"],
+        opportunity_card_id="opp-001",
+        notes="Test trade",
+    )
+
+
+def _make_outcome(buy_id: str = "t1", sell_id: str = "t2") -> TradeOutcome:
+    return TradeOutcome(
+        ticker="AAPL",
+        buy_trade_id=buy_id,
+        sell_trade_id=sell_id,
+        buy_price=150.0,
+        sell_price=165.0,
+        quantity=10,
+        buy_date="2026-06-03",
+        sell_date="2026-06-13",
+        holding_days=10,
+        return_pct=10.0,
+        return_dollar=150.0,
+        signals_at_entry=["rsi_oversold", "macd_cross"],
+        conviction_at_entry=0.82,
+    )
+
+
+def test_save_and_load_trade(tmp_path: pytest.TempPathFactory) -> None:
+    store = SQLiteStore(str(tmp_path / "trades.db"))  # type: ignore[arg-type]
+    trade = _make_trade()
+    store.save_trade(trade)
+    results = store.get_trades()
+    assert len(results) == 1
+    loaded = results[0]
+    assert loaded.trade_id == "t1"
+    assert loaded.ticker == "AAPL"
+    assert loaded.action == TradeAction.BUY
+    assert loaded.price == 150.0
+    assert loaded.quantity == 10
+    assert loaded.signals_at_trade == ["rsi_oversold", "macd_cross"]
+    assert loaded.conviction_at_trade == 0.82
+    assert loaded.opportunity_card_id == "opp-001"
+    assert loaded.notes == "Test trade"
+
+
+def test_save_and_load_outcome(tmp_path: pytest.TempPathFactory) -> None:
+    store = SQLiteStore(str(tmp_path / "outcomes.db"))  # type: ignore[arg-type]
+    outcome = _make_outcome()
+    store.save_outcome(outcome)
+    results = store.get_outcomes()
+    assert len(results) == 1
+    loaded = results[0]
+    assert loaded.ticker == "AAPL"
+    assert loaded.return_pct == 10.0
+    assert loaded.return_dollar == 150.0
+    assert loaded.holding_days == 10
+    assert loaded.signals_at_entry == ["rsi_oversold", "macd_cross"]
+    assert loaded.conviction_at_entry == 0.82
+
+
+def test_get_trades_all(tmp_path: pytest.TempPathFactory) -> None:
+    store = SQLiteStore(str(tmp_path / "filter.db"))  # type: ignore[arg-type]
+    store.save_trade(_make_trade("t1", "AAPL"))
+    store.save_trade(_make_trade("t2", "GOOG"))
+    # All trades
+    all_trades = store.get_trades()
+    assert len(all_trades) == 2
+    # Filter by ticker
+    aapl_trades = store.get_trades(ticker="AAPL")
+    assert len(aapl_trades) == 1
+    assert aapl_trades[0].ticker == "AAPL"
+    goog_trades = store.get_trades(ticker="GOOG")
+    assert len(goog_trades) == 1
+    assert goog_trades[0].ticker == "GOOG"
+
+
+# ---------------------------------------------------------------------------
+# WeightAdjustment + LearnedRule persistence
+# ---------------------------------------------------------------------------
+
+from domain.pattern_memory import LearnedRule, WeightAdjustment  # noqa: E402
+
+
+def test_save_and_load_weight_adjustment(tmp_path: pytest.TempPathFactory) -> None:
+    store = SQLiteStore(str(tmp_path / "weights.db"))  # type: ignore[arg-type]
+    adj = WeightAdjustment(
+        dimension="sentiment",
+        old_weight=0.3,
+        new_weight=0.4,
+        reason="Sentiment outperformed last 30 days",
+        adjusted_date="2026-06-03",
+    )
+    store.save_weight_adjustment(adj)
+    results = store.get_weight_history()
+    assert len(results) == 1
+    loaded = results[0]
+    assert loaded.dimension == "sentiment"
+    assert loaded.old_weight == 0.3
+    assert loaded.new_weight == 0.4
+    assert loaded.reason == "Sentiment outperformed last 30 days"
+    assert loaded.adjusted_date == "2026-06-03"
+
+
+def test_get_weight_history_filter_by_dimension(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    store = SQLiteStore(str(tmp_path / "weights2.db"))  # type: ignore[arg-type]
+    adj1 = WeightAdjustment(
+        dimension="sentiment",
+        old_weight=0.3,
+        new_weight=0.4,
+        reason="Reason A",
+        adjusted_date="2026-06-01",
+    )
+    adj2 = WeightAdjustment(
+        dimension="technical",
+        old_weight=0.5,
+        new_weight=0.45,
+        reason="Reason B",
+        adjusted_date="2026-06-02",
+    )
+    store.save_weight_adjustment(adj1)
+    store.save_weight_adjustment(adj2)
+    all_results = store.get_weight_history()
+    assert len(all_results) == 2
+    sentiment_results = store.get_weight_history(dimension="sentiment")
+    assert len(sentiment_results) == 1
+    assert sentiment_results[0].dimension == "sentiment"
+
+
+def test_save_and_load_learned_rule(tmp_path: pytest.TempPathFactory) -> None:
+    store = SQLiteStore(str(tmp_path / "rules.db"))  # type: ignore[arg-type]
+    rule = LearnedRule(
+        rule_id="rule-001",
+        description="RSI oversold + MACD cross = buy signal in tech",
+        signal_combination=("rsi_oversold", "macd_cross"),
+        sector="technology",
+        action="boost",
+        confidence=0.78,
+        supporting_outcomes=42,
+        learned_date="2026-06-03",
+    )
+    store.save_learned_rule(rule)
+    results = store.get_learned_rules()
+    assert len(results) == 1
+    loaded = results[0]
+    assert loaded.rule_id == "rule-001"
+    assert loaded.description == "RSI oversold + MACD cross = buy signal in tech"
+    assert loaded.signal_combination == ("rsi_oversold", "macd_cross")
+    assert loaded.sector == "technology"
+    assert loaded.action == "boost"
+    assert loaded.confidence == 0.78
+    assert loaded.supporting_outcomes == 42
+    assert loaded.learned_date == "2026-06-03"
+
+
+def test_save_learned_rule_upsert(tmp_path: pytest.TempPathFactory) -> None:
+    """INSERT OR REPLACE: same rule_id overwrites existing row."""
+    store = SQLiteStore(str(tmp_path / "rules2.db"))  # type: ignore[arg-type]
+    rule = LearnedRule(
+        rule_id="rule-001",
+        description="Original",
+        signal_combination=("rsi_oversold",),
+        sector="any",
+        action="suppress",
+        confidence=0.6,
+        supporting_outcomes=10,
+        learned_date="2026-06-01",
+    )
+    store.save_learned_rule(rule)
+    updated = LearnedRule(
+        rule_id="rule-001",
+        description="Updated with more data",
+        signal_combination=("rsi_oversold",),
+        sector="any",
+        action="suppress",
+        confidence=0.75,
+        supporting_outcomes=25,
+        learned_date="2026-06-03",
+    )
+    store.save_learned_rule(updated)
+    results = store.get_learned_rules()
+    assert len(results) == 1
+    assert results[0].confidence == 0.75
+    assert results[0].supporting_outcomes == 25

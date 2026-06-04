@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
+from domain.conviction import OpportunityCard
 from domain.models import SellSignal
 
 
@@ -238,6 +239,130 @@ def run_tournament(
     _update(0.5, "Running tournament...")
     use_case.execute(prediction_date=datetime.now())
     _update(1.0, "Tournament complete.")
+
+
+def run_conviction_scan(
+    db_path: str = "data/recommendations.db",
+    market: str = "us",
+    progress_callback: Callable[[float, str], None] | None = None,
+) -> list[OpportunityCard]:
+    """Scan for conviction-ranked opportunities using smart money signals.
+
+    Stages: Config (20%) → Tickers (40%) → Signals (60%) → Watchlist (70%) → Score (80-100%).
+    Returns list[OpportunityCard].
+    """
+    _update = progress_callback or (lambda p, m: None)
+
+    # 1. Load market config
+    _update(0.20, "Loading market config...")
+    from config.loader import load_market_config
+
+    config = load_market_config(market)
+
+    # 2. Load tickers from config files
+    _update(0.40, "Loading ticker universe...")
+    tickers: list[str] = config.get("tickers", [])
+    if not tickers:
+        from pathlib import Path
+
+        ticker_path = Path("config/tickers")
+        if ticker_path.exists():
+            for f in ticker_path.glob("*.txt"):
+                tickers.extend(
+                    [t.strip() for t in f.read_text().strip().split("\n") if t.strip()]
+                )
+
+    # Limit for performance
+    tickers = tickers[:50]
+
+    # 3. Create SECEdgarAdapter and fetch signals
+    _update(0.60, f"Fetching smart money signals for {len(tickers)} tickers...")
+    from adapters.data.sec_edgar_adapter import SECEdgarAdapter
+
+    edgar = SECEdgarAdapter()
+
+    # 4. Load watchlist for pinned tickers
+    _update(0.70, "Loading watchlist...")
+    pinned: set[str] = set()
+    try:
+        from adapters.data.sqlite_store import SQLiteStore
+
+        store = SQLiteStore(db_path)
+        watchlist = store.get_watchlist()
+        pinned = {w["symbol"] for w in watchlist}
+    except Exception:
+        pass
+
+    # 5. Run conviction scoring
+    _update(0.80, "Scoring conviction...")
+    from application.conviction_use_case import ConvictionScoringUseCase
+    from domain.conviction import ConvictionWeights
+
+    weights = ConvictionWeights()
+    use_case = ConvictionScoringUseCase(
+        smart_money=edgar,
+        tickers=tickers,
+        weights=weights,
+        pinned=pinned,
+        top_n=15,
+    )
+
+    def _inner_progress(idx: int, total_: int) -> None:
+        frac = 0.80 + 0.20 * (idx / max(total_, 1))
+        _update(frac, f"Scoring {idx}/{total_} tickers...")
+
+    cards = use_case.run(
+        scan_time=datetime.now(),
+        progress_callback=_inner_progress,
+    )
+    _update(1.0, f"Scan complete — {len(cards)} opportunities found.")
+    return cards
+
+
+def run_record_buy(
+    ticker: str,
+    price: float,
+    quantity: int,
+    trade_date: str,
+    conviction: float = 0.0,
+    signals: list[str] | None = None,
+    db_path: str = "data/recommendations.db",
+) -> None:
+    """Record a BUY trade via OutcomeTrackingUseCase."""
+    from adapters.data.sqlite_store import SQLiteStore
+    from application.outcome_use_case import OutcomeTrackingUseCase
+
+    store = SQLiteStore(db_path)
+    uc = OutcomeTrackingUseCase(store=store)
+    uc.record_buy(
+        ticker=ticker,
+        price=price,
+        quantity=quantity,
+        trade_date=trade_date,
+        conviction=conviction,
+        signals=signals or [],
+    )
+
+
+def run_record_sell(
+    ticker: str,
+    price: float,
+    quantity: int,
+    trade_date: str,
+    db_path: str = "data/recommendations.db",
+) -> None:
+    """Record a SELL trade via OutcomeTrackingUseCase."""
+    from adapters.data.sqlite_store import SQLiteStore
+    from application.outcome_use_case import OutcomeTrackingUseCase
+
+    store = SQLiteStore(db_path)
+    uc = OutcomeTrackingUseCase(store=store)
+    uc.record_sell(
+        ticker=ticker,
+        price=price,
+        quantity=quantity,
+        trade_date=trade_date,
+    )
 
 
 def run_backtest(
