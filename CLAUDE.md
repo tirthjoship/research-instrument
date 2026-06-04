@@ -253,4 +253,22 @@ Five hard stops — see `AGENTS.md` for full details:
 - ADR-035 documenting dashboard redesign decisions
 - Test suite — 838+ tests passing
 
+**Done (Phase 5.4 — SimplyWallSt-Grade Dashboard Redesign 2026-06-04):**
+- SWST design language across all tabs: criteria cards, verdict bullets, charts
+- Signal Radar — 6-axis chart (Technical/Sentiment/Fundamental/Cross-Asset/Event-Causal/Smart Money)
+- Stock Analysis tab — full 7-section deep dive for any S&P 500/NASDAQ ticker
+- Conviction engine fix — 3 placeholder sub-scores (sentiment, fundamentals, ML direction) wired to real data
+- Live prices via yfinance batch cache (5min TTL market hours, 60min after)
+- 15+ new Plotly chart builders (radar, gauge, comparison bars, ownership pie, insider bars, financials line, cluster bubble)
+- Market overview fallback when conviction data is thin
+- Scrolling ticker bar with major index prices
+- Portfolio live P&L with position health cards
+- Watchlist with live prices, remove button, structured add form
+- Supply chain tags with live price change colors + cluster bubble chart
+- How It Works: criteria cards, grade donut, sector heatmap, real accuracy distribution
+- CSS tooltips with hover explainers on Signal Radar, Conviction, Valuation, Walk-Forward Accuracy
+- Dead code cleanup — removed unused legacy helpers
+- ADR-036 documenting redesign decisions
+- Test suite — 996 tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
