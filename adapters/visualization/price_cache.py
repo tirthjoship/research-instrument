@@ -1,0 +1,225 @@
+"""Batch yfinance price fetching with TTL-cached Streamlit wrappers.
+
+The `_impl` functions contain actual logic and can be called in any context.
+The cached wrappers (e.g. `fetch_prices`) import streamlit at call time so the
+module is safely importable in non-Streamlit contexts (CI, tests, CLI).
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, time
+from typing import Any, cast
+from zoneinfo import ZoneInfo
+
+import yfinance as yf
+from loguru import logger
+from pandas import DataFrame
+
+ET = ZoneInfo("America/New_York")
+
+_INDEX_TICKERS = ("SPY", "QQQ", "DIA", "IWM")
+
+_MARKET_OPEN = time(9, 30)
+_MARKET_CLOSE = time(16, 0)
+
+# TTL in seconds for @st.cache_data
+_TTL_MARKET_HOURS = 15 * 60
+_TTL_AFTER_HOURS = 60 * 60
+
+
+def _is_market_hours() -> bool:
+    """Return True if current time falls within 09:30–16:00 ET."""
+    now_et = datetime.now(tz=ET)
+    t = now_et.time()
+    return _MARKET_OPEN <= t < _MARKET_CLOSE
+
+
+def _current_ttl() -> int:
+    """Return TTL in seconds based on whether market is open."""
+    return _TTL_MARKET_HOURS if _is_market_hours() else _TTL_AFTER_HOURS
+
+
+# ---------------------------------------------------------------------------
+# Implementation functions — import-safe, test-friendly
+# ---------------------------------------------------------------------------
+
+
+def _batch_fetch_prices_impl(tickers: tuple[str, ...]) -> dict[str, dict[str, float]]:
+    """Fetch close prices for multiple tickers via yf.download().
+
+    Returns ``{ticker: {"price": float, "change_pct": float}}``.
+    Handles yfinance's different column shapes for single vs multi-ticker downloads.
+    """
+    if not tickers:
+        return {}
+
+    try:
+        data = yf.download(
+            list(tickers),
+            period="5d",
+            auto_adjust=True,
+            progress=False,
+        )
+    except Exception as exc:
+        logger.warning("yf.download failed for {}: {}", tickers, exc)
+        return {}
+
+    if data is None or data.empty:
+        return {}
+
+    result: dict[str, dict[str, float]] = {}
+
+    if len(tickers) == 1:
+        # Flat columns: data["Close"]
+        ticker = tickers[0]
+        try:
+            close_series = data["Close"].dropna()
+            if len(close_series) < 2:
+                return {}
+            last = float(close_series.iloc[-1])
+            prev = float(close_series.iloc[-2])
+            change_pct = (last - prev) / prev * 100 if prev != 0 else 0.0
+            result[ticker] = {"price": last, "change_pct": change_pct}
+        except (KeyError, IndexError) as exc:
+            logger.warning("Could not extract price for {}: {}", ticker, exc)
+    else:
+        # MultiIndex columns: data["Close"][ticker]
+        try:
+            close_df = data["Close"]
+        except KeyError:
+            logger.warning("No 'Close' column in yf.download result for {}", tickers)
+            return {}
+
+        for ticker in tickers:
+            try:
+                series = close_df[ticker].dropna()
+                if len(series) < 2:
+                    continue
+                last = float(series.iloc[-1])
+                prev = float(series.iloc[-2])
+                change_pct = (last - prev) / prev * 100 if prev != 0 else 0.0
+                result[ticker] = {"price": last, "change_pct": change_pct}
+            except (KeyError, IndexError) as exc:
+                logger.warning("Could not extract price for {}: {}", ticker, exc)
+
+    return result
+
+
+def _fetch_ticker_info_impl(ticker: str) -> dict[str, Any]:
+    """Fetch full ticker info dict from yfinance. Returns {} on any error."""
+    try:
+        t = yf.Ticker(ticker)
+        return dict(t.info)
+    except Exception as exc:
+        logger.warning("yf.Ticker({}).info failed: {}", ticker, exc)
+        return {}
+
+
+def _fetch_quarterly_financials_impl(
+    ticker: str,
+) -> tuple[DataFrame | None, DataFrame | None, DataFrame | None]:
+    """Return (income_stmt, balance_sheet, cashflow) quarterly DataFrames.
+
+    Each can be None if unavailable.
+    """
+    try:
+        t = yf.Ticker(ticker)
+        income = t.quarterly_income_stmt
+        balance = t.quarterly_balance_sheet
+        cashflow = t.quarterly_cashflow
+        return (
+            income if income is not None and not income.empty else None,
+            balance if balance is not None and not balance.empty else None,
+            cashflow if cashflow is not None and not cashflow.empty else None,
+        )
+    except Exception as exc:
+        logger.warning("Quarterly financials fetch failed for {}: {}", ticker, exc)
+        return None, None, None
+
+
+def _fetch_insider_transactions_impl(ticker: str) -> list[dict[str, Any]]:
+    """Fetch insider transactions for *ticker*. Returns [] on any error or no data."""
+    try:
+        t = yf.Ticker(ticker)
+        df = t.insider_transactions
+        if df is None or (hasattr(df, "empty") and df.empty):
+            return []
+        return cast(list[dict[str, Any]], df.to_dict(orient="records"))
+    except Exception as exc:
+        logger.warning("Insider transactions fetch failed for {}: {}", ticker, exc)
+        return []
+
+
+def _fetch_index_prices_impl() -> dict[str, dict[str, float]]:
+    """Fetch prices for SPY, QQQ, DIA, IWM."""
+    return _batch_fetch_prices_impl(_INDEX_TICKERS)
+
+
+# ---------------------------------------------------------------------------
+# Streamlit-cached wrappers — import st at call time
+# ---------------------------------------------------------------------------
+
+
+def fetch_prices(tickers: tuple[str, ...]) -> dict[str, dict[str, float]]:
+    """Streamlit-cached wrapper around _batch_fetch_prices_impl."""
+    import streamlit as st
+
+    ttl = _current_ttl()
+
+    @st.cache_data(ttl=ttl)  # type: ignore[misc]
+    def _cached(t: tuple[str, ...]) -> dict[str, dict[str, float]]:
+        return _batch_fetch_prices_impl(t)
+
+    return cast(dict[str, dict[str, float]], _cached(tickers))
+
+
+def fetch_ticker_info(ticker: str) -> dict[str, Any]:
+    """Streamlit-cached wrapper around _fetch_ticker_info_impl."""
+    import streamlit as st
+
+    @st.cache_data(ttl=_TTL_AFTER_HOURS)  # type: ignore[misc]
+    def _cached(t: str) -> dict[str, Any]:
+        return _fetch_ticker_info_impl(t)
+
+    return cast(dict[str, Any], _cached(ticker))
+
+
+def fetch_quarterly_financials(
+    ticker: str,
+) -> tuple[DataFrame | None, DataFrame | None, DataFrame | None]:
+    """Streamlit-cached wrapper around _fetch_quarterly_financials_impl."""
+    import streamlit as st
+
+    @st.cache_data(ttl=_TTL_AFTER_HOURS)  # type: ignore[misc]
+    def _cached(
+        t: str,
+    ) -> tuple[DataFrame | None, DataFrame | None, DataFrame | None]:
+        return _fetch_quarterly_financials_impl(t)
+
+    return cast(
+        tuple[DataFrame | None, DataFrame | None, DataFrame | None], _cached(ticker)
+    )
+
+
+def fetch_insider_transactions(ticker: str) -> list[dict[str, Any]]:
+    """Streamlit-cached wrapper around _fetch_insider_transactions_impl."""
+    import streamlit as st
+
+    @st.cache_data(ttl=_TTL_AFTER_HOURS)  # type: ignore[misc]
+    def _cached(t: str) -> list[dict[str, Any]]:
+        return _fetch_insider_transactions_impl(t)
+
+    return cast(list[dict[str, Any]], _cached(ticker))
+
+
+def fetch_index_prices() -> dict[str, dict[str, float]]:
+    """Streamlit-cached wrapper around _fetch_index_prices_impl."""
+    import streamlit as st
+
+    ttl = _current_ttl()
+
+    @st.cache_data(ttl=ttl)  # type: ignore[misc]
+    def _cached() -> dict[str, dict[str, float]]:
+        return _fetch_index_prices_impl()
+
+    return cast(dict[str, dict[str, float]], _cached())
