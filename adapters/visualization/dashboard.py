@@ -62,9 +62,9 @@ st.markdown(
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "🎯 Opportunity Feed",
-        "📊 Model Confidence",
+        "📊 System Intelligence",
         "🔍 Signal Breakdown",
-        "💼 My Positions",
+        "💼 Outcome Tracker",
         "🚀 Opportunities",
         "🌍 Market Pulse",
     ]

@@ -1,4 +1,4 @@
-"""Tab 2: Model Confidence — Should I trust these predictions?"""
+"""Tab 2: System Intelligence — Signal performance and model confidence."""
 
 from __future__ import annotations
 
@@ -20,19 +20,32 @@ from adapters.visualization.components.metrics import (
 from adapters.visualization.components.verdicts import (
     ablation_verdict,
     model_confidence_verdict,
+    system_intelligence_verdict,
 )
 from adapters.visualization.data_loader import (
     load_ablation_results,
     load_backtest_reports,
+    load_outcomes,
     load_shap_importance,
 )
 
 REPORTS_DIR = "data/reports"
 SHAP_PATH = "data/reports/shap_importance.json"
+DB_PATH = "data/recommendations.db"
 
 
-def render(reports_dir: str = REPORTS_DIR, shap_path: str = SHAP_PATH) -> None:
-    """Render the Model Confidence tab."""
+def render(
+    reports_dir: str = REPORTS_DIR,
+    shap_path: str = SHAP_PATH,
+    db_path: str = DB_PATH,
+) -> None:
+    """Render the System Intelligence tab."""
+    # ── Signal Report Card ────────────────────────────────────────────────────
+    _render_signal_report_card(db_path)
+
+    st.divider()
+
+    # ── Existing backtest / SHAP / ablation content ───────────────────────────
     reports = load_backtest_reports(reports_dir)
 
     if not reports:
@@ -189,3 +202,56 @@ def _render_shap(shap_path: str) -> None:
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.caption("No SHAP data available. Run SHAP analysis to populate.")
+
+
+def _render_signal_report_card(db_path: str) -> None:
+    """Render signal report card from tracked trade outcomes."""
+    st.markdown("#### Signal Report Card")
+
+    outcomes = load_outcomes(db_path)
+
+    if not outcomes:
+        render_inline_context(
+            st,
+            "No outcome data yet — start tracking trades to build signal intelligence.",
+        )
+        return
+
+    # Compute per-signal win rates from outcome objects
+    signal_wins: dict[str, int] = {}
+    signal_totals: dict[str, int] = {}
+    for outcome in outcomes:
+        signals = getattr(outcome, "signals_used", None) or []
+        won = getattr(outcome, "was_correct", False)
+        for sig in signals:
+            signal_totals[sig] = signal_totals.get(sig, 0) + 1
+            if won:
+                signal_wins[sig] = signal_wins.get(sig, 0) + 1
+
+    best_signal: str | None = None
+    worst_signal: str | None = None
+    if signal_totals:
+        win_rates = {s: signal_wins.get(s, 0) / signal_totals[s] for s in signal_totals}
+        best_signal = max(win_rates, key=lambda s: win_rates[s])
+        worst_signal = min(win_rates, key=lambda s: win_rates[s])
+
+    verdict = system_intelligence_verdict(
+        n_outcomes=len(outcomes),
+        best_signal=best_signal,
+        worst_signal=worst_signal,
+    )
+    render_verdict_card(st, verdict, tone="neutral")
+
+    # Report card table
+    if signal_totals:
+        st.markdown("**Signal performance breakdown:**")
+        rows = []
+        for sig, total in sorted(signal_totals.items(), key=lambda x: -x[1]):
+            wins = signal_wins.get(sig, 0)
+            rate = wins / total
+            rows.append(f"- **{sig}**: {wins}/{total} correct ({rate:.0%})")
+        st.markdown("\n".join(rows))
+
+    st.caption(
+        f"Learning progress: {len(outcomes)} outcome{'s' if len(outcomes) != 1 else ''} tracked"
+    )
