@@ -48,6 +48,25 @@ def load_recommendations(
         return []
 
 
+def load_recommendations_latest(db_path: str) -> list[Any]:
+    """Load most recent week's recommendations sorted by composite_score desc."""
+    try:
+        if not Path(db_path).exists():
+            return []
+        from adapters.data.sqlite_store import SQLiteStore
+
+        store = SQLiteStore(db_path)
+        recs = store.get_recommendations()
+        if not recs:
+            return []
+        latest_week = max(r.week_start for r in recs)
+        latest = [r for r in recs if r.week_start == latest_week]
+        latest.sort(key=lambda r: r.composite_score, reverse=True)
+        return latest
+    except Exception:
+        return []
+
+
 def load_holdings(db_path: str) -> list[Holding]:
     """Load holdings from SQLite. Returns empty list if DB missing."""
     if not Path(db_path).exists():
@@ -133,21 +152,6 @@ def load_supply_chains(yaml_path: str) -> dict[str, Any]:
         return result
     except Exception as e:
         logger.warning("Failed to load supply chains: %s", e)
-        return {}
-
-
-def load_event_sector_mapping(yaml_path: str) -> dict[str, Any]:
-    """Load event-sector mapping YAML. Returns empty dict if missing."""
-    path = Path(yaml_path)
-    if not path.exists():
-        return {}
-    try:
-        import yaml
-
-        result: dict[str, Any] = yaml.safe_load(path.read_text()) or {}
-        return result
-    except Exception as e:
-        logger.warning("Failed to load event mapping: %s", e)
         return {}
 
 
