@@ -7,6 +7,7 @@ on these abstractions. Ports support point-in-time access and leakage pruning.
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
+from .conviction import SmartMoneySignal
 from .models import (
     AccuracyRecord,
     BacktestResult,
@@ -222,3 +223,20 @@ class EventClassifierPort(Protocol):
     def classify_batch(
         self, headlines: list[tuple[str, str]]
     ) -> list[ClassifiedEvent]: ...
+
+
+@runtime_checkable
+class SmartMoneyPort(Protocol):
+    """Retrieves institutional (13D) and insider (Form 4) SEC filings."""
+
+    def get_13d_filings(
+        self, ticker: str | None = None, since_date: str | None = None
+    ) -> list[SmartMoneySignal]: ...
+
+    def get_form4_filings(
+        self, ticker: str | None = None, since_date: str | None = None
+    ) -> list[SmartMoneySignal]: ...
+
+    def get_all_signals(
+        self, ticker: str | None = None, since_date: str | None = None
+    ) -> list[SmartMoneySignal]: ...

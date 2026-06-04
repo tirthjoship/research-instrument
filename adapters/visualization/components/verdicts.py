@@ -131,3 +131,37 @@ def ablation_verdict(
         f"No improvement detected. "
         f"Technical-only: {tech_accuracy:.1%}, Combined: {combined_accuracy:.1%}."
     )
+
+
+def outcome_tracker_verdict(
+    n_trades: int,
+    n_outcomes: int,
+    total_return: float,
+    win_rate: float,
+) -> str:
+    """Generate verdict for the Outcome Tracker section."""
+    if n_trades == 0:
+        return "No trades recorded yet — use the Positions tab to log your first trade."
+    if n_outcomes == 0:
+        return f"{n_trades} trade{'s' if n_trades != 1 else ''} recorded, none closed yet — outcomes will appear once you log a sell."
+    sign = "+" if total_return >= 0 else ""
+    return (
+        f"{n_outcomes} completed trade{'s' if n_outcomes != 1 else ''} — "
+        f"{sign}${total_return:,.2f} total return, {win_rate:.0f}% win rate."
+    )
+
+
+def system_intelligence_verdict(
+    n_outcomes: int,
+    best_signal: str | None,
+    worst_signal: str | None,
+) -> str:
+    """Generate verdict for the System Intelligence section."""
+    if n_outcomes == 0:
+        return "No outcome data yet — close your first trade to start building signal intelligence."
+    if n_outcomes < 10:
+        return f"{n_outcomes} outcome{'s' if n_outcomes != 1 else ''} tracked. Need 10+ for reliable signal data."
+    return (
+        f"Based on {n_outcomes} completed trades: "
+        f"best signal is {best_signal}, weakest is {worst_signal}."
+    )
