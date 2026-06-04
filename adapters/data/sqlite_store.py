@@ -19,6 +19,7 @@ from domain.models import (
     StockRecommendation,
     WeeklyReport,
 )
+from domain.outcome import TrackedTrade, TradeAction, TradeOutcome
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS recommendations (
@@ -135,6 +136,39 @@ CREATE TABLE IF NOT EXISTS watchlist (
     added_date TEXT NOT NULL,
     notes TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tracked_trades (
+    trade_id TEXT PRIMARY KEY,
+    ticker TEXT NOT NULL,
+    action TEXT NOT NULL,
+    price REAL NOT NULL,
+    quantity INTEGER NOT NULL,
+    trade_date TEXT NOT NULL,
+    conviction_at_trade REAL,
+    signals_at_trade TEXT,
+    opportunity_card_id TEXT DEFAULT '',
+    notes TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS trade_outcomes (
+    id INTEGER PRIMARY KEY,
+    ticker TEXT NOT NULL,
+    buy_trade_id TEXT NOT NULL,
+    sell_trade_id TEXT NOT NULL,
+    buy_price REAL NOT NULL,
+    sell_price REAL NOT NULL,
+    quantity INTEGER NOT NULL,
+    buy_date TEXT NOT NULL,
+    sell_date TEXT NOT NULL,
+    holding_days INTEGER NOT NULL,
+    return_pct REAL NOT NULL,
+    return_dollar REAL NOT NULL,
+    signals_at_entry TEXT,
+    conviction_at_entry REAL,
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(buy_trade_id, sell_trade_id)
 );
 """
 
@@ -535,6 +569,105 @@ class SQLiteStore:
             }
             for r in rows
         ]
+
+    # ------------------------------------------------------------------
+    # TrackedTrade + TradeOutcome CRUD
+    # ------------------------------------------------------------------
+
+    def save_trade(self, trade: TrackedTrade) -> None:
+        self._conn.execute(
+            """INSERT OR REPLACE INTO tracked_trades
+            (trade_id, ticker, action, price, quantity, trade_date,
+             conviction_at_trade, signals_at_trade, opportunity_card_id, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                trade.trade_id,
+                trade.ticker,
+                trade.action.value,
+                trade.price,
+                trade.quantity,
+                trade.trade_date,
+                trade.conviction_at_trade,
+                json.dumps(trade.signals_at_trade),
+                trade.opportunity_card_id,
+                trade.notes,
+            ),
+        )
+        self._conn.commit()
+
+    def get_trades(self, ticker: str | None = None) -> list[TrackedTrade]:
+        query = "SELECT * FROM tracked_trades WHERE 1=1"
+        params: list[Any] = []
+        if ticker is not None:
+            query += " AND ticker = ?"
+            params.append(ticker)
+        rows = self._conn.execute(query, params).fetchall()
+        return [self._row_to_trade(r) for r in rows]
+
+    def save_outcome(self, outcome: TradeOutcome) -> None:
+        self._conn.execute(
+            """INSERT OR REPLACE INTO trade_outcomes
+            (ticker, buy_trade_id, sell_trade_id, buy_price, sell_price,
+             quantity, buy_date, sell_date, holding_days, return_pct,
+             return_dollar, signals_at_entry, conviction_at_entry)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                outcome.ticker,
+                outcome.buy_trade_id,
+                outcome.sell_trade_id,
+                outcome.buy_price,
+                outcome.sell_price,
+                outcome.quantity,
+                outcome.buy_date,
+                outcome.sell_date,
+                outcome.holding_days,
+                outcome.return_pct,
+                outcome.return_dollar,
+                json.dumps(outcome.signals_at_entry),
+                outcome.conviction_at_entry,
+            ),
+        )
+        self._conn.commit()
+
+    def get_outcomes(self, ticker: str | None = None) -> list[TradeOutcome]:
+        query = "SELECT * FROM trade_outcomes WHERE 1=1"
+        params: list[Any] = []
+        if ticker is not None:
+            query += " AND ticker = ?"
+            params.append(ticker)
+        rows = self._conn.execute(query, params).fetchall()
+        return [self._row_to_outcome(r) for r in rows]
+
+    def _row_to_trade(self, r: sqlite3.Row) -> TrackedTrade:
+        return TrackedTrade(
+            trade_id=r["trade_id"],
+            ticker=r["ticker"],
+            action=TradeAction(r["action"]),
+            price=r["price"],
+            quantity=r["quantity"],
+            trade_date=r["trade_date"],
+            conviction_at_trade=r["conviction_at_trade"],
+            signals_at_trade=json.loads(r["signals_at_trade"] or "[]"),
+            opportunity_card_id=r["opportunity_card_id"] or "",
+            notes=r["notes"] or "",
+        )
+
+    def _row_to_outcome(self, r: sqlite3.Row) -> TradeOutcome:
+        return TradeOutcome(
+            ticker=r["ticker"],
+            buy_trade_id=r["buy_trade_id"],
+            sell_trade_id=r["sell_trade_id"],
+            buy_price=r["buy_price"],
+            sell_price=r["sell_price"],
+            quantity=r["quantity"],
+            buy_date=r["buy_date"],
+            sell_date=r["sell_date"],
+            holding_days=r["holding_days"],
+            return_pct=r["return_pct"],
+            return_dollar=r["return_dollar"],
+            signals_at_entry=json.loads(r["signals_at_entry"] or "[]"),
+            conviction_at_entry=r["conviction_at_entry"],
+        )
 
     def _row_to_recommendation(self, r: sqlite3.Row) -> StockRecommendation:
         pred = MultiHorizonPrediction(

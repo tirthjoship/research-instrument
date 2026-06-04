@@ -185,6 +185,34 @@ def load_spy_sparkline() -> dict[str, Any]:
         return {}
 
 
+def load_trades(db_path: str, ticker: str | None = None) -> list[Any]:
+    """Load tracked trades. Returns empty list if DB missing."""
+    if not Path(db_path).exists():
+        return []
+    try:
+        from adapters.data.sqlite_store import SQLiteStore
+
+        store = SQLiteStore(db_path)
+        return store.get_trades(ticker=ticker)
+    except Exception as e:
+        logger.warning("Failed to load trades: %s", e)
+        return []
+
+
+def load_outcomes(db_path: str, ticker: str | None = None) -> list[Any]:
+    """Load trade outcomes. Returns empty list if DB missing."""
+    if not Path(db_path).exists():
+        return []
+    try:
+        from adapters.data.sqlite_store import SQLiteStore
+
+        store = SQLiteStore(db_path)
+        return store.get_outcomes(ticker=ticker)
+    except Exception as e:
+        logger.warning("Failed to load outcomes: %s", e)
+        return []
+
+
 def load_scan_timestamp(reports_dir: str = "data/reports") -> str | None:
     """Find most recent backtest report and return formatted timestamp string.
 

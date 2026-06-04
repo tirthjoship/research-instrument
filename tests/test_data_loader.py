@@ -216,6 +216,34 @@ class TestLoadSpySparkline:
                 assert key in result
 
 
+class TestLoadTrades:
+    def test_missing_db_returns_empty(self) -> None:
+        from adapters.visualization.data_loader import load_trades
+
+        result = load_trades("/nonexistent/test.db")
+        assert result == []
+
+    def test_missing_db_with_ticker_returns_empty(self) -> None:
+        from adapters.visualization.data_loader import load_trades
+
+        result = load_trades("/nonexistent/test.db", ticker="AAPL")
+        assert result == []
+
+
+class TestLoadOutcomes:
+    def test_missing_db_returns_empty(self) -> None:
+        from adapters.visualization.data_loader import load_outcomes
+
+        result = load_outcomes("/nonexistent/test.db")
+        assert result == []
+
+    def test_missing_db_with_ticker_returns_empty(self) -> None:
+        from adapters.visualization.data_loader import load_outcomes
+
+        result = load_outcomes("/nonexistent/test.db", ticker="AAPL")
+        assert result == []
+
+
 class TestLoadScanTimestamp:
     def test_returns_none_when_no_reports_dir(self) -> None:
         from adapters.visualization.data_loader import load_scan_timestamp
