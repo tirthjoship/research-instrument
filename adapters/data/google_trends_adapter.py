@@ -34,7 +34,7 @@ class GoogleTrendsAdapter:
 
     def _get_pytrends(self) -> Any:
         """Lazy import pytrends to avoid hard dependency."""
-        from pytrends.request import TrendReq  # type: ignore[import-not-found]
+        from pytrends.request import TrendReq  # type: ignore
 
         return TrendReq(hl="en-US", tz=360)
 
