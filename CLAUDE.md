@@ -228,4 +228,14 @@ Five hard stops — see `AGENTS.md` for full details:
 - ADR-033 documenting outcome tracking and signal learning
 - Test suite — 735+ tests passing
 
+**Done (Phase 9 — Adaptive Intelligence 2026-06-03):**
+- PatternEntry, WeightAdjustment, LearnedRule domain models
+- Pattern memory service — build_patterns_from_outcomes, compute_weight_adjustments, discover_rules
+- SQLite persistence — weight_history + learned_rules tables
+- LearningUseCase — orchestrates pattern analysis, weight adjustment, rule discovery
+- System Intelligence tab — Run Learning Cycle button, weight history table, learned rules display
+- Data loaders — load_weight_history, load_learned_rules
+- ADR-034 documenting adaptive intelligence architecture
+- Test suite — 785+ tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
