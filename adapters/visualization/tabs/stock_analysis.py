@@ -11,6 +11,7 @@ from adapters.visualization.components.cards import (
     criteria_card,
     metric_kpi,
     price_range_bar,
+    tooltip,
     verdict_bullet,
 )
 from adapters.visualization.components.charts import (
@@ -132,6 +133,15 @@ def _render_verdict(result: AnalysisResult) -> None:
     col_radar, col_verdict = st.columns([2, 1])
     with col_radar:
         if result.signal_scores:
+            st.markdown(
+                tooltip(
+                    "**Signal Radar**",
+                    "6-axis spider chart showing strength across Technical, Sentiment, "
+                    "Fundamental, Cross-Asset, Event-Causal, and Smart Money dimensions. "
+                    "A larger shape means stronger multi-signal alignment.",
+                ),
+                unsafe_allow_html=True,
+            )
             fig = signal_radar(result.signal_scores)
             st.plotly_chart(fig, use_container_width=True)
         else:
@@ -146,8 +156,15 @@ def _render_verdict(result: AnalysisResult) -> None:
             f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">System Verdict</div>'
             f'<div style="font-size:28px;font-weight:700;color:{grade_color};'
             f"font-family:'DM Sans',sans-serif;margin-bottom:8px;\">{result.grade.upper()}</div>"
-            f'<div style="font-size:12px;color:#64748B;margin-bottom:6px;">Conviction</div>'
-            f'<div style="background:#E2E8F0;border-radius:999px;height:6px;margin-bottom:6px;">'
+            f'<div style="font-size:12px;color:#64748B;margin-bottom:6px;">'
+            + tooltip(
+                "Conviction",
+                "Weighted score (0-10) combining Technical, Sentiment, Fundamental, "
+                "Cross-Asset, Event-Causal, and Smart Money sub-scores. "
+                "Higher conviction = stronger multi-dimensional signal agreement.",
+            )
+            + "</div>"
+            + f'<div style="background:#E2E8F0;border-radius:999px;height:6px;margin-bottom:6px;">'
             f'<div style="width:{conviction_bar}%;height:6px;background:{grade_color};'
             f'border-radius:999px;"></div></div>'
             f'<div style="font-size:13px;color:#1A202C;font-weight:600;margin-bottom:4px;">'
@@ -201,7 +218,15 @@ def _render_valuation(result: AnalysisResult) -> None:
     section = result.valuation
     if not section:
         return
-    st.markdown("#### 1. Valuation")
+    st.markdown(
+        "#### "
+        + tooltip(
+            "1. Valuation",
+            "Evaluates whether the stock is fairly priced using P/E, PEG (Price/Earnings-to-Growth, "
+            "below 1 = undervalued, above 2 = overvalued), P/B, analyst targets, and FCF yield.",
+        ),
+        unsafe_allow_html=True,
+    )
     st.markdown(
         criteria_card(section.title, section.score, section.max_score, section.summary),
         unsafe_allow_html=True,
@@ -214,6 +239,15 @@ def _render_valuation(result: AnalysisResult) -> None:
         # P/E comparison bars
         pe_items = _build_pe_items(result.ticker, info, result.peer_data)
         if pe_items:
+            st.markdown(
+                tooltip(
+                    "**P/E vs Peers**",
+                    "Price-to-Earnings ratio: how much investors pay per $1 of earnings. "
+                    "Lower P/E vs peers can signal undervaluation; much higher P/E signals "
+                    "growth premium or overvaluation.",
+                ),
+                unsafe_allow_html=True,
+            )
             fig = comparison_bars(pe_items, highlight=result.ticker, value_suffix="x")
             st.plotly_chart(fig, use_container_width=True)
 

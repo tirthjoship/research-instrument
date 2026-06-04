@@ -7,7 +7,7 @@ from typing import Any
 import streamlit as st
 
 from adapters.visualization.action_runner import run_backtest
-from adapters.visualization.components.cards import criteria_card
+from adapters.visualization.components.cards import criteria_card, tooltip
 from adapters.visualization.components.charts import (
     ablation_bar_chart,
     accuracy_line_chart,
@@ -301,10 +301,12 @@ def _render_model_baseline(reports_dir: str, shap_path: str) -> None:
     st.markdown(
         '<div class="limitation-card">'
         "<ul>"
-        "<li>Phase 3A result: technical features alone perform at random on S&P mega-caps</li>"
-        "<li>Phase 3B in-sample only — out-of-sample validation pending</li>"
-        "<li>101 features wired but only 45 tested in backtest so far</li>"
-        "<li>p-value > 0.05 on most horizons — no proven statistical edge yet</li>"
+        "<li>Direction prediction alone shows no statistical edge on mega-caps (~49% accuracy vs 50% random)</li>"
+        "<li>Conviction scoring uses 6 dimensions but smart money data (SEC EDGAR) is sparse for most tickers</li>"
+        "<li>Sentiment data requires daily scanning — stale signals reduce conviction accuracy</li>"
+        "<li>ML direction sub-score uses stored recommendations — no live model inference</li>"
+        "<li>Historical backtest used 45 of 101 features — full feature evaluation pending</li>"
+        "<li>Phase 3B sentiment lift (47% → 70%) is in-sample only — out-of-sample validation pending</li>"
         "</ul>"
         "</div>",
         unsafe_allow_html=True,
@@ -328,6 +330,16 @@ def _render_verdict(metrics: dict[str, Any]) -> None:
     cols[0].metric("Avg Accuracy", f"{accuracy:.1%}")
     cols[1].metric("Folds", str(n_folds))
     cols[2].metric("Predictions", str(n_preds))
+    st.markdown(
+        tooltip(
+            "Walk-Forward Directional Accuracy",
+            "The model is trained on a rolling historical window and tested on the "
+            "next unseen period — mimicking live trading conditions. Accuracy reflects "
+            "how often the model correctly predicted UP vs DOWN direction, not magnitude. "
+            "50% = random baseline (coin flip).",
+        ),
+        unsafe_allow_html=True,
+    )
 
 
 def _render_accuracy_chart(metrics: dict[str, Any]) -> None:
@@ -468,27 +480,3 @@ def _render_sector_heatmap() -> None:
             st.plotly_chart(fig, use_container_width=True)
     except Exception:  # noqa: BLE001
         pass
-
-
-# ── Legacy helpers kept for backward compatibility ─────────────────────────────
-
-
-def _render_signal_report_card(db_path: str) -> None:
-    """Render signal report card from tracked trade outcomes (legacy entry point)."""
-    st.markdown("#### Signal Report Card")
-    outcomes = load_outcomes(db_path)
-    if not outcomes:
-        render_inline_context(
-            st,
-            "No outcome data yet — start tracking trades to build signal intelligence.",
-        )
-        return
-    _render_signal_report_card_content(outcomes)
-
-
-def _render_learning_dashboard(db_path: str) -> None:
-    """Render weight history, learned rules, and Run Learning Cycle button (legacy entry point)."""
-    st.markdown("#### Adaptive Learning")
-    weight_history = load_weight_history(db_path)
-    rules = load_learned_rules(db_path)
-    _render_learning_dashboard_content(db_path, weight_history, rules)
