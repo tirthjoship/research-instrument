@@ -32,7 +32,7 @@ GLOBAL_CSS = """
 
 /* ===== Base Typography ===== */
 html, body, [class*="css"] {
-    font-size: 15px;
+    font-size: 16px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: var(--text-primary);
     background-color: var(--bg-primary);
@@ -72,6 +72,7 @@ h4 {
 footer { visibility: hidden; }
 header [data-testid="stToolbar"] { visibility: hidden; }
 [data-testid="stDecoration"] { display: none; }
+header[data-testid="stHeader"] { display: none !important; }
 
 /* ===== Tab Styling ===== */
 .stTabs [data-baseweb="tab-list"] {
@@ -449,6 +450,7 @@ header [data-testid="stToolbar"] { visibility: hidden; }
 
 /* ===== Section Spacing ===== */
 .block-container {
+    padding-top: 1rem !important;
     padding-left: 1rem !important;
     padding-right: 1rem !important;
 }

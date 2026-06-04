@@ -23,10 +23,11 @@ def _make_card(
     sub_scores: dict[str, float] | None = None,
 ) -> OpportunityCard:
     now = datetime(2026, 6, 4, 10, 0, 0)
+    # sub_scores are on a 0-10 scale (matching ConvictionScore domain model)
     score = ConvictionScore(
         ticker=ticker,
         score=conviction,
-        sub_scores=sub_scores or {"sentiment": 0.8, "technical": 0.6},
+        sub_scores=sub_scores or {"sentiment": 8.0, "technical": 6.0},
         signals_firing=3,
         freshest_signal=now,
         explanation="Test explanation",
@@ -50,16 +51,17 @@ def _make_card(
 
 
 class TestHoldDurationText:
+    # sub_scores are on 0-10 scale (domain model ConvictionScore)
     def test_high_scores_returns_hold_until_flip(self) -> None:
-        result = _hold_duration_text({"sentiment": 0.9, "technical": 0.85})
+        result = _hold_duration_text({"sentiment": 9.0, "technical": 8.5})
         assert result == "Hold until flip"
 
     def test_medium_scores_position_hold(self) -> None:
-        result = _hold_duration_text({"sentiment": 0.6, "technical": 0.5})
+        result = _hold_duration_text({"sentiment": 6.0, "technical": 5.0})
         assert result == "Position hold (5-10d)"
 
     def test_low_scores_monitor_daily(self) -> None:
-        result = _hold_duration_text({"sentiment": 0.1, "technical": 0.2})
+        result = _hold_duration_text({"sentiment": 1.0, "technical": 2.0})
         assert result == "Monitor daily"
 
     def test_empty_sub_scores_returns_monitor_daily(self) -> None:
@@ -68,13 +70,14 @@ class TestHoldDurationText:
 
 
 class TestSubScoreBarsHtml:
+    # sub_scores are on 0-10 scale (domain model ConvictionScore)
     def test_returns_string(self) -> None:
-        html = _sub_score_bars_html({"sentiment": 0.8, "technical": 0.6})
+        html = _sub_score_bars_html({"sentiment": 8.0, "technical": 6.0})
         assert isinstance(html, str)
         assert len(html) > 0
 
     def test_contains_score_labels(self) -> None:
-        html = _sub_score_bars_html({"sentiment": 0.8})
+        html = _sub_score_bars_html({"sentiment": 8.0})
         assert "Sentiment" in html
 
     def test_empty_returns_empty_string(self) -> None:
@@ -82,13 +85,15 @@ class TestSubScoreBarsHtml:
         assert html == ""
 
     def test_clamps_pct_to_100(self) -> None:
-        html = _sub_score_bars_html({"sentiment": 1.5})
-        assert "100%" in html
+        # Value > 10 should clamp bar to 100%
+        html = _sub_score_bars_html({"sentiment": 15.0})
+        assert "100.0%" in html
 
 
 class TestEnhancedCompactCard:
     def test_hold_duration_in_html(self) -> None:
-        card = _make_card("AAPL", 8.5, sub_scores={"sentiment": 0.9, "technical": 0.85})
+        # sub_scores on 0-10 scale
+        card = _make_card("AAPL", 8.5, sub_scores={"sentiment": 9.0, "technical": 8.5})
         html = render_compact_card_html(card, datetime(2026, 6, 4, 10, 30, 0))
         assert (
             "Hold until flip" in html
@@ -98,7 +103,8 @@ class TestEnhancedCompactCard:
         )
 
     def test_sub_score_bars_rendered(self) -> None:
-        card = _make_card("NVDA", 7.5, sub_scores={"sentiment": 0.8, "technical": 0.7})
+        # sub_scores on 0-10 scale
+        card = _make_card("NVDA", 7.5, sub_scores={"sentiment": 8.0, "technical": 7.0})
         html = render_compact_card_html(card, datetime(2026, 6, 4, 10, 30, 0))
         assert "Sentiment" in html
 
