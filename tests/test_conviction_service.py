@@ -227,3 +227,24 @@ class TestRankOpportunities:
         )
         # First 2 are top scorers (TSLA=9, AAPL=8), AMZN appended last
         assert results[-1].ticker == "AMZN"
+
+
+def test_rank_opportunities_returns_top_n_when_all_below_min_score():
+    from datetime import datetime
+
+    from domain.conviction import ConvictionScore
+    from domain.conviction_service import rank_opportunities
+
+    scores = [
+        ConvictionScore(
+            ticker=f"T{i}",
+            score=2.0 + i * 0.1,
+            sub_scores={},
+            signals_firing=1,
+            freshest_signal=datetime(2026, 6, 4),
+            explanation="",
+        )
+        for i in range(20)
+    ]
+    result = rank_opportunities(scores, top_n=5, min_score=3.0)
+    assert len(result) >= 5
