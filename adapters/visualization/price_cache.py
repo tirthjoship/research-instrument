@@ -212,6 +212,11 @@ def fetch_insider_transactions(ticker: str) -> list[dict[str, Any]]:
     return cast(list[dict[str, Any]], _cached(ticker))
 
 
+def batch_fetch_prices(tickers: tuple[str, ...]) -> dict[str, dict[str, float]]:
+    """Alias for fetch_prices — batch fetch prices for a tuple of tickers."""
+    return fetch_prices(tickers)
+
+
 def fetch_index_prices() -> dict[str, dict[str, float]]:
     """Streamlit-cached wrapper around _fetch_index_prices_impl."""
     import streamlit as st
