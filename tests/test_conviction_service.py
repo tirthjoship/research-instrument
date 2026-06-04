@@ -189,10 +189,14 @@ class TestRankOpportunities:
         scores = [r.score for r in results]
         assert scores == sorted(scores, reverse=True)
 
-    def test_min_score_filters_low(self) -> None:
+    def test_min_score_filters_low_but_fallback_fills_when_sparse(self) -> None:
+        # With only 4 above-threshold and top_n=15, fallback fills from below-threshold
         results = rank_opportunities(self._scores(), min_score=3.0)
         tickers = [r.ticker for r in results]
-        assert "AMZN" not in tickers
+        # High-conviction tickers always appear before low-conviction ones
+        assert tickers.index("TSLA") < tickers.index("AMZN")
+        # When top_n > eligible count, below-threshold tickers are included via fallback
+        assert "AMZN" in tickers
 
     def test_top_n_respected(self) -> None:
         scores = [_make_score(f"T{i}", 5.0) for i in range(20)]
@@ -216,9 +220,12 @@ class TestRankOpportunities:
     def test_empty_input(self) -> None:
         assert rank_opportunities([]) == []
 
-    def test_all_below_min_score_empty_without_pinned(self) -> None:
+    def test_all_below_min_score_fallback_fills_results(self) -> None:
+        # Fallback: when all below threshold, return sorted by score (best first)
         scores = [_make_score("X", 1.5)]
-        assert rank_opportunities(scores, min_score=3.0) == []
+        results = rank_opportunities(scores, min_score=3.0)
+        assert len(results) == 1
+        assert results[0].ticker == "X"
 
     def test_pinned_appended_after_top_n(self) -> None:
         """Pinned tickers that missed cut appear at the end, not mixed in."""
