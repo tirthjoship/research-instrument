@@ -319,6 +319,52 @@ def run_conviction_scan(
     return cards
 
 
+def run_record_buy(
+    ticker: str,
+    price: float,
+    quantity: int,
+    trade_date: str,
+    conviction: float = 0.0,
+    signals: list[str] | None = None,
+    db_path: str = "data/recommendations.db",
+) -> None:
+    """Record a BUY trade via OutcomeTrackingUseCase."""
+    from adapters.data.sqlite_store import SQLiteStore
+    from application.outcome_use_case import OutcomeTrackingUseCase
+
+    store = SQLiteStore(db_path)
+    uc = OutcomeTrackingUseCase(store=store)
+    uc.record_buy(
+        ticker=ticker,
+        price=price,
+        quantity=quantity,
+        trade_date=trade_date,
+        conviction=conviction,
+        signals=signals or [],
+    )
+
+
+def run_record_sell(
+    ticker: str,
+    price: float,
+    quantity: int,
+    trade_date: str,
+    db_path: str = "data/recommendations.db",
+) -> None:
+    """Record a SELL trade via OutcomeTrackingUseCase."""
+    from adapters.data.sqlite_store import SQLiteStore
+    from application.outcome_use_case import OutcomeTrackingUseCase
+
+    store = SQLiteStore(db_path)
+    uc = OutcomeTrackingUseCase(store=store)
+    uc.record_sell(
+        ticker=ticker,
+        price=price,
+        quantity=quantity,
+        trade_date=trade_date,
+    )
+
+
 def run_backtest(
     market: str = "us",
     start: str = "2024-01",
