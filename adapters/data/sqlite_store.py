@@ -20,6 +20,7 @@ from domain.models import (
     WeeklyReport,
 )
 from domain.outcome import TrackedTrade, TradeAction, TradeOutcome
+from domain.pattern_memory import LearnedRule, WeightAdjustment
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS recommendations (
@@ -169,6 +170,28 @@ CREATE TABLE IF NOT EXISTS trade_outcomes (
     conviction_at_entry REAL,
     created_at TEXT DEFAULT (datetime('now')),
     UNIQUE(buy_trade_id, sell_trade_id)
+);
+
+CREATE TABLE IF NOT EXISTS weight_history (
+    id INTEGER PRIMARY KEY,
+    dimension TEXT NOT NULL,
+    old_weight REAL NOT NULL,
+    new_weight REAL NOT NULL,
+    reason TEXT,
+    adjusted_date TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS learned_rules (
+    rule_id TEXT PRIMARY KEY,
+    description TEXT NOT NULL,
+    signal_combination TEXT NOT NULL,
+    sector TEXT DEFAULT 'any',
+    action TEXT NOT NULL,
+    confidence REAL NOT NULL,
+    supporting_outcomes INTEGER NOT NULL,
+    learned_date TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
 );
 """
 
@@ -637,6 +660,81 @@ class SQLiteStore:
             params.append(ticker)
         rows = self._conn.execute(query, params).fetchall()
         return [self._row_to_outcome(r) for r in rows]
+
+    # ------------------------------------------------------------------
+    # WeightAdjustment + LearnedRule CRUD
+    # ------------------------------------------------------------------
+
+    def save_weight_adjustment(self, adj: WeightAdjustment) -> None:
+        self._conn.execute(
+            """INSERT INTO weight_history
+            (dimension, old_weight, new_weight, reason, adjusted_date)
+            VALUES (?, ?, ?, ?, ?)""",
+            (
+                adj.dimension,
+                adj.old_weight,
+                adj.new_weight,
+                adj.reason,
+                adj.adjusted_date,
+            ),
+        )
+        self._conn.commit()
+
+    def get_weight_history(
+        self, dimension: str | None = None
+    ) -> list[WeightAdjustment]:
+        query = "SELECT * FROM weight_history WHERE 1=1"
+        params: list[Any] = []
+        if dimension is not None:
+            query += " AND dimension = ?"
+            params.append(dimension)
+        query += " ORDER BY adjusted_date DESC"
+        rows = self._conn.execute(query, params).fetchall()
+        return [
+            WeightAdjustment(
+                dimension=r["dimension"],
+                old_weight=r["old_weight"],
+                new_weight=r["new_weight"],
+                reason=r["reason"] or "",
+                adjusted_date=r["adjusted_date"],
+            )
+            for r in rows
+        ]
+
+    def save_learned_rule(self, rule: LearnedRule) -> None:
+        self._conn.execute(
+            """INSERT OR REPLACE INTO learned_rules
+            (rule_id, description, signal_combination, sector, action,
+             confidence, supporting_outcomes, learned_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                rule.rule_id,
+                rule.description,
+                json.dumps(list(rule.signal_combination)),
+                rule.sector,
+                rule.action,
+                rule.confidence,
+                rule.supporting_outcomes,
+                rule.learned_date,
+            ),
+        )
+        self._conn.commit()
+
+    def get_learned_rules(self) -> list[LearnedRule]:
+        rows = self._conn.execute("SELECT * FROM learned_rules").fetchall()
+        return [
+            LearnedRule(
+                rule_id=r["rule_id"],
+                description=r["description"],
+                signal_combination=tuple(json.loads(r["signal_combination"])),
+                sector=r["sector"],
+                action=r["action"],
+                confidence=r["confidence"],
+                supporting_outcomes=r["supporting_outcomes"],
+                learned_date=r["learned_date"],
+            )
+            for r in rows
+        ]
 
     def _row_to_trade(self, r: sqlite3.Row) -> TrackedTrade:
         return TrackedTrade(
