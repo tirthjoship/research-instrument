@@ -1,9 +1,9 @@
 # Multi-Modal Stock Recommender
 
-Production-grade ML system predicting multi-horizon stock returns using a 5-layer feature architecture: 45 technical (Stage 1) + 24 sentiment/buzz/divergence (Stage 2) + 16 fundamental valuation + 8 cross-asset intelligence + 8 event-causal features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Cross-asset correlation graph with Granger causality. Event-causal learning with Gemini-classified news and exponential decay impact modeling. Portfolio tracking with automated sell signal detection. 6-tab Streamlit decision dashboard with interactive Plotly charts. Built with hexagonal architecture and strict point-in-time enforcement.
+Production-grade ML system predicting multi-horizon stock returns using a 5-layer feature architecture: 45 technical (Stage 1) + 24 sentiment/buzz/divergence (Stage 2) + 16 fundamental valuation + 8 cross-asset intelligence + 8 event-causal features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Cross-asset correlation graph with Granger causality. Event-causal learning with Gemini-classified news and exponential decay impact modeling. Portfolio tracking with automated sell signal detection. 6-tab adaptive intelligence dashboard with conviction-scored opportunity surfacing. Built with hexagonal architecture and strict point-in-time enforcement.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-518%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-785%20passing-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25+-brightgreen)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
@@ -17,6 +17,8 @@ Production-grade ML system predicting multi-horizon stock returns using a 5-laye
 **Phase 3A tests:** Can technical + regime + macro features alone predict multi-horizon stock returns above random baseline with statistical significance?
 
 **Phase 3B tests:** Does adding sentiment/buzz features (from RSS news + social media) provide measurable lift (>2%) over Phase 3A's ~50% technical-only baseline?
+
+**Phases 7-9 reframe:** Direction prediction alone shows no edge (~49% accuracy on mega-caps). The system now surfaces opportunities via multi-signal conviction scoring with adaptive learning — catching trends before mainstream awareness through SEC filing analysis, sentiment convergence, and pattern memory.
 
 ---
 
@@ -37,6 +39,11 @@ Production-grade ML system predicting multi-horizon stock returns using a 5-laye
 12. **Portfolio tracking** — add/remove holdings, automated sell signal detection (stop-loss, negative sentiment, technical breakdown)
 13. **Decision dashboard** — 6-tab Streamlit app (Command Center, Model Confidence, Signal Breakdown, Positions, Opportunities, Market Pulse) with interactive Plotly charts
 14. Runs via **CLI** (daily-scan + weekly tournament + portfolio management + dashboard)
+15. **Conviction scoring** — 6-dimension weighted scoring (signal agreement, smart money, sentiment, fundamentals, freshness, ML direction) surfaces top 15 opportunities from 350+ tickers
+16. **SEC EDGAR integration** — 13D activist filings and Form 4 insider trades as "smart money" signals (free, no API key)
+17. **Opportunity cards** — 4-part output: Alert (headline), Evidence (plain English), Suggestion (Buy/Watch/Hold/Sell), Risk (what could go wrong)
+18. **Outcome tracking** — manual buy/sell logging with P&L computation, signal correlation, and signal report card showing which signals actually work
+19. **Adaptive intelligence** — pattern memory learns from tracked outcomes, auto-adjusts conviction weights (boost >65% hit rate, reduce <50%), discovers rules ("avoid X in sector Y")
 
 ---
 
@@ -60,6 +67,18 @@ domain/                          # Pure business logic (stdlib only)
                                  #   validate_data_freshness(), classify_horizon()
   exceptions.py                  # LookAheadBiasError, InsufficientDataError,
                                  #   StaleDataError
+  conviction.py                  # ConvictionScore, ConvictionWeights, OpportunityCard,
+                                 #   SmartMoneySignal, ActionType, FreshnessLevel
+  conviction_service.py          # compute_conviction(), compute_freshness_score(),
+                                 #   determine_action(), rank_opportunities()
+  outcome.py                     # TrackedTrade, TradeOutcome, SignalPerformance
+  outcome_service.py             # compute_outcome(), compute_signal_performance(),
+                                 #   generate_report_card()
+  pattern_memory.py              # PatternEntry, WeightAdjustment, LearnedRule
+  pattern_service.py             # build_patterns_from_outcomes(),
+                                 #   compute_weight_adjustments(), discover_rules()
+  ports.py                       # (add) SmartMoneyPort
+  services.py                    # (add) validate_smart_money_signals()
 
 adapters/
   data/
@@ -70,6 +89,9 @@ adapters/
     gdelt_sentiment_adapter.py   # HistoricalSentimentPort (GDELT DOC API)
     sqlite_store.py              # RecommendationStorePort + HoldingsPort (8 tables)
     cache_mixin.py               # Append-only raw data cache (ADR-017)
+    sec_edgar_adapter.py         # SmartMoneyPort (SEC EDGAR EFTS API, 13D + Form 4)
+    sqlite_store.py              # (add) 4 new tables: tracked_trades, trade_outcomes,
+                                 #   weight_history, learned_rules
   ml/
     feature_engineer.py          # 45 technical features
     sentiment_feature_engineer.py # 24 sentiment/buzz/divergence features
@@ -79,6 +101,7 @@ adapters/
     gemini_event_classifier.py     # EventClassifierPort (Gemini free tier)
     event_impact_analyzer.py       # Exponential decay impact learning
     event_causal_features.py       # 8 event-causal features
+    smart_money_engineer.py      # 8 smart money features (13D count, insider cluster, etc.)
     keyword_scorer.py            # SentimentPort (rule-based, instant)
     flan_t5_scorer.py            # SentimentPort (zero-shot NLP, MPS)
     xgboost_predictor.py         # StockPredictorPort (Stage 1)
@@ -100,17 +123,22 @@ adapters/
       verdicts.py                # Plain-English verdict generators (5 functions)
       charts.py                  # 7 Plotly builders (accuracy, donut, heatmap, decay, SHAP, ablation)
     tabs/
-      command_center.py          # Tab 1: Hero banner, Run Full Cycle, priority actions
-      model_confidence.py        # Tab 2: Verdict card, Run Backtest, SHAP, ablation
+      command_center.py          # Tab 1: Opportunity Feed — conviction-ranked cards
+      model_confidence.py        # Tab 2: System Intelligence — signal report + weight history + rules
       signal_breakdown.py        # Tab 3: Per-ticker 5-layer signal view with verdicts
-      positions.py               # Tab 4: Holdings, sell signals, add holding form
+      positions.py               # Tab 4: Outcome Tracker — trade recording + P&L
       opportunities.py           # Tab 5: Top 5 pick cards, Run Tournament, watchlist
       market_pulse.py            # Tab 6: Data pipeline status, supply chains, event decay
-    action_runner.py             # Progress-tracked: Run Full Cycle, Tournament, Backtest
+      opportunity_cards.py       # Conviction badges, evidence/risk card rendering
+    action_runner.py             # (add) run_conviction_scan, run_record_buy, run_record_sell
 
 application/
   use_cases.py                   # PretrainingUseCase, WeeklyTournamentUseCase,
                                  #   TrackRecommendationsUseCase, EvaluationUseCase
+  conviction_use_case.py         # ConvictionScoringUseCase (signal → score → cards)
+  outcome_use_case.py            # OutcomeTrackingUseCase (record_buy, record_sell, report)
+  bootstrap_use_case.py          # HistoricalBootstrapUseCase (cold-start simulation)
+  learning_use_case.py           # LearningUseCase (pattern analysis → weight adjustment → rules)
   monitor_holdings.py            # MonitorHoldingsUseCase (sell signal detection)
   daily_scan.py                  # DailyScanUseCase (RSS → scorers → SQLite)
   ablation.py                    # Three-way ablation runner
@@ -129,7 +157,7 @@ application/
   ticker_universe.py               # Config-driven ticker loader (S&P 500 + NASDAQ-100)
 
 config/
-  markets/us.yaml                  # US market + sentiment configuration
+  markets/us.yaml                  # US market + sentiment configuration + conviction weights + SEC EDGAR config
   relationships/supply_chain.yaml  # 10 supply chain groups (80+ tickers)
   events/sector_mapping.yaml       # 10 event categories → affected sectors
   tickers/sp500.txt                # ~503 S&P 500 constituents
@@ -262,7 +290,7 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: 518 passed
+# Expected: 785 passed
 ```
 
 ### CLI Usage
@@ -372,7 +400,20 @@ make check
 | Dashboard data loader | 15 | SQLite + JSON loading, graceful defaults, missing DB handling |
 | Dashboard smoke | 4 | Import verification for all visualization modules |
 | Watchlist | 6 | SQLite CRUD: add, upsert dedup, remove, empty, dict structure |
-| **Total** | **518** | |
+| Conviction models | 27 | ConvictionScore, OpportunityCard, SmartMoneySignal |
+| Conviction service | 32 | Freshness, action mapping, weighted scoring, ranking |
+| SEC EDGAR adapter | 10 | 13D/Form 4 parsing, error handling, rate limiting |
+| Smart money features | 9 | 8 feature extraction, cluster detection |
+| Conviction use case | 7 | Signal gathering → scoring → card generation |
+| Opportunity cards | 35 | HTML rendering, badges, evidence, risk sections |
+| Outcome models | 8 | TrackedTrade, TradeOutcome, SignalPerformance |
+| Outcome service | 32 | Trade outcomes, signal performance, report cards |
+| Outcome use case | 23 | Buy/sell recording, outcome computation |
+| Bootstrap | 5 | Historical simulation for cold-start |
+| Pattern memory | 16 | PatternEntry, WeightAdjustment, LearnedRule |
+| Pattern service | 19 | Pattern building, weight adjustment, rules |
+| Learning use case | 11 | Pattern analysis → weight adjustment → rules |
+| **Total** | **785** | |
 
 ---
 
@@ -480,12 +521,15 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 5 | ✅ Complete | **Decision dashboard** — 6-tab Streamlit (Command Center, Model Confidence, Signal Breakdown, Positions, Opportunities, Market Pulse), Plotly charts, watchlist, graceful empty states |
 | 5.1 | ✅ Complete | **Dashboard UI polish** — CSS cards/pills/badges, pages→tabs rename, grade donut fix, SHAP layer colors |
 | 5.2 | ✅ Complete | **Dashboard UX overhaul** — Inter font, verdict-first layout, Run Full Cycle/Tournament/Backtest buttons, emoji-free content, pick cards, data pipeline panel |
+| 7 | ✅ Complete | **Opportunity Intelligence Foundation** — conviction scoring engine (6 dimensions), SEC EDGAR adapter (13D + Form 4), smart money features, opportunity cards, Opportunity Feed dashboard tab, freshness header with S&P 500 sparkline |
+| 8 | ✅ Complete | **Outcome Tracking & Memory** — trade logging, outcome tracking with P&L, signal report card, historical bootstrap, Outcome Tracker tab, System Intelligence tab |
+| 9 | ✅ Complete | **Adaptive Intelligence** — pattern memory, weight adjustment with guardrails, learned rule discovery, Run Learning Cycle, weight history display |
 
 ---
 
 ## Architecture Decision Records
 
-31 ADRs in `docs/adr/` documenting all major design choices:
+34 ADRs in `docs/adr/` documenting all major design choices:
 
 | ADR | Decision |
 |-----|----------|
@@ -514,6 +558,9 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 029 | Cross-asset feature architecture: dual adapter + Granger pre-filter |
 | 030 | Event-causal learning: Gemini free tier + empirical impact + exponential decay |
 | 031 | Decision dashboard: 6-tab Streamlit + Plotly, command center first |
+| 032 | Opportunity intelligence: reframe from direction prediction to conviction-scored opportunity surfacing |
+| 033 | Outcome tracking: trade logging, signal report card, historical bootstrap |
+| 034 | Adaptive intelligence: pattern memory, weight evolution with guardrails, rule discovery |
 
 ---
 
@@ -523,7 +570,7 @@ Three GitHub Actions workflows automate quality gates:
 
 | Workflow | Trigger | What it does |
 |----------|---------|-------------|
-| `test.yml` | Push/PR to develop | Runs 518 tests, enforces 90% coverage |
+| `test.yml` | Push/PR to develop | Runs 785 tests, enforces 90% coverage |
 | `lint.yml` | Push/PR to develop | black, isort, ruff, mypy strict |
 | `security.yml` | Push/PR to develop | gitleaks secret scanning |
 
@@ -549,9 +596,13 @@ Future: `daily-scan.yml` cron workflow for automated RSS buzz collection.
 >
 > **Decision Dashboard** ties it all together — a 6-tab Streamlit app designed like Wealthsimple/SimplyWallSt. Every section explains itself in plain English first ('The model doesn't have a proven edge yet'), then shows the evidence. One-click 'Run Full Cycle' button chains scan→tournament→accuracy tracking — no terminal needed. The Command Center shows prioritized actions (urgent/this week/watch). Model Confidence is brutally honest about what works and what doesn't. Opportunities tab shows top 5 picks as full detail cards with layer convergence and source attribution.
 >
+> **Opportunity Intelligence** (Phases 7-9) is the real breakthrough. After proving that direction prediction has no edge on mega-caps, I reframed the entire system around opportunity surfacing. A conviction engine scores every ticker across 6 dimensions — smart money activity (SEC EDGAR 13D activist filings, Form 4 insider trades), sentiment momentum, fundamentals, and signal freshness. It surfaces the top 15 opportunities as plain-English cards: 'ValueAct Capital just filed a 13D on NVDA — conviction 8/10, here's the evidence, here's what could go wrong.'
+>
+> The system learns from outcomes. When I buy based on a recommendation, I log it. When I sell, it computes the return and correlates back to which signals fired. A monthly report card shows 'insider buying clusters had 72% hit rate, ML direction prediction was 48% — stop weighting it.' Weights adjust automatically: boost signals that work (>65% hit rate), reduce signals that don't (<50%), with guardrails to prevent wild swings. The system discovers rules from data: 'never recommend pure-technical plays on mega-caps' — learned, not hardcoded.
+>
 > **Full-universe backtest** (350+ tickers, 29 months, 2024-2026) confirms: technical + fundamental + cross-asset + event-causal features alone achieve ~49% accuracy — indistinguishable from random on mega-caps. This honest null result is the foundation. The thesis posits that live sentiment divergence is the edge — Phase 3B in-sample showed 69.7% with sentiment, but out-of-sample validation is pending.
 >
-> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 518 tests, mypy strict, full CI/CD."
+> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 785 tests, mypy strict, full CI/CD."
 
 ---
 
