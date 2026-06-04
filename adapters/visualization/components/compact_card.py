@@ -26,11 +26,13 @@ _FRESHNESS_DOT_CSS: dict[FreshnessLevel, str] = {
 def _hold_duration_text(sub_scores: dict[str, float]) -> str:
     """Derive a hold duration hint from sub-score magnitudes.
 
+    Sub-scores are on a 0-10 scale. Normalise to 0-1 for threshold checks.
     Uses sentiment + technical scores to categorise as short/medium/position hold.
     """
     sentiment = sub_scores.get("sentiment", 0.0)
     technical = sub_scores.get("technical", 0.0)
-    avg = (sentiment + technical) / 2 if (sentiment or technical) else 0.0
+    # Normalise from 0-10 → 0-1
+    avg = (sentiment + technical) / 2 / 10.0 if (sentiment or technical) else 0.0
     if avg >= 0.75:
         return "Hold until flip"
     elif avg >= 0.5:
@@ -42,7 +44,7 @@ def _hold_duration_text(sub_scores: dict[str, float]) -> str:
 
 
 def _sub_score_bars_html(sub_scores: dict[str, float]) -> str:
-    """Render small horizontal bars for each sub-score (0-1 scale)."""
+    """Render small horizontal bars for each sub-score (0-10 scale)."""
     _COLORS: dict[str, str] = {
         "sentiment": "#7C3AED",
         "technical": "#2563EB",
@@ -53,15 +55,16 @@ def _sub_score_bars_html(sub_scores: dict[str, float]) -> str:
     bars = ""
     for key, val in sub_scores.items():
         color = _COLORS.get(key, "#94A3B8")
-        pct = max(0, min(100, int(val * 100)))
+        # Values are 0-10; convert to 0-100% for bar width
+        pct = min(100, max(0, val / 10.0 * 100))
         label = key.replace("_", " ").title()
         bars += (
             f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">'
             f'<span style="font-size:11px;color:#94A3B8;width:80px;flex-shrink:0;">{label}</span>'
             f'<div style="flex:1;height:4px;background:#E5E7EB;border-radius:2px;overflow:hidden;">'
-            f'<div style="width:{pct}%;height:4px;background:{color};border-radius:2px;"></div>'
+            f'<div style="width:{pct:.1f}%;height:4px;background:{color};border-radius:2px;"></div>'
             f"</div>"
-            f'<span style="font-size:11px;color:#6B7280;width:30px;text-align:right;">{val:.0%}</span>'
+            f'<span style="font-size:11px;color:#6B7280;width:30px;text-align:right;">{val:.1f}</span>'
             f"</div>"
         )
     return bars

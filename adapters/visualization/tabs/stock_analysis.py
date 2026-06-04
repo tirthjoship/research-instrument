@@ -23,7 +23,7 @@ from adapters.visualization.components.charts import (
     ownership_pie,
     signal_radar,
 )
-from adapters.visualization.stock_analyzer import AnalysisResult, analyze_ticker
+from adapters.visualization.stock_analyzer import AnalysisResult
 
 
 def render() -> None:
@@ -44,12 +44,33 @@ def render() -> None:
 
     if analyze and ticker_input:
         ticker = ticker_input.upper().strip()
-        _show_loading_steps(ticker)
         try:
-            result = analyze_ticker(ticker)
+            from adapters.visualization.stock_analyzer import analyze_ticker
+
+            progress = st.progress(0)
+            status = st.empty()
+            steps = [
+                "Fetching market data...",
+                "Loading fundamentals...",
+                "Computing indicators...",
+                "Checking sentiment...",
+                "Querying insiders...",
+                "Computing scores...",
+                "Building analysis...",
+            ]
+            for i, step in enumerate(steps):
+                progress.progress((i + 1) / len(steps))
+                status.text(step)
+
+            result = analyze_ticker(ticker, db_path="data/recommendations.db")
             st.session_state[f"analysis_{ticker}"] = result
+            progress.empty()
+            status.empty()
         except Exception as exc:
             st.error(f"Analysis failed for {ticker}: {exc}")
+            import traceback
+
+            st.code(traceback.format_exc())
             return
 
     # Show cached result
