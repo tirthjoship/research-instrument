@@ -216,4 +216,16 @@ Five hard stops — see `AGENTS.md` for full details:
 - ADR-032 documenting the reframe from direction prediction to opportunity surfacing
 - Test suite — 660+ tests passing
 
+**Done (Phase 8 — Outcome Tracking & Memory 2026-06-03):**
+- TrackedTrade, TradeOutcome, SignalPerformance domain models
+- Outcome tracking service — compute_outcome, compute_signal_performance, generate_report_card
+- SQLite persistence — tracked_trades + trade_outcomes tables with CRUD
+- OutcomeTrackingUseCase — record_buy, record_sell, get_signal_report, get_outcomes_summary
+- Dashboard data loaders — load_trades, load_outcomes with graceful defaults
+- Outcome Tracker tab (was Positions) — trade recording form, P&L display, outcomes table
+- System Intelligence tab (was Model Confidence) — signal report card + learning progress
+- Historical bootstrap engine — simulates past outcomes for cold-start learning
+- ADR-033 documenting outcome tracking and signal learning
+- Test suite — 735+ tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
