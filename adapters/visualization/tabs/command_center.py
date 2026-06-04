@@ -141,7 +141,7 @@ def _render_hero(
     total_value = (
         sum(h.quantity * h.purchase_price for h in holdings) if holdings else 0.0
     )
-    best_performer = holdings[0].ticker if holdings else "—"
+    best_performer = holdings[0].symbol if holdings else "—"
     portfolio = {
         "total_value": total_value,
         "total_pnl": 0.0,
