@@ -5,6 +5,16 @@ from __future__ import annotations
 from typing import Literal
 
 
+def tooltip(text: str, help_text: str) -> str:
+    """Wrap text with a hover tooltip icon."""
+    return (
+        f'<span class="tooltip-container">{text}'
+        f'<span class="tooltip-icon">?</span>'
+        f'<span class="tooltip-text">{help_text}</span>'
+        f"</span>"
+    )
+
+
 def criteria_card(title: str, score: int, max_score: int, summary: str) -> str:
     """Render a criteria scoring card with dot indicators.
 
