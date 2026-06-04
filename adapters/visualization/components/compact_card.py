@@ -23,13 +23,59 @@ _FRESHNESS_DOT_CSS: dict[FreshnessLevel, str] = {
 }
 
 
+def _hold_duration_text(sub_scores: dict[str, float]) -> str:
+    """Derive a hold duration hint from sub-score magnitudes.
+
+    Uses sentiment + technical scores to categorise as short/medium/position hold.
+    """
+    sentiment = sub_scores.get("sentiment", 0.0)
+    technical = sub_scores.get("technical", 0.0)
+    avg = (sentiment + technical) / 2 if (sentiment or technical) else 0.0
+    if avg >= 0.75:
+        return "Hold until flip"
+    elif avg >= 0.5:
+        return "Position hold (5-10d)"
+    elif avg >= 0.3:
+        return "Short hold (2-3d)"
+    else:
+        return "Monitor daily"
+
+
+def _sub_score_bars_html(sub_scores: dict[str, float]) -> str:
+    """Render small horizontal bars for each sub-score (0-1 scale)."""
+    _COLORS: dict[str, str] = {
+        "sentiment": "#7C3AED",
+        "technical": "#2563EB",
+        "smart_money": "#059669",
+        "fundamental": "#D97706",
+        "event": "#EA580C",
+    }
+    bars = ""
+    for key, val in sub_scores.items():
+        color = _COLORS.get(key, "#94A3B8")
+        pct = max(0, min(100, int(val * 100)))
+        label = key.replace("_", " ").title()
+        bars += (
+            f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">'
+            f'<span style="font-size:11px;color:#94A3B8;width:80px;flex-shrink:0;">{label}</span>'
+            f'<div style="flex:1;height:4px;background:#E5E7EB;border-radius:2px;overflow:hidden;">'
+            f'<div style="width:{pct}%;height:4px;background:{color};border-radius:2px;"></div>'
+            f"</div>"
+            f'<span style="font-size:11px;color:#6B7280;width:30px;text-align:right;">{val:.0%}</span>'
+            f"</div>"
+        )
+    return bars
+
+
 def render_compact_card_html(card: OpportunityCard, now: datetime) -> str:
     """Return compact single-row HTML for an OpportunityCard.
 
     Layout:
-      Row 1: ticker | conviction bar | score | action badge | freshness dot
-      Row 2: alert_summary (one line)
-      Row 3: abbreviated risks — first 2, joined by " · "
+      Row 1: ticker | conviction bar | score | action badge | freshness dot | hold duration
+      Row 2: sub-score breakdown bars
+      Row 3: alert_summary (one line)
+      Row 4: abbreviated risks — first 2, joined by " · "
+      Row 5: "Analyze" link text
 
     CSS card class is opp-card plus one of:
       opp-card-high (conviction >= 7), opp-card-mid (4-6), opp-card-low (< 4).
@@ -61,9 +107,16 @@ def render_compact_card_html(card: OpportunityCard, now: datetime) -> str:
     # Abbreviated risks (first 2, joined by " · ")
     risk_abbrev = " · ".join(card.risks[:2]) if card.risks else ""
 
+    # Hold duration derived from sub-scores
+    sub_scores = card.conviction_score.sub_scores
+    hold_text = _hold_duration_text(sub_scores)
+
+    # Sub-score bars
+    sub_bars_html = _sub_score_bars_html(sub_scores) if sub_scores else ""
+
     return (
         f'<div class="opp-card {tier_class}">'
-        # Row 1: ticker + conviction bar + score + badge + freshness
+        # Row 1: ticker + conviction bar + score + badge + freshness + hold
         f'<div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">'
         f"<span style=\"font-family:'DM Sans',sans-serif; font-size:18px; font-weight:700;"
         f' color:#111827;">{card.ticker}</span>'
@@ -81,14 +134,27 @@ def render_compact_card_html(card: OpportunityCard, now: datetime) -> str:
         # Freshness dot + label
         f'<span class="status-dot {freshness_css}"></span>'
         f'<span style="font-size:12px; color:#6B7280;">{freshness_label}</span>'
+        # Hold duration
+        f'<span style="margin-left:auto; font-size:12px; color:#64748B; '
+        f'font-style:italic;">{hold_text}</span>'
         f"</div>"
-        # Row 2: alert summary
-        f'<div style="font-size:13px; color:#374151; margin-top:6px;">'
+        # Row 2: sub-score bars
+        + (
+            f'<div style="margin-top:8px; padding:6px 0;">{sub_bars_html}</div>'
+            if sub_bars_html
+            else ""
+        )
+        # Row 3: alert summary
+        + f'<div style="font-size:13px; color:#374151; margin-top:6px;">'
         f"{card.alert_summary}"
         f"</div>"
-        # Row 3: abbreviated risks
+        # Row 4: abbreviated risks
         f'<div style="font-size:12px; color:#9CA3AF; margin-top:4px;">'
         f"{risk_abbrev}"
+        f"</div>"
+        # Row 5: analyze link
+        f'<div style="margin-top:8px; font-size:12px;">'
+        f'<span style="color:#2563EB; cursor:pointer; font-weight:500;">Analyze {card.ticker} &rarr;</span>'
         f"</div>"
         f"</div>"
     )
