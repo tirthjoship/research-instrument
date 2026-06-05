@@ -38,8 +38,21 @@ def run_monitor_holdings(
 
     from application.monitor_holdings import MonitorHoldingsUseCase
 
+    # Fetch live prices for all held symbols
+    symbols = tuple(h.symbol for h in holdings)
+    try:
+        from adapters.visualization.price_cache import _batch_fetch_prices_impl
+
+        price_batch = _batch_fetch_prices_impl(symbols)
+    except Exception:
+        price_batch = {}
+
     def get_price_stub(symbol: str) -> float:
-        """Stub price getter — returns purchase price (no live API in dashboard)."""
+        """Return live price when available, fall back to purchase price."""
+        info = price_batch.get(symbol, {})
+        live = info.get("price") or info.get("current_price")
+        if live is not None:
+            return float(live)
         for h in holdings:
             if h.symbol == symbol:
                 return h.purchase_price
@@ -272,9 +285,6 @@ def run_conviction_scan(
                     [t.strip() for t in f.read_text().strip().split("\n") if t.strip()]
                 )
 
-    # Limit for performance
-    tickers = tickers[:50]
-
     # 3. Create SECEdgarAdapter and fetch signals
     _update(0.60, f"Fetching smart money signals for {len(tickers)} tickers...")
     from adapters.data.sec_edgar_adapter import SECEdgarAdapter
@@ -284,6 +294,7 @@ def run_conviction_scan(
     # 4. Load watchlist for pinned tickers
     _update(0.70, "Loading watchlist...")
     pinned: set[str] = set()
+    store: object | None = None
     try:
         from adapters.data.sqlite_store import SQLiteStore
 
@@ -303,6 +314,7 @@ def run_conviction_scan(
         smart_money=edgar,
         tickers=tickers,
         weights=weights,
+        store=store,
         pinned=pinned,
         top_n=15,
     )

@@ -78,3 +78,9 @@ class TestPromptConstruction:
 
         for cat in EventCategory:
             assert cat.value in _SYSTEM_PROMPT
+
+
+def test_system_prompt_includes_government_investment() -> None:
+    from adapters.ml.gemini_event_classifier import _SYSTEM_PROMPT
+
+    assert "government_investment" in _SYSTEM_PROMPT

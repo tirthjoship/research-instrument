@@ -82,3 +82,11 @@ mappings:
       direction: 0
     - sector: Energy
       direction: 0
+
+  government_investment:
+    - sector: Technology
+      direction: 1
+    - sector: Industrials
+      direction: 1
+    - sector: Semiconductors
+      direction: 1
