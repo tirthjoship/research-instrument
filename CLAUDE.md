@@ -296,4 +296,20 @@ Five hard stops — see `AGENTS.md` for full details:
 - ADR-041 documenting the honest opportunity engine decisions
 - Test suite — 1120 tests passing
 
+**Planned/Decided (Leg-2 sub-project B — Honest Ingestion & Source Health 2026-06-05):**
+- **Decided approach (not yet implemented):** Fix the data layer so the no-joint-signal finding (finding 6) can be re-evaluated on clean inputs. Sub-project A live run found GDELT silently failing, Google Trends unusable under burst load, rate-limited sources writing empty rows as if genuine, and the backfill universe mismatched against the scan universe — all confounding the edge question.
+- **Prune, don't add** — no new model dimensions; conviction combiner frozen until clean-data re-evaluation.
+- **Throttle ≠ empty rule** — `SourceThrottledError` distinguishes rate-limits from genuine empty observations; a throttle must never write a zero to the base window (look-ahead-adjacent data-integrity rule).
+- **Source consolidation** — Google News RSS + Wikipedia pageviews as primary; Google Trends secondary (slow-drip only); GDELT demoted to optional/off (free tier confirmed dead in sub-project A live run); Reddit unchanged (off without creds); StockTwits already retired.
+- **`SourceHealth` value object** — per-source `attempts/ok/empty/throttled/failed` surfaced in every run report; sibling of `ConvictionSignalCache.flags`; never silent.
+- **Resumable spine-first slow-drip backfill** — `DripBackfillUseCase` iterates scan universe (spine first), checkpoints via store (crash = resume for free), spaced/jittered under rate budgets. `DailyDeltaSweepUseCase` fetches only new days. No proxies / multi-account (ToS-evasion, contradicts the honesty thesis).
+- **Minimum-history gate** — `has_min_history` domain predicate (~21 days) blocks day-1 noise spikes before a ticker is eligible to surface.
+- **Discrimination audit** — `DiscriminationAuditUseCase` one-shot diagnostic: per-dim variance + neutral-share + conviction contribution; output drives principled pruning decisions (human decides, not auto-prune).
+- **Honest empty-state** — when the engine abstains, dashboard shows full ranked candidate distribution + near-misses + source-health panel so abstention reads as rigor.
+- **`caffeinate` constraint documented** — launchd will not fire on a sleeping laptop; documented in `docs/scheduling.md`, not solved by infra here.
+- **Honest caveat:** this improves data reliability, not proven edge. ADR-039's no-OOS-edge finding stands. The no-joint-signal finding (sub-project A) was confounded by broken data and will be re-evaluated on clean inputs.
+- Spec: `docs/superpowers/specs/2026-06-05-leg2-subproject-b-honest-ingestion-design.md`
+- Plan: `docs/superpowers/plans/2026-06-05-leg2-subproject-b-honest-ingestion.md`
+- ADR-042: `docs/adr/042-honest-ingestion-source-health.md`
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
