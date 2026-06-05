@@ -73,7 +73,7 @@ class HistoricalBootstrapUseCase:
                 )
                 if outcome is not None:
                     all_outcomes.append(outcome)
-                    self._store.save_outcome(outcome)
+                    self._store.save_trade_outcome(outcome)
 
             window_start += timedelta(days=step_days)
 
