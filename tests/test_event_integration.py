@@ -100,3 +100,6 @@ def test_sector_mapping_yaml_loads() -> None:
 
     mappings = data["mappings"]
     assert len(mappings) >= 10, f"Expected >= 10 categories, got {len(mappings)}"
+    assert (
+        "government_investment" in mappings
+    ), "government_investment category missing from YAML"
