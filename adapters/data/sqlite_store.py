@@ -10,6 +10,7 @@ from typing import Any
 
 from domain.models import (
     AccuracyRecord,
+    AttentionPoint,
     BuzzSignal,
     EvaluationRun,
     Holding,
@@ -229,6 +230,16 @@ CREATE TABLE IF NOT EXISTS call_outcomes (
     beat_both INTEGER NOT NULL,
     PRIMARY KEY (call_id, horizon)
 );
+
+CREATE TABLE IF NOT EXISTS attention_series (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticker TEXT NOT NULL,
+    source TEXT NOT NULL,
+    ts TIMESTAMP NOT NULL,
+    value REAL NOT NULL,
+    UNIQUE(ticker, source, ts)
+);
+CREATE INDEX IF NOT EXISTS idx_attn_ticker ON attention_series(ticker);
 """
 
 
@@ -909,6 +920,37 @@ class SQLiteStore:
                 beat_spy=bool(r["beat_spy"]),
                 beat_ndx=bool(r["beat_ndx"]),
                 beat_both=bool(r["beat_both"]),
+            )
+            for r in rows
+        ]
+
+    # ------------------------------------------------------------------
+    # AttentionPoint (attention_series) CRUD
+    # ------------------------------------------------------------------
+
+    def save_attention_points(self, points: list[AttentionPoint]) -> None:
+        for p in points:
+            self._conn.execute(
+                "INSERT OR IGNORE INTO attention_series (ticker, source, ts, value) "
+                "VALUES (?, ?, ?, ?)",
+                (p.ticker, p.source, p.timestamp.isoformat(), p.value),
+            )
+        self._conn.commit()
+
+    def get_attention_series(
+        self, ticker: str, start: datetime, end: datetime
+    ) -> list[AttentionPoint]:
+        rows = self._conn.execute(
+            "SELECT * FROM attention_series WHERE ticker = ? AND ts >= ? AND ts <= ? "
+            "ORDER BY ts",
+            (ticker, start.isoformat(), end.isoformat()),
+        ).fetchall()
+        return [
+            AttentionPoint(
+                r["ticker"],
+                datetime.fromisoformat(r["ts"]),
+                r["value"],
+                r["source"],
             )
             for r in rows
         ]

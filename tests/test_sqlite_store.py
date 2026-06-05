@@ -397,6 +397,32 @@ def test_save_and_load_learned_rule(tmp_path: pytest.TempPathFactory) -> None:
     assert loaded.learned_date == "2026-06-03"
 
 
+def test_attention_series_roundtrip(tmp_path: pytest.TempPathFactory) -> None:
+    from adapters.data.sqlite_store import SQLiteStore
+    from domain.models import AttentionPoint
+
+    store = SQLiteStore(str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    pts = [
+        AttentionPoint("ASTS", datetime(2026, 6, 1), 10.0, "google_trends"),
+        AttentionPoint("ASTS", datetime(2026, 6, 2), 80.0, "wikipedia"),
+    ]
+    store.save_attention_points(pts)
+    got = store.get_attention_series("ASTS", datetime(2026, 5, 1), datetime(2026, 7, 1))
+    assert len(got) == 2
+
+
+def test_attention_series_dedupe(tmp_path: pytest.TempPathFactory) -> None:
+    from adapters.data.sqlite_store import SQLiteStore
+    from domain.models import AttentionPoint
+
+    store = SQLiteStore(str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    p = AttentionPoint("ASTS", datetime(2026, 6, 1), 10.0, "google_trends")
+    store.save_attention_points([p])
+    store.save_attention_points([p])  # re-run, must not duplicate
+    got = store.get_attention_series("ASTS", datetime(2026, 5, 1), datetime(2026, 7, 1))
+    assert len(got) == 1
+
+
 def test_save_learned_rule_upsert(tmp_path: pytest.TempPathFactory) -> None:
     """INSERT OR REPLACE: same rule_id overwrites existing row."""
     store = SQLiteStore(str(tmp_path / "rules2.db"))  # type: ignore[arg-type]
