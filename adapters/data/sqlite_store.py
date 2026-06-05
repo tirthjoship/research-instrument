@@ -240,6 +240,19 @@ CREATE TABLE IF NOT EXISTS attention_series (
     UNIQUE(ticker, source, ts)
 );
 CREATE INDEX IF NOT EXISTS idx_attn_ticker ON attention_series(ticker);
+
+CREATE TABLE IF NOT EXISTS scan_candidates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    scan_date TEXT NOT NULL,
+    ticker TEXT NOT NULL,
+    conviction REAL NOT NULL,
+    divergence REAL NOT NULL,
+    sub_scores_json TEXT NOT NULL,
+    surfaced INTEGER NOT NULL,
+    theme TEXT,
+    cap_tier TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_cand_date ON scan_candidates(scan_date);
 """
 
 
@@ -954,6 +967,53 @@ class SQLiteStore:
             )
             for r in rows
         ]
+
+    # ------------------------------------------------------------------
+    # ScanCandidate full-distribution log
+    # ------------------------------------------------------------------
+
+    def save_scan_candidate(
+        self,
+        scan_date: str,
+        ticker: str,
+        conviction: float,
+        divergence: float,
+        sub_scores: dict[str, float],
+        surfaced: bool,
+        theme: str | None,
+        cap_tier: str | None,
+    ) -> None:
+        self._conn.execute(
+            "INSERT INTO scan_candidates "
+            "(scan_date, ticker, conviction, divergence, sub_scores_json, surfaced, theme, cap_tier) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                scan_date,
+                ticker,
+                conviction,
+                divergence,
+                json.dumps(sub_scores),
+                1 if surfaced else 0,
+                theme,
+                cap_tier,
+            ),
+        )
+        self._conn.commit()
+
+    def get_scan_candidates(self, scan_date: str | None = None) -> list[dict[str, Any]]:
+        q = "SELECT * FROM scan_candidates"
+        params: list[Any] = []
+        if scan_date is not None:
+            q += " WHERE scan_date = ?"
+            params.append(scan_date)
+        q += " ORDER BY conviction DESC"
+        rows = self._conn.execute(q, params).fetchall()
+        out: list[dict[str, Any]] = []
+        for r in rows:
+            d = dict(r)
+            d["sub_scores"] = json.loads(d.pop("sub_scores_json"))
+            out.append(d)
+        return out
 
     def _row_to_recommendation(self, r: sqlite3.Row) -> StockRecommendation:
         pred = MultiHorizonPrediction(
