@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import random
 import warnings
 
 
@@ -57,9 +58,73 @@ def expected_profit_per_signal(
     return precision * avg_win - (1 - precision) * avg_loss - cost
 
 
+def moving_block_bootstrap(
+    values: list[float],
+    n_resamples: int = 2000,
+    block_size: int | None = None,
+    seed: int = 12345,
+) -> dict[str, object]:
+    """Moving-block bootstrap for the mean of an autocorrelated series.
+
+    Resamples contiguous (overlapping) blocks so within-block time-structure and
+    fat tails are preserved, giving a CI on the mean that does not assume
+    independence. Deterministic given `seed` (reproducible across runs).
+    Returns: n, block_size, n_resamples, mean, ci_low (2.5%), ci_high (97.5%),
+    p_value_ge_0 (fraction of resampled means <= 0 — small => mean robustly > 0).
+    Safe on n < 2: CI/p None, n_resamples 0.
+    """
+    n = len(values)
+    mean_val = round(sum(values) / n, 6) if n > 0 else 0.0
+
+    if n < 2:
+        return {
+            "n": n,
+            "block_size": None,
+            "n_resamples": 0,
+            "mean": mean_val,
+            "ci_low": None,
+            "ci_high": None,
+            "p_value_ge_0": None,
+        }
+
+    # Determine block size: default max(2, round(n^(1/3))), clamped to <= n
+    if block_size is None:
+        bs = max(2, round(n ** (1 / 3)))
+    else:
+        bs = block_size
+    bs = min(bs, n)
+
+    max_start = n - bs
+    rng = random.Random(seed)
+
+    resample_means: list[float] = []
+    for _ in range(n_resamples):
+        sample: list[float] = []
+        while len(sample) < n:
+            start = rng.randint(0, max_start)
+            sample.extend(values[start : start + bs])
+        sample = sample[:n]
+        resample_means.append(sum(sample) / n)
+
+    resample_means.sort()
+    ci_low = round(resample_means[int(0.025 * n_resamples)], 6)
+    ci_high = round(resample_means[int(0.975 * n_resamples)], 6)
+    p_value_ge_0 = round(sum(1 for m in resample_means if m <= 0) / n_resamples, 4)
+
+    return {
+        "n": n,
+        "block_size": bs,
+        "n_resamples": n_resamples,
+        "mean": mean_val,
+        "ci_low": ci_low,
+        "ci_high": ci_high,
+        "p_value_ge_0": p_value_ge_0,
+    }
+
+
 def date_level_significance(
     model_basket_returns: list[float], spy_returns: list[float]
-) -> dict[str, float | int | None]:
+) -> dict[str, object]:
     """Treat each scan date as the independent unit. excess[i] = model[i] - spy[i].
 
     One-sided tests that mean excess > 0. Returns t-test, Wilcoxon signed-rank,
@@ -75,7 +140,7 @@ def date_level_significance(
     n_positive = sum(1 for e in excess if e > 0)
     pct_dates_positive = round(n_positive / n_dates, 4) if n_dates > 0 else 0.0
 
-    _degenerate: dict[str, float | int | None] = {
+    _degenerate: dict[str, object] = {
         "n_dates": n_dates,
         "mean_excess": mean_excess,
         "pct_dates_positive": pct_dates_positive,
@@ -83,6 +148,10 @@ def date_level_significance(
         "t_pvalue": None,
         "wilcoxon_pvalue": None,
         "sign_test_pvalue": None,
+        "per_date_excess": [round(e, 6) for e in excess],
+        "top1_date_share": None,
+        "top3_date_share": None,
+        "bootstrap": moving_block_bootstrap(excess),
     }
 
     if n_dates < 2:
@@ -129,6 +198,18 @@ def date_level_significance(
         compute_binomial_pvalue(pct_dates_positive, n_dates, null_p=0.5), 4
     )
 
+    # --- F1: concentration diagnostics ---
+    srt = sorted(excess, reverse=True)
+    pos_sum = sum(e for e in excess if e > 0)
+    top1_date_share: float | None
+    top3_date_share: float | None
+    if pos_sum > 0:
+        top1_date_share = round(srt[0] / pos_sum, 4)
+        top3_date_share = round(sum(srt[:3]) / pos_sum, 4)
+    else:
+        top1_date_share = None
+        top3_date_share = None
+
     return {
         "n_dates": n_dates,
         "mean_excess": mean_excess,
@@ -137,4 +218,8 @@ def date_level_significance(
         "t_pvalue": t_pvalue,
         "wilcoxon_pvalue": wilcoxon_pvalue,
         "sign_test_pvalue": sign_test_pvalue,
+        "per_date_excess": [round(e, 6) for e in excess],
+        "top1_date_share": top1_date_share,
+        "top3_date_share": top3_date_share,
+        "bootstrap": moving_block_bootstrap(excess),
     }
