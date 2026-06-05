@@ -1,0 +1,103 @@
+# application/opportunity_scan_use_case.py
+"""Surface emerging opportunities: conviction x early-divergence, with abstention."""
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+from typing import Any, Callable
+
+from domain.divergence_service import divergence_score
+from domain.surfaced_call import (
+    EvidenceItem,
+    OpportunityDirection,
+    SurfacedCall,
+    make_call_id,
+)
+
+ConvictionProvider = Callable[[str, datetime], tuple[float, dict[str, float]]]
+
+
+def _cap_tier(market_cap: float) -> str:
+    if market_cap >= 1e10:
+        return "large"
+    if market_cap >= 2e9:
+        return "mid"
+    return "small"
+
+
+class OpportunityScanUseCase:
+    def __init__(
+        self,
+        universe_provider: Any,
+        conviction_provider: ConvictionProvider,
+        buzz_discovery: Any,
+        market_data: Any,
+        store: Any,
+        cmin: float = 6.0,
+        dmin: float = 6.0,
+    ) -> None:
+        self._universe = universe_provider
+        self._conviction = conviction_provider
+        self._buzz = buzz_discovery
+        self._md = market_data
+        self._store = store
+        self._cmin = cmin
+        self._dmin = dmin
+
+    def _price_series(self, ticker: str, now: datetime) -> list[tuple[datetime, float]]:
+        start = now - timedelta(days=40)
+        sigs = self._md.get_signals(ticker, now, start_date=start, end_date=now)
+        return [(s.timestamp, s.price) for s in sigs]
+
+    def _benchmark(self, symbol: str, now: datetime) -> float:
+        sigs = self._md.get_signals(symbol, now, end_date=now)
+        return float(sigs[-1].price) if sigs else 0.0
+
+    def execute(
+        self, now: datetime, *, allow_abstention: bool = True
+    ) -> list[SurfacedCall]:
+        spy = self._benchmark("SPY", now)
+        ndx = self._benchmark("QQQ", now)
+        surfaced: list[SurfacedCall] = []
+        for entry in self._universe.get_universe(now):
+            conviction, sub_scores = self._conviction(entry.ticker, now)
+            buzz = self._buzz.get_buzz_signals(ticker=entry.ticker, end_date=now)
+            buzz_times = [b.fetched_at for b in buzz if b.fetched_at is not None]
+            raw_sent = (
+                sum(getattr(b, "sentiment_raw", 0.0) for b in buzz) / len(buzz)
+                if buzz
+                else 0.0
+            )
+            sentiment = max(0.0, min(1.0, 0.5 + raw_sent / 2.0))
+            divergence = divergence_score(
+                buzz_times, self._price_series(entry.ticker, now), sentiment, now
+            )
+            if conviction < self._cmin or divergence < self._dmin:
+                continue
+            info = self._md.get_ticker_info(entry.ticker)
+            evidence = tuple(
+                EvidenceItem(dim, score, f"{dim} contribution")
+                for dim, score in sorted(sub_scores.items(), key=lambda kv: -kv[1])
+            ) + (
+                EvidenceItem(
+                    "divergence", divergence, "buzz accelerating, price lagging"
+                ),
+            )
+            call = SurfacedCall(
+                call_id=make_call_id(entry.ticker, now),
+                ticker=entry.ticker,
+                surfaced_at=now,
+                conviction=conviction,
+                divergence_score=divergence,
+                direction=OpportunityDirection.BUY,
+                evidence=evidence,
+                theme=entry.theme,
+                cap_tier=_cap_tier(float(info.get("marketCap", 0.0))),
+                spy_at_surface=spy,
+                ndx_at_surface=ndx,
+            )
+            self._store.save_call(call)
+            surfaced.append(call)
+        surfaced.sort(key=lambda c: (c.conviction + c.divergence_score), reverse=True)
+        if not surfaced and allow_abstention:
+            return []
+        return surfaced

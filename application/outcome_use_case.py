@@ -104,7 +104,7 @@ class OutcomeTrackingUseCase:
         self._store.save_trade(sell_trade)
 
         outcome = compute_outcome(buy, sell_trade)
-        self._store.save_outcome(outcome)
+        self._store.save_trade_outcome(outcome)
 
         logger.info(
             "Recorded SELL trade {} for {} @ {} — return {:.2f}%",
@@ -128,7 +128,7 @@ class OutcomeTrackingUseCase:
         Returns:
             Formatted report string.
         """
-        outcomes: list[TradeOutcome] = self._store.get_outcomes()
+        outcomes: list[TradeOutcome] = self._store.get_trade_outcomes()
         performances = compute_signal_performance(outcomes)
         return generate_report_card(performances, month=month)
 
@@ -138,7 +138,7 @@ class OutcomeTrackingUseCase:
         Returns:
             Dict with keys: total_trades, total_return, win_rate, avg_return_pct.
         """
-        outcomes: list[TradeOutcome] = self._store.get_outcomes()
+        outcomes: list[TradeOutcome] = self._store.get_trade_outcomes()
         if not outcomes:
             return {
                 "total_trades": 0,
