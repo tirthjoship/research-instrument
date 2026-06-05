@@ -271,4 +271,16 @@ Five hard stops — see `AGENTS.md` for full details:
 - ADR-036 documenting redesign decisions
 - Test suite — 996 tests passing
 
+**Done (Leg-2 sub-project 1 — Opportunity Forward-Tracking 2026-06-05):**
+- SurfacedCall + CallOutcome paper-call domain models (semantically separate from Phase 8 real-trade P&L)
+- divergence_score — buzz-leads-price "early" signal (pure domain)
+- UniverseProviderPort + SurfacedCallStorePort; UniverseEntry; config/universe/themes.yaml thematic spine
+- HybridUniverseProvider — curated spine + BuzzDiscovery overlay (spine wins theme; discovery capped; spine-only fallback)
+- SQLite surfaced_calls + call_outcomes tables (Phase 8 save_outcome/get_outcomes renamed to save_trade_outcome/get_trade_outcomes to disambiguate from call outcomes)
+- OpportunityScanUseCase — layered trigger (conviction × divergence) + honest abstention
+- ForwardTrackingUseCase — resolve 1w/1m/3m vs SPY + NDX(QQQ), feed Phase 8 compute_signal_performance
+- CLI: scan-opportunities, resolve-calls, opportunity-report (6/8 conviction dims live in bulk scan; event_signal + analyst_signal held neutral to avoid per-ticker API/network cost)
+- ADR-040 documenting the evidence-first forward-tracking decision
+- Test suite — 1078 tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
