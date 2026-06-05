@@ -24,6 +24,33 @@ def _recent_return(price_series: list[tuple[datetime, float]], now: datetime) ->
     return (last - prior) / prior
 
 
+def _mean_between(
+    series: list[tuple[datetime, float]], lo: datetime, hi: datetime
+) -> float:
+    vals = [v for t, v in series if lo < t <= hi]
+    return sum(vals) / len(vals) if vals else 0.0
+
+
+def intensity_acceleration(
+    series: list[tuple[datetime, float]], now: datetime
+) -> float:
+    """Scale-free acceleration of an intensity series (GT index, pageviews).
+
+    Mirrors event buzz_accel but on levels: recent mean vs base mean.
+    Returns ~[-1, 1]; 0.0 when no data or perfectly flat.
+    """
+    if not series:
+        return 0.0
+    recent_level = _mean_between(series, now - timedelta(days=_RECENT_DAYS), now)
+    base_level = _mean_between(
+        series,
+        now - timedelta(days=_RECENT_DAYS + _BASE_DAYS),
+        now - timedelta(days=_RECENT_DAYS),
+    )
+    denom = max(recent_level, base_level, 1e-9)
+    return (recent_level - base_level) / denom
+
+
 def divergence_score(
     buzz_times: list[datetime],
     price_series: list[tuple[datetime, float]],
