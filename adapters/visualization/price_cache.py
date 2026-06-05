@@ -166,22 +166,22 @@ def fetch_prices(tickers: tuple[str, ...]) -> dict[str, dict[str, float]]:
 
     ttl = _current_ttl()
 
-    @st.cache_data(ttl=ttl)  # type: ignore[misc]
+    @st.cache_data(ttl=ttl)
     def _cached(t: tuple[str, ...]) -> dict[str, dict[str, float]]:
         return _batch_fetch_prices_impl(t)
 
-    return cast(dict[str, dict[str, float]], _cached(tickers))
+    return _cached(tickers)
 
 
 def fetch_ticker_info(ticker: str) -> dict[str, Any]:
     """Streamlit-cached wrapper around _fetch_ticker_info_impl."""
     import streamlit as st
 
-    @st.cache_data(ttl=_TTL_AFTER_HOURS)  # type: ignore[misc]
+    @st.cache_data(ttl=_TTL_AFTER_HOURS)
     def _cached(t: str) -> dict[str, Any]:
         return _fetch_ticker_info_impl(t)
 
-    return cast(dict[str, Any], _cached(ticker))
+    return _cached(ticker)
 
 
 def fetch_quarterly_financials(
@@ -190,26 +190,24 @@ def fetch_quarterly_financials(
     """Streamlit-cached wrapper around _fetch_quarterly_financials_impl."""
     import streamlit as st
 
-    @st.cache_data(ttl=_TTL_AFTER_HOURS)  # type: ignore[misc]
+    @st.cache_data(ttl=_TTL_AFTER_HOURS)
     def _cached(
         t: str,
     ) -> tuple[DataFrame | None, DataFrame | None, DataFrame | None]:
         return _fetch_quarterly_financials_impl(t)
 
-    return cast(
-        tuple[DataFrame | None, DataFrame | None, DataFrame | None], _cached(ticker)
-    )
+    return _cached(ticker)
 
 
 def fetch_insider_transactions(ticker: str) -> list[dict[str, Any]]:
     """Streamlit-cached wrapper around _fetch_insider_transactions_impl."""
     import streamlit as st
 
-    @st.cache_data(ttl=_TTL_AFTER_HOURS)  # type: ignore[misc]
+    @st.cache_data(ttl=_TTL_AFTER_HOURS)
     def _cached(t: str) -> list[dict[str, Any]]:
         return _fetch_insider_transactions_impl(t)
 
-    return cast(list[dict[str, Any]], _cached(ticker))
+    return _cached(ticker)
 
 
 def batch_fetch_prices(tickers: tuple[str, ...]) -> dict[str, dict[str, float]]:
@@ -223,8 +221,8 @@ def fetch_index_prices() -> dict[str, dict[str, float]]:
 
     ttl = _current_ttl()
 
-    @st.cache_data(ttl=ttl)  # type: ignore[misc]
+    @st.cache_data(ttl=ttl)
     def _cached() -> dict[str, dict[str, float]]:
         return _fetch_index_prices_impl()
 
-    return cast(dict[str, dict[str, float]], _cached())
+    return _cached()
