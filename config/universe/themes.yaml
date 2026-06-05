@@ -1,0 +1,55 @@
+# config/universe/themes.yaml
+# Curated thematic spine. Tickers always watched; discovery overlay adds the rest.
+# Membership is a tunable starting set — extend as themes evolve.
+themes:
+  space:
+    [ASTS, RKLB, LUNR, IRDM, HXL, RDW]
+  memory_storage:
+    [MU, WDC, SNDK, STX]
+  ai_infra:
+    [SMCI, VRT, ANET, COHR, CRDO]
+  nuclear_energy:
+    [SMR, OKLO, CCJ, LEU]
+  defense:
+    [LMT, RTX, NOC, KTOS, AVAV]
+  biotech:
+    [VKTX, CYTK, KRYS, EXEL, HALO]
+
+# Ticker aliases — canonical names, cashtags, subreddits, and Wikipedia article titles.
+# Used by Reddit + Google Trends adapters for query construction.
+aliases:
+  # --- Space ---
+  ASTS:  { name: "AST SpaceMobile",       cashtag: "ASTS", subreddits: ["ASTSpaceMobile", "spacestocks"],           wiki: "AST_SpaceMobile" }
+  RKLB:  { name: "Rocket Lab",             cashtag: "RKLB", subreddits: ["RKLB", "spacestocks"],                     wiki: "Rocket_Lab" }
+  LUNR:  { name: "Intuitive Machines",     cashtag: "LUNR", subreddits: ["spacestocks"],                             wiki: "Intuitive_Machines" }
+  IRDM:  { name: "Iridium Communications", cashtag: "IRDM", subreddits: ["spacestocks", "stocks"],                   wiki: "Iridium_Communications" }
+  HXL:   { name: "Hexcel Corporation",     cashtag: "HXL",  subreddits: ["stocks"],                                  wiki: "Hexcel" }
+  RDW:   { name: "Redwire Corporation",    cashtag: "RDW",  subreddits: ["spacestocks", "stocks"],                   wiki: "Redwire" }
+  # --- Memory / Storage ---
+  MU:    { name: "Micron Technology",      cashtag: "MU",   subreddits: ["stocks", "investing"],                     wiki: "Micron_Technology" }
+  WDC:   { name: "Western Digital",        cashtag: "WDC",  subreddits: ["stocks"],                                  wiki: "Western_Digital" }
+  SNDK:  { name: "SanDisk",               cashtag: "SNDK", subreddits: ["stocks"],                                  wiki: "SanDisk" }
+  STX:   { name: "Seagate Technology",     cashtag: "STX",  subreddits: ["stocks"],                                  wiki: "Seagate_Technology" }
+  # --- AI Infrastructure ---
+  SMCI:  { name: "Super Micro Computer",   cashtag: "SMCI", subreddits: ["SMCI", "stocks"],                          wiki: "Super_Micro_Computer" }
+  VRT:   { name: "Vertiv Holdings",        cashtag: "VRT",  subreddits: ["stocks"],                                  wiki: "Vertiv" }
+  ANET:  { name: "Arista Networks",        cashtag: "ANET", subreddits: ["stocks", "investing"],                     wiki: "Arista_Networks" }
+  COHR:  { name: "Coherent Corp",          cashtag: "COHR", subreddits: ["stocks"],                                  wiki: "Coherent_Corp" }
+  CRDO:  { name: "Credo Technology",       cashtag: "CRDO", subreddits: ["stocks"],                                  wiki: "Credo_Technology" }
+  # --- Nuclear Energy ---
+  SMR:   { name: "NuScale Power",          cashtag: "SMR",  subreddits: ["NuclearPower", "stocks"],                  wiki: "NuScale_Power" }
+  OKLO:  { name: "Oklo Inc",               cashtag: "OKLO", subreddits: ["NuclearPower", "OKLO"],                    wiki: "Oklo_(company)" }
+  CCJ:   { name: "Cameco Corporation",     cashtag: "CCJ",  subreddits: ["NuclearPower", "stocks", "investing"],     wiki: "Cameco" }
+  LEU:   { name: "Centrus Energy",         cashtag: "LEU",  subreddits: ["NuclearPower", "stocks"],                  wiki: "Centrus_Energy" }
+  # --- Defense ---
+  LMT:   { name: "Lockheed Martin",        cashtag: "LMT",  subreddits: ["stocks", "investing"],                     wiki: "Lockheed_Martin" }
+  RTX:   { name: "RTX Corporation",        cashtag: "RTX",  subreddits: ["stocks", "investing"],                     wiki: "RTX_Corporation" }
+  NOC:   { name: "Northrop Grumman",       cashtag: "NOC",  subreddits: ["stocks"],                                  wiki: "Northrop_Grumman" }
+  KTOS:  { name: "Kratos Defense",         cashtag: "KTOS", subreddits: ["stocks", "spacestocks"],                   wiki: "Kratos_Defense_%26_Security_Solutions" }
+  AVAV:  { name: "AeroVironment",          cashtag: "AVAV", subreddits: ["stocks"],                                  wiki: "AeroVironment" }
+  # --- Biotech ---
+  VKTX:  { name: "Viking Therapeutics",    cashtag: "VKTX", subreddits: ["investing", "biotechplays", "stocks"],     wiki: "Viking_Therapeutics" }
+  CYTK:  { name: "Cytokinetics",           cashtag: "CYTK", subreddits: ["biotechplays", "stocks"],                  wiki: "Cytokinetics" }
+  KRYS:  { name: "Krystal Biotech",        cashtag: "KRYS", subreddits: ["biotechplays", "stocks"],                  wiki: "Krystal_Biotech" }
+  EXEL:  { name: "Exelixis",              cashtag: "EXEL", subreddits: ["biotechplays", "stocks"],                  wiki: "Exelixis" }
+  HALO:  { name: "Halozyme Therapeutics",  cashtag: "HALO", subreddits: ["biotechplays", "stocks"],                  wiki: "Halozyme_Therapeutics" }

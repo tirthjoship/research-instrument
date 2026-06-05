@@ -19,7 +19,9 @@ from adapters.data.yfinance_adapter import YFinanceAdapter
 from adapters.ml.ensemble_predictor import EnsemblePredictor
 from adapters.ml.feature_engineer import FeatureEngineer
 from adapters.ml.fundamental_feature_engineer import FundamentalFeatureEngineer
+from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
+from application.opportunity_scan_use_case import OpportunityScanUseCase
 from application.use_cases import (
     PretrainingUseCase,
     TrackRecommendationsUseCase,
@@ -718,10 +720,335 @@ def backtest_conviction(
         "n_samples_total": len(samples),
         "n_samples_kept": len(kept),
         "cohort_metrics": cohort_metrics,
+        "validated_signal_scope": (
+            "smart_money + analyst_signal active; 6/8 conviction sub-scores held "
+            "neutral (event_signal, sentiment_momentum, fundamental_basis, "
+            "ml_direction, signal_agreement, temporal_freshness) and analyst "
+            "firm-accuracy weighting inactive. This backtest validates the "
+            "smart-money + analyst slice, NOT the full conviction engine."
+        ),
     }
 
+    logger.warning(
+        "VALIDATED SCOPE: smart-money + analyst slice only (6/8 sub-scores neutral, "
+        "firm-accuracy off) — not a validation of the full conviction engine."
+    )
     report_path.write_text(json.dumps(report, indent=2, default=str))
     click.echo(f"\nReport saved to: {report_path}")
+
+
+@cli.command("scan-opportunities")
+@click.option("--market", default="us", help="Market config to use")
+@click.option("--date", default=None, help="Scan date (YYYY-MM-DD); default: now (UTC)")
+@click.option(
+    "--cmin",
+    default=6.0,
+    show_default=True,
+    type=float,
+    help="Minimum conviction score to surface an opportunity",
+)
+@click.option(
+    "--dmin",
+    default=6.0,
+    show_default=True,
+    type=float,
+    help="Minimum divergence score to surface an opportunity",
+)
+@click.option(
+    "--max-discovery",
+    default=50,
+    show_default=True,
+    type=int,
+    help="Maximum tickers added via buzz discovery overlay",
+)
+@click.option(
+    "--show-all",
+    is_flag=True,
+    default=False,
+    help="Print the full candidate score distribution after scanning",
+)
+def scan_opportunities(
+    market: str,
+    date: str | None,
+    cmin: float,
+    dmin: float,
+    max_discovery: int,
+    show_all: bool,
+) -> None:
+    """Surface emerging opportunities: high-conviction + early divergence signals.
+
+    Scans the thematic universe (config/universe/themes.yaml) plus buzz-discovered
+    tickers. Each candidate is scored on conviction × divergence; only calls that
+    clear both thresholds (--cmin, --dmin) are surfaced and persisted to the store.
+    """
+    from datetime import timezone
+
+    from adapters.data.google_trends_adapter import GoogleTrendsAdapter
+    from adapters.data.hybrid_universe_provider import HybridUniverseProvider
+    from adapters.data.rss_adapter import RSSAdapter
+    from adapters.data.sec_edgar_adapter import SECEdgarAdapter
+    from adapters.data.wikipedia_pageviews_adapter import WikipediaPageviewsAdapter
+    from adapters.data.yfinance_analyst_adapter import YFinanceAnalystAdapter
+    from adapters.ml.smart_money_engineer import SmartMoneyFeatureEngineer
+    from application.conviction_signal_cache import ConvictionSignalCache
+    from application.conviction_use_case import ConvictionScoringUseCase
+    from domain.analyst_service import analyst_conviction_score
+    from domain.conviction import ConvictionWeights
+    from domain.conviction_service import compute_conviction
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+    market_data = deps["market_data"]
+    config = deps["config"]
+
+    now: datetime
+    if date:
+        now = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    else:
+        now = datetime.now(timezone.utc)
+
+    # ConvictionSignalCache — daily TTL from opportunity_engine config
+    _opp_cfg: dict[str, Any] = config.get("opportunity_engine", {})
+    _ttl: float = float(_opp_cfg.get("signal_cache_ttl_hours", 24))
+    signal_cache = ConvictionSignalCache(store=store, ttl_hours=_ttl)
+
+    # Attention sources: Wikipedia pageviews + Google Trends combined
+    wiki_adapter = WikipediaPageviewsAdapter(article_map=_load_wiki_map(market))
+    trends_adapter = GoogleTrendsAdapter()
+    combined_attention = _CombinedAttention(wiki=wiki_adapter, trends=trends_adapter)
+
+    # Analyst adapter (shared across all tickers; re-used by _compute_analyst closure)
+    analyst_adapter = YFinanceAnalystAdapter()
+
+    # HybridUniverseProvider: thematic spine + RSS buzz overlay.
+    # RSSAdapter satisfies the scan_sources half of BuzzDiscoveryPort; the
+    # get_buzz_signals half is not used by HybridUniverseProvider internally
+    # (only scan_sources is called), so we suppress the structural type-check
+    # gap here.  A future cleanup would add get_buzz_signals to RSSAdapter.
+    rss = RSSAdapter()
+    themes_path = str(
+        Path(__file__).parent.parent / "config" / "universe" / "themes.yaml"
+    )
+    universe_provider = HybridUniverseProvider(
+        themes_path=themes_path,
+        buzz_discovery=rss,  # type: ignore[arg-type]
+        max_discovery=max_discovery,
+    )
+
+    # conviction_provider: closure over ConvictionScoringUseCase._compute_sub_scores
+    # and compute_conviction.  We pass whatever is cheaply available from deps:
+    #
+    # LIVE dimensions (wired to real data):
+    #   - smart_money       → SmartMoneyFeatureEngineer (SEC EDGAR signals from store)
+    #   - fundamental_basis → ticker_info via market_data.get_ticker_info (yfinance)
+    #   - temporal_freshness→ freshest smart-money filed_date
+    #   - sentiment_momentum→ buzz_signals from SQLiteStore (stored RSS/GT/ST signals)
+    #   - signal_agreement  → cross-layer check using above 4 dimensions
+    #   - ml_direction      → stored recommendation grade from SQLiteStore
+    #
+    # NEUTRAL (fall to default 5.0 — source not wired in scan command):
+    #   - event_signal      → 5.0 (Gemini classifier not wired; no free inline source)
+    #   - analyst_signal    → 5.0 (YFinanceAnalystAdapter not wired to avoid extra
+    #                              network calls per ticker in a bulk scan)
+
+    sec_adapter = SECEdgarAdapter()
+    engineer = SmartMoneyFeatureEngineer()
+
+    def conviction_provider(
+        ticker: str, scan_time: datetime
+    ) -> tuple[float, dict[str, float]]:
+        # Gather smart-money signals for this ticker (SEC EDGAR — free, no API key)
+        try:
+            since_str = (scan_time.replace(tzinfo=None) - timedelta(days=180)).strftime(
+                "%Y-%m-%d"
+            )
+            sm_signals = sec_adapter.get_all_signals(
+                ticker=ticker, since_date=since_str
+            )
+        except Exception:
+            sm_signals = []
+
+        features = engineer.compute(
+            ticker=ticker, signals=sm_signals, prediction_time=scan_time
+        )
+
+        # Fetch buzz signals from SQLiteStore (scan_sources already persisted them)
+        try:
+            buzz_signals = store.get_buzz_signals(ticker=ticker)
+        except Exception:
+            buzz_signals = []
+
+        # Fetch ticker_info for fundamental_basis (yfinance — one call per ticker)
+        try:
+            ticker_info: dict[str, Any] = market_data.get_ticker_info(ticker)
+        except Exception:
+            ticker_info = {}
+
+        # Fetch stored recommendation for ml_direction
+        try:
+            recs = store.get_recommendations()
+            ticker_recs = [r for r in recs if r.symbol == ticker]
+            recommendation = ticker_recs[0] if ticker_recs else None
+        except Exception:
+            recommendation = None
+
+        def _compute_analyst(t: str, now: datetime) -> float:
+            since = (now.replace(tzinfo=None) - timedelta(days=30)).replace(
+                tzinfo=now.tzinfo
+            )
+            rating_events = analyst_adapter.get_rating_events(t, since, now)
+            return analyst_conviction_score(rating_events, {}, now)
+
+        def _compute_event(_t: str, _now: datetime) -> float:
+            # Gemini event path requires a news source adapter (not wired in bulk
+            # scan — no free keyless headline API is available here). Returns neutral
+            # so the cache stores 5.0, preserving honesty. To enable real event
+            # scoring wire an AlphaVantageNewsAdapter + GeminiEventClassifier here.
+            return 5.0
+
+        analyst_score = signal_cache.get_or_compute(
+            ticker, "analyst_signal", scan_time, _compute_analyst
+        )
+        event_score = signal_cache.get_or_compute(
+            ticker, "event_signal", scan_time, _compute_event
+        )
+
+        sub_scores = ConvictionScoringUseCase._compute_sub_scores(
+            features=features,
+            ticker_signals=sm_signals,
+            scan_time=scan_time,
+            buzz_signals=buzz_signals,
+            ticker_info=ticker_info,
+            recommendation=recommendation,
+            event_score=event_score,
+            analyst_score=analyst_score,
+        )
+        weights = ConvictionWeights()
+        score = compute_conviction(sub_scores, weights)
+        return score, sub_scores
+
+    # buzz_discovery for OpportunityScanUseCase.execute uses get_buzz_signals —
+    # SQLiteStore implements this (returns stored buzz signals per ticker).
+    use_case = OpportunityScanUseCase(
+        universe_provider=universe_provider,
+        conviction_provider=conviction_provider,
+        buzz_discovery=store,  # SQLiteStore.get_buzz_signals satisfies the port
+        market_data=market_data,
+        store=store,
+        attention_provider=combined_attention,
+        cmin=cmin,
+        dmin=dmin,
+    )
+
+    click.echo(
+        f"Scanning opportunities at {now.isoformat()} (cmin={cmin}, dmin={dmin})..."
+    )
+    calls = use_case.execute(now)
+
+    if show_all:
+        rows = store.get_scan_candidates(scan_date=now.date().isoformat())
+        click.echo("\nFull candidate distribution (conviction / divergence):")
+        for r in rows:
+            mark = "*" if r["surfaced"] else " "
+            click.echo(
+                f"  {mark} {r['ticker']:6s} c={r['conviction']:.2f} "
+                f"d={r['divergence']:.2f} [{r['cap_tier']}]"
+            )
+
+    if not calls:
+        click.echo("No opportunities surfaced above thresholds (abstaining).")
+        return
+
+    click.echo(f"\n{len(calls)} opportunity call(s) surfaced:\n")
+    for c in calls:
+        click.echo(
+            f"  {c.ticker:<8} conviction={c.conviction:.2f}  "
+            f"divergence={c.divergence_score:.2f}  "
+            f"theme={c.theme}  cap={c.cap_tier}"
+        )
+
+
+@cli.command("resolve-calls")
+@click.option(
+    "--date", default=None, help="Resolution date (YYYY-MM-DD); default: now (UTC)"
+)
+def resolve_calls(date: str | None) -> None:
+    """Resolve due surfaced calls against actual price outcomes.
+
+    Fetches market prices for all calls whose forward-tracking horizon has elapsed,
+    computes 1w/1m/3m returns vs SPY+NDX, persists outcomes, and prints a summary.
+    """
+    from datetime import timezone
+
+    from application.forward_tracking_use_case import ForwardTrackingUseCase
+
+    deps = _build_dependencies("us")
+    store = deps["store"]
+    market_data = deps["market_data"]
+
+    now: datetime
+    if date:
+        now = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    else:
+        now = datetime.now(timezone.utc)
+
+    use_case = ForwardTrackingUseCase(store=store, market_data=market_data)
+
+    click.echo(f"Resolving due calls as of {now.isoformat()}...")
+    outcomes = use_case.resolve_due_calls(now)
+
+    if not outcomes:
+        click.echo("No calls due for resolution.")
+        return
+
+    click.echo(f"\n{len(outcomes)} call(s) resolved:\n")
+    beat_both = sum(1 for o in outcomes if o.beat_both)
+    for o in outcomes:
+        status = "BEAT" if o.beat_both else ("SPY" if o.beat_spy else "MISS")
+        click.echo(
+            f"  {o.call_id[:20]:<22} fwd={o.forward_return:+.2%}  "
+            f"spy={o.spy_return:+.2%}  ndx={o.ndx_return:+.2%}  [{status}]"
+        )
+    click.echo(
+        f"\nBeat both benchmarks: {beat_both}/{len(outcomes)} "
+        f"({beat_both / len(outcomes):.0%})"
+    )
+
+
+@cli.command("opportunity-report")
+@click.option(
+    "--top", default=10, show_default=True, type=int, help="Top N signals to show"
+)
+def opportunity_report(top: int) -> None:
+    """Show signal performance track record from resolved opportunity calls.
+
+    Reads all resolved call outcomes, groups by signal dimension, and reports
+    per-signal hit rate, trade count, and average return.
+    """
+    from application.forward_tracking_use_case import ForwardTrackingUseCase
+
+    deps = _build_dependencies("us")
+    store = deps["store"]
+    market_data = deps["market_data"]
+
+    use_case = ForwardTrackingUseCase(store=store, market_data=market_data)
+    performances = use_case.get_track_record()
+
+    if not performances:
+        click.echo("No signal performance data yet — run resolve-calls first.")
+        return
+
+    performances.sort(key=lambda p: p.hit_rate, reverse=True)
+    shown = performances[:top]
+
+    click.echo(f"\nSignal Track Record (top {len(shown)} of {len(performances)}):\n")
+    click.echo(f"  {'Signal':<28} {'Hit Rate':>10} {'Trades':>8} {'Avg Return':>12}")
+    click.echo("  " + "-" * 62)
+    for p in shown:
+        click.echo(
+            f"  {p.signal_name:<28} {p.hit_rate:>9.1%} {p.total_trades:>8d} "
+            f"{p.avg_return_pct:>11.2f}%"
+        )
 
 
 @cli.command("add-holding")
@@ -852,6 +1179,190 @@ def remove_watchlist_cmd(symbol: str) -> None:
     store = deps["store"]
     store.remove_watchlist(symbol.upper())
     click.echo(f"Removed from watchlist: {symbol.upper()}")
+
+
+class _CombinedAttention:
+    """Merge Wikipedia + Google Trends attention series for a ticker.
+
+    Each source returns [] on failure, so concatenation is always safe.
+    """
+
+    def __init__(
+        self,
+        wiki: Any,
+        trends: Any,
+    ) -> None:
+        self._wiki = wiki
+        self._trends = trends
+
+    def get_attention_series(
+        self, ticker: str, start: datetime, end: datetime
+    ) -> list[Any]:
+        wiki_pts: list[Any] = self._wiki.get_attention_series(ticker, start, end)
+        trends_pts: list[Any] = self._trends.get_attention_series(ticker, start, end)
+        combined: list[Any] = wiki_pts + trends_pts
+        return combined
+
+
+def _load_wiki_map(market: str) -> dict[str, str]:
+    """Build {ticker: wiki_article} from config/universe/themes.yaml aliases block."""
+    import yaml
+
+    themes_path = Path(__file__).parent.parent / "config" / "universe" / "themes.yaml"
+    if not themes_path.exists():
+        return {}
+    try:
+        data = yaml.safe_load(themes_path.read_text())
+        aliases = data.get("aliases", {})
+        return {
+            ticker: str(info.get("wiki", ""))
+            for ticker, info in aliases.items()
+            if info.get("wiki")
+        }
+    except Exception:
+        return {}
+
+
+@cli.command("backfill-history")
+@click.option("--market", default="us", help="Market config to use")
+@click.option(
+    "--days", default=90, show_default=True, type=int, help="Backfill window in days"
+)
+@click.option("--limit", default=0, type=int, help="Max tickers (0 = all in universe)")
+def backfill_history(market: str, days: int, limit: int) -> None:
+    """Backfill the divergence base window from honest historical archives (GDELT/GT/Wikipedia)."""
+    from datetime import timezone
+
+    from adapters.data.gdelt_sentiment_adapter import GdeltSentimentAdapter
+    from adapters.data.google_trends_adapter import GoogleTrendsAdapter
+    from adapters.data.wikipedia_pageviews_adapter import WikipediaPageviewsAdapter
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+    if limit:
+        tickers = tickers[:limit]
+
+    now = datetime.now(timezone.utc)
+    uc = BackfillHistoryUseCase(
+        gdelt=GdeltSentimentAdapter(),
+        trends=GoogleTrendsAdapter(),
+        wiki=WikipediaPageviewsAdapter(article_map=_load_wiki_map(market)),
+        store=store,
+    )
+    stats = uc.execute(tickers, now=now, days=days)
+    click.echo(
+        f"Backfill complete: {stats['tickers']} tickers, {stats['errors']} errors"
+    )
+
+
+def _cfg_cmin(market: str) -> float:
+    """Return cmin threshold from market config (opportunity_engine.thresholds.cmin).
+
+    Falls back to 6.0 (the scan-opportunities default) if the key is missing.
+    """
+    try:
+        config = load_market_config(market)
+        return float(
+            config.get("opportunity_engine", {}).get("thresholds", {}).get("cmin", 6.0)
+        )
+    except Exception:
+        return 6.0
+
+
+def _cfg_dmin(market: str) -> float:
+    """Return dmin threshold from market config (opportunity_engine.thresholds.dmin).
+
+    Falls back to 6.0 (the scan-opportunities default) if the key is missing.
+    """
+    try:
+        config = load_market_config(market)
+        return float(
+            config.get("opportunity_engine", {}).get("thresholds", {}).get("dmin", 6.0)
+        )
+    except Exception:
+        return 6.0
+
+
+def _is_backfill_due(market: str) -> bool:
+    """Return True if 7+ days have elapsed since the most recent attention_series row.
+
+    Implementation: we check whether get_attention_series for the first spine ticker
+    returns any rows in the last 7 days.  If the table is empty OR the check fails,
+    we conservatively return True (backfill is due).  This avoids adding a bespoke
+    "last row" store query while keeping the check honest.
+    """
+    try:
+        from datetime import timezone
+
+        import yaml
+
+        from adapters.data.sqlite_store import SQLiteStore
+
+        store = SQLiteStore("data/recommendations.db")
+
+        # Pick the first spine ticker from themes.yaml for the probe query
+        themes_path = (
+            Path(__file__).parent.parent / "config" / "universe" / "themes.yaml"
+        )
+        probe_ticker = "AAPL"  # safe fallback
+        if themes_path.exists():
+            data = yaml.safe_load(themes_path.read_text())
+            tickers_in_themes: list[str] = []
+            for theme in data.get("themes", {}).values():
+                tickers_in_themes.extend(theme.get("tickers", []))
+            if tickers_in_themes:
+                probe_ticker = tickers_in_themes[0]
+
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        week_ago = now - timedelta(days=7)
+        rows = store.get_attention_series(ticker=probe_ticker, start=week_ago, end=now)
+        # If rows exist in the past 7 days → backfill not due
+        return len(rows) == 0
+    except Exception:
+        # Can't determine → default to due (conservative)
+        return True
+
+
+@cli.command("daily-cycle")
+@click.option("--market", default="us", help="Market config to use")
+@click.option(
+    "--skip-backfill",
+    is_flag=True,
+    help="Skip the weekly backfill refresh",
+)
+@click.pass_context
+def daily_cycle(ctx: click.Context, market: str, skip_backfill: bool) -> None:
+    """Run the full daily cycle: scan-opportunities -> resolve-calls -> weekly backfill.
+
+    Chains three sub-commands in order:
+      1. scan-opportunities  — surface new conviction × divergence calls
+      2. resolve-calls       — mark due calls as outcomes vs SPY/NDX
+      3. backfill-history    — refresh the divergence base window (weekly, conditional)
+
+    The backfill step only runs when --skip-backfill is not set AND
+    _is_backfill_due() returns True (i.e. no attention_series row in the last 7 days).
+    """
+    click.echo("Starting daily cycle...")
+
+    ctx.invoke(
+        scan_opportunities,
+        market=market,
+        date=None,
+        cmin=_cfg_cmin(market),
+        dmin=_cfg_dmin(market),
+        max_discovery=50,
+        show_all=False,
+    )
+
+    ctx.invoke(resolve_calls, date=None)
+
+    if not skip_backfill and _is_backfill_due(market):
+        click.echo("Backfill is due — running backfill-history...")
+        ctx.invoke(backfill_history, market=market, days=14, limit=0)
+
+    click.echo("Daily cycle complete.")
 
 
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:

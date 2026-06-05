@@ -208,6 +208,25 @@ class BuzzSignal:
 
 
 @dataclass(frozen=True)
+class AttentionPoint:
+    """A single attention-intensity observation (search interest, pageviews).
+
+    Distinct from BuzzSignal (discrete events): this is a magnitude at a point
+    in time. Scale is source-relative (GT index 0-100, Wikipedia raw views);
+    divergence uses scale-free ratios so no normalization is needed.
+    """
+
+    ticker: str
+    timestamp: datetime
+    value: float  # >= 0; source-relative intensity
+    source: str  # e.g. "google_trends", "wikipedia"
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError("attention value must be >= 0")
+
+
+@dataclass(frozen=True)
 class SourceReliability:
     """Tracks per-source directional accuracy over time."""
 

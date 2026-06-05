@@ -11,6 +11,7 @@ from .analyst import AnalystRating
 from .conviction import SmartMoneySignal
 from .models import (
     AccuracyRecord,
+    AttentionPoint,
     BacktestResult,
     BuzzSignal,
     ClassifiedEvent,
@@ -23,6 +24,8 @@ from .models import (
     StockRecommendation,
     WeeklyReport,
 )
+from .surfaced_call import CallOutcome, Horizon, SurfacedCall
+from .universe import UniverseEntry
 
 
 class MarketDataPort(Protocol):
@@ -259,3 +262,41 @@ class AnalystRatingsPort(Protocol):
     def get_rating_events(
         self, ticker: str, since: datetime, until: datetime | None = None
     ) -> list[AnalystRating]: ...
+
+
+@runtime_checkable
+class UniverseProviderPort(Protocol):
+    """Provides the scan universe (curated spine + dynamic discovery)."""
+
+    def get_universe(self, now: datetime) -> list[UniverseEntry]: ...
+
+
+@runtime_checkable
+class SurfacedCallStorePort(Protocol):
+    """Persistence for surfaced paper calls and their resolved outcomes."""
+
+    def save_call(self, call: SurfacedCall) -> None: ...
+
+    def get_call(self, call_id: str) -> SurfacedCall | None: ...
+
+    def get_all_calls(self) -> list[SurfacedCall]: ...
+
+    def get_due_calls(self, now: datetime) -> list[tuple[SurfacedCall, Horizon]]: ...
+
+    def save_outcome(self, outcome: CallOutcome) -> None: ...
+
+    def get_outcomes(self) -> list[CallOutcome]: ...
+
+
+@runtime_checkable
+class AttentionSeriesPort(Protocol):
+    """Retrieves attention-intensity series (search interest, pageviews)."""
+
+    def get_attention_series(
+        self,
+        ticker: str,
+        start: datetime,
+        end: datetime,
+    ) -> list[AttentionPoint]:
+        """Return intensity observations for ticker in [start, end]."""
+        ...
