@@ -9,6 +9,7 @@ class FakeSurfacedCallStore:
     def __init__(self) -> None:
         self.saved: list[SurfacedCall] = []
         self.outcomes: list[CallOutcome] = []
+        self.candidates: list[dict] = []
 
     def save_call(self, call: SurfacedCall) -> None:
         self.saved.append(call)
@@ -34,3 +35,27 @@ class FakeSurfacedCallStore:
 
     def get_outcomes(self) -> list[CallOutcome]:
         return list(self.outcomes)
+
+    def save_scan_candidate(
+        self,
+        scan_date: str,
+        ticker: str,
+        conviction: float,
+        divergence: float,
+        sub_scores: dict[str, float],
+        surfaced: bool,
+        theme: str | None,
+        cap_tier: str | None,
+    ) -> None:
+        self.candidates.append(
+            {
+                "scan_date": scan_date,
+                "ticker": ticker,
+                "conviction": conviction,
+                "divergence": divergence,
+                "sub_scores": sub_scores,
+                "surfaced": surfaced,
+                "theme": theme,
+                "cap_tier": cap_tier,
+            }
+        )

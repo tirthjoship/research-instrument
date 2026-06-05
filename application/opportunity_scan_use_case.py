@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any, Callable
 
-from domain.divergence_service import divergence_score
+from domain.divergence_service import blended_divergence_score
 from domain.surfaced_call import (
     EvidenceItem,
     OpportunityDirection,
@@ -47,6 +47,7 @@ class OpportunityScanUseCase:
         buzz_discovery: Any,
         market_data: Any,
         store: Any,
+        attention_provider: Any = None,
         cmin: float = 6.0,
         dmin: float = 6.0,
     ) -> None:
@@ -55,8 +56,18 @@ class OpportunityScanUseCase:
         self._buzz = buzz_discovery
         self._md = market_data
         self._store = store
+        self._attn = attention_provider
         self._cmin = cmin
         self._dmin = dmin
+
+    def _intensity_series(
+        self, ticker: str, now: datetime
+    ) -> list[tuple[datetime, float]]:
+        if self._attn is None:
+            return []
+        start = now - timedelta(days=40)
+        pts = self._attn.get_attention_series(ticker, start, now)
+        return [(_match_awareness(p.timestamp, now), p.value) for p in pts]
 
     def _price_series(self, ticker: str, now: datetime) -> list[tuple[datetime, float]]:
         start = now - timedelta(days=40)
@@ -87,12 +98,29 @@ class OpportunityScanUseCase:
                 else 0.0
             )
             sentiment = max(0.0, min(1.0, 0.5 + raw_sent / 2.0))
-            divergence = divergence_score(
-                buzz_times, self._price_series(entry.ticker, now), sentiment, now
+            intensity = self._intensity_series(entry.ticker, now)
+            divergence = blended_divergence_score(
+                buzz_times,
+                intensity,
+                self._price_series(entry.ticker, now),
+                sentiment,
+                now,
             )
-            if conviction < self._cmin or divergence < self._dmin:
-                continue
             info = self._md.get_ticker_info(entry.ticker)
+            cap = _cap_tier(float(info.get("marketCap", 0.0)))
+            surfaced_flag = conviction >= self._cmin and divergence >= self._dmin
+            self._store.save_scan_candidate(
+                scan_date=now.date().isoformat(),
+                ticker=entry.ticker,
+                conviction=conviction,
+                divergence=divergence,
+                sub_scores=sub_scores,
+                surfaced=surfaced_flag,
+                theme=entry.theme,
+                cap_tier=cap,
+            )
+            if not surfaced_flag:
+                continue
             evidence = tuple(
                 EvidenceItem(dim, score, f"{dim} contribution")
                 for dim, score in sorted(sub_scores.items(), key=lambda kv: -kv[1])
@@ -110,7 +138,7 @@ class OpportunityScanUseCase:
                 direction=OpportunityDirection.BUY,
                 evidence=evidence,
                 theme=entry.theme,
-                cap_tier=_cap_tier(float(info.get("marketCap", 0.0))),
+                cap_tier=cap,
                 spy_at_surface=spy,
                 ndx_at_surface=ndx,
             )
