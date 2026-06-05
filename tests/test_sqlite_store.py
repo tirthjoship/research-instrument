@@ -444,6 +444,33 @@ def test_scan_candidates_roundtrip(tmp_path: pytest.TempPathFactory) -> None:
     assert rows[0]["sub_scores"]["smart_money"] == 8.0
 
 
+def test_signal_cache_hit_and_ttl(tmp_path: pytest.TempPathFactory) -> None:
+    from datetime import datetime, timedelta
+
+    from adapters.data.sqlite_store import SQLiteStore
+
+    store = SQLiteStore(str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    t0 = datetime(2026, 6, 5, 8, 0, 0)
+    store.put_cached_signal("ASTS", "event_signal", 7.0, t0)
+
+    # fresh within TTL
+    assert (
+        store.get_cached_signal(
+            "ASTS", "event_signal", t0 + timedelta(hours=1), ttl_hours=24
+        )
+        == 7.0
+    )
+    # expired beyond TTL
+    assert (
+        store.get_cached_signal(
+            "ASTS", "event_signal", t0 + timedelta(hours=25), ttl_hours=24
+        )
+        is None
+    )
+    # missing key
+    assert store.get_cached_signal("ZZZ", "event_signal", t0, ttl_hours=24) is None
+
+
 def test_save_learned_rule_upsert(tmp_path: pytest.TempPathFactory) -> None:
     """INSERT OR REPLACE: same rule_id overwrites existing row."""
     store = SQLiteStore(str(tmp_path / "rules2.db"))  # type: ignore[arg-type]

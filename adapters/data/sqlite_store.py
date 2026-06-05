@@ -253,6 +253,14 @@ CREATE TABLE IF NOT EXISTS scan_candidates (
     cap_tier TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_cand_date ON scan_candidates(scan_date);
+
+CREATE TABLE IF NOT EXISTS signal_cache (
+    ticker TEXT NOT NULL,
+    dim TEXT NOT NULL,
+    value REAL NOT NULL,
+    computed_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (ticker, dim)
+);
 """
 
 
@@ -1014,6 +1022,34 @@ class SQLiteStore:
             d["sub_scores"] = json.loads(d.pop("sub_scores_json"))
             out.append(d)
         return out
+
+    # ------------------------------------------------------------------
+    # signal_cache — per-(ticker, dim) computed value with TTL
+    # ------------------------------------------------------------------
+
+    def put_cached_signal(
+        self, ticker: str, dim: str, value: float, computed_at: datetime
+    ) -> None:
+        self._conn.execute(
+            "INSERT OR REPLACE INTO signal_cache (ticker, dim, value, computed_at) "
+            "VALUES (?, ?, ?, ?)",
+            (ticker, dim, value, computed_at.isoformat()),
+        )
+        self._conn.commit()
+
+    def get_cached_signal(
+        self, ticker: str, dim: str, now: datetime, ttl_hours: float
+    ) -> float | None:
+        row = self._conn.execute(
+            "SELECT value, computed_at FROM signal_cache WHERE ticker = ? AND dim = ?",
+            (ticker, dim),
+        ).fetchone()
+        if row is None:
+            return None
+        computed = datetime.fromisoformat(row["computed_at"])
+        if (now - computed).total_seconds() > ttl_hours * 3600:
+            return None
+        return float(row["value"])
 
     def _row_to_recommendation(self, r: sqlite3.Row) -> StockRecommendation:
         pred = MultiHorizonPrediction(
