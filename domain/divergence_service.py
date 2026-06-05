@@ -114,3 +114,17 @@ def blended_divergence_score(
     raw = blended_accel - price_move * 2.0
     score = 5.0 + raw * 5.0 + (sentiment - 0.5) * 2.0
     return max(1.0, min(10.0, score))
+
+
+def has_min_history(
+    series: list[tuple[datetime, float]], now: datetime, min_days: int = 21
+) -> bool:
+    """True when the observation span covers at least min_days.
+
+    Guards against day-1 noise: a name with too few base-window points
+    produces unstable acceleration ratios and must not be eligible to surface.
+    """
+    if not series:
+        return False
+    oldest = min(t for t, _ in series)
+    return (now - oldest).days >= min_days
