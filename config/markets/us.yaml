@@ -131,8 +131,16 @@ opportunity_engine:
     event_weight: 0.5
     intensity_weight: 0.5
   thresholds:
-    cmin: 6.0   # placeholder — recalibrated from --show-all distribution later
-    dmin: 6.0   # placeholder — recalibrated from --show-all distribution later
+    # Calibrated 2026-06-05 from the observed --show-all distribution (44 candidates,
+    # data/reports/_calibration_distribution.txt). Conviction is compressed (floor ~2.49,
+    # max 3.39) because event_signal is held neutral and several dims are thin/rate-limited;
+    # divergence has a real upper tail (K/MU/V/META/CRDO > 6.0). cmin set at the conviction
+    # top-quartile knee, dmin at the divergence upper-tail knee. NOTE: in this run NO name
+    # clears BOTH axes (high-conviction names show low divergence and vice-versa), so the
+    # layered trigger correctly abstains. Revisit once event_signal is wired (Gemini) and
+    # GDELT/Trends are not rate-limited — the conviction scale should widen and the knees move.
+    cmin: 2.8
+    dmin: 6.0
   signal_cache_ttl_hours: 24
   backfill_days: 90
   sources:
