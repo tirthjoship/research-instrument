@@ -321,6 +321,10 @@ class ConvictionScoringUseCase:
         for sig in ticker_signals:
             try:
                 filed_dt = datetime.strptime(sig.filed_date, "%Y-%m-%d")
+                # filed_date parses naive; match scan_time's awareness so the
+                # freshness subtraction never mixes naive/aware datetimes.
+                if scan_time.tzinfo is not None:
+                    filed_dt = filed_dt.replace(tzinfo=scan_time.tzinfo)
                 fs = compute_freshness_score(filed_dt, scan_time)
                 freshness = max(freshness, fs)
             except ValueError:

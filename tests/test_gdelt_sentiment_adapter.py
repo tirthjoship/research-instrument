@@ -8,10 +8,13 @@ from unittest.mock import MagicMock, patch
 import requests
 
 from adapters.data.gdelt_sentiment_adapter import GdeltSentimentAdapter
-from domain.models import Sentiment
+from domain.models import BuzzSignal, Sentiment
 
 START = datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 END = datetime(2026, 1, 7, 23, 59, 59, tzinfo=timezone.utc)
+
+# Canonical patch target — all calls go through the adapter module's requests reference
+_REQUESTS_GET = "adapters.data.gdelt_sentiment_adapter.requests.get"
 
 
 # ---------------------------------------------------------------------------
@@ -316,3 +319,72 @@ def test_request_query_includes_symbol() -> None:
     assert "NVDA" in params["query"]
     assert params["mode"] == "ArtList"
     assert params["format"] == "csv"
+
+
+# ---------------------------------------------------------------------------
+# Task 9: 429 backoff/retry + get_historical_buzz
+# ---------------------------------------------------------------------------
+
+
+def test_gdelt_retries_on_429_then_succeeds() -> None:
+    err = requests.HTTPError(response=MagicMock(status_code=429))
+    ok = MagicMock(status_code=200, text="")
+    ok.raise_for_status = lambda: None
+    bad = MagicMock()
+    bad.raise_for_status = MagicMock(side_effect=err)
+    with (
+        patch(
+            "adapters.data.gdelt_sentiment_adapter.requests.get", side_effect=[bad, ok]
+        ) as g,
+        patch("adapters.data.gdelt_sentiment_adapter.time.sleep"),
+    ):
+        GdeltSentimentAdapter(max_retries=2, throttle_s=0).get_historical_sentiment(
+            "ASTS", datetime(2026, 4, 1), datetime(2026, 6, 1)
+        )
+    assert g.call_count == 2
+
+
+def test_gdelt_get_historical_buzz_returns_buzz_signals() -> None:
+    csv_text = "DATE\tSourceCommonName\tDocumentIdentifier\n20260501120000\tx\thttp://a\n20260502120000\ty\thttp://b\n"
+    ok = MagicMock(status_code=200, text=csv_text)
+    ok.raise_for_status = lambda: None
+    with (
+        patch("adapters.data.gdelt_sentiment_adapter.requests.get", return_value=ok),
+        patch("adapters.data.gdelt_sentiment_adapter.time.sleep"),
+    ):
+        sigs = GdeltSentimentAdapter(throttle_s=0).get_historical_buzz(
+            "ASTS", datetime(2026, 4, 1), datetime(2026, 6, 1)
+        )
+    assert all(isinstance(s, BuzzSignal) for s in sigs)
+    assert all(s.source == "gdelt" for s in sigs)
+
+
+def test_gdelt_regression_get_historical_sentiment_still_parses() -> None:
+    """Regression: refactor must not break existing get_historical_sentiment parsing."""
+    csv_text = _build_csv(
+        [
+            {
+                "DATE": "20260101120000",
+                "SourceCommonName": "reuters.com",
+                "V2Tone": "3.0,3.5,0.5,4.0",
+            },
+            {
+                "DATE": "20260102130000",
+                "SourceCommonName": "bloomberg.com",
+                "V2Tone": "-2.0,0.5,2.5,3.0",
+            },
+        ]
+    )
+    ok = MagicMock(status_code=200, text=csv_text)
+    ok.raise_for_status = lambda: None
+    with (
+        patch("adapters.data.gdelt_sentiment_adapter.requests.get", return_value=ok),
+        patch("adapters.data.gdelt_sentiment_adapter.time.sleep"),
+    ):
+        results = GdeltSentimentAdapter(throttle_s=0).get_historical_sentiment(
+            "AAPL", datetime(2026, 1, 1), datetime(2026, 1, 7)
+        )
+    assert len(results) == 2
+    assert all(isinstance(r, Sentiment) for r in results)
+    assert abs(results[0].sentiment_score - 0.3) < 1e-9
+    assert abs(results[1].sentiment_score - (-0.2)) < 1e-9

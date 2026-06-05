@@ -283,4 +283,17 @@ Five hard stops — see `AGENTS.md` for full details:
 - ADR-040 documenting the evidence-first forward-tracking decision
 - Test suite — 1078 tests passing
 
+**Done (Leg-2 sub-project A — Honest Opportunity Engine 2026-06-05):**
+- StockTwits adapter deprecated and dropped from the pipeline (dead — HTTP 403 on every ticker)
+- Keyless-first source strategy: GoogleNewsAdapter (per-ticker RSS, mid-cap news volume, BuzzDiscovery), WikipediaPageviewsAdapter (keyless daily history, AttentionSeriesPort), GoogleTrendsAdapter `get_attention_series` (AttentionSeriesPort), GDELT throttle fix (429 exponential backoff) + `get_historical_buzz` (honest article timestamps)
+- RedditAdapter (PRAW) — pluggable, logged no-op without credentials
+- Domain: AttentionPoint model + AttentionSeriesPort protocol (intensity shape, distinct from event-based BuzzDiscoveryPort); `intensity_acceleration()` + `blended_divergence_score()` blending event-acceleration (news/social) + intensity-acceleration (search/pageviews) into one [1,10] divergence with adaptive single-shape weights; Hypothesis property tests
+- Store: `attention_series` (append-only, deduped on ticker+source+ts), `scan_candidates` (full candidate-distribution log), `signal_cache` (24h TTL get/put); `_to_naive_utc` tz normalization in attention_series + signal_cache to prevent naive/aware comparison crashes
+- Application: BackfillHistoryUseCase (seeds divergence base window from honest GDELT/Trends/Wikipedia archives, per-ticker isolation, idempotent append-only); ConvictionSignalCache (cached event/analyst dims, compute-on-miss, failure → flagged neutral 5.0, never a silent pin); OpportunityScanUseCase extended to use blended divergence + log the FULL candidate distribution before the threshold cut
+- CLI: `backfill-history`, `scan-opportunities --show-all` (full distribution + wired Wikipedia + Google Trends attention + ConvictionSignalCache), `daily-cycle` (scan → resolve → conditional weekly backfill)
+- Scheduling: `docs/scheduling.md` launchd plist — local SQLite → local scheduler (intentional ADR-007 deviation)
+- Deps: pytrends added; praw optional. Honest caveats: 7/8 conviction dims live in bulk scan (analyst wired live; event_signal held neutral — per-ticker Gemini cost/keys deferred); backfill is leakage-free for forward-tracking but NOT a backtest and is NOT evidence of edge; cmin/dmin empirically calibrated from the observed distribution (not hand-tuned); live sources rate-limited so the daily cycle tolerates partial source failure
+- ADR-041 documenting the honest opportunity engine decisions
+- Test suite — 1120 tests passing
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing

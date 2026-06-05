@@ -11,6 +11,7 @@ from .analyst import AnalystRating
 from .conviction import SmartMoneySignal
 from .models import (
     AccuracyRecord,
+    AttentionPoint,
     BacktestResult,
     BuzzSignal,
     ClassifiedEvent,
@@ -285,3 +286,17 @@ class SurfacedCallStorePort(Protocol):
     def save_outcome(self, outcome: CallOutcome) -> None: ...
 
     def get_outcomes(self) -> list[CallOutcome]: ...
+
+
+@runtime_checkable
+class AttentionSeriesPort(Protocol):
+    """Retrieves attention-intensity series (search interest, pageviews)."""
+
+    def get_attention_series(
+        self,
+        ticker: str,
+        start: datetime,
+        end: datetime,
+    ) -> list[AttentionPoint]:
+        """Return intensity observations for ticker in [start, end]."""
+        ...
