@@ -67,6 +67,26 @@ def test_backtest_report_includes_pvalue_and_sharpe() -> None:
     assert "n_total_predictions" in h5
 
 
+def test_binomial_pvalue_null_at_observed_accuracy_is_near_half() -> None:
+    """P(X >= k | p=k/n) should be close to 0.5 for moderate n."""
+    p = compute_binomial_pvalue(0.55, 100, null_p=0.55)
+    assert 0.4 <= p <= 0.6
+
+
+def test_binomial_pvalue_lower_null_is_more_significant() -> None:
+    """Observed accuracy of 0.55 is more significant vs null=0.45 than vs null=0.5."""
+    p_vs_45 = compute_binomial_pvalue(0.55, 100, null_p=0.45)
+    p_vs_50 = compute_binomial_pvalue(0.55, 100, null_p=0.5)
+    assert p_vs_45 < p_vs_50
+
+
+def test_binomial_pvalue_default_unchanged() -> None:
+    """Adding null_p param must not change results of existing callers (default=0.5)."""
+    p_no_arg = compute_binomial_pvalue(0.60, 760)
+    p_explicit = compute_binomial_pvalue(0.60, 760, null_p=0.5)
+    assert abs(p_no_arg - p_explicit) < 1e-9
+
+
 def test_no_fabricated_returns() -> None:
     from domain.models import EvaluationRun
 

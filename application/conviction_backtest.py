@@ -10,6 +10,7 @@ from typing import Callable
 
 from application.backtest_runner import compute_binomial_pvalue, compute_sharpe_vs_spy
 from application.precision_metrics import (
+    date_level_significance,
     expected_profit_per_signal,
     f_beta,
     monotonic_precision_curve,
@@ -77,6 +78,9 @@ def run_conviction_backtest(
     avg_loss = -(sum(loss_ret) / len(loss_ret)) if loss_ret else 0.0
     sharpe = compute_sharpe_vs_spy(model_basket_returns, spy_returns)
 
+    # Empirical base rate: fraction of the whole scored universe that beat the benchmark
+    base_rate = sum(pooled_wins) / len(pooled_wins) if pooled_wins else 0.0
+
     return {
         "top_decile_hit_rate": round(precision, 4),
         "precision_curve": monotonic_precision_curve(
@@ -89,7 +93,17 @@ def run_conviction_backtest(
         "model_sharpe": sharpe["model_sharpe"],
         "spy_sharpe": sharpe["spy_sharpe"],
         "excess_sharpe": sharpe["excess_sharpe"],
-        "p_value": round(compute_binomial_pvalue(precision, n_selected), 4),
+        # Honest null: test against empirical base rate, not hardcoded 0.5
+        "p_value": round(
+            compute_binomial_pvalue(precision, n_selected, null_p=base_rate), 4
+        ),
+        # Additive keys for transparency
+        "base_rate": round(base_rate, 4),
+        "edge_over_base": round(precision - base_rate, 4),
+        "p_value_vs_50": round(
+            compute_binomial_pvalue(precision, n_selected, null_p=0.5), 4
+        ),
+        "date_level": date_level_significance(model_basket_returns, spy_returns),
         "n_signals": n_selected,
         "n_dates": n_dates,
         "avg_win": round(avg_win, 4),
