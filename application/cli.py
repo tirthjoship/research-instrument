@@ -860,9 +860,6 @@ def scan_opportunities(
         features = engineer.compute(
             ticker=ticker, signals=sm_signals, prediction_time=scan_time
         )
-        features = engineer.compute(
-            ticker=ticker, signals=sm_signals, prediction_time=scan_time
-        )
 
         # Fetch buzz signals from SQLiteStore (scan_sources already persisted them)
         try:
