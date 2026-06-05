@@ -19,7 +19,7 @@ jobs:
         run: |
           pip install pre-commit
           pip install black isort mypy ruff
-          pip install types-PyYAML types-click types-requests pandas-stubs loguru
+          pip install "types-PyYAML==6.0.12.20260518" "types-click==7.1.8" "types-requests==2.33.0.20260518" "pandas-stubs==3.0.3.260530" loguru
       - name: Run pre-commit
         run: pre-commit run --all-files
 
@@ -33,7 +33,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install mypy pandas-stubs types-requests types-PyYAML types-click loguru
+          pip install mypy "pandas-stubs==3.0.3.260530" "types-requests==2.33.0.20260518" "types-PyYAML==6.0.12.20260518" "types-click==7.1.8" loguru
           pip install pandas scikit-learn xgboost lightgbm hypothesis numpy
       - name: Run mypy
         run: mypy domain/ adapters/ application/ --strict

@@ -570,3 +570,56 @@ Honest null result remains valid — rigorous negative finding is equally impres
 9. ~~Phase 5.1~~ — ✅ Complete. CSS cards/pills/badges, pages→tabs, grade donut fix. 496 tests. PR #16 merged.
 10. ~~Phase 5.2~~ — ✅ Complete. Inter font, verdict-first, Run Full Cycle, emoji-free content. 518 tests. PR #17 merged.
 11. Full universe backtest — 350+ tickers, 29 months. Result: ~49% accuracy, no edge (all p>0.05). Confirms EMH on mega-caps without sentiment.
+12. ~~Financial Intelligence Engine v1~~ — ✅ Complete (2026-06-04). Leakage-safe conviction backtest harness, event intelligence revived, analyst signal added, fabricated returns metric removed. ~1052 tests. ADR-038 + ADR-039.
+
+---
+
+## Session 6: Financial Intelligence Engine v1 (2026-06-04)
+
+### Context
+
+After six dashboard redesigns (Phases 5.0–5.5) applied to an unvalidated conviction score, ADR-038 documented the pivot to a validation-first approach. Two bugs were found in the existing backtest:
+
+1. **Fabricated returns metric** — `backtest_runner.py` was computing `accuracy - 0.5` and labeling it "excess returns." Directional accuracy is not a return metric. `compute_sharpe_vs_spy` was defined but never called. Removed.
+2. **Conviction engine never backtested** — the dashboard centerpiece had hand-tuned magic number weights with no historical precision validation.
+
+### What Shipped
+
+| Component | Description |
+|-----------|-------------|
+| Conviction backtest harness | Leakage-safe stratified walk-forward (monthly, 21-day horizon). Metrics: Top-Decile Hit Rate, monotonic precision curve, F₀.₅, expected-profit-per-signal, real Sharpe vs SPY. |
+| Event intelligence | Phase 4D engine revived with live news feed. `government_investment` event category added. `event_conviction_score` wired into conviction, point-in-time safe. |
+| Analyst signal | Finnhub (live) + yfinance (multi-year history) upgrade/downgrade adapters. Track-record-weighted `analyst_conviction_score` wired into conviction. |
+| New free data adapters | `NewsHeadlinePort` (Alpha Vantage news), `AnalystRatingsPort` (Finnhub + yfinance). CI uses fakes — no network calls in tests. |
+| ADR-039 | Conviction validation findings + product framing decision documented. |
+
+### Validation Findings (First Powered, Leakage-Safe Backtest)
+
+Stratified walk-forward, 76 tickers, 2023-06 → 2026-05, monthly steps, 21-day horizon, top-decile, signal-bearing tickers only. 2 tickers dropped (CIVI, GMS — delisted/unavailable).
+
+| Cohort | Top-Decile Hit Rate | Excess Sharpe vs SPY | n (top-decile picks) | p-value |
+|--------|--------------------|--------------------|---------------------|---------|
+| Large-cap | 57.4% | +0.52 | 61 | 0.15 |
+| Small/mid-cap | 48.6% | −0.52 | 35 | 0.63 |
+| Overall | 56.1% | +0.39 | 98 | 0.13 |
+
+**Interpretation:** No statistically significant edge in any cohort (all p > 0.13). A faint positive lean overall (56.1%, p=0.13) — "something, maybe." Small/mid-cap hypothesis not supported (underperformed SPY). Any faint signal lives in large-caps. Sample sizes still modest.
+
+**Caveats:** Only 2 of 8 conviction dimensions are historically reconstructable (smart-money + analyst). Events, sentiment, fundamentals held at neutral to avoid look-ahead bias. Small-cap list has survivorship bias.
+
+### Product Framing Decision (ADR-039)
+
+The product is an **honest evidence-aggregator + calibrated-abstention tool**: surface organized, point-in-time evidence per name; abstain when nothing clears the conviction bar. Not a "beat-the-market predictor."
+
+**Next directions (to be decided):** densify signal and add statistical power; forward-track the event + sentiment-spike layer via existing outcome-tracking infra (can't be cleanly backtested); do not chase small-caps.
+
+### ADRs Added
+
+| ADR | Decision |
+|-----|----------|
+| 038 | Financial Intelligence Engine v1: validation-first pivot, precision metrics, fabricated returns removed |
+| 039 | Conviction validation findings: first powered backtest results, product framing as honest evidence-aggregator |
+
+### Test Suite
+
+~1052 tests passing (up from 996 at Phase 5.4).
