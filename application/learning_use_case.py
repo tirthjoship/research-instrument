@@ -47,7 +47,7 @@ class LearningUseCase:
         Returns:
             Dict with keys: patterns, adjustments, rules.
         """
-        outcomes: list[TradeOutcome] = self._store.get_outcomes()
+        outcomes: list[TradeOutcome] = self._store.get_trade_outcomes()
 
         if not outcomes:
             logger.info("LearningUseCase.learn: no outcomes found — skipping")
@@ -93,7 +93,7 @@ class LearningUseCase:
                 weights_adjusted: int — count of non-unchanged saved adjustments.
                 rules_discovered: int — total rules discovered.
         """
-        outcomes: list[TradeOutcome] = self._store.get_outcomes()
+        outcomes: list[TradeOutcome] = self._store.get_trade_outcomes()
         weight_history: list[WeightAdjustment] = self._store.get_weight_history()
         rules: list[LearnedRule] = self._store.get_learned_rules()
 

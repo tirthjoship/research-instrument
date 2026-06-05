@@ -21,7 +21,7 @@ class FakeLearningStore:
         self._rules: list[LearnedRule] = []
 
     # Required port methods
-    def get_outcomes(self) -> list[TradeOutcome]:
+    def get_trade_outcomes(self) -> list[TradeOutcome]:
         return list(self._outcomes)
 
     def save_weight_adjustment(self, adjustment: WeightAdjustment) -> None:
