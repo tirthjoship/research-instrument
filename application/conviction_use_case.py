@@ -10,6 +10,7 @@ from typing import Any, Callable
 from loguru import logger
 
 from adapters.ml.smart_money_engineer import SmartMoneyFeatureEngineer
+from domain.analyst_service import analyst_conviction_score
 from domain.conviction import (
     ActionType,
     ConvictionScore,
@@ -50,6 +51,7 @@ class ConvictionScoringUseCase:
         news_source: object | None = None,
         event_classifier: object | None = None,
         event_impacts: dict[Any, Any] | None = None,
+        analyst_source: object | None = None,
     ) -> None:
         self._smart_money = smart_money
         self._tickers = tickers
@@ -61,6 +63,7 @@ class ConvictionScoringUseCase:
         self._news_source = news_source
         self._event_classifier = event_classifier
         self._event_impacts: dict[Any, Any] = event_impacts or {}
+        self._analyst_source = analyst_source
 
     # ------------------------------------------------------------------
     # Public API
@@ -185,6 +188,17 @@ class ConvictionScoringUseCase:
                 events, sector, self._event_impacts, scan_time
             )
 
+        # Analyst signal sub-score (point-in-time: until=scan_time)
+        analyst_score = 5.0
+        if self._analyst_source is not None:
+            since = scan_time - timedelta(days=30)
+            rating_events = self._analyst_source.get_rating_events(  # type: ignore[attr-defined]
+                ticker, since, scan_time
+            )
+            # firm_scores={} — unknown firms weight at neutral 0.5;
+            # real track-record weighting is a later enrichment.
+            analyst_score = analyst_conviction_score(rating_events, {}, scan_time)
+
         sub_scores = self._compute_sub_scores(
             features=features,
             ticker_signals=ticker_signals,
@@ -193,6 +207,7 @@ class ConvictionScoringUseCase:
             ticker_info=ticker_info,
             recommendation=recommendation,
             event_score=event_score,
+            analyst_score=analyst_score,
         )
 
         conviction = compute_conviction(sub_scores, self._weights)
@@ -223,6 +238,7 @@ class ConvictionScoringUseCase:
         ticker_info: dict[str, Any] | None = None,
         recommendation: object | None = None,
         event_score: float = 5.0,
+        analyst_score: float = 5.0,
     ) -> dict[str, float]:
         """Compute the six sub-score dimensions using real data when available."""
         # smart_money (existing logic)
@@ -318,6 +334,7 @@ class ConvictionScoringUseCase:
             "fundamental_basis": fundamental_basis,
             "ml_direction": ml_direction,
             "event_signal": event_score,
+            "analyst_signal": analyst_score,
         }
 
     @staticmethod
