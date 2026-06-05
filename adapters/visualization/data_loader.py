@@ -211,7 +211,7 @@ def load_outcomes(db_path: str, ticker: str | None = None) -> list[Any]:
         from adapters.data.sqlite_store import SQLiteStore
 
         store = SQLiteStore(db_path)
-        return store.get_outcomes(ticker=ticker)
+        return store.get_trade_outcomes(ticker=ticker)
     except Exception as e:
         logger.warning("Failed to load outcomes: %s", e)
         return []

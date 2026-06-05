@@ -447,3 +447,32 @@ def test_fakes_implement_protocols() -> None:
     FakeRecommendationStore()
     FakeFeatureEngineer()
     FakePredictor()
+
+
+# --- AttentionPoint tests ---
+
+
+def test_attention_point_valid_creation():
+    from datetime import datetime
+
+    from domain.models import AttentionPoint
+
+    p = AttentionPoint(
+        ticker="ASTS",
+        timestamp=datetime(2026, 6, 1),
+        value=42.0,
+        source="google_trends",
+    )
+    assert p.ticker == "ASTS"
+    assert p.value == 42.0
+
+
+def test_attention_point_rejects_negative_value():
+    from datetime import datetime
+
+    import pytest
+
+    from domain.models import AttentionPoint
+
+    with pytest.raises(ValueError):
+        AttentionPoint("ASTS", datetime(2026, 6, 1), -1.0, "wikipedia")

@@ -47,3 +47,49 @@ def test_empty_dates_safe():
     r = run_conviction_backtest([], [], lambda d: {}, lambda t, d: 0.0, lambda d: 0.0)
     assert r["n_dates"] == 0
     assert r["top_decile_hit_rate"] == 0.0
+
+
+def test_result_contains_new_keys():
+    """Output dict must contain base_rate, edge_over_base, p_value_vs_50, date_level."""
+    dates = ["2026-01-01", "2026-02-01"]
+    tickers = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+    convictions = {t: 10 - i for i, t in enumerate(tickers)}
+
+    def score_fn(d: str) -> dict[str, float]:
+        return dict(convictions)
+
+    def fwd(t: str, d: str) -> float:
+        return 0.10 if convictions[t] >= 6 else -0.05
+
+    def bench(d: str) -> float:
+        return 0.0
+
+    r = run_conviction_backtest(dates, tickers, score_fn, fwd, bench, decile=0.1)
+    assert "base_rate" in r
+    assert "edge_over_base" in r
+    assert "p_value_vs_50" in r
+    assert "date_level" in r
+
+
+def test_perfectly_correlated_scenario_extended():
+    """Existing scenario still hits top_decile_hit_rate==1.0; new fields are coherent."""
+    dates = ["2026-01-01", "2026-02-01"]
+    tickers = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+    convictions = {t: 10 - i for i, t in enumerate(tickers)}
+
+    def score_fn(d: str) -> dict[str, float]:
+        return dict(convictions)
+
+    def fwd(t: str, d: str) -> float:
+        return 0.10 if convictions[t] >= 6 else -0.05
+
+    def bench(d: str) -> float:
+        return 0.0
+
+    r = run_conviction_backtest(dates, tickers, score_fn, fwd, bench, decile=0.1)
+    assert r["top_decile_hit_rate"] == 1.0
+    assert r["edge_over_base"] >= 0
+    dl = r["date_level"]
+    assert isinstance(dl, dict)
+    assert dl["t_pvalue"] is not None
+    assert dl["t_pvalue"] < 0.5
