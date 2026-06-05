@@ -1,0 +1,16 @@
+# config/universe/themes.yaml
+# Curated thematic spine. Tickers always watched; discovery overlay adds the rest.
+# Membership is a tunable starting set — extend as themes evolve.
+themes:
+  space:
+    [ASTS, RKLB, LUNR, IRDM, HXL, RDW]
+  memory_storage:
+    [MU, WDC, SNDK, STX]
+  ai_infra:
+    [SMCI, VRT, ANET, COHR, CRDO]
+  nuclear_energy:
+    [SMR, OKLO, CCJ, LEU]
+  defense:
+    [LMT, RTX, NOC, KTOS, AVAV]
+  biotech:
+    [VKTX, CYTK, KRYS, EXEL, HALO]
