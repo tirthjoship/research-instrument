@@ -287,3 +287,30 @@ def test_scan_sources_patches_trendreq_at_module_level() -> None:
 
     assert len(results) == 1
     assert results[0].ticker == "MSFT"
+
+
+# ---------------------------------------------------------------------------
+# Task 10: AttentionSeriesPort conformance
+# ---------------------------------------------------------------------------
+
+
+def test_google_trends_conforms_to_attention_series_port() -> None:
+    from domain.ports import AttentionSeriesPort
+
+    assert isinstance(GoogleTrendsAdapter(), AttentionSeriesPort)
+
+
+def test_get_attention_series_maps_historical_interest() -> None:
+    from domain.models import AttentionPoint
+
+    a = GoogleTrendsAdapter()
+    fake_buzz = [
+        MagicMock(ticker="ASTS", mention_count=10, fetched_at=datetime(2026, 5, 1)),
+        MagicMock(ticker="ASTS", mention_count=80, fetched_at=datetime(2026, 6, 1)),
+    ]
+    with patch.object(a, "get_historical_interest", return_value=fake_buzz):
+        pts = a.get_attention_series("ASTS", datetime(2026, 4, 1), datetime(2026, 6, 1))
+    assert len(pts) == 2
+    assert all(isinstance(p, AttentionPoint) for p in pts)
+    assert pts[1].value == 80.0
+    assert pts[1].source == "google_trends"

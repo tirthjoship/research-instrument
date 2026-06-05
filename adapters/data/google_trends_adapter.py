@@ -9,7 +9,7 @@ from typing import Any
 
 from loguru import logger
 
-from domain.models import BuzzSignal
+from domain.models import AttentionPoint, BuzzSignal
 
 # Maximum tickers per pytrends request
 _BATCH_SIZE = 5
@@ -161,3 +161,21 @@ class GoogleTrendsAdapter:
     ) -> list[BuzzSignal]:
         """Not applicable for trend queries — returns empty list."""
         return []
+
+    def get_attention_series(
+        self,
+        ticker: str,
+        start: datetime,
+        end: datetime,
+    ) -> list[AttentionPoint]:
+        """Adapt historical interest to AttentionSeriesPort (intensity points)."""
+        signals = self.get_historical_interest(ticker, start, end)
+        return [
+            AttentionPoint(
+                ticker=ticker,
+                timestamp=s.fetched_at,
+                value=float(s.mention_count),
+                source="google_trends",
+            )
+            for s in signals
+        ]
