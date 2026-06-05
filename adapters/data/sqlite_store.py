@@ -5,7 +5,7 @@ Schema matches spec section 14 — 4 tables with multi-horizon support.
 
 import json
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from domain.models import (
@@ -29,6 +29,20 @@ from domain.surfaced_call import (
     OpportunityDirection,
     SurfacedCall,
 )
+
+
+def _to_naive_utc(dt: datetime) -> datetime:
+    """Normalize to naive UTC so stored timestamps compare consistently.
+
+    Existing rows are tz-naive; an aware datetime is converted to UTC then
+    stripped of tzinfo. A naive datetime is assumed already UTC and returned
+    unchanged. Prevents naive/aware comparison crashes and isoformat-string
+    ordering bugs in range/TTL queries.
+    """
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS recommendations (
@@ -954,7 +968,7 @@ class SQLiteStore:
             self._conn.execute(
                 "INSERT OR IGNORE INTO attention_series (ticker, source, ts, value) "
                 "VALUES (?, ?, ?, ?)",
-                (p.ticker, p.source, p.timestamp.isoformat(), p.value),
+                (p.ticker, p.source, _to_naive_utc(p.timestamp).isoformat(), p.value),
             )
         self._conn.commit()
 
@@ -964,7 +978,7 @@ class SQLiteStore:
         rows = self._conn.execute(
             "SELECT * FROM attention_series WHERE ticker = ? AND ts >= ? AND ts <= ? "
             "ORDER BY ts",
-            (ticker, start.isoformat(), end.isoformat()),
+            (ticker, _to_naive_utc(start).isoformat(), _to_naive_utc(end).isoformat()),
         ).fetchall()
         return [
             AttentionPoint(
@@ -1033,7 +1047,7 @@ class SQLiteStore:
         self._conn.execute(
             "INSERT OR REPLACE INTO signal_cache (ticker, dim, value, computed_at) "
             "VALUES (?, ?, ?, ?)",
-            (ticker, dim, value, computed_at.isoformat()),
+            (ticker, dim, value, _to_naive_utc(computed_at).isoformat()),
         )
         self._conn.commit()
 
@@ -1046,7 +1060,8 @@ class SQLiteStore:
         ).fetchone()
         if row is None:
             return None
-        computed = datetime.fromisoformat(row["computed_at"])
+        now = _to_naive_utc(now)
+        computed = _to_naive_utc(datetime.fromisoformat(row["computed_at"]))
         if (now - computed).total_seconds() > ttl_hours * 3600:
             return None
         return float(row["value"])
