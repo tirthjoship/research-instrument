@@ -1,5 +1,9 @@
 """StockTwits adapter — BuzzDiscoveryPort via StockTwits free API."""
 
+# DEPRECATED (2026-06-05): StockTwits public API returns HTTP 403 (locked down).
+# Retired from the live pipeline. Replaced by Reddit + Google News adapters.
+# Kept for reference / potential future API revival; not wired into any use case.
+
 from __future__ import annotations
 
 import hashlib
