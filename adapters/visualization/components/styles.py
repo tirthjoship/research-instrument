@@ -32,7 +32,7 @@ GLOBAL_CSS = """
 
 /* ===== Base Typography ===== */
 html, body, [class*="css"] {
-    font-size: 15px;
+    font-size: 16px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: var(--text-primary);
     background-color: var(--bg-primary);
@@ -72,6 +72,7 @@ h4 {
 footer { visibility: hidden; }
 header [data-testid="stToolbar"] { visibility: hidden; }
 [data-testid="stDecoration"] { display: none; }
+header[data-testid="stHeader"] { display: none !important; }
 
 /* ===== Tab Styling ===== */
 .stTabs [data-baseweb="tab-list"] {
@@ -449,6 +450,7 @@ header [data-testid="stToolbar"] { visibility: hidden; }
 
 /* ===== Section Spacing ===== */
 .block-container {
+    padding-top: 1rem !important;
     padding-left: 1rem !important;
     padding-right: 1rem !important;
 }
@@ -533,6 +535,117 @@ header [data-testid="stToolbar"] { visibility: hidden; }
     padding: 2rem 0 1rem 0;
     border-top: 1px solid var(--border);
     margin-top: 3rem;
+}
+
+/* ===== Phase 5.4 — Missing CSS fixes ===== */
+.hero-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+.hero-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 4px;
+}
+.hero-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+.verdict-card {
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin: 12px 0;
+}
+.verdict-positive { border-left: 4px solid var(--success); }
+.verdict-negative { border-left: 4px solid var(--danger); }
+.verdict-neutral { border-left: 4px solid var(--accent); }
+.dashboard-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+}
+.ticker-bar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 8px 16px;
+    background: #0F172A;
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    overflow: hidden;
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+}
+.ticker-bar-item { display: inline-flex; align-items: center; gap: 6px; }
+.ticker-bar-up { color: #4ADE80; }
+.ticker-bar-down { color: #F87171; }
+
+/* ===== Tooltips ===== */
+.tooltip-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+}
+.tooltip-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #E2E8F0;
+    color: #64748B;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+.tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1E293B;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: normal;
+    width: max-content;
+    max-width: 280px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: opacity 0.2s;
+}
+.tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #1E293B transparent transparent transparent;
 }
 </style>
 """

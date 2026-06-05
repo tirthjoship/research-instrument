@@ -95,7 +95,6 @@ def run_backtest_report(
         n_total = n_folds * tickers_per_fold
 
         p_value = compute_binomial_pvalue(avg_acc, n_total)
-        model_returns = [a - 0.5 for a in accs]
 
         report["horizons"][horizon] = {  # type: ignore[index]
             "avg_directional_accuracy": avg_acc,
@@ -104,7 +103,8 @@ def run_backtest_report(
             "min_accuracy": min(accs) if accs else 0.0,
             "max_accuracy": max(accs) if accs else 0.0,
             "p_value_vs_random": round(p_value, 4),
-            "model_excess_returns_per_fold": model_returns,
+            "sharpe": None,
+            "returns_source": "directional_accuracy_only",
         }
 
     out = Path(output_dir)

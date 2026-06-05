@@ -189,10 +189,14 @@ class TestRankOpportunities:
         scores = [r.score for r in results]
         assert scores == sorted(scores, reverse=True)
 
-    def test_min_score_filters_low(self) -> None:
+    def test_min_score_filters_low_but_fallback_fills_when_sparse(self) -> None:
+        # With only 4 above-threshold and top_n=15, fallback fills from below-threshold
         results = rank_opportunities(self._scores(), min_score=3.0)
         tickers = [r.ticker for r in results]
-        assert "AMZN" not in tickers
+        # High-conviction tickers always appear before low-conviction ones
+        assert tickers.index("TSLA") < tickers.index("AMZN")
+        # When top_n > eligible count, below-threshold tickers are included via fallback
+        assert "AMZN" in tickers
 
     def test_top_n_respected(self) -> None:
         scores = [_make_score(f"T{i}", 5.0) for i in range(20)]
@@ -216,9 +220,12 @@ class TestRankOpportunities:
     def test_empty_input(self) -> None:
         assert rank_opportunities([]) == []
 
-    def test_all_below_min_score_empty_without_pinned(self) -> None:
+    def test_all_below_min_score_fallback_fills_results(self) -> None:
+        # Fallback: when all below threshold, return sorted by score (best first)
         scores = [_make_score("X", 1.5)]
-        assert rank_opportunities(scores, min_score=3.0) == []
+        results = rank_opportunities(scores, min_score=3.0)
+        assert len(results) == 1
+        assert results[0].ticker == "X"
 
     def test_pinned_appended_after_top_n(self) -> None:
         """Pinned tickers that missed cut appear at the end, not mixed in."""
@@ -227,3 +234,24 @@ class TestRankOpportunities:
         )
         # First 2 are top scorers (TSLA=9, AAPL=8), AMZN appended last
         assert results[-1].ticker == "AMZN"
+
+
+def test_rank_opportunities_returns_top_n_when_all_below_min_score():
+    from datetime import datetime
+
+    from domain.conviction import ConvictionScore
+    from domain.conviction_service import rank_opportunities
+
+    scores = [
+        ConvictionScore(
+            ticker=f"T{i}",
+            score=2.0 + i * 0.1,
+            sub_scores={},
+            signals_firing=1,
+            freshest_signal=datetime(2026, 6, 4),
+            explanation="",
+        )
+        for i in range(20)
+    ]
+    result = rank_opportunities(scores, top_n=5, min_score=3.0)
+    assert len(result) >= 5

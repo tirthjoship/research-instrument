@@ -1,4 +1,4 @@
-"""Dashboard entry point — 5-tab router."""
+"""Dashboard entry point — 6-tab router."""
 
 from __future__ import annotations
 
@@ -20,11 +20,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "Today's Opportunities",
         "Watchlist",
         "My Portfolio",
+        "Stock Analysis",
         "How It Works",
         "Market Context",
     ]
@@ -43,15 +44,19 @@ with tab3:
 
     render_portfolio()
 with tab4:
+    from adapters.visualization.tabs.stock_analysis import render as render_analysis
+
+    render_analysis()
+with tab5:
     from adapters.visualization.tabs.model_confidence import render as render_hiw
 
     render_hiw()
-with tab5:
+with tab6:
     from adapters.visualization.tabs.market_pulse import render as render_market
 
     render_market()
 
 st.markdown(
-    '<div class="ws-footer">Multi-Modal Stock Recommender · Built by Tirth Joshi</div>',
+    '<div class="ws-footer">Multi-Modal Stock Recommender · Hexagonal Architecture · Built by Tirth Joshi</div>',
     unsafe_allow_html=True,
 )

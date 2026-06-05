@@ -101,14 +101,24 @@ def rank_opportunities(
     pinned_scores: list[ConvictionScore] = []
     eligible: list[ConvictionScore] = []
 
+    below_threshold: list[ConvictionScore] = []
+
     for cs in scores:
         if cs.ticker in pinned:
             pinned_scores.append(cs)
         elif cs.score >= min_score:
             eligible.append(cs)
+        else:
+            below_threshold.append(cs)
 
     eligible.sort(key=lambda c: c.score, reverse=True)
     top = eligible[:top_n]
+
+    # Fill from below-threshold when not enough pass the filter
+    if len(top) < top_n:
+        below_threshold.sort(key=lambda c: c.score, reverse=True)
+        needed = top_n - len(top)
+        top = top + below_threshold[:needed]
 
     top_tickers = {c.ticker for c in top}
     missed_pinned = [c for c in pinned_scores if c.ticker not in top_tickers]

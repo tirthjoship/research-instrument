@@ -3,7 +3,7 @@
 Production-grade ML system predicting multi-horizon stock returns using a 5-layer feature architecture: 45 technical (Stage 1) + 24 sentiment/buzz/divergence (Stage 2) + 16 fundamental valuation + 8 cross-asset intelligence + 8 event-causal features. XGBoost + LightGBM + Ridge ensemble with walk-forward validation, permutation testing, and transaction cost modeling. Cross-asset correlation graph with Granger causality. Event-causal learning with Gemini-classified news and exponential decay impact modeling. Portfolio tracking with automated sell signal detection. 6-tab adaptive intelligence dashboard with conviction-scored opportunity surfacing. Built with hexagonal architecture and strict point-in-time enforcement.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-785%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-1052%20passing-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25+-brightgreen)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
@@ -290,7 +290,7 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: 785 passed
+# Expected: ~1052 passed
 ```
 
 ### CLI Usage
@@ -413,7 +413,7 @@ make check
 | Pattern memory | 16 | PatternEntry, WeightAdjustment, LearnedRule |
 | Pattern service | 19 | Pattern building, weight adjustment, rules |
 | Learning use case | 11 | Pattern analysis → weight adjustment → rules |
-| **Total** | **785** | |
+| **Total** | **~1052** | |
 
 ---
 
@@ -505,6 +505,46 @@ Four stock-selection baselines are ready for comparison against the ML model:
 
 ---
 
+## Financial Intelligence Engine v1 (ADR-038, ADR-039)
+
+### Approach
+
+Phases 5.0–5.5 were six consecutive dashboard redesigns applied to an unvalidated conviction score. The fabricated backtest reported `accuracy - 0.5` relabeled as "excess returns" — directional accuracy is not a return metric. ADR-038 documents the pivot.
+
+The Financial Intelligence Engine v1 replaces that with a **validation-first, precision-first system**:
+
+1. **Conviction backtest harness** — a leakage-safe stratified walk-forward backtest (monthly steps, 21-day forward horizon). Headline metric: **Top-Decile Hit Rate** (did picks in the top conviction decile beat a coin flip?). Full suite: precision@top-decile, monotonic precision–conviction curve, F₀.₅, expected-profit-per-signal, real Sharpe vs SPY. Accuracy banned as a standalone claim.
+2. **Event intelligence revived** — Phase 4D event engine (previously dormant) now feeds live news into the Gemini classifier. A `government_investment` event category was added; the resulting `event_conviction_score` is wired into conviction, point-in-time safe.
+3. **Analyst signal** — Finnhub (live) + yfinance (multi-year history) upgrade/downgrade adapters, track-record-weighted. `analyst_conviction_score` wired into conviction, point-in-time safe.
+4. **New free data adapters** — `NewsHeadlinePort` (Alpha Vantage news), `AnalystRatingsPort` (Finnhub + yfinance). CI uses fakes; no network calls in tests.
+5. **Honest abstention** — the system abstains when no signal clears the conviction bar, rather than generating low-confidence picks.
+
+### Validation Findings (First Powered, Leakage-Safe Backtest)
+
+Stratified walk-forward, 76 tickers, 2023-06 → 2026-05, monthly steps, 21-day horizon, top-decile signals only, signal-bearing tickers only. Two tickers (CIVI, GMS) dropped as delisted/unavailable.
+
+| Cohort | Top-Decile Hit Rate | Excess Sharpe vs SPY | n (top-decile picks) | p-value |
+|--------|--------------------|--------------------|---------------------|---------|
+| Large-cap | 57.4% | +0.52 | 61 | 0.15 |
+| Small/mid-cap | 48.6% | −0.52 | 35 | 0.63 |
+| Overall | 56.1% | +0.39 | 98 | 0.13 |
+
+**Honest interpretation:**
+
+- **No statistically significant edge** in any cohort (all p > 0.13). Not tradeable as-is.
+- A **faint, non-significant positive lean** overall (56.1%, p=0.13): "something, maybe" — not nothing, not a proven edge.
+- The small/mid-cap hypothesis was **not supported** — it underperformed SPY (−0.52 excess Sharpe) despite survivorship bias in the small-cap list that should have flatered it. Any faint hint lives in large-caps.
+- Top-decile sample sizes remain modest (61 / 35 / 98).
+- **Caveats:** only 2 of 8 conviction dimensions are historically reconstructable (smart-money + analyst); events, sentiment, and fundamentals were held at neutral to avoid look-ahead bias. Small-cap list has survivorship bias.
+
+### Product Framing (ADR-039)
+
+Given the "credible-null-with-a-whisper" result, the product is an **honest evidence-aggregator + calibrated-abstention tool**: surface organized, point-in-time evidence per name; abstain when nothing clears the conviction bar. It is not a "beat-the-market predictor."
+
+Next directions (to be decided): densify signal and add statistical power; forward-track the event + sentiment-spike layer using existing outcome-tracking infrastructure (these signals cannot be cleanly backtested historically); do not chase small-caps.
+
+---
+
 ## Project Status
 
 | Phase | Status | Description |
@@ -524,12 +564,15 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 7 | ✅ Complete | **Opportunity Intelligence Foundation** — conviction scoring engine (6 dimensions), SEC EDGAR adapter (13D + Form 4), smart money features, opportunity cards, Opportunity Feed dashboard tab, freshness header with S&P 500 sparkline |
 | 8 | ✅ Complete | **Outcome Tracking & Memory** — trade logging, outcome tracking with P&L, signal report card, historical bootstrap, Outcome Tracker tab, System Intelligence tab |
 | 9 | ✅ Complete | **Adaptive Intelligence** — pattern memory, weight adjustment with guardrails, learned rule discovery, Run Learning Cycle, weight history display |
+| 5.3 | ✅ Complete | **Dashboard redesign** — WealthSimple 5-tab layout, auto-scan, compact conviction cards, learning progress bar, onboarding flow, market context grid |
+| 5.4 | ✅ Complete | **SimplyWallSt-Grade Redesign** — SWST design language, signal radar, Stock Analysis tab (7 sections), live prices, conviction engine fix (3 placeholder sub-scores wired), 15+ new chart builders, criteria cards + verdict bullets on all tabs, CSS tooltips with hover explainers |
+| FIE v1 | ✅ Complete | **Financial Intelligence Engine v1** — leakage-safe conviction backtest harness (precision-first metrics), event intelligence revived (`government_investment` category), analyst signal (Finnhub + yfinance), new free data adapters, fabricated returns metric removed. First powered validation: 56.1% top-decile hit rate overall (p=0.13, not significant). ~1052 tests. |
 
 ---
 
 ## Architecture Decision Records
 
-34 ADRs in `docs/adr/` documenting all major design choices:
+39 ADRs in `docs/adr/` documenting all major design choices:
 
 | ADR | Decision |
 |-----|----------|
@@ -561,6 +604,11 @@ Four stock-selection baselines are ready for comparison against the ML model:
 | 032 | Opportunity intelligence: reframe from direction prediction to conviction-scored opportunity surfacing |
 | 033 | Outcome tracking: trade logging, signal report card, historical bootstrap |
 | 034 | Adaptive intelligence: pattern memory, weight evolution with guardrails, rule discovery |
+| 035 | Dashboard redesign: WealthSimple 5-tab layout, auto-scan, compact conviction cards |
+| 036 | Phase 5.4 SimplyWallSt-grade redesign: signal radar, Stock Analysis tab, SWST design language |
+| 037 | Phase 5.5 UX overhaul: action-oriented redesign, action queue, portfolio health, Gemini AI |
+| 038 | Financial Intelligence Engine v1: validation-first pivot, precision metrics, fabricated returns removed |
+| 039 | Conviction validation findings: first powered backtest results, product framing as honest evidence-aggregator |
 
 ---
 
@@ -570,7 +618,7 @@ Three GitHub Actions workflows automate quality gates:
 
 | Workflow | Trigger | What it does |
 |----------|---------|-------------|
-| `test.yml` | Push/PR to develop | Runs 785 tests, enforces 90% coverage |
+| `test.yml` | Push/PR to develop | Runs ~1052 tests, enforces 90% coverage |
 | `lint.yml` | Push/PR to develop | black, isort, ruff, mypy strict |
 | `security.yml` | Push/PR to develop | gitleaks secret scanning |
 
@@ -602,7 +650,9 @@ Future: `daily-scan.yml` cron workflow for automated RSS buzz collection.
 >
 > **Full-universe backtest** (350+ tickers, 29 months, 2024-2026) confirms: technical + fundamental + cross-asset + event-causal features alone achieve ~49% accuracy — indistinguishable from random on mega-caps. This honest null result is the foundation. The thesis posits that live sentiment divergence is the edge — Phase 3B in-sample showed 69.7% with sentiment, but out-of-sample validation is pending.
 >
-> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. 785 tests, mypy strict, full CI/CD."
+> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. ~1052 tests, mypy strict, full CI/CD.
+>
+> **Financial Intelligence Engine v1** (2026-06-04) closes the validation gap. I discovered the backtest had been fabricating a return metric — literally `accuracy - 0.5` relabeled as 'excess returns.' That's gone. A leakage-safe conviction backtest (stratified walk-forward, 76 tickers, 2023-06 to 2026-05, top-decile precision) replaced it. First honest result: 56.1% top-decile hit rate overall (p=0.13) — a faint positive lean, not statistically significant. Large-caps show 57.4% (p=0.15); small/mid-caps underperformed SPY (48.6%, −0.52 excess Sharpe). The product is now framed honestly: an evidence-aggregator that surfaces organized, point-in-time information per name and abstains when nothing clears the conviction bar. Not a market-beating predictor — not yet. The next step is densifying signal and forward-tracking the event+sentiment-spike layer that can't be cleanly backtested."
 
 ---
 

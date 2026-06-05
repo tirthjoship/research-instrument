@@ -321,6 +321,7 @@ class EventCategory(Enum):
     SUPPLY_CHAIN_DISRUPTION = "supply_chain_disruption"
     PRODUCT_LAUNCH = "product_launch"
     MACRO_DATA = "macro_data"
+    GOVERNMENT_INVESTMENT = "government_investment"
 
 
 @dataclass(frozen=True)

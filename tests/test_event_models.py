@@ -20,12 +20,17 @@ class TestEventCategory:
             "supply_chain_disruption",
             "product_launch",
             "macro_data",
+            "government_investment",
         }
         actual = {e.value for e in EventCategory}
         assert actual == expected
 
     def test_count(self) -> None:
-        assert len(EventCategory) == 10
+        assert len(EventCategory) == 11
+
+
+def test_government_investment_category_exists() -> None:
+    assert EventCategory("government_investment") is EventCategory.GOVERNMENT_INVESTMENT
 
 
 class TestClassifiedEvent:
