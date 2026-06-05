@@ -19,6 +19,18 @@ from domain.conviction import SmartMoneySignal
 _NEUTRAL = 5.0
 
 
+def is_signal_bearing(sub_scores: dict[str, float]) -> bool:
+    """True if the name has any active smart-money or analyst signal (not pure-neutral).
+
+    Isolates the real hypothesis (does insider/analyst activity predict outperformance?)
+    from the neutral mass that only differs by tie-breaking.
+    """
+    return (
+        sub_scores.get("smart_money", 0.0) > 0.0
+        or sub_scores.get("analyst_signal", 5.0) != 5.0
+    )
+
+
 @dataclass(frozen=True)
 class BacktestSample:
     """One (ticker, date) observation from the historical conviction backtest."""
