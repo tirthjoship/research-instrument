@@ -21,6 +21,7 @@ from adapters.ml.feature_engineer import FeatureEngineer
 from adapters.ml.fundamental_feature_engineer import FundamentalFeatureEngineer
 from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
+from application.opportunity_scan_use_case import OpportunityScanUseCase
 from application.use_cases import (
     PretrainingUseCase,
     TrackRecommendationsUseCase,
@@ -749,12 +750,19 @@ def backtest_conviction(
     type=int,
     help="Maximum tickers added via buzz discovery overlay",
 )
+@click.option(
+    "--show-all",
+    is_flag=True,
+    default=False,
+    help="Print the full candidate score distribution after scanning",
+)
 def scan_opportunities(
     market: str,
     date: str | None,
     cmin: float,
     dmin: float,
     max_discovery: int,
+    show_all: bool,
 ) -> None:
     """Surface emerging opportunities: high-conviction + early divergence signals.
 
@@ -764,24 +772,42 @@ def scan_opportunities(
     """
     from datetime import timezone
 
+    from adapters.data.google_trends_adapter import GoogleTrendsAdapter
     from adapters.data.hybrid_universe_provider import HybridUniverseProvider
     from adapters.data.rss_adapter import RSSAdapter
     from adapters.data.sec_edgar_adapter import SECEdgarAdapter
+    from adapters.data.wikipedia_pageviews_adapter import WikipediaPageviewsAdapter
+    from adapters.data.yfinance_analyst_adapter import YFinanceAnalystAdapter
     from adapters.ml.smart_money_engineer import SmartMoneyFeatureEngineer
+    from application.conviction_signal_cache import ConvictionSignalCache
     from application.conviction_use_case import ConvictionScoringUseCase
-    from application.opportunity_scan_use_case import OpportunityScanUseCase
+    from domain.analyst_service import analyst_conviction_score
     from domain.conviction import ConvictionWeights
     from domain.conviction_service import compute_conviction
 
     deps = _build_dependencies(market)
     store = deps["store"]
     market_data = deps["market_data"]
+    config = deps["config"]
 
     now: datetime
     if date:
         now = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     else:
         now = datetime.now(timezone.utc)
+
+    # ConvictionSignalCache — daily TTL from opportunity_engine config
+    _opp_cfg: dict[str, Any] = config.get("opportunity_engine", {})
+    _ttl: float = float(_opp_cfg.get("signal_cache_ttl_hours", 24))
+    signal_cache = ConvictionSignalCache(store=store, ttl_hours=_ttl)
+
+    # Attention sources: Wikipedia pageviews + Google Trends combined
+    wiki_adapter = WikipediaPageviewsAdapter(article_map=_load_wiki_map(market))
+    trends_adapter = GoogleTrendsAdapter()
+    combined_attention = _CombinedAttention(wiki=wiki_adapter, trends=trends_adapter)
+
+    # Analyst adapter (shared across all tickers; re-used by _compute_analyst closure)
+    analyst_adapter = YFinanceAnalystAdapter()
 
     # HybridUniverseProvider: thematic spine + RSS buzz overlay.
     # RSSAdapter satisfies the scan_sources half of BuzzDiscoveryPort; the
@@ -858,6 +884,27 @@ def scan_opportunities(
         except Exception:
             recommendation = None
 
+        def _compute_analyst(t: str, now: datetime) -> float:
+            since = (now.replace(tzinfo=None) - timedelta(days=30)).replace(
+                tzinfo=now.tzinfo
+            )
+            rating_events = analyst_adapter.get_rating_events(t, since, now)
+            return analyst_conviction_score(rating_events, {}, now)
+
+        def _compute_event(_t: str, _now: datetime) -> float:
+            # Gemini event path requires a news source adapter (not wired in bulk
+            # scan — no free keyless headline API is available here). Returns neutral
+            # so the cache stores 5.0, preserving honesty. To enable real event
+            # scoring wire an AlphaVantageNewsAdapter + GeminiEventClassifier here.
+            return 5.0
+
+        analyst_score = signal_cache.get_or_compute(
+            ticker, "analyst_signal", scan_time, _compute_analyst
+        )
+        event_score = signal_cache.get_or_compute(
+            ticker, "event_signal", scan_time, _compute_event
+        )
+
         sub_scores = ConvictionScoringUseCase._compute_sub_scores(
             features=features,
             ticker_signals=sm_signals,
@@ -865,9 +912,8 @@ def scan_opportunities(
             buzz_signals=buzz_signals,
             ticker_info=ticker_info,
             recommendation=recommendation,
-            # event_signal and analyst_signal fall to neutral 5.0 (not wired — see above)
-            event_score=5.0,
-            analyst_score=5.0,
+            event_score=event_score,
+            analyst_score=analyst_score,
         )
         weights = ConvictionWeights()
         score = compute_conviction(sub_scores, weights)
@@ -881,6 +927,7 @@ def scan_opportunities(
         buzz_discovery=store,  # SQLiteStore.get_buzz_signals satisfies the port
         market_data=market_data,
         store=store,
+        attention_provider=combined_attention,
         cmin=cmin,
         dmin=dmin,
     )
@@ -889,6 +936,17 @@ def scan_opportunities(
         f"Scanning opportunities at {now.isoformat()} (cmin={cmin}, dmin={dmin})..."
     )
     calls = use_case.execute(now)
+
+    if show_all:
+        rows = store.get_scan_candidates(scan_date=now.date().isoformat())
+        click.echo("\nFull candidate distribution (conviction / divergence):")
+        for r in rows:
+            mark = "*" if r["surfaced"] else " "
+            click.echo(
+                f"  {mark} {r['ticker']:6s} c={r['conviction']:.2f} "
+                f"d={r['divergence']:.2f} [{r['cap_tier']}]"
+            )
+
     if not calls:
         click.echo("No opportunities surfaced above thresholds (abstaining).")
         return
@@ -1113,6 +1171,29 @@ def remove_watchlist_cmd(symbol: str) -> None:
     store = deps["store"]
     store.remove_watchlist(symbol.upper())
     click.echo(f"Removed from watchlist: {symbol.upper()}")
+
+
+class _CombinedAttention:
+    """Merge Wikipedia + Google Trends attention series for a ticker.
+
+    Each source returns [] on failure, so concatenation is always safe.
+    """
+
+    def __init__(
+        self,
+        wiki: Any,
+        trends: Any,
+    ) -> None:
+        self._wiki = wiki
+        self._trends = trends
+
+    def get_attention_series(
+        self, ticker: str, start: datetime, end: datetime
+    ) -> list[Any]:
+        wiki_pts: list[Any] = self._wiki.get_attention_series(ticker, start, end)
+        trends_pts: list[Any] = self._trends.get_attention_series(ticker, start, end)
+        combined: list[Any] = wiki_pts + trends_pts
+        return combined
 
 
 def _load_wiki_map(market: str) -> dict[str, str]:
