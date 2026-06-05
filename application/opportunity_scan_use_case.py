@@ -16,6 +16,21 @@ from domain.surfaced_call import (
 ConvictionProvider = Callable[[str, datetime], tuple[float, dict[str, float]]]
 
 
+def _match_awareness(ts: datetime, ref: datetime) -> datetime:
+    """Coerce ``ts`` to ``ref``'s tz-awareness.
+
+    Stored timestamps (SQLite buzz ``fetched_at``, some price series) are
+    tz-naive, while the CLI passes a tz-aware UTC ``now``. Comparing them
+    raises TypeError, so normalize inbound timestamps to the reference's
+    awareness before any arithmetic or comparison.
+    """
+    if ref.tzinfo is not None and ts.tzinfo is None:
+        return ts.replace(tzinfo=ref.tzinfo)
+    if ref.tzinfo is None and ts.tzinfo is not None:
+        return ts.replace(tzinfo=None)
+    return ts
+
+
 def _cap_tier(market_cap: float) -> str:
     if market_cap >= 1e10:
         return "large"
@@ -46,7 +61,7 @@ class OpportunityScanUseCase:
     def _price_series(self, ticker: str, now: datetime) -> list[tuple[datetime, float]]:
         start = now - timedelta(days=40)
         sigs = self._md.get_signals(ticker, now, start_date=start, end_date=now)
-        return [(s.timestamp, s.price) for s in sigs]
+        return [(_match_awareness(s.timestamp, now), s.price) for s in sigs]
 
     def _benchmark(self, symbol: str, now: datetime) -> float:
         sigs = self._md.get_signals(symbol, now, end_date=now)
@@ -61,7 +76,11 @@ class OpportunityScanUseCase:
         for entry in self._universe.get_universe(now):
             conviction, sub_scores = self._conviction(entry.ticker, now)
             buzz = self._buzz.get_buzz_signals(ticker=entry.ticker, end_date=now)
-            buzz_times = [b.fetched_at for b in buzz if b.fetched_at is not None]
+            buzz_times = [
+                _match_awareness(b.fetched_at, now)
+                for b in buzz
+                if b.fetched_at is not None
+            ]
             raw_sent = (
                 sum(getattr(b, "sentiment_raw", 0.0) for b in buzz) / len(buzz)
                 if buzz

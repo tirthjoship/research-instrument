@@ -81,6 +81,41 @@ def test_surfaces_qualifying_name_and_abstains_on_rest():
     assert store.saved and store.saved[0].ticker == "ASTS"
 
 
+def test_naive_stored_timestamps_with_aware_now_does_not_crash():
+    """Regression: stored buzz/price timestamps are tz-naive (SQLite, yfinance),
+    but the CLI passes a tz-aware UTC `now`. The divergence path compared them
+    directly and raised TypeError ("can't compare offset-naive and offset-aware
+    datetimes"), crashing the live scan. The use case must normalize inbound
+    timestamps to `now`'s awareness."""
+    naive_now = NOW.replace(tzinfo=None)
+    # Buzz signals come from SQLite with tz-naive `fetched_at` (the real culprit).
+    naive_buzz = [
+        BuzzSignal(
+            ticker="ASTS",
+            source="reddit",
+            sentiment_raw=0.7,
+            fetched_at=naive_now - timedelta(days=d),
+            mention_count=1,
+            scorer="keyword",
+            article_hash=f"h{d}",
+        )
+        for d in (1, 2, 3, 4, 5)
+    ]
+    store = FakeSurfacedCallStore()
+    uc = OpportunityScanUseCase(
+        universe_provider=FakeUniverseProvider([UniverseEntry("ASTS", "space")]),
+        conviction_provider=_conviction("ASTS"),
+        buzz_discovery=FakeBuzzDiscovery(naive_buzz),
+        market_data=_md(),
+        store=store,
+        cmin=6.0,
+        dmin=6.0,
+    )
+    # aware now + naive stored data must not raise
+    calls = uc.execute(NOW)
+    assert [c.ticker for c in calls] == ["ASTS"]
+
+
 def test_abstention_returns_empty():
     store = FakeSurfacedCallStore()
     uc = OpportunityScanUseCase(
