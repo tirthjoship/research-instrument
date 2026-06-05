@@ -433,6 +433,42 @@ Buzz-leads-price "early" signal in the opportunity layer. Measures whether socia
 ### forward-tracking
 The practice of recording opportunity calls at surface time and accruing live return evidence over 1w/1m/3m horizons. Used for signals — divergence, event, sentiment — that cannot be cleanly backtested due to data availability constraints. Forward-tracking is the only intellectually honest way to validate these signals; it requires patience (months of accumulation) but produces real, non-leakage evidence.
 
+## Glossary — Honest Opportunity Engine Terms (Leg-2 Sub-Project A, ADR-041)
+
+### AttentionPoint
+An immutable, point-in-time observation of attention *intensity* for a ticker: `(ticker, timestamp, value, source)`. Used for continuous-level sources (Google Trends index, Wikipedia pageviews) where the data is a level over time, not a stream of discrete events. Distinct from `Sentiment` (which carries a scored opinion) — an AttentionPoint carries only how much attention exists, not its polarity.
+
+### AttentionSeriesPort
+The port for **intensity** attention sources: `get_attention_series(ticker, start, end) -> list[AttentionPoint]`. Deliberately separate from `BuzzDiscoveryPort` (discrete news/social *events*) because the two data shapes differ structurally — a continuous interest *level* and a stream of *events* are not interchangeable, and faking one from the other would be dishonest modeling. Implemented by `WikipediaPageviewsAdapter` and the `GoogleTrendsAdapter.get_attention_series` conformance.
+
+### Attention Sources (event vs intensity shape)
+The honest opportunity engine reads two data shapes through two ports. Events feed event-acceleration; intensity feeds intensity-acceleration; the two blend into one divergence score.
+
+| Source | Port | Shape | Key | Honest history? | Notes |
+|--------|------|-------|-----|-----------------|-------|
+| GDELT | BuzzDiscoveryPort + history | events | keyless | Yes (article timestamps to 2015) | `get_historical_buzz`; 429 exponential backoff |
+| Google Trends | AttentionSeriesPort | intensity | keyless (pytrends) | Yes (weekly to 2004) | scale-free 0–100 index; rate-limited |
+| Google News | BuzzDiscoveryPort | events | keyless | No — live-only | per-ticker RSS by company alias; mid-cap coverage |
+| Wikipedia | AttentionSeriesPort | intensity | keyless | Yes (daily pageviews) | raw view counts; scale-free ratio |
+| Reddit | BuzzDiscoveryPort | events | needs PRAW creds | No — live-only | pluggable; logged no-op without credentials |
+| ~~StockTwits~~ | — | — | — | — | **Retired** — dead public API (HTTP 403) |
+
+### Blended Divergence
+One [1,10] divergence score combining two honest, scale-free accelerations:
+- **Event acceleration** — recent (7d) event count vs prior-30d base rate (news/social events).
+- **Intensity acceleration** — recent mean level vs prior base mean (search/pageviews); averaged across available intensity sources.
+
+Weights adapt to available data: both shapes present → configured blend (`w_e`/`w_i`, default 0.5/0.5 in `us.yaml`); one shape absent → the present shape gets weight 1.0 (no zero-padding a missing signal); neither present → neutral 5.0 (the honest abstain path). The score expresses the thesis "attention up, price flat" — high blended divergence is the primary surfacing trigger. Pure domain computation, no ML, no look-ahead.
+
+### Honest Archive Backfill
+Seeding the divergence base window from genuinely archived attention (GDELT article dates, Google Trends weeks, Wikipedia days) using each source's **real recorded timestamp**. Append-only, deduped on `(ticker, source, ts)`, per-ticker failure-isolated, idempotent. Leakage-free for *forward-tracking* because it reads public values that demonstrably existed at those moments (not reconstructed past social state) and uses them only to compute a base-rate window. It is **NOT a backtest** and must never be presented as evidence of predictive edge. Reddit and Google News are excluded precisely because they lack an honest archive.
+
+### Full Candidate Distribution Log
+Every scanned candidate's scores (conviction, blended divergence, per-dimension sub-scores, theme, cap tier, `surfaced` flag) persisted to the `scan_candidates` table *before* the surface/abstain cut. Only above-bar calls are forward-tracked, preserving honest abstention. Powers empirical `cmin`/`dmin` calibration, bar-discrimination analysis, and Sub-Project B's eval harness.
+
+### Conviction Signal Cache
+A 24h-TTL cache (`signal_cache` table) wrapping the event/analyst conviction dimensions: scan checks the cache, reuses a fresh hit, else computes and stores. On fetch failure a dimension falls to an honest neutral 5.0 **with a logged flag row** — never a silent pin. Lifts bulk-scan conviction from 6/8 to 7/8 live dimensions (`analyst_signal` wired via yfinance analyst-rating events; `event_signal` still held neutral — per-ticker Gemini cost/keys deferred).
+
 ---
 
 ## Portfolio platform enhancements (2026-05-30)
