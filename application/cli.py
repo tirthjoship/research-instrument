@@ -1249,6 +1249,114 @@ def backfill_history(market: str, days: int, limit: int) -> None:
     )
 
 
+def _cfg_cmin(market: str) -> float:
+    """Return cmin threshold from market config (opportunity_engine.thresholds.cmin).
+
+    Falls back to 6.0 (the scan-opportunities default) if the key is missing.
+    """
+    try:
+        config = load_market_config(market)
+        return float(
+            config.get("opportunity_engine", {}).get("thresholds", {}).get("cmin", 6.0)
+        )
+    except Exception:
+        return 6.0
+
+
+def _cfg_dmin(market: str) -> float:
+    """Return dmin threshold from market config (opportunity_engine.thresholds.dmin).
+
+    Falls back to 6.0 (the scan-opportunities default) if the key is missing.
+    """
+    try:
+        config = load_market_config(market)
+        return float(
+            config.get("opportunity_engine", {}).get("thresholds", {}).get("dmin", 6.0)
+        )
+    except Exception:
+        return 6.0
+
+
+def _is_backfill_due(market: str) -> bool:
+    """Return True if 7+ days have elapsed since the most recent attention_series row.
+
+    Implementation: we check whether get_attention_series for the first spine ticker
+    returns any rows in the last 7 days.  If the table is empty OR the check fails,
+    we conservatively return True (backfill is due).  This avoids adding a bespoke
+    "last row" store query while keeping the check honest.
+    """
+    try:
+        from datetime import timezone
+
+        import yaml
+
+        from adapters.data.sqlite_store import SQLiteStore
+
+        store = SQLiteStore("data/recommendations.db")
+
+        # Pick the first spine ticker from themes.yaml for the probe query
+        themes_path = (
+            Path(__file__).parent.parent / "config" / "universe" / "themes.yaml"
+        )
+        probe_ticker = "AAPL"  # safe fallback
+        if themes_path.exists():
+            data = yaml.safe_load(themes_path.read_text())
+            tickers_in_themes: list[str] = []
+            for theme in data.get("themes", {}).values():
+                tickers_in_themes.extend(theme.get("tickers", []))
+            if tickers_in_themes:
+                probe_ticker = tickers_in_themes[0]
+
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        week_ago = now - timedelta(days=7)
+        rows = store.get_attention_series(ticker=probe_ticker, start=week_ago, end=now)
+        # If rows exist in the past 7 days → backfill not due
+        return len(rows) == 0
+    except Exception:
+        # Can't determine → default to due (conservative)
+        return True
+
+
+@cli.command("daily-cycle")
+@click.option("--market", default="us", help="Market config to use")
+@click.option(
+    "--skip-backfill",
+    is_flag=True,
+    help="Skip the weekly backfill refresh",
+)
+@click.pass_context
+def daily_cycle(ctx: click.Context, market: str, skip_backfill: bool) -> None:
+    """Run the full daily cycle: scan-opportunities -> resolve-calls -> weekly backfill.
+
+    Chains three sub-commands in order:
+      1. scan-opportunities  — surface new conviction × divergence calls
+      2. resolve-calls       — mark due calls as outcomes vs SPY/NDX
+      3. backfill-history    — refresh the divergence base window (weekly, conditional)
+
+    The backfill step only runs when --skip-backfill is not set AND
+    _is_backfill_due() returns True (i.e. no attention_series row in the last 7 days).
+    """
+    click.echo("Starting daily cycle...")
+
+    ctx.invoke(
+        scan_opportunities,
+        market=market,
+        date=None,
+        cmin=_cfg_cmin(market),
+        dmin=_cfg_dmin(market),
+        max_discovery=50,
+        show_all=False,
+    )
+
+    ctx.invoke(resolve_calls, date=None)
+
+    if not skip_backfill and _is_backfill_due(market):
+        click.echo("Backfill is due — running backfill-history...")
+        ctx.invoke(backfill_history, market=market, days=14, limit=0)
+
+    click.echo("Daily cycle complete.")
+
+
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     """Load ticker universe from config files, with hardcoded fallback."""
     config_dir = Path(__file__).parent.parent / "config" / "tickers"
