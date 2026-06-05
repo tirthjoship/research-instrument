@@ -155,3 +155,24 @@ def test_abstention_returns_empty():
     )
     assert uc.execute(NOW) == []
     assert store.saved == []
+
+
+def test_cap_tier_uses_marketcap_for_large():
+    from tests.fakes.fake_attention_series import FakeAttentionSeries
+
+    store = FakeSurfacedCallStore()
+    uc = OpportunityScanUseCase(
+        universe_provider=FakeUniverseProvider([UniverseEntry("META", "ai")]),
+        conviction_provider=lambda t, now: (3.0, {"smart_money": 3.0}),
+        buzz_discovery=FakeBuzzDiscovery([]),
+        market_data=FakeMarketData(
+            signals={"META": [], "SPY": [], "QQQ": []},
+            ticker_info={"META": {"market_cap": 1.5e12}},
+        ),
+        store=store,
+        attention_provider=FakeAttentionSeries([]),
+        cmin=99.0,
+        dmin=99.0,  # force abstain; we only inspect the logged candidate
+    )
+    uc.execute(NOW)
+    assert store.candidates[0]["cap_tier"] == "large"

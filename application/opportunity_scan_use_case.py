@@ -107,7 +107,7 @@ class OpportunityScanUseCase:
                 now,
             )
             info = self._md.get_ticker_info(entry.ticker)
-            cap = _cap_tier(float(info.get("marketCap", 0.0)))
+            cap = _cap_tier(float(info.get("market_cap", 0.0)))
             surfaced_flag = conviction >= self._cmin and divergence >= self._dmin
             self._store.save_scan_candidate(
                 scan_date=now.date().isoformat(),
