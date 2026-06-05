@@ -65,3 +65,31 @@ def test_backtest_report_includes_pvalue_and_sharpe() -> None:
     h5 = horizons["5d"]
     assert "p_value_vs_random" in h5
     assert "n_total_predictions" in h5
+
+
+def test_no_fabricated_returns() -> None:
+    from domain.models import EvaluationRun
+
+    mock_store = MagicMock()
+    mock_store.get_evaluation_runs.return_value = [
+        EvaluationRun(
+            run_date=f"2025-{m:02d}",
+            eval_type="walk_forward",
+            horizon="5d",
+            metric_name="directional_accuracy",
+            metric_value=0.51,
+        )
+        for m in range(1, 4)
+    ]
+
+    with patch("adapters.data.sqlite_store.SQLiteStore", return_value=mock_store):
+        report = run_backtest_report()
+
+    horizons = report.get("horizons", {})
+    assert "5d" in horizons
+    h = horizons["5d"]
+    assert "model_excess_returns_per_fold" not in h
+    assert h["sharpe"] is None
+    assert h["returns_source"] == "directional_accuracy_only"
+    assert "avg_directional_accuracy" in h
+    assert "p_value_vs_random" in h

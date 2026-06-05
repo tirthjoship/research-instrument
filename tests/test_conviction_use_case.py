@@ -240,3 +240,295 @@ def test_form4_evidence_buy_sell_label() -> None:
     evidence_text = " ".join(cards[0].evidence) if cards else ""
     if cards:
         assert "sell" in evidence_text.lower() or "sale" in evidence_text.lower()
+
+
+def test_compute_sub_scores_uses_real_data_when_available():
+    from datetime import datetime
+    from unittest.mock import MagicMock
+
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    use_case = ConvictionScoringUseCase(
+        smart_money=MagicMock(), tickers=["NVDA"], weights=WEIGHTS
+    )
+    features = {
+        "sm_13d_count": 0,
+        "sm_form4_buy_count": 0,
+        "sm_activist_count": 0,
+        "sm_insider_cluster": 0,
+    }
+    mock_buzz = MagicMock()
+    mock_buzz.sentiment_raw = 0.6
+    mock_buzz.fetched_at = datetime(2026, 6, 3)
+    ticker_info = {
+        "pegRatio": 0.66,
+        "freeCashflow": 46e9,
+        "marketCap": 5.3e12,
+        "returnOnEquity": 1.14,
+    }
+    mock_rec = MagicMock()
+    mock_rec.grade = "strong_buy"
+
+    sub_scores = use_case._compute_sub_scores(
+        features=features,
+        ticker_signals=[],
+        scan_time=datetime(2026, 6, 4),
+        buzz_signals=[mock_buzz],
+        ticker_info=ticker_info,
+        recommendation=mock_rec,
+    )
+    assert sub_scores["sentiment_momentum"] != 5.0
+    assert sub_scores["fundamental_basis"] != 5.0
+    assert sub_scores["ml_direction"] == 9
+
+
+def test_compute_sub_scores_falls_back_without_data():
+    from datetime import datetime
+    from unittest.mock import MagicMock
+
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    use_case = ConvictionScoringUseCase(
+        smart_money=MagicMock(), tickers=["NVDA"], weights=WEIGHTS
+    )
+    features = {
+        "sm_13d_count": 0,
+        "sm_form4_buy_count": 0,
+        "sm_activist_count": 0,
+        "sm_insider_cluster": 0,
+    }
+    sub_scores = use_case._compute_sub_scores(
+        features=features, ticker_signals=[], scan_time=datetime(2026, 6, 4)
+    )
+    assert sub_scores["sentiment_momentum"] == 5.0
+    assert sub_scores["fundamental_basis"] == 5.0
+    assert sub_scores["ml_direction"] == 5.0
+
+
+# ---------------------------------------------------------------------------
+# Event signal tests (Step A — TDD)
+# ---------------------------------------------------------------------------
+
+
+def _make_event_use_case(
+    news_source: object | None,
+    classifier: object | None,
+    event_impacts: dict | None,
+) -> "ConvictionScoringUseCase":  # noqa: F821
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    adapter = FakeSmartMoneyAdapter(signals=[_13D_SIGNAL])
+    return ConvictionScoringUseCase(
+        smart_money=adapter,
+        tickers=["AAPL"],
+        weights=WEIGHTS,
+        news_source=news_source,
+        event_classifier=classifier,
+        event_impacts=event_impacts,
+    )
+
+
+def test_event_signal_raises_conviction() -> None:
+    """Bullish govt-investment event before scan_time → event_signal > 5.0."""
+    from domain.models import ClassifiedEvent, EventCategory, EventSectorImpact
+    from tests.fakes.fake_event_classifier import FakeEventClassifier
+    from tests.fakes.fake_news_source import FakeNewsSource
+
+    sector = "Technology"
+    headline = "Government invests billions in chip manufacturing"
+    event_date = "2026-06-01"  # before SCAN_TIME (2026-06-03)
+
+    news = FakeNewsSource(headlines=[(headline, event_date)])
+    classifier = FakeEventClassifier()
+    event = ClassifiedEvent(
+        headline=headline,
+        event_date=event_date,
+        category=EventCategory.GOVERNMENT_INVESTMENT,
+        direction=1,
+        confidence=0.9,
+        source="rss",
+    )
+    classifier.add_response(headline, event)
+    impact_key = (EventCategory.GOVERNMENT_INVESTMENT, sector)
+    impacts = {
+        impact_key: EventSectorImpact(
+            category=EventCategory.GOVERNMENT_INVESTMENT,
+            sector=sector,
+            magnitude=1.5,
+            half_life_days=5,
+            sample_count=10,
+        )
+    }
+
+    uc = _make_event_use_case(news, classifier, impacts)
+    # Patch ticker_info to return the sector we care about
+    import unittest.mock as mock
+
+    with mock.patch(
+        "adapters.visualization.price_cache._fetch_ticker_info_impl",
+        return_value={"sector": sector},
+    ):
+        cards = uc.run(scan_time=SCAN_TIME)
+
+    assert cards, "Expected at least one card"
+    sub_scores = cards[0].conviction_score.sub_scores
+    assert "event_signal" in sub_scores
+    assert (
+        sub_scores["event_signal"] > 5.0
+    ), f"Expected event_signal > 5.0, got {sub_scores['event_signal']}"
+
+
+def test_no_news_source_event_signal_neutral() -> None:
+    """No news source wired → event_signal must be neutral 5.0."""
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    adapter = FakeSmartMoneyAdapter(signals=[_13D_SIGNAL])
+    uc = ConvictionScoringUseCase(
+        smart_money=adapter,
+        tickers=["AAPL"],
+        weights=WEIGHTS,
+        # no news_source, no event_classifier
+    )
+    cards = uc.run(scan_time=SCAN_TIME)
+    assert cards
+    sub_scores = cards[0].conviction_score.sub_scores
+    assert (
+        sub_scores.get("event_signal") == 5.0
+    ), f"Expected neutral 5.0, got {sub_scores.get('event_signal')}"
+
+
+def test_future_event_filtered_point_in_time() -> None:
+    """Headline dated after scan_time must not contribute (point-in-time guard)."""
+    from domain.models import ClassifiedEvent, EventCategory, EventSectorImpact
+    from tests.fakes.fake_event_classifier import FakeEventClassifier
+    from tests.fakes.fake_news_source import FakeNewsSource
+
+    future_date = "2026-12-31"  # after SCAN_TIME
+    headline = "Future government spending bill announced"
+    news = FakeNewsSource(headlines=[(headline, future_date)])
+    classifier = FakeEventClassifier()
+    event = ClassifiedEvent(
+        headline=headline,
+        event_date=future_date,
+        category=EventCategory.GOVERNMENT_INVESTMENT,
+        direction=1,
+        confidence=0.9,
+        source="rss",
+    )
+    classifier.add_response(headline, event)
+    sector = "Technology"
+    impacts = {
+        (EventCategory.GOVERNMENT_INVESTMENT, sector): EventSectorImpact(
+            category=EventCategory.GOVERNMENT_INVESTMENT,
+            sector=sector,
+            magnitude=1.5,
+            half_life_days=5,
+            sample_count=10,
+        )
+    }
+
+    uc = _make_event_use_case(news, classifier, impacts)
+    import unittest.mock as mock
+
+    with mock.patch(
+        "adapters.visualization.price_cache._fetch_ticker_info_impl",
+        return_value={"sector": sector},
+    ):
+        cards = uc.run(scan_time=SCAN_TIME)
+
+    assert cards
+    sub_scores = cards[0].conviction_score.sub_scores
+    # FakeNewsSource filters until=scan_time → no headlines returned → no events → neutral
+    assert (
+        sub_scores.get("event_signal") == 5.0
+    ), f"Point-in-time guard failed: event_signal={sub_scores.get('event_signal')}"
+
+
+# ---------------------------------------------------------------------------
+# Analyst signal tests
+# ---------------------------------------------------------------------------
+
+
+def test_analyst_signal_raises_conviction() -> None:
+    """UPGRADE dated just before scan_time → analyst_signal > 5.0."""
+    from application.conviction_use_case import ConvictionScoringUseCase
+    from domain.analyst import AnalystAction, AnalystRating
+    from tests.fakes.fake_analyst_source import FakeAnalystSource
+
+    rating = AnalystRating(
+        ticker="AAPL",
+        firm="Goldman",
+        rating="Buy",
+        prior_rating="Neutral",
+        action=AnalystAction.UPGRADE,
+        price_target=220.0,
+        published_at=datetime(2026, 6, 2, 10, 0, 0),  # 1 day before scan_time
+        source="rss",
+    )
+    analyst_source = FakeAnalystSource([rating])
+    adapter = FakeSmartMoneyAdapter(signals=[_13D_SIGNAL])
+    uc = ConvictionScoringUseCase(
+        smart_money=adapter,
+        tickers=["AAPL"],
+        weights=WEIGHTS,
+        analyst_source=analyst_source,
+    )
+    cards = uc.run(scan_time=SCAN_TIME)
+    assert cards
+    sub_scores = cards[0].conviction_score.sub_scores
+    assert "analyst_signal" in sub_scores
+    assert (
+        sub_scores["analyst_signal"] > 5.0
+    ), f"Expected analyst_signal > 5.0, got {sub_scores['analyst_signal']}"
+
+
+def test_no_analyst_source_neutral() -> None:
+    """No analyst source wired → analyst_signal must be neutral 5.0."""
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    adapter = FakeSmartMoneyAdapter(signals=[_13D_SIGNAL])
+    uc = ConvictionScoringUseCase(
+        smart_money=adapter,
+        tickers=["AAPL"],
+        weights=WEIGHTS,
+        # no analyst_source
+    )
+    cards = uc.run(scan_time=SCAN_TIME)
+    assert cards
+    sub_scores = cards[0].conviction_score.sub_scores
+    assert (
+        sub_scores.get("analyst_signal") == 5.0
+    ), f"Expected neutral 5.0, got {sub_scores.get('analyst_signal')}"
+
+
+def test_future_rating_filtered_point_in_time() -> None:
+    """Rating dated after scan_time must be excluded (LEAK GUARD)."""
+    from application.conviction_use_case import ConvictionScoringUseCase
+    from domain.analyst import AnalystAction, AnalystRating
+    from tests.fakes.fake_analyst_source import FakeAnalystSource
+
+    future_rating = AnalystRating(
+        ticker="AAPL",
+        firm="JPMorgan",
+        rating="Overweight",
+        prior_rating="Neutral",
+        action=AnalystAction.UPGRADE,
+        price_target=250.0,
+        published_at=datetime(2026, 12, 31, 0, 0, 0),  # future!
+        source="rss",
+    )
+    analyst_source = FakeAnalystSource([future_rating])
+    adapter = FakeSmartMoneyAdapter(signals=[_13D_SIGNAL])
+    uc = ConvictionScoringUseCase(
+        smart_money=adapter,
+        tickers=["AAPL"],
+        weights=WEIGHTS,
+        analyst_source=analyst_source,
+    )
+    cards = uc.run(scan_time=SCAN_TIME)
+    assert cards
+    sub_scores = cards[0].conviction_score.sub_scores
+    # FakeAnalystSource filters until=scan_time → future rating excluded → neutral
+    assert (
+        sub_scores.get("analyst_signal") == 5.0
+    ), f"Point-in-time guard failed: analyst_signal={sub_scores.get('analyst_signal')}"
