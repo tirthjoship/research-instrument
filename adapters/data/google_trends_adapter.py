@@ -9,6 +9,7 @@ from typing import Any
 
 from loguru import logger
 
+from domain.exceptions import SourceThrottledError
 from domain.models import AttentionPoint, BuzzSignal
 
 # Maximum tickers per pytrends request
@@ -146,6 +147,11 @@ class GoogleTrendsAdapter:
                 results.append(signal)
 
         except Exception as exc:  # noqa: BLE001
+            msg = str(exc)
+            if "429" in msg or "Too Many Requests" in msg:
+                raise SourceThrottledError(
+                    f"Google Trends rate-limited (429) for {ticker}: {msg}"
+                ) from exc
             logger.warning(
                 "Google Trends historical fetch failed for {}: {}", ticker, exc
             )
