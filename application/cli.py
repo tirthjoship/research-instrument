@@ -658,8 +658,8 @@ def backtest_conviction(
     cohort_metrics: dict[str, object] = {}
     for cohort_name, cohort_samples in cohorts.items():
         filtered = _filter(cohort_samples)
-        n_signals = len(filtered)
-        if n_signals == 0:
+        n_signal_bearing = len(filtered)
+        if n_signal_bearing == 0:
             logger.warning(
                 "COHORT {} | 0 signal-bearing samples — skipping metric computation",
                 cohort_name,
@@ -672,7 +672,7 @@ def backtest_conviction(
                 k: (float(v) if isinstance(v, (int, float)) else v)
                 for k, v in m.items()
             },
-            "n_signals": n_signals,
+            "n_signal_bearing": n_signal_bearing,
             "n_total": len(cohort_samples),
         }
 
