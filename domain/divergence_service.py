@@ -51,6 +51,19 @@ def intensity_acceleration(
     return (recent_level - base_level) / denom
 
 
+def _event_acceleration(buzz_times: list[datetime], now: datetime) -> float:
+    if not buzz_times:
+        return 0.0
+    recent = _count_between(buzz_times, now - timedelta(days=_RECENT_DAYS), now)
+    base = _count_between(
+        buzz_times,
+        now - timedelta(days=_RECENT_DAYS + _BASE_DAYS),
+        now - timedelta(days=_RECENT_DAYS),
+    )
+    base_rate = (base / _BASE_DAYS) * _RECENT_DAYS
+    return (recent - base_rate) / max(recent, base_rate, 1.0)
+
+
 def divergence_score(
     buzz_times: list[datetime],
     price_series: list[tuple[datetime, float]],
@@ -61,15 +74,43 @@ def divergence_score(
     Neutral 5.0 with no buzz. Inputs pre-filtered to <= now upstream."""
     if not buzz_times:
         return 5.0
-    recent = _count_between(buzz_times, now - timedelta(days=_RECENT_DAYS), now)
-    base = _count_between(
-        buzz_times,
-        now - timedelta(days=_RECENT_DAYS + _BASE_DAYS),
-        now - timedelta(days=_RECENT_DAYS),
-    )
-    base_rate = (base / _BASE_DAYS) * _RECENT_DAYS
-    buzz_accel = (recent - base_rate) / max(recent, base_rate, 1.0)
+    buzz_accel = _event_acceleration(buzz_times, now)
     price_move = max(_recent_return(price_series, now), 0.0)
     raw = buzz_accel - price_move * 2.0
+    score = 5.0 + raw * 5.0 + (sentiment - 0.5) * 2.0
+    return max(1.0, min(10.0, score))
+
+
+def blended_divergence_score(
+    buzz_times: list[datetime],
+    intensity_series: list[tuple[datetime, float]],
+    price_series: list[tuple[datetime, float]],
+    sentiment: float,
+    now: datetime,
+    event_weight: float = 0.5,
+    intensity_weight: float = 0.5,
+) -> float:
+    """Blend event-acceleration (news/social) + intensity-acceleration
+    (search/pageviews) into one divergence score. Weights adapt to available
+    data: if one shape is absent, the present shape gets full weight. Neutral
+    5.0 when neither shape has data. Inputs pre-filtered to <= now upstream.
+    """
+    has_events = bool(buzz_times)
+    has_intensity = bool(intensity_series)
+    if not has_events and not has_intensity:
+        return 5.0
+    event_accel = _event_acceleration(buzz_times, now) if has_events else 0.0
+    intens_accel = (
+        intensity_acceleration(intensity_series, now) if has_intensity else 0.0
+    )
+    if has_events and has_intensity:
+        w_e, w_i = event_weight, intensity_weight
+    elif has_events:
+        w_e, w_i = 1.0, 0.0
+    else:
+        w_e, w_i = 0.0, 1.0
+    blended_accel = w_e * event_accel + w_i * intens_accel
+    price_move = max(_recent_return(price_series, now), 0.0)
+    raw = blended_accel - price_move * 2.0
     score = 5.0 + raw * 5.0 + (sentiment - 0.5) * 2.0
     return max(1.0, min(10.0, score))
