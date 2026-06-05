@@ -83,6 +83,7 @@ class ConvictionWeights:
     temporal_freshness: float = 1.2
     ml_direction: float = 0.3
     event_signal: float = 1.0
+    analyst_signal: float = 1.0
 
 
 _FRESH_THRESHOLD_HOURS = 4

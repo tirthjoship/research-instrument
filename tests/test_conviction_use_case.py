@@ -442,3 +442,93 @@ def test_future_event_filtered_point_in_time() -> None:
     assert (
         sub_scores.get("event_signal") == 5.0
     ), f"Point-in-time guard failed: event_signal={sub_scores.get('event_signal')}"
+
+
+# ---------------------------------------------------------------------------
+# Analyst signal tests
+# ---------------------------------------------------------------------------
+
+
+def test_analyst_signal_raises_conviction() -> None:
+    """UPGRADE dated just before scan_time → analyst_signal > 5.0."""
+    from application.conviction_use_case import ConvictionScoringUseCase
+    from domain.analyst import AnalystAction, AnalystRating
+    from tests.fakes.fake_analyst_source import FakeAnalystSource
+
+    rating = AnalystRating(
+        ticker="AAPL",
+        firm="Goldman",
+        rating="Buy",
+        prior_rating="Neutral",
+        action=AnalystAction.UPGRADE,
+        price_target=220.0,
+        published_at=datetime(2026, 6, 2, 10, 0, 0),  # 1 day before scan_time
+        source="rss",
+    )
+    analyst_source = FakeAnalystSource([rating])
+    adapter = FakeSmartMoneyAdapter(signals=[_13D_SIGNAL])
+    uc = ConvictionScoringUseCase(
+        smart_money=adapter,
+        tickers=["AAPL"],
+        weights=WEIGHTS,
+        analyst_source=analyst_source,
+    )
+    cards = uc.run(scan_time=SCAN_TIME)
+    assert cards
+    sub_scores = cards[0].conviction_score.sub_scores
+    assert "analyst_signal" in sub_scores
+    assert (
+        sub_scores["analyst_signal"] > 5.0
+    ), f"Expected analyst_signal > 5.0, got {sub_scores['analyst_signal']}"
+
+
+def test_no_analyst_source_neutral() -> None:
+    """No analyst source wired → analyst_signal must be neutral 5.0."""
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    adapter = FakeSmartMoneyAdapter(signals=[_13D_SIGNAL])
+    uc = ConvictionScoringUseCase(
+        smart_money=adapter,
+        tickers=["AAPL"],
+        weights=WEIGHTS,
+        # no analyst_source
+    )
+    cards = uc.run(scan_time=SCAN_TIME)
+    assert cards
+    sub_scores = cards[0].conviction_score.sub_scores
+    assert (
+        sub_scores.get("analyst_signal") == 5.0
+    ), f"Expected neutral 5.0, got {sub_scores.get('analyst_signal')}"
+
+
+def test_future_rating_filtered_point_in_time() -> None:
+    """Rating dated after scan_time must be excluded (LEAK GUARD)."""
+    from application.conviction_use_case import ConvictionScoringUseCase
+    from domain.analyst import AnalystAction, AnalystRating
+    from tests.fakes.fake_analyst_source import FakeAnalystSource
+
+    future_rating = AnalystRating(
+        ticker="AAPL",
+        firm="JPMorgan",
+        rating="Overweight",
+        prior_rating="Neutral",
+        action=AnalystAction.UPGRADE,
+        price_target=250.0,
+        published_at=datetime(2026, 12, 31, 0, 0, 0),  # future!
+        source="rss",
+    )
+    analyst_source = FakeAnalystSource([future_rating])
+    adapter = FakeSmartMoneyAdapter(signals=[_13D_SIGNAL])
+    uc = ConvictionScoringUseCase(
+        smart_money=adapter,
+        tickers=["AAPL"],
+        weights=WEIGHTS,
+        analyst_source=analyst_source,
+    )
+    cards = uc.run(scan_time=SCAN_TIME)
+    assert cards
+    sub_scores = cards[0].conviction_score.sub_scores
+    # FakeAnalystSource filters until=scan_time → future rating excluded → neutral
+    assert (
+        sub_scores.get("analyst_signal") == 5.0
+    ), f"Point-in-time guard failed: analyst_signal={sub_scores.get('analyst_signal')}"
