@@ -440,6 +440,205 @@ def validate_3b(market: str, skip_scan: bool, output: str) -> None:
     click.echo(f"{'=' * 60}")
 
 
+@cli.command("backtest-conviction")
+@click.option(
+    "--tickers",
+    default="AAPL,MSFT,NVDA,AMD,INTC,MU,TSLA,GOOGL,META,AMZN,QCOM,TXN,AVGO,CRM,ORCL,ADBE,CSCO,PLTR,UBER,NFLX",
+    help="Comma-separated list of tickers to backtest",
+)
+@click.option(
+    "--start",
+    default=None,
+    help="Start date (YYYY-MM-DD). Defaults to 2 years before today.",
+)
+@click.option(
+    "--end",
+    default=None,
+    help="End date (YYYY-MM-DD). Defaults to today.",
+)
+@click.option(
+    "--horizon-days",
+    default=21,
+    show_default=True,
+    help="Forward-return horizon in calendar days",
+)
+@click.option(
+    "--decile",
+    default=0.1,
+    show_default=True,
+    help="Top-decile fraction used for hit-rate calculation",
+)
+def backtest_conviction(
+    tickers: str,
+    start: str | None,
+    end: str | None,
+    horizon_days: int,
+    decile: float,
+) -> None:
+    """Run a real-data historical conviction backtest (SEC + analyst + price data)."""
+    import json
+    from pathlib import Path
+
+    from adapters.data.sec_edgar_adapter import SECEdgarAdapter
+    from adapters.data.yfinance_analyst_adapter import YFinanceAnalystAdapter
+    from application.historical_dataset import (
+        build_historical_dataset,
+        make_historical_sub_score_fn,
+        metrics_from_samples,
+    )
+    from application.price_returns import compute_forward_return, load_price_series
+    from domain.conviction import ConvictionWeights
+    from domain.conviction_service import compute_conviction
+
+    today = datetime.now()
+    two_years_ago = today.replace(year=today.year - 2)
+
+    start_dt = datetime.strptime(start, "%Y-%m-%d") if start else two_years_ago
+    end_dt = datetime.strptime(end, "%Y-%m-%d") if end else today
+
+    ticker_list = [t.strip().upper() for t in tickers.split(",") if t.strip()]
+
+    logger.info(
+        "backtest-conviction: {} tickers, {} → {}, horizon={}d, decile={}",
+        len(ticker_list),
+        start_dt.strftime("%Y-%m-%d"),
+        end_dt.strftime("%Y-%m-%d"),
+        horizon_days,
+        decile,
+    )
+
+    # Build monthly scan dates, excluding last horizon_days so forward returns exist
+    cutoff = end_dt - timedelta(days=horizon_days)
+    scan_dates: list[datetime] = []
+    current = start_dt.replace(day=1)
+    while current <= cutoff:
+        scan_dates.append(current)
+        # Advance to first of next month
+        if current.month == 12:
+            current = current.replace(year=current.year + 1, month=1)
+        else:
+            current = current.replace(month=current.month + 1)
+
+    logger.info("Scan dates: {} monthly snapshots", len(scan_dates))
+
+    # Fetch smart-money signals from SEC EDGAR (network)
+    click.echo(f"Fetching SEC EDGAR signals for {len(ticker_list)} tickers...")
+    sec_adapter = SECEdgarAdapter()
+    all_smart_money = []
+    since_str = start_dt.strftime("%Y-%m-%d")
+    for ticker in ticker_list:
+        sigs = sec_adapter.get_all_signals(ticker=ticker, since_date=since_str)
+        all_smart_money.extend(sigs)
+    logger.info("SEC EDGAR: {} total smart-money signals", len(all_smart_money))
+
+    # Fetch analyst rating events from yfinance (network)
+    click.echo(f"Fetching analyst rating events for {len(ticker_list)} tickers...")
+    analyst_adapter = YFinanceAnalystAdapter()
+    all_analyst = []
+    for ticker in ticker_list:
+        events = analyst_adapter.get_rating_events(ticker, start_dt, end_dt)
+        all_analyst.extend(events)
+    logger.info("Analyst events: {} total rating events", len(all_analyst))
+
+    # Load price series for each ticker + SPY (network)
+    click.echo(f"Loading price series for {len(ticker_list) + 1} tickers (+ SPY)...")
+    # Add horizon_days buffer so the last exit price is available
+    price_end = end_dt + timedelta(days=horizon_days + 10)
+    price_series: dict[str, list[tuple[datetime, float]]] = {}
+    for ticker in ticker_list:
+        price_series[ticker] = load_price_series(ticker, start_dt, price_end)
+    spy_series = load_price_series("SPY", start_dt, price_end)
+    logger.info("Price series loaded for {} tickers", len(price_series))
+
+    # Wire conviction pipeline
+    sub_score_fn = make_historical_sub_score_fn(all_smart_money, all_analyst)
+    weights = ConvictionWeights()
+
+    def conviction_fn(sub: dict[str, float]) -> float:
+        return compute_conviction(sub, weights)
+
+    def forward_return_fn(ticker: str, scan_date: datetime) -> float:
+        series = price_series.get(ticker, [])
+        return compute_forward_return(series, scan_date, horizon_days)
+
+    def benchmark_return_fn(scan_date: datetime) -> float:
+        return compute_forward_return(spy_series, scan_date, horizon_days)
+
+    # Build samples
+    click.echo("Building historical dataset...")
+    samples = build_historical_dataset(
+        scan_dates,
+        ticker_list,
+        sub_score_fn,
+        conviction_fn,
+        forward_return_fn,
+        benchmark_return_fn,
+    )
+
+    # Drop samples with no price data (both returns == 0.0)
+    kept = [
+        s
+        for s in samples
+        if not (s.forward_return == 0.0 and s.benchmark_return == 0.0)
+    ]
+    logger.info(
+        "Samples: {} total, {} kept after dropping missing-price rows",
+        len(samples),
+        len(kept),
+    )
+
+    if not kept:
+        click.echo("No samples with price data. Check tickers / date range.")
+        return
+
+    # Compute metrics
+    click.echo("Computing conviction backtest metrics...")
+    metrics = metrics_from_samples(kept, decile)
+
+    # Write report
+    Path("data/reports").mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    report_path = Path(f"data/reports/conviction_backtest_{timestamp}.json")
+
+    report = {
+        "run_at": datetime.now().isoformat(),
+        "tickers": ticker_list,
+        "start": start_dt.strftime("%Y-%m-%d"),
+        "end": end_dt.strftime("%Y-%m-%d"),
+        "horizon_days": horizon_days,
+        "decile": decile,
+        "n_scan_dates": len(scan_dates),
+        "n_samples_total": len(samples),
+        "n_samples_kept": len(kept),
+        "metrics": {
+            k: (float(v) if isinstance(v, (int, float)) else v)
+            for k, v in metrics.items()
+        },
+    }
+
+    report_path.write_text(json.dumps(report, indent=2, default=str))
+
+    top_decile_hit_rate = metrics.get("top_decile_hit_rate", 0.0)
+    excess_sharpe = metrics.get("excess_sharpe", float("nan"))
+    n_signals = metrics.get("n_signals", len(kept))
+    p_value = metrics.get("p_value", float("nan"))
+
+    click.echo(f"\nReport saved to: {report_path}")
+    logger.info(
+        "TOP-DECILE HIT RATE: {:.1%} | excess_sharpe {} | n_signals {} | p={}",
+        top_decile_hit_rate,
+        excess_sharpe,
+        n_signals,
+        p_value,
+    )
+    click.echo(
+        f"TOP-DECILE HIT RATE: {top_decile_hit_rate:.1%} | "
+        f"excess_sharpe {excess_sharpe} | "
+        f"n_signals {n_signals} | "
+        f"p={p_value}"
+    )
+
+
 @cli.command("add-holding")
 @click.argument("symbol")
 @click.argument("quantity", type=float)
