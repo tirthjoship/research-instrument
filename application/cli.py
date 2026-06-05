@@ -696,7 +696,7 @@ def backtest_conviction(
                 cohort_name,
                 hit_rate * 100,
                 float(str(exc_sharpe)) if exc_sharpe is not None else float("nan"),
-                int(str(n_sig)),
+                int(float(str(n_sig))),
                 float(str(pval)) if pval is not None else float("nan"),
             )
 
