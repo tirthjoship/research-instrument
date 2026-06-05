@@ -28,10 +28,10 @@ class FakeBootstrapStore:
     def __init__(self):
         self.outcomes: list[TradeOutcome] = []
 
-    def save_outcome(self, outcome: TradeOutcome) -> None:
+    def save_trade_outcome(self, outcome: TradeOutcome) -> None:
         self.outcomes.append(outcome)
 
-    def get_outcomes(self, ticker=None):
+    def get_trade_outcomes(self, ticker=None):
         return self.outcomes
 
 

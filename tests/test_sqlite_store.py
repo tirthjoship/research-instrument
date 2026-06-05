@@ -289,8 +289,8 @@ def test_save_and_load_trade(tmp_path: pytest.TempPathFactory) -> None:
 def test_save_and_load_outcome(tmp_path: pytest.TempPathFactory) -> None:
     store = SQLiteStore(str(tmp_path / "outcomes.db"))  # type: ignore[arg-type]
     outcome = _make_outcome()
-    store.save_outcome(outcome)
-    results = store.get_outcomes()
+    store.save_trade_outcome(outcome)
+    results = store.get_trade_outcomes()
     assert len(results) == 1
     loaded = results[0]
     assert loaded.ticker == "AAPL"

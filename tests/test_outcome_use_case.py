@@ -26,10 +26,10 @@ class FakeTradeStore:
         return list(self._trades)
 
     # -- outcomes --
-    def save_outcome(self, outcome: TradeOutcome) -> None:
+    def save_trade_outcome(self, outcome: TradeOutcome) -> None:
         self._outcomes.append(outcome)
 
-    def get_outcomes(self) -> list[TradeOutcome]:
+    def get_trade_outcomes(self) -> list[TradeOutcome]:
         return list(self._outcomes)
 
 
@@ -150,7 +150,7 @@ class TestRecordSell:
         uc = OutcomeTrackingUseCase(store=store)
         uc.record_buy("TSLA", 200.0, 2, "2024-01-10")
         uc.record_sell("TSLA", 220.0, 2, "2024-01-20")
-        assert len(store.get_outcomes()) == 1
+        assert len(store.get_trade_outcomes()) == 1
 
     def test_sell_trade_persisted_in_store(self) -> None:
         store = FakeTradeStore()
