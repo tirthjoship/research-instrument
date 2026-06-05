@@ -4,7 +4,7 @@ and OpportunityCard generation.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Callable
 
 from loguru import logger
@@ -24,6 +24,7 @@ from domain.conviction_service import (
     determine_action,
     rank_opportunities,
 )
+from domain.event_service import event_conviction_score
 
 
 class ConvictionScoringUseCase:
@@ -46,6 +47,9 @@ class ConvictionScoringUseCase:
         store: object | None = None,
         pinned: set[str] | None = None,
         top_n: int = 15,
+        news_source: object | None = None,
+        event_classifier: object | None = None,
+        event_impacts: dict[Any, Any] | None = None,
     ) -> None:
         self._smart_money = smart_money
         self._tickers = tickers
@@ -54,6 +58,9 @@ class ConvictionScoringUseCase:
         self._pinned = pinned or set()
         self._top_n = top_n
         self._engineer = SmartMoneyFeatureEngineer()
+        self._news_source = news_source
+        self._event_classifier = event_classifier
+        self._event_impacts: dict[Any, Any] = event_impacts or {}
 
     # ------------------------------------------------------------------
     # Public API
@@ -165,6 +172,19 @@ class ConvictionScoringUseCase:
         except Exception:
             pass
 
+        # Event intelligence sub-score (point-in-time: until=scan_time)
+        event_score = 5.0
+        if self._news_source is not None and self._event_classifier is not None:
+            sector = str(ticker_info.get("sector", "")) if ticker_info else ""
+            since = scan_time - timedelta(days=30)
+            headlines = self._news_source.get_recent_headlines(  # type: ignore[attr-defined]
+                ticker, since, scan_time
+            )
+            events = self._event_classifier.classify_batch(headlines)  # type: ignore[attr-defined]
+            event_score = event_conviction_score(
+                events, sector, self._event_impacts, scan_time
+            )
+
         sub_scores = self._compute_sub_scores(
             features=features,
             ticker_signals=ticker_signals,
@@ -172,6 +192,7 @@ class ConvictionScoringUseCase:
             buzz_signals=buzz_signals,
             ticker_info=ticker_info,
             recommendation=recommendation,
+            event_score=event_score,
         )
 
         conviction = compute_conviction(sub_scores, self._weights)
@@ -201,6 +222,7 @@ class ConvictionScoringUseCase:
         buzz_signals: list[Any] | None = None,
         ticker_info: dict[str, Any] | None = None,
         recommendation: object | None = None,
+        event_score: float = 5.0,
     ) -> dict[str, float]:
         """Compute the six sub-score dimensions using real data when available."""
         # smart_money (existing logic)
@@ -295,6 +317,7 @@ class ConvictionScoringUseCase:
             "sentiment_momentum": sentiment_momentum,
             "fundamental_basis": fundamental_basis,
             "ml_direction": ml_direction,
+            "event_signal": event_score,
         }
 
     @staticmethod

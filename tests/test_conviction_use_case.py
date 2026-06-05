@@ -303,3 +303,142 @@ def test_compute_sub_scores_falls_back_without_data():
     assert sub_scores["sentiment_momentum"] == 5.0
     assert sub_scores["fundamental_basis"] == 5.0
     assert sub_scores["ml_direction"] == 5.0
+
+
+# ---------------------------------------------------------------------------
+# Event signal tests (Step A — TDD)
+# ---------------------------------------------------------------------------
+
+
+def _make_event_use_case(
+    news_source: object | None,
+    classifier: object | None,
+    event_impacts: dict | None,
+) -> "ConvictionScoringUseCase":  # noqa: F821
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    adapter = FakeSmartMoneyAdapter(signals=[_13D_SIGNAL])
+    return ConvictionScoringUseCase(
+        smart_money=adapter,
+        tickers=["AAPL"],
+        weights=WEIGHTS,
+        news_source=news_source,
+        event_classifier=classifier,
+        event_impacts=event_impacts,
+    )
+
+
+def test_event_signal_raises_conviction() -> None:
+    """Bullish govt-investment event before scan_time → event_signal > 5.0."""
+    from domain.models import ClassifiedEvent, EventCategory, EventSectorImpact
+    from tests.fakes.fake_event_classifier import FakeEventClassifier
+    from tests.fakes.fake_news_source import FakeNewsSource
+
+    sector = "Technology"
+    headline = "Government invests billions in chip manufacturing"
+    event_date = "2026-06-01"  # before SCAN_TIME (2026-06-03)
+
+    news = FakeNewsSource(headlines=[(headline, event_date)])
+    classifier = FakeEventClassifier()
+    event = ClassifiedEvent(
+        headline=headline,
+        event_date=event_date,
+        category=EventCategory.GOVERNMENT_INVESTMENT,
+        direction=1,
+        confidence=0.9,
+        source="rss",
+    )
+    classifier.add_response(headline, event)
+    impact_key = (EventCategory.GOVERNMENT_INVESTMENT, sector)
+    impacts = {
+        impact_key: EventSectorImpact(
+            category=EventCategory.GOVERNMENT_INVESTMENT,
+            sector=sector,
+            magnitude=1.5,
+            half_life_days=5,
+            sample_count=10,
+        )
+    }
+
+    uc = _make_event_use_case(news, classifier, impacts)
+    # Patch ticker_info to return the sector we care about
+    import unittest.mock as mock
+
+    with mock.patch(
+        "adapters.visualization.price_cache._fetch_ticker_info_impl",
+        return_value={"sector": sector},
+    ):
+        cards = uc.run(scan_time=SCAN_TIME)
+
+    assert cards, "Expected at least one card"
+    sub_scores = cards[0].conviction_score.sub_scores
+    assert "event_signal" in sub_scores
+    assert (
+        sub_scores["event_signal"] > 5.0
+    ), f"Expected event_signal > 5.0, got {sub_scores['event_signal']}"
+
+
+def test_no_news_source_event_signal_neutral() -> None:
+    """No news source wired → event_signal must be neutral 5.0."""
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    adapter = FakeSmartMoneyAdapter(signals=[_13D_SIGNAL])
+    uc = ConvictionScoringUseCase(
+        smart_money=adapter,
+        tickers=["AAPL"],
+        weights=WEIGHTS,
+        # no news_source, no event_classifier
+    )
+    cards = uc.run(scan_time=SCAN_TIME)
+    assert cards
+    sub_scores = cards[0].conviction_score.sub_scores
+    assert (
+        sub_scores.get("event_signal") == 5.0
+    ), f"Expected neutral 5.0, got {sub_scores.get('event_signal')}"
+
+
+def test_future_event_filtered_point_in_time() -> None:
+    """Headline dated after scan_time must not contribute (point-in-time guard)."""
+    from domain.models import ClassifiedEvent, EventCategory, EventSectorImpact
+    from tests.fakes.fake_event_classifier import FakeEventClassifier
+    from tests.fakes.fake_news_source import FakeNewsSource
+
+    future_date = "2026-12-31"  # after SCAN_TIME
+    headline = "Future government spending bill announced"
+    news = FakeNewsSource(headlines=[(headline, future_date)])
+    classifier = FakeEventClassifier()
+    event = ClassifiedEvent(
+        headline=headline,
+        event_date=future_date,
+        category=EventCategory.GOVERNMENT_INVESTMENT,
+        direction=1,
+        confidence=0.9,
+        source="rss",
+    )
+    classifier.add_response(headline, event)
+    sector = "Technology"
+    impacts = {
+        (EventCategory.GOVERNMENT_INVESTMENT, sector): EventSectorImpact(
+            category=EventCategory.GOVERNMENT_INVESTMENT,
+            sector=sector,
+            magnitude=1.5,
+            half_life_days=5,
+            sample_count=10,
+        )
+    }
+
+    uc = _make_event_use_case(news, classifier, impacts)
+    import unittest.mock as mock
+
+    with mock.patch(
+        "adapters.visualization.price_cache._fetch_ticker_info_impl",
+        return_value={"sector": sector},
+    ):
+        cards = uc.run(scan_time=SCAN_TIME)
+
+    assert cards
+    sub_scores = cards[0].conviction_score.sub_scores
+    # FakeNewsSource filters until=scan_time → no headlines returned → no events → neutral
+    assert (
+        sub_scores.get("event_signal") == 5.0
+    ), f"Point-in-time guard failed: event_signal={sub_scores.get('event_signal')}"
