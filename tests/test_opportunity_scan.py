@@ -116,6 +116,32 @@ def test_naive_stored_timestamps_with_aware_now_does_not_crash():
     assert [c.ticker for c in calls] == ["ASTS"]
 
 
+def test_scan_persists_full_candidate_distribution():
+    """All universe candidates are logged with surfaced flag; only ASTS passes cmin."""
+    from tests.fakes.fake_attention_series import FakeAttentionSeries
+
+    store = FakeSurfacedCallStore()
+    uc = OpportunityScanUseCase(
+        universe_provider=FakeUniverseProvider(
+            [UniverseEntry("ASTS", "space"), UniverseEntry("DUD", "space")]
+        ),
+        conviction_provider=_conviction("ASTS"),
+        buzz_discovery=FakeBuzzDiscovery(
+            [_buzz_sig("ASTS", d) for d in (1, 2, 3, 4, 5)]
+        ),
+        market_data=_md(),
+        store=store,
+        attention_provider=FakeAttentionSeries([]),
+        cmin=6.0,
+        dmin=0.0,
+    )
+    uc.execute(NOW)
+    assert len(store.candidates) == 2
+    surfaced_flags = {c["ticker"]: c["surfaced"] for c in store.candidates}
+    assert surfaced_flags["ASTS"] is True
+    assert surfaced_flags["DUD"] is False
+
+
 def test_abstention_returns_empty():
     store = FakeSurfacedCallStore()
     uc = OpportunityScanUseCase(
