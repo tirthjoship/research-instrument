@@ -397,6 +397,80 @@ def test_save_and_load_learned_rule(tmp_path: pytest.TempPathFactory) -> None:
     assert loaded.learned_date == "2026-06-03"
 
 
+def test_attention_series_roundtrip(tmp_path: pytest.TempPathFactory) -> None:
+    from adapters.data.sqlite_store import SQLiteStore
+    from domain.models import AttentionPoint
+
+    store = SQLiteStore(str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    pts = [
+        AttentionPoint("ASTS", datetime(2026, 6, 1), 10.0, "google_trends"),
+        AttentionPoint("ASTS", datetime(2026, 6, 2), 80.0, "wikipedia"),
+    ]
+    store.save_attention_points(pts)
+    got = store.get_attention_series("ASTS", datetime(2026, 5, 1), datetime(2026, 7, 1))
+    assert len(got) == 2
+
+
+def test_attention_series_dedupe(tmp_path: pytest.TempPathFactory) -> None:
+    from adapters.data.sqlite_store import SQLiteStore
+    from domain.models import AttentionPoint
+
+    store = SQLiteStore(str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    p = AttentionPoint("ASTS", datetime(2026, 6, 1), 10.0, "google_trends")
+    store.save_attention_points([p])
+    store.save_attention_points([p])  # re-run, must not duplicate
+    got = store.get_attention_series("ASTS", datetime(2026, 5, 1), datetime(2026, 7, 1))
+    assert len(got) == 1
+
+
+def test_scan_candidates_roundtrip(tmp_path: pytest.TempPathFactory) -> None:
+    from adapters.data.sqlite_store import SQLiteStore
+
+    store = SQLiteStore(str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    store.save_scan_candidate(
+        scan_date="2026-06-05",
+        ticker="ASTS",
+        conviction=6.4,
+        divergence=7.1,
+        sub_scores={"smart_money": 8.0, "event_signal": 6.0},
+        surfaced=True,
+        theme="space",
+        cap_tier="mid",
+    )
+    rows = store.get_scan_candidates(scan_date="2026-06-05")
+    assert len(rows) == 1
+    assert rows[0]["ticker"] == "ASTS"
+    assert rows[0]["surfaced"] == 1
+    assert rows[0]["sub_scores"]["smart_money"] == 8.0
+
+
+def test_signal_cache_hit_and_ttl(tmp_path: pytest.TempPathFactory) -> None:
+    from datetime import datetime, timedelta
+
+    from adapters.data.sqlite_store import SQLiteStore
+
+    store = SQLiteStore(str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    t0 = datetime(2026, 6, 5, 8, 0, 0)
+    store.put_cached_signal("ASTS", "event_signal", 7.0, t0)
+
+    # fresh within TTL
+    assert (
+        store.get_cached_signal(
+            "ASTS", "event_signal", t0 + timedelta(hours=1), ttl_hours=24
+        )
+        == 7.0
+    )
+    # expired beyond TTL
+    assert (
+        store.get_cached_signal(
+            "ASTS", "event_signal", t0 + timedelta(hours=25), ttl_hours=24
+        )
+        is None
+    )
+    # missing key
+    assert store.get_cached_signal("ZZZ", "event_signal", t0, ttl_hours=24) is None
+
+
 def test_save_learned_rule_upsert(tmp_path: pytest.TempPathFactory) -> None:
     """INSERT OR REPLACE: same rule_id overwrites existing row."""
     store = SQLiteStore(str(tmp_path / "rules2.db"))  # type: ignore[arg-type]
@@ -426,3 +500,69 @@ def test_save_learned_rule_upsert(tmp_path: pytest.TempPathFactory) -> None:
     assert len(results) == 1
     assert results[0].confidence == 0.75
     assert results[0].supporting_outcomes == 25
+
+
+# ---------------------------------------------------------------------------
+# TZ naive/aware regression tests — must FAIL before fix, PASS after
+# ---------------------------------------------------------------------------
+
+
+def test_attention_series_handles_aware_query(tmp_path: pytest.TempPathFactory) -> None:
+    from datetime import timezone
+
+    from adapters.data.sqlite_store import SQLiteStore
+    from domain.models import AttentionPoint
+
+    store = SQLiteStore(db_path=str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    # stored naive
+    store.save_attention_points(
+        [AttentionPoint("ASTS", datetime(2026, 6, 1), 10.0, "google_trends")]
+    )
+    # queried with aware bounds — must still find the row
+    got = store.get_attention_series(
+        "ASTS",
+        datetime(2026, 5, 1, tzinfo=timezone.utc),
+        datetime(2026, 7, 1, tzinfo=timezone.utc),
+    )
+    assert len(got) == 1
+
+
+def test_attention_series_dedupe_across_naive_and_aware(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    from datetime import timezone
+
+    from adapters.data.sqlite_store import SQLiteStore
+    from domain.models import AttentionPoint
+
+    store = SQLiteStore(db_path=str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    store.save_attention_points(
+        [AttentionPoint("ASTS", datetime(2026, 6, 1), 10.0, "google_trends")]
+    )
+    store.save_attention_points(
+        [
+            AttentionPoint(
+                "ASTS",
+                datetime(2026, 6, 1, tzinfo=timezone.utc),
+                10.0,
+                "google_trends",
+            )
+        ]
+    )
+    got = store.get_attention_series("ASTS", datetime(2026, 5, 1), datetime(2026, 7, 1))
+    assert len(got) == 1
+
+
+def test_signal_cache_handles_aware_now(tmp_path: pytest.TempPathFactory) -> None:
+    from datetime import timezone
+
+    from adapters.data.sqlite_store import SQLiteStore
+
+    store = SQLiteStore(db_path=str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    t0 = datetime(2026, 6, 5, 8, 0, 0)  # naive store
+    store.put_cached_signal("ASTS", "event_signal", 7.0, t0)
+    # aware now within TTL — must not raise, must hit
+    aware_now = datetime(2026, 6, 5, 9, 0, 0, tzinfo=timezone.utc)
+    assert (
+        store.get_cached_signal("ASTS", "event_signal", aware_now, ttl_hours=24) == 7.0
+    )

@@ -282,6 +282,38 @@ def test_compute_sub_scores_uses_real_data_when_available():
     assert sub_scores["ml_direction"] == 9
 
 
+def test_compute_sub_scores_tz_aware_scan_time_with_signals():
+    """Regression: tz-aware scan_time + dated signals must not raise.
+
+    The CLI passes a tz-aware UTC `now`, but SmartMoneySignal.filed_date
+    parses to a naive datetime. Subtracting them in the freshness path
+    raised TypeError ("can't subtract offset-naive and offset-aware
+    datetimes"), crashing the first live opportunity scan.
+    """
+    from datetime import datetime, timezone
+    from unittest.mock import MagicMock
+
+    from application.conviction_use_case import ConvictionScoringUseCase
+
+    use_case = ConvictionScoringUseCase(
+        smart_money=MagicMock(), tickers=["AAPL"], weights=WEIGHTS
+    )
+    features = {
+        "sm_13d_count": 1,
+        "sm_form4_buy_count": 0,
+        "sm_activist_count": 1,
+        "sm_insider_cluster": 0,
+    }
+
+    sub_scores = use_case._compute_sub_scores(
+        features=features,
+        ticker_signals=[_13D_SIGNAL],
+        scan_time=datetime(2026, 6, 3, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    # filed_date 2026-06-01 is 2 days before scan_time → 1–3 day bucket = 6.0
+    assert sub_scores["temporal_freshness"] == 6.0
+
+
 def test_compute_sub_scores_falls_back_without_data():
     from datetime import datetime
     from unittest.mock import MagicMock
