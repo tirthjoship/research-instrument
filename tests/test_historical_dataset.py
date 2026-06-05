@@ -118,6 +118,22 @@ def test_build_dataset_shapes_and_win_flag() -> None:
 # ---------------------------------------------------------------------------
 
 
+def test_is_signal_bearing() -> None:
+    from application.historical_dataset import is_signal_bearing
+
+    neutral = {"smart_money": 0.0, "analyst_signal": 5.0, "event_signal": 5.0}
+    assert is_signal_bearing(neutral) is False
+    assert (
+        is_signal_bearing({"smart_money": 4.0, "analyst_signal": 5.0}) is True
+    )  # insider signal
+    assert (
+        is_signal_bearing({"smart_money": 0.0, "analyst_signal": 7.2}) is True
+    )  # analyst signal
+    assert (
+        is_signal_bearing({"smart_money": 0.0, "analyst_signal": 3.1}) is True
+    )  # bearish analyst still signal
+
+
 def test_metrics_from_samples_perfect_ranking() -> None:
     """High conviction == winners → top-decile hit rate 1.0."""
     samples = [

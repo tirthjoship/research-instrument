@@ -440,11 +440,31 @@ def validate_3b(market: str, skip_scan: bool, output: str) -> None:
     click.echo(f"{'=' * 60}")
 
 
+_LARGE_CAP_TICKERS = (
+    "AAPL,MSFT,NVDA,AMD,INTC,MU,TSLA,GOOGL,META,AMZN,QCOM,TXN,AVGO,CRM,ORCL,"
+    "ADBE,CSCO,PLTR,UBER,NFLX,JPM,BAC,WFC,V,MA,UNH,JNJ,PFE,MRK,XOM,CVX,WMT,"
+    "HD,COST,DIS,KO,PEP,NKE,BA,CAT"
+)
+
+_SMALL_MID_TICKERS = (
+    "HALO,EXEL,CYTK,ARWR,INSM,VKTX,KRYS,BLDR,CROX,SHAK,WING,SOFI,AFRM,UPST,"
+    "SITM,RMBS,LSCC,POWI,AMKR,SMTC,ONTO,COHU,FORM,ACLS,BOOT,STRL,ATKR,GMS,"
+    "MGY,CIVI,AIT,CALM,IBP,FOUR,DOCS,PRCT"
+)
+
+
 @cli.command("backtest-conviction")
 @click.option(
     "--tickers",
-    default="AAPL,MSFT,NVDA,AMD,INTC,MU,TSLA,GOOGL,META,AMZN,QCOM,TXN,AVGO,CRM,ORCL,ADBE,CSCO,PLTR,UBER,NFLX",
-    help="Comma-separated list of tickers to backtest",
+    default=_LARGE_CAP_TICKERS,
+    show_default=False,
+    help="Comma-separated large-cap tickers (default: 40 large-caps)",
+)
+@click.option(
+    "--small-tickers",
+    default=_SMALL_MID_TICKERS,
+    show_default=False,
+    help="Comma-separated small/mid-cap tickers (default: ~36 mid/small-caps)",
 )
 @click.option(
     "--start",
@@ -468,14 +488,30 @@ def validate_3b(market: str, skip_scan: bool, output: str) -> None:
     show_default=True,
     help="Top-decile fraction used for hit-rate calculation",
 )
+@click.option(
+    "--signal-bearing/--no-signal-bearing",
+    default=True,
+    show_default=True,
+    help=(
+        "When ON, filter samples to those with active insider/analyst signal "
+        "before computing metrics (removes neutral mass)."
+    ),
+)
 def backtest_conviction(
     tickers: str,
+    small_tickers: str,
     start: str | None,
     end: str | None,
     horizon_days: int,
     decile: float,
+    signal_bearing: bool,
 ) -> None:
-    """Run a real-data historical conviction backtest (SEC + analyst + price data)."""
+    """Run a real-data historical conviction backtest with cap-cohort stratification.
+
+    Builds dataset over the UNION of large-cap and small/mid-cap tickers (one pass),
+    then reports metrics for each cohort and overall. Use --signal-bearing (default ON)
+    to isolate names with actual insider or analyst activity.
+    """
     import json
     from pathlib import Path
 
@@ -483,6 +519,7 @@ def backtest_conviction(
     from adapters.data.yfinance_analyst_adapter import YFinanceAnalystAdapter
     from application.historical_dataset import (
         build_historical_dataset,
+        is_signal_bearing,
         make_historical_sub_score_fn,
         metrics_from_samples,
     )
@@ -496,15 +533,26 @@ def backtest_conviction(
     start_dt = datetime.strptime(start, "%Y-%m-%d") if start else two_years_ago
     end_dt = datetime.strptime(end, "%Y-%m-%d") if end else today
 
-    ticker_list = [t.strip().upper() for t in tickers.split(",") if t.strip()]
+    large_set = {t.strip().upper() for t in tickers.split(",") if t.strip()}
+    small_set = {t.strip().upper() for t in small_tickers.split(",") if t.strip()}
+    all_tickers = sorted(large_set | small_set)
 
     logger.info(
-        "backtest-conviction: {} tickers, {} → {}, horizon={}d, decile={}",
-        len(ticker_list),
+        "backtest-conviction: {} large, {} small/mid, {} total unique tickers, "
+        "{} → {}, horizon={}d, decile={}, signal_bearing={}",
+        len(large_set),
+        len(small_set),
+        len(all_tickers),
         start_dt.strftime("%Y-%m-%d"),
         end_dt.strftime("%Y-%m-%d"),
         horizon_days,
         decile,
+        signal_bearing,
+    )
+
+    logger.warning(
+        "Small-cap list uses current tickers (survivorship bias) — "
+        "interpret small/mid-cap results as optimistic upper bounds."
     )
 
     # Build monthly scan dates, excluding last horizon_days so forward returns exist
@@ -513,7 +561,6 @@ def backtest_conviction(
     current = start_dt.replace(day=1)
     while current <= cutoff:
         scan_dates.append(current)
-        # Advance to first of next month
         if current.month == 12:
             current = current.replace(year=current.year + 1, month=1)
         else:
@@ -522,30 +569,29 @@ def backtest_conviction(
     logger.info("Scan dates: {} monthly snapshots", len(scan_dates))
 
     # Fetch smart-money signals from SEC EDGAR (network)
-    click.echo(f"Fetching SEC EDGAR signals for {len(ticker_list)} tickers...")
+    click.echo(f"Fetching SEC EDGAR signals for {len(all_tickers)} tickers...")
     sec_adapter = SECEdgarAdapter()
     all_smart_money = []
     since_str = start_dt.strftime("%Y-%m-%d")
-    for ticker in ticker_list:
+    for ticker in all_tickers:
         sigs = sec_adapter.get_all_signals(ticker=ticker, since_date=since_str)
         all_smart_money.extend(sigs)
     logger.info("SEC EDGAR: {} total smart-money signals", len(all_smart_money))
 
     # Fetch analyst rating events from yfinance (network)
-    click.echo(f"Fetching analyst rating events for {len(ticker_list)} tickers...")
+    click.echo(f"Fetching analyst rating events for {len(all_tickers)} tickers...")
     analyst_adapter = YFinanceAnalystAdapter()
     all_analyst = []
-    for ticker in ticker_list:
+    for ticker in all_tickers:
         events = analyst_adapter.get_rating_events(ticker, start_dt, end_dt)
         all_analyst.extend(events)
     logger.info("Analyst events: {} total rating events", len(all_analyst))
 
     # Load price series for each ticker + SPY (network)
-    click.echo(f"Loading price series for {len(ticker_list) + 1} tickers (+ SPY)...")
-    # Add horizon_days buffer so the last exit price is available
+    click.echo(f"Loading price series for {len(all_tickers) + 1} tickers (+ SPY)...")
     price_end = end_dt + timedelta(days=horizon_days + 10)
     price_series: dict[str, list[tuple[datetime, float]]] = {}
-    for ticker in ticker_list:
+    for ticker in all_tickers:
         price_series[ticker] = load_price_series(ticker, start_dt, price_end)
     spy_series = load_price_series("SPY", start_dt, price_end)
     logger.info("Price series loaded for {} tickers", len(price_series))
@@ -564,11 +610,11 @@ def backtest_conviction(
     def benchmark_return_fn(scan_date: datetime) -> float:
         return compute_forward_return(spy_series, scan_date, horizon_days)
 
-    # Build samples
+    # Build samples (one pass over the full universe)
     click.echo("Building historical dataset...")
     samples = build_historical_dataset(
         scan_dates,
-        ticker_list,
+        all_tickers,
         sub_score_fn,
         conviction_fn,
         forward_return_fn,
@@ -591,52 +637,91 @@ def backtest_conviction(
         click.echo("No samples with price data. Check tickers / date range.")
         return
 
-    # Compute metrics
-    click.echo("Computing conviction backtest metrics...")
-    metrics = metrics_from_samples(kept, decile)
+    # Partition into cohorts
+    large_samples = [s for s in kept if s.ticker in large_set]
+    small_mid_samples = [s for s in kept if s.ticker in small_set]
 
-    # Write report
+    # Optionally apply signal-bearing filter
+    def _filter(subset: list) -> list:  # type: ignore[type-arg]
+        if signal_bearing:
+            return [s for s in subset if is_signal_bearing(s.sub_scores)]
+        return subset
+
+    cohorts = {
+        "large": large_samples,
+        "small_mid": small_mid_samples,
+        "overall": kept,
+    }
+
+    # Compute metrics per cohort
+    click.echo("Computing conviction backtest metrics per cohort...")
+    cohort_metrics: dict[str, object] = {}
+    for cohort_name, cohort_samples in cohorts.items():
+        filtered = _filter(cohort_samples)
+        n_signals = len(filtered)
+        if n_signals == 0:
+            logger.warning(
+                "COHORT {} | 0 signal-bearing samples — skipping metric computation",
+                cohort_name,
+            )
+            cohort_metrics[cohort_name] = {"n_signals": 0, "skipped": True}
+            continue
+        m = metrics_from_samples(filtered, decile)
+        cohort_metrics[cohort_name] = {
+            **{
+                k: (float(v) if isinstance(v, (int, float)) else v)
+                for k, v in m.items()
+            },
+            "n_signals": n_signals,
+            "n_total": len(cohort_samples),
+        }
+
+    # Log cohort table
+    for cohort_name in ("large", "small_mid", "overall"):
+        cm = cohort_metrics.get(cohort_name, {})
+        if isinstance(cm, dict) and cm.get("skipped"):
+            logger.info(
+                "COHORT {:<10} | n_signals=0 (no signal-bearing samples)",
+                cohort_name,
+            )
+            continue
+        if isinstance(cm, dict):
+            hit_rate = float(str(cm.get("top_decile_hit_rate", 0.0)))
+            exc_sharpe = cm.get("excess_sharpe", float("nan"))
+            n_sig = cm.get("n_signals", 0)
+            pval = cm.get("p_value", float("nan"))
+            logger.info(
+                "COHORT {:<10} | hit_rate {:5.1f}% | excess_sharpe {:6.2f} "
+                "| n_signals {:4d} | p={:.2f}",
+                cohort_name,
+                hit_rate * 100,
+                float(str(exc_sharpe)) if exc_sharpe is not None else float("nan"),
+                int(str(n_sig)),
+                float(str(pval)) if pval is not None else float("nan"),
+            )
+
+    # Write stratified report
     Path("data/reports").mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    report_path = Path(f"data/reports/conviction_backtest_{timestamp}.json")
+    report_path = Path(f"data/reports/conviction_backtest_stratified_{timestamp}.json")
 
     report = {
         "run_at": datetime.now().isoformat(),
-        "tickers": ticker_list,
+        "large_tickers": sorted(large_set),
+        "small_mid_tickers": sorted(small_set),
         "start": start_dt.strftime("%Y-%m-%d"),
         "end": end_dt.strftime("%Y-%m-%d"),
         "horizon_days": horizon_days,
         "decile": decile,
+        "signal_bearing_filter": signal_bearing,
         "n_scan_dates": len(scan_dates),
         "n_samples_total": len(samples),
         "n_samples_kept": len(kept),
-        "metrics": {
-            k: (float(v) if isinstance(v, (int, float)) else v)
-            for k, v in metrics.items()
-        },
+        "cohort_metrics": cohort_metrics,
     }
 
     report_path.write_text(json.dumps(report, indent=2, default=str))
-
-    top_decile_hit_rate = metrics.get("top_decile_hit_rate", 0.0)
-    excess_sharpe = metrics.get("excess_sharpe", float("nan"))
-    n_signals = metrics.get("n_signals", len(kept))
-    p_value = metrics.get("p_value", float("nan"))
-
     click.echo(f"\nReport saved to: {report_path}")
-    logger.info(
-        "TOP-DECILE HIT RATE: {:.1%} | excess_sharpe {} | n_signals {} | p={}",
-        top_decile_hit_rate,
-        excess_sharpe,
-        n_signals,
-        p_value,
-    )
-    click.echo(
-        f"TOP-DECILE HIT RATE: {top_decile_hit_rate:.1%} | "
-        f"excess_sharpe {excess_sharpe} | "
-        f"n_signals {n_signals} | "
-        f"p={p_value}"
-    )
 
 
 @cli.command("add-holding")
