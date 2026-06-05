@@ -19,6 +19,7 @@ from adapters.data.yfinance_adapter import YFinanceAdapter
 from adapters.ml.ensemble_predictor import EnsemblePredictor
 from adapters.ml.feature_engineer import FeatureEngineer
 from adapters.ml.fundamental_feature_engineer import FundamentalFeatureEngineer
+from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
 from application.use_cases import (
     PretrainingUseCase,
@@ -1112,6 +1113,59 @@ def remove_watchlist_cmd(symbol: str) -> None:
     store = deps["store"]
     store.remove_watchlist(symbol.upper())
     click.echo(f"Removed from watchlist: {symbol.upper()}")
+
+
+def _load_wiki_map(market: str) -> dict[str, str]:
+    """Build {ticker: wiki_article} from config/universe/themes.yaml aliases block."""
+    import yaml
+
+    themes_path = Path(__file__).parent.parent / "config" / "universe" / "themes.yaml"
+    if not themes_path.exists():
+        return {}
+    try:
+        data = yaml.safe_load(themes_path.read_text())
+        aliases = data.get("aliases", {})
+        return {
+            ticker: str(info.get("wiki", ""))
+            for ticker, info in aliases.items()
+            if info.get("wiki")
+        }
+    except Exception:
+        return {}
+
+
+@cli.command("backfill-history")
+@click.option("--market", default="us", help="Market config to use")
+@click.option(
+    "--days", default=90, show_default=True, type=int, help="Backfill window in days"
+)
+@click.option("--limit", default=0, type=int, help="Max tickers (0 = all in universe)")
+def backfill_history(market: str, days: int, limit: int) -> None:
+    """Backfill the divergence base window from honest historical archives (GDELT/GT/Wikipedia)."""
+    from datetime import timezone
+
+    from adapters.data.gdelt_sentiment_adapter import GdeltSentimentAdapter
+    from adapters.data.google_trends_adapter import GoogleTrendsAdapter
+    from adapters.data.wikipedia_pageviews_adapter import WikipediaPageviewsAdapter
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+    if limit:
+        tickers = tickers[:limit]
+
+    now = datetime.now(timezone.utc)
+    uc = BackfillHistoryUseCase(
+        gdelt=GdeltSentimentAdapter(),
+        trends=GoogleTrendsAdapter(),
+        wiki=WikipediaPageviewsAdapter(article_map=_load_wiki_map(market)),
+        store=store,
+    )
+    stats = uc.execute(tickers, now=now, days=days)
+    click.echo(
+        f"Backfill complete: {stats['tickers']} tickers, {stats['errors']} errors"
+    )
 
 
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
