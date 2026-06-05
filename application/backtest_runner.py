@@ -10,11 +10,19 @@ from pathlib import Path
 from loguru import logger
 
 
-def compute_binomial_pvalue(accuracy: float, n_predictions: int) -> float:
-    """Compute one-sided binomial test p-value: P(X >= observed | p=0.5).
+def compute_binomial_pvalue(
+    accuracy: float, n_predictions: int, null_p: float = 0.5
+) -> float:
+    """Compute one-sided binomial test p-value: P(X >= observed | p=null_p).
 
-    Tests whether observed directional accuracy significantly exceeds random (50%).
+    Tests whether observed directional accuracy significantly exceeds null_p.
     Uses scipy if available, falls back to normal approximation.
+
+    Args:
+        accuracy: Observed hit-rate (wins / n_predictions).
+        n_predictions: Total number of predictions.
+        null_p: Null hypothesis probability (default 0.5 for backward compat).
+                Pass the empirical base rate to use an honest null.
     """
     if n_predictions == 0:
         return 1.0
@@ -24,11 +32,11 @@ def compute_binomial_pvalue(accuracy: float, n_predictions: int) -> float:
     try:
         from scipy.stats import binomtest
 
-        result = binomtest(k, n_predictions, 0.5, alternative="greater")
+        result = binomtest(k, n_predictions, null_p, alternative="greater")
         return float(result.pvalue)
     except ImportError:
         # Normal approximation fallback
-        z = (accuracy - 0.5) / math.sqrt(0.25 / n_predictions)
+        z = (accuracy - null_p) / math.sqrt(null_p * (1 - null_p) / n_predictions)
         p = 0.5 * math.erfc(z / math.sqrt(2))
         return p
 

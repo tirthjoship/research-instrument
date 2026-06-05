@@ -718,8 +718,19 @@ def backtest_conviction(
         "n_samples_total": len(samples),
         "n_samples_kept": len(kept),
         "cohort_metrics": cohort_metrics,
+        "validated_signal_scope": (
+            "smart_money + analyst_signal active; 6/8 conviction sub-scores held "
+            "neutral (event_signal, sentiment_momentum, fundamental_basis, "
+            "ml_direction, signal_agreement, temporal_freshness) and analyst "
+            "firm-accuracy weighting inactive. This backtest validates the "
+            "smart-money + analyst slice, NOT the full conviction engine."
+        ),
     }
 
+    logger.warning(
+        "VALIDATED SCOPE: smart-money + analyst slice only (6/8 sub-scores neutral, "
+        "firm-accuracy off) — not a validation of the full conviction engine."
+    )
     report_path.write_text(json.dumps(report, indent=2, default=str))
     click.echo(f"\nReport saved to: {report_path}")
 
