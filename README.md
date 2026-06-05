@@ -339,6 +339,15 @@ streamlit run adapters/visualization/dashboard.py
 
 ---
 
+## Scheduling
+
+The daily opportunity cycle (`scan-opportunities → resolve-calls → weekly backfill`) runs via
+macOS **launchd** pre-market at 08:00 local time. See [docs/scheduling.md](docs/scheduling.md)
+for the ready-to-edit plist, load/unload instructions, Reddit credential setup, and the ADR-007
+deviation note explaining why local scheduling follows from the local SQLite decision.
+
+---
+
 ## Testing
 
 ```bash
