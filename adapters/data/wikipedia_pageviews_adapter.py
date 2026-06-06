@@ -54,7 +54,6 @@ class WikipediaPageviewsAdapter:
             start=start.strftime("%Y%m%d"),
             end=end.strftime("%Y%m%d"),
         )
-        last_exc: Exception | None = None
         for attempt in range(self._max_retries + 1):
             try:
                 self._throttle()
@@ -65,7 +64,6 @@ class WikipediaPageviewsAdapter:
             except Exception as exc:  # noqa: BLE001
                 msg = str(exc)
                 if "429" in msg or "Too Many Requests" in msg:
-                    last_exc = exc
                     if attempt < self._max_retries:
                         backoff = (
                             self._throttle_s * (2**attempt)
@@ -79,11 +77,6 @@ class WikipediaPageviewsAdapter:
                     ) from exc
                 logger.warning("Wikipedia pageviews failed for {}: {}", ticker, exc)
                 return []
-        else:
-            # All retries exhausted (only reachable if loop didn't break)
-            raise SourceThrottledError(
-                f"Wikipedia rate-limited (429) for {ticker}: {last_exc}"
-            )
 
         out: list[AttentionPoint] = []
         for it in items:
