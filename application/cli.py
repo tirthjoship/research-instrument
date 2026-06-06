@@ -1242,8 +1242,12 @@ def _load_wiki_map_merged(
                 for ticker, info in aliases.items()
                 if info.get("wiki")
             }
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(
+                "_load_wiki_map_merged: failed to load curated aliases from {}: {}",
+                themes_path,
+                exc,
+            )
 
     if resolved_path is None:
         resolved_path = str(
@@ -1259,8 +1263,12 @@ def _load_wiki_map_merged(
         try:
             raw = yaml.safe_load(rp.read_text()) or {}
             resolved = {str(k): str(v) for k, v in raw.items()}
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(
+                "_load_wiki_map_merged: failed to load resolved YAML from {}: {}",
+                rp,
+                exc,
+            )
 
     # Merge: start with resolved, then let curated win on conflict
     merged = {**resolved, **curated}
@@ -1380,6 +1388,8 @@ def resolve_wiki_articles(
     resolved_map: dict[str, str] = dict(existing)
 
     counts = {"resolved": 0, "no_name": 0, "no_article": 0, "skipped_existing": 0}
+    no_name_tickers: list[str] = []
+    no_article_tickers: list[str] = []
 
     resolver = WikipediaArticleResolver(throttle_s=throttle_s)
 
@@ -1391,6 +1401,7 @@ def resolve_wiki_articles(
         name = _get_company_name(deps, ticker)
         if not name:
             counts["no_name"] += 1
+            no_name_tickers.append(ticker)
             logger.debug("resolve-wiki-articles: no name for {}", ticker)
             continue
 
@@ -1407,6 +1418,7 @@ def resolve_wiki_articles(
                 logger.warning("resolve-wiki-articles: write failed: {}", exc)
         else:
             counts["no_article"] += 1
+            no_article_tickers.append(ticker)
             logger.debug(
                 "resolve-wiki-articles: no validated article for {} ({})", ticker, name
             )
@@ -1426,6 +1438,14 @@ def resolve_wiki_articles(
         f"no_article={counts['no_article']} "
         f"skipped_existing={counts['skipped_existing']}"
     )
+    if no_name_tickers:
+        click.echo(
+            f"  no company name ({len(no_name_tickers)}): {', '.join(sorted(no_name_tickers))}"
+        )
+    if no_article_tickers:
+        click.echo(
+            f"  no valid article ({len(no_article_tickers)}): {', '.join(sorted(no_article_tickers))}"
+        )
     click.echo(f"Output: {out_path}")
 
 

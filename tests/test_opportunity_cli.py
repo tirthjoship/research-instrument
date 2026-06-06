@@ -308,6 +308,8 @@ def test_resolve_wiki_articles_writes_yaml(
     data = yaml.safe_load(out.read_text())
     assert data["AAPL"] == "Apple Inc."
     assert "AIZ" not in data
+    # FIX 1: dropped ticker symbols must appear in the CLI output
+    assert "AIZ" in result.output
 
 
 def test_resolve_wiki_articles_skips_existing_alias(
