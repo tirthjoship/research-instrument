@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import urllib.parse
 from datetime import datetime
 
 
@@ -219,6 +220,100 @@ def test_mean_daily_views_persistent_429_raises_throttled() -> None:
     )
     with pytest.raises(SourceThrottledError):
         r.mean_daily_views("Apple Inc.", datetime(2024, 1, 1), datetime(2024, 1, 3))
+
+
+def _os(title: str):  # type: ignore[no-untyped-def]
+    """opensearch response shape echoing the title."""
+    return _resp([title, [title] if title else [], [""], ["u"]])
+
+
+def test_normalize_company_name_strips_suffixes() -> None:
+    from adapters.data.wikipedia_article_resolver import normalize_company_name
+
+    assert normalize_company_name("AbbVie Inc.") == "AbbVie"
+    assert normalize_company_name("Accenture plc") == "Accenture"
+    assert normalize_company_name("Applied Materials, Inc.") == "Applied Materials"
+    assert normalize_company_name("The Allstate Corporation") == "Allstate"
+    assert (
+        normalize_company_name("Archer-Daniels-Midland Company")
+        == "Archer-Daniels-Midland"
+    )
+    # already clean stays clean
+    assert normalize_company_name("Assurant") == "Assurant"
+
+
+def test_resolve_validated_raw_first_keeps_apple() -> None:
+    """raw 'Apple Inc.' passes the gate -> must NOT fall back to cleaned 'Apple'."""
+    from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
+
+    def http_get(url, headers=None, timeout=None):  # type: ignore[no-untyped-def]
+        if "opensearch" in url:
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)["search"][0]
+            return _os(q)
+        # pageviews: "Apple Inc." article is high-traffic
+        if "Apple_Inc." in url:
+            return _resp({"items": [{"views": 40000}]})
+        return _resp({"items": [{"views": 9999}]})
+
+    r = WikipediaArticleResolver(
+        http_get=http_get, sleep=lambda s: None, throttle_s=0.0
+    )
+    assert (
+        r.resolve_validated(
+            "Apple Inc.", datetime(2024, 1, 1), datetime(2024, 1, 3), min_views=50.0
+        )
+        == "Apple Inc."
+    )
+
+
+def test_resolve_validated_falls_back_to_cleaned_for_abbvie() -> None:
+    """raw 'AbbVie Inc.' -> stub (low views) -> fall back to cleaned 'AbbVie' -> passes."""
+    from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
+
+    def http_get(url, headers=None, timeout=None):  # type: ignore[no-untyped-def]
+        if "opensearch" in url:
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)["search"][0]
+            return _os(q)
+        if "AbbVie_Inc." in url:
+            return _resp({"items": [{"views": 16}]})  # stub, below gate
+        if "AbbVie" in url:
+            return _resp({"items": [{"views": 896}]})  # real article
+        return _resp({"items": []})
+
+    r = WikipediaArticleResolver(
+        http_get=http_get, sleep=lambda s: None, throttle_s=0.0
+    )
+    assert (
+        r.resolve_validated(
+            "AbbVie Inc.", datetime(2024, 1, 1), datetime(2024, 1, 3), min_views=50.0
+        )
+        == "AbbVie"
+    )
+
+
+def test_resolve_validated_no_fallback_when_name_already_clean() -> None:
+    """if cleaned == raw, do not make duplicate calls; genuine low-views still -> None."""
+    from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
+
+    calls: dict[str, int] = {"n": 0}
+
+    def http_get(url, headers=None, timeout=None):  # type: ignore[no-untyped-def]
+        calls["n"] += 1
+        if "opensearch" in url:
+            return _os("Tinycorp")
+        return _resp({"items": [{"views": 3}]})  # below gate
+
+    r = WikipediaArticleResolver(
+        http_get=http_get, sleep=lambda s: None, throttle_s=0.0
+    )
+    assert (
+        r.resolve_validated(
+            "Tinycorp", datetime(2024, 1, 1), datetime(2024, 1, 3), min_views=50.0
+        )
+        is None
+    )
+    # exactly 2 calls: 1 opensearch + 1 pageviews (no second opensearch for fallback)
+    assert calls["n"] == 2
 
 
 def test_resolve_validated_propagates_throttle_not_reject() -> None:
