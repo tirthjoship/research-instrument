@@ -313,4 +313,16 @@ Five hard stops — see `AGENTS.md` for full details:
 - Plan: `docs/superpowers/plans/2026-06-05-leg2-subproject-b-honest-ingestion.md`
 - ADR-042: `docs/adr/042-honest-ingestion-source-health.md`
 
+**Done (Leg-2 sub-project D — Divergence IC Validation 2026-06-06): VERDICT = KILL**
+- Pre-registered cross-sectional IC falsification test of the intensity-divergence signal (the last untested "edge" hypothesis). Pre-registration LOCKED before any result: primary horizon 1m (21d); gate = bootstrap CI excludes 0, positive, AND |mean IC| ≥ 0.02; broad survivor-biased ~518 universe.
+- **Phase 3 (signal + math + harness):** `intensity_divergence_raw` (continuous, intensity-only, sentiment-free signal under test); `application/ic_analysis.py` (Spearman cross-sectional rank-IC + aggregate, NaN-propagating); `DivergenceICBacktestUseCase` (point-in-time loop + reuses `precision_metrics` bootstrap/date-level significance); `validate-divergence-ic` CLI (locked gate, writes JSON report, PROCEED/KILL).
+- **Phase 3.5 (attention-data unblocker — not in original plan):** the first live run was invalid (Wikipedia article-map covered 1.5% of the universe → noise stubs). Five hardening passes: R1 429 backoff + `SourceThrottledError` in pageviews adapter (throttle ≠ empty); R2 `WikipediaArticleResolver` (OpenSearch name→article + view-volume validation ≥50/day); R3 `resolve-wiki-articles` CLI + merged `_load_wiki_map` (curated aliases win); R4 throttle-≠-rejection (a 429 on validation must not false-reject); R5 yfinance legal-suffix normalization (raw-first/cleaned-fallback — "Apple Inc." stays the company, "AbbVie Inc."→"AbbVie"). Coverage 1.5% → **83% (430/518)**, 1.4M attention rows.
+- **Verdict (2026-06-06, 430-ticker universe):** 1w IC=0.0072 (CI excludes 0 but ≪0.02), **1m IC=0.0040 (CI spans 0) → KILL**, 3m IC=−0.0046. n_dates 490–499. The signal has no economically meaningful cross-sectional edge at any horizon — falsified even on a flattering survivor-biased sample. Reports: `data/reports/divergence_ic_{1m,1w,3m}_20260606.json`.
+- **No Phase 5.** Divergence-led surfacing (Tasks 8–9) was conditional on PROCEED; not built (would manufacture false confidence on a dead signal). Forward clock not started; no real-money path.
+- **Kept as protected baseline:** the IC harness + article resolver + 83%-coverage attention map = a reusable honest falsification rig + clean data layer for the next candidate signal.
+- Three independent honest tests now agree the "tradeable edge from public attention/conviction" thesis is unsupported: ADR-039 (no OOS conviction edge), ADR-043 (conviction dims dead), ADR-044 (no divergence IC). Defensible product = honest evidence-aggregator that abstains + the validation harness. Next move (pivot signal / reframe as research-monitoring tool / harden abstention) is a user decision.
+- Test suite — 1201 tests passing
+- Plan: `docs/superpowers/plans/2026-06-06-leg2-subproject-d-phase35-attention-resolver.md` (+ `2026-06-05-leg2-subproject-d-divergence-ic-validation.md`)
+- ADR-044: `docs/adr/044-divergence-ic-verdict.md`
+
 **Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
