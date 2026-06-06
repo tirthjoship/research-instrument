@@ -21,6 +21,7 @@ from adapters.ml.feature_engineer import FeatureEngineer
 from adapters.ml.fundamental_feature_engineer import FundamentalFeatureEngineer
 from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
+from application.divergence_ic_backtest import DivergenceICBacktestUseCase
 from application.drip_backfill_use_case import DripBackfillUseCase
 from application.opportunity_scan_use_case import OpportunityScanUseCase
 from application.use_cases import (
@@ -1319,6 +1320,101 @@ def audit_dimensions(market: str, date_: str | None) -> None:
             f"  {dim:16s} var={stats['variance']:.3f} "
             f"neutral_share={stats['neutral_share']:.2f} n={int(stats['n'])}"
         )
+
+
+@cli.command("validate-divergence-ic")
+@click.option("--market", default="us")
+@click.option("--start", default="2016-01-01", show_default=True)
+@click.option("--end", default="2025-12-31", show_default=True)
+@click.option("--horizon-days", default=21, show_default=True, type=int)
+@click.option("--min-names", default=50, show_default=True, type=int)
+@click.option("--limit", default=0, type=int, help="Cap universe (0 = all ~605)")
+@click.option(
+    "--quick",
+    is_flag=True,
+    help="Monthly cadence sample (faster) instead of weekly",
+)
+def validate_divergence_ic(
+    market: str,
+    start: str,
+    end: str,
+    horizon_days: int,
+    min_names: int,
+    limit: int,
+    quick: bool,
+) -> None:
+    """Pre-registered cross-sectional IC test of intensity-divergence (spec D §4)."""
+    import json as _json
+    import os
+    from datetime import timezone
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+    tickers = _get_ticker_universe(deps["config"])
+    if limit:
+        tickers = tickers[:limit]
+
+    start_dt = datetime.fromisoformat(start).replace(tzinfo=timezone.utc)
+    end_dt = datetime.fromisoformat(end).replace(tzinfo=timezone.utc)
+    step = 28 if quick else 7
+    dates: list[datetime] = []
+    d = start_dt
+    while d <= end_dt - timedelta(days=horizon_days):
+        dates.append(d)
+        d += timedelta(days=step)
+
+    def attention_fn(ticker: str, t: datetime) -> list[tuple[datetime, float]]:
+        pts = store.get_attention_series(ticker, t - timedelta(days=40), t)
+        return [(p.timestamp, p.value) for p in pts]
+
+    _price_cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def _prices(ticker: str) -> list[tuple[datetime, float]]:
+        if ticker not in _price_cache:
+            from application.price_returns import load_price_series
+
+            _price_cache[ticker] = load_price_series(
+                ticker,
+                start_dt - timedelta(days=60),
+                end_dt + timedelta(days=horizon_days + 5),
+            )
+        return _price_cache[ticker]
+
+    def price_fn(ticker: str, t: datetime) -> list[tuple[datetime, float]]:
+        return [
+            (ts, px) for ts, px in _prices(ticker) if t - timedelta(days=40) <= ts <= t
+        ]
+
+    def forward_return_fn(ticker: str, t: datetime) -> float:
+        from application.price_returns import compute_forward_return
+
+        return compute_forward_return(_prices(ticker), t, horizon_days)
+
+    uc = DivergenceICBacktestUseCase(
+        attention_fn, price_fn, forward_return_fn, min_names=min_names
+    )
+    report = uc.execute(dates, tickers, horizon_label=f"{horizon_days}d")
+
+    boot = report.get("bootstrap") or {}
+    ci_low = boot.get("ci_low")
+    mean_ic: float = report["mean_ic"]
+    proceed = mean_ic >= 0.02 and ci_low is not None and ci_low > 0.0
+    verdict = "PROCEED" if proceed else "KILL"
+    report["verdict"] = verdict
+
+    os.makedirs("data/reports", exist_ok=True)
+    out_path = f"data/reports/divergence_ic_{horizon_days}d.json"
+    with open(out_path, "w") as f:
+        _json.dump(report, f, indent=2, default=str)
+
+    click.echo(
+        f"mean_ic={mean_ic:.4f} ic_ir={report['ic_ir']:.3f} "
+        f"n_dates={report['n_dates']} CI=[{boot.get('ci_low')},{boot.get('ci_high')}]"
+    )
+    click.echo(
+        f"VERDICT: {verdict}  (gate: |IC|>=0.02 & bootstrap CI excludes 0, positive)"
+    )
+    click.echo(f"report -> {out_path}")
 
 
 @cli.command("backfill-history")
