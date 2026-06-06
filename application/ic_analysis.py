@@ -42,6 +42,8 @@ def spearman_ic(signal: list[float], forward_return: list[float]) -> float:
     """Spearman rank-IC for one date. NaN if < 2 points or degenerate."""
     if len(signal) != len(forward_return) or len(signal) < 2:
         return float("nan")
+    if any(math.isnan(x) for x in signal) or any(math.isnan(x) for x in forward_return):
+        return float("nan")
     return _pearson(_rank(signal), _rank(forward_return))
 
 
