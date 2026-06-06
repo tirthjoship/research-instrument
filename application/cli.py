@@ -15,6 +15,7 @@ import click
 from loguru import logger
 
 from adapters.data.sqlite_store import SQLiteStore
+from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
 from adapters.data.yfinance_adapter import YFinanceAdapter
 from adapters.ml.ensemble_predictor import EnsemblePredictor
 from adapters.ml.feature_engineer import FeatureEngineer
@@ -1207,22 +1208,75 @@ class _CombinedAttention:
 
 
 def _load_wiki_map(market: str) -> dict[str, str]:
-    """Build {ticker: wiki_article} from config/universe/themes.yaml aliases block."""
+    """Build {ticker: wiki_article} merging themes.yaml aliases + resolved YAML.
+
+    Aliases from themes.yaml are authoritative and win on conflict.
+    Also loads config/universe/wiki_articles_<market>.yaml if it exists.
+    """
+    return _load_wiki_map_merged(market)
+
+
+def _load_wiki_map_merged(
+    market: str, resolved_path: str | None = None
+) -> dict[str, str]:
+    """Merge curated themes.yaml aliases (authoritative) with a resolved YAML.
+
+    Args:
+        market: Market identifier (e.g. "us").
+        resolved_path: Override path to the resolved YAML.  Defaults to
+            config/universe/wiki_articles_<market>.yaml.
+
+    Returns:
+        Merged {ticker: wiki_article} with curated aliases winning on conflict.
+    """
     import yaml
 
     themes_path = Path(__file__).parent.parent / "config" / "universe" / "themes.yaml"
-    if not themes_path.exists():
-        return {}
+    curated: dict[str, str] = {}
+    if themes_path.exists():
+        try:
+            data = yaml.safe_load(themes_path.read_text())
+            aliases = data.get("aliases", {})
+            curated = {
+                ticker: str(info.get("wiki", ""))
+                for ticker, info in aliases.items()
+                if info.get("wiki")
+            }
+        except Exception:
+            pass
+
+    if resolved_path is None:
+        resolved_path = str(
+            Path(__file__).parent.parent
+            / "config"
+            / "universe"
+            / f"wiki_articles_{market}.yaml"
+        )
+
+    resolved: dict[str, str] = {}
+    rp = Path(resolved_path)
+    if rp.exists():
+        try:
+            raw = yaml.safe_load(rp.read_text()) or {}
+            resolved = {str(k): str(v) for k, v in raw.items()}
+        except Exception:
+            pass
+
+    # Merge: start with resolved, then let curated win on conflict
+    merged = {**resolved, **curated}
+    return merged
+
+
+def _get_company_name(deps: dict[str, Any], ticker: str) -> str | None:
+    """Look up the company's display name via the market_data adapter."""
     try:
-        data = yaml.safe_load(themes_path.read_text())
-        aliases = data.get("aliases", {})
-        return {
-            ticker: str(info.get("wiki", ""))
-            for ticker, info in aliases.items()
-            if info.get("wiki")
-        }
+        adapter: Any = deps.get("market_data")
+        if adapter is not None and hasattr(adapter, "get_company_name"):
+            result: str | None = adapter.get_company_name(ticker)
+            return result
+        return None
     except Exception:
-        return {}
+        return None
 
 
 def _load_spine_tickers(market: str) -> list[str]:
@@ -1247,6 +1301,132 @@ def _load_spine_tickers(market: str) -> list[str]:
         return tickers if tickers else list(_load_wiki_map(market).keys())
     except Exception:
         return list(_load_wiki_map(market).keys())
+
+
+@cli.command("resolve-wiki-articles")
+@click.option("--market", default="us", help="Market config to use")
+@click.option("--limit", default=0, type=int, help="Max tickers to process (0 = all)")
+@click.option(
+    "--min-views",
+    default=50.0,
+    type=float,
+    show_default=True,
+    help="Minimum mean daily pageviews to accept an article",
+)
+@click.option(
+    "--throttle-s",
+    default=1.5,
+    type=float,
+    show_default=True,
+    help="Seconds to wait between Wikipedia API calls",
+)
+@click.option(
+    "--out",
+    default=None,
+    help=("Output YAML path (default: config/universe/wiki_articles_<market>.yaml)"),
+)
+def resolve_wiki_articles(
+    market: str,
+    limit: int,
+    min_views: float,
+    throttle_s: float,
+    out: str | None,
+) -> None:
+    """Resolve the ticker universe to Wikipedia article titles and write a YAML map.
+
+    For each ticker not already covered by a curated alias in themes.yaml or the
+    existing output file, the company name is looked up via yfinance and then
+    resolved + validated via WikipediaArticleResolver.  The output YAML is written
+    incrementally (each success is persisted immediately) so the command is resumable.
+    """
+    import yaml
+
+    deps = _build_dependencies(market)
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+    if limit:
+        tickers = tickers[:limit]
+
+    # Validation window: stable 30-day window used to check article identity
+    val_start = datetime(2024, 1, 1)
+    val_end = datetime(2024, 1, 31)
+
+    # Output path
+    out_path = (
+        Path(out)
+        if out
+        else (
+            Path(__file__).parent.parent
+            / "config"
+            / "universe"
+            / f"wiki_articles_{market}.yaml"
+        )
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load curated aliases (skip set — authoritative, never re-resolve)
+    curated_map = _load_wiki_map(market)
+    curated_tickers = set(curated_map.keys())
+
+    # Load existing resolved entries (resumable skip set)
+    existing: dict[str, str] = {}
+    if out_path.exists():
+        try:
+            raw = yaml.safe_load(out_path.read_text()) or {}
+            existing = {str(k): str(v) for k, v in raw.items()}
+        except Exception:
+            pass
+
+    resolved_map: dict[str, str] = dict(existing)
+
+    counts = {"resolved": 0, "no_name": 0, "no_article": 0, "skipped_existing": 0}
+
+    resolver = WikipediaArticleResolver(throttle_s=throttle_s)
+
+    for ticker in tickers:
+        if ticker in curated_tickers or ticker in existing:
+            counts["skipped_existing"] += 1
+            continue
+
+        name = _get_company_name(deps, ticker)
+        if not name:
+            counts["no_name"] += 1
+            logger.debug("resolve-wiki-articles: no name for {}", ticker)
+            continue
+
+        article = resolver.resolve_validated(name, val_start, val_end, min_views)
+        if article:
+            resolved_map[ticker] = article
+            counts["resolved"] += 1
+            # Incremental write — crash-safe / resumable
+            try:
+                out_path.write_text(
+                    yaml.dump(dict(sorted(resolved_map.items())), allow_unicode=True)
+                )
+            except Exception as exc:
+                logger.warning("resolve-wiki-articles: write failed: {}", exc)
+        else:
+            counts["no_article"] += 1
+            logger.debug(
+                "resolve-wiki-articles: no validated article for {} ({})", ticker, name
+            )
+
+    # Final write (sorted keys)
+    try:
+        out_path.write_text(
+            yaml.dump(dict(sorted(resolved_map.items())), allow_unicode=True)
+        )
+    except Exception as exc:
+        logger.warning("resolve-wiki-articles: final write failed: {}", exc)
+
+    click.echo(
+        f"resolve-wiki-articles complete: "
+        f"resolved={counts['resolved']} "
+        f"no_name={counts['no_name']} "
+        f"no_article={counts['no_article']} "
+        f"skipped_existing={counts['skipped_existing']}"
+    )
+    click.echo(f"Output: {out_path}")
 
 
 @cli.command("drip-backfill")

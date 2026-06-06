@@ -269,3 +269,94 @@ def test_validate_divergence_ic_passes_naive_dates(monkeypatch: object) -> None:
     assert all(
         d.tzinfo is None for d in captured["dates"]
     ), "dates must be naive-UTC to match price/attention layers"
+
+
+# ── R3: resolve-wiki-articles + _load_wiki_map merge ────────────────────────
+
+
+def test_resolve_wiki_articles_writes_yaml(
+    monkeypatch: object, tmp_path: object
+) -> None:
+    import yaml
+
+    import application.cli as climod
+    from application.cli import cli
+
+    class _FakeResolver:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def resolve_validated(
+            self, name: str, start: object, end: object, min_views: float = 50.0
+        ) -> str | None:
+            return "Apple Inc." if name == "Apple Inc." else None
+
+    monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
+
+    names = {"AAPL": "Apple Inc.", "AIZ": "Assurant"}
+    monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: names.get(t), raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["AAPL", "AIZ"], raising=False)  # type: ignore[attr-defined]
+
+    from pathlib import Path
+
+    out = Path(str(tmp_path)) / "wiki_articles_us.yaml"  # type: ignore[arg-type]
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["resolve-wiki-articles", "--out", str(out), "--throttle-s", "0"]
+    )
+    assert result.exit_code == 0, result.output
+    data = yaml.safe_load(out.read_text())
+    assert data["AAPL"] == "Apple Inc."
+    assert "AIZ" not in data
+
+
+def test_resolve_wiki_articles_skips_existing_alias(
+    monkeypatch: object, tmp_path: object
+) -> None:
+    import application.cli as climod
+    from application.cli import cli
+
+    seen: list[str] = []
+
+    class _FakeResolver:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def resolve_validated(
+            self, name: str, start: object, end: object, min_views: float = 50.0
+        ) -> str | None:
+            seen.append(name)
+            return "X"
+
+    monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: "Name " + t, raising=False)  # type: ignore[attr-defined]
+    # RKLB is in themes.yaml aliases — must be skipped
+    monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["RKLB"], raising=False)  # type: ignore[attr-defined]
+
+    from pathlib import Path
+
+    out = Path(str(tmp_path)) / "wiki_articles_us.yaml"  # type: ignore[arg-type]
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["resolve-wiki-articles", "--out", str(out), "--throttle-s", "0"]
+    )
+    assert result.exit_code == 0, result.output
+    assert "Name RKLB" not in seen
+
+
+def test_load_wiki_map_merged_aliases_win(
+    monkeypatch: object, tmp_path: object
+) -> None:
+    """_load_wiki_map_merged: curated aliases win over resolved YAML; resolved entries added."""
+    from pathlib import Path
+
+    import application.cli as climod
+
+    resolved = Path(str(tmp_path)) / "wiki_articles_us.yaml"  # type: ignore[arg-type]
+    resolved.write_text("RKLB: WRONG_Override\nAAPL: Apple Inc.\n")
+
+    m = climod._load_wiki_map_merged(market="us", resolved_path=str(resolved))
+    # RKLB has a curated alias in themes.yaml ("Rocket_Lab") — must not be overridden
+    assert m.get("RKLB") != "WRONG_Override"
+    # AAPL is not in themes aliases → resolved entry present
+    assert m.get("AAPL") == "Apple Inc."
