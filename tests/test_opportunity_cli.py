@@ -292,6 +292,8 @@ def test_resolve_wiki_articles_writes_yaml(
             return "Apple Inc." if name == "Apple Inc." else None
 
     monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
+    # Prevent the test from reading the real wiki_articles_us.yaml (which may have AAPL already)
+    monkeypatch.setattr(climod, "_load_wiki_map", lambda market: {}, raising=False)  # type: ignore[attr-defined]
 
     names = {"AAPL": "Apple Inc.", "AIZ": "Assurant"}
     monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: names.get(t), raising=False)  # type: ignore[attr-defined]
@@ -362,3 +364,45 @@ def test_load_wiki_map_merged_aliases_win(
     assert m.get("RKLB") != "WRONG_Override"
     # AAPL is not in themes aliases → resolved entry present
     assert m.get("AAPL") == "Apple Inc."
+
+
+def test_resolve_wiki_articles_skips_throttled(
+    monkeypatch: object, tmp_path: object
+) -> None:
+    import yaml
+
+    import application.cli as climod
+    from application.cli import cli
+    from domain.exceptions import SourceThrottledError
+
+    class _FakeResolver:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def resolve_validated(
+            self, name: str, start: object, end: object, min_views: float = 50.0
+        ) -> str | None:
+            if name == "Apple Inc.":
+                raise SourceThrottledError("throttled")
+            return "Abbott Laboratories"
+
+    monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
+    # Prevent reading real wiki_articles_us.yaml which may contain AAPL/ABT
+    monkeypatch.setattr(climod, "_load_wiki_map", lambda market: {}, raising=False)  # type: ignore[attr-defined]
+
+    names = {"AAPL": "Apple Inc.", "ABT": "Abbott Laboratories"}
+    monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: names.get(t), raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["AAPL", "ABT"], raising=False)  # type: ignore[attr-defined]
+
+    from pathlib import Path
+
+    out = Path(str(tmp_path)) / "w.yaml"  # type: ignore[arg-type]
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["resolve-wiki-articles", "--out", str(out), "--throttle-s", "0"]
+    )
+    assert result.exit_code == 0, result.output
+    data = yaml.safe_load(out.read_text()) or {}
+    assert "AAPL" not in data  # throttled -> skipped, NOT written
+    assert data.get("ABT") == "Abbott Laboratories"
+    assert "AAPL" in result.output  # throttled ticker named in summary

@@ -31,6 +31,7 @@ from application.use_cases import (
     WeeklyTournamentUseCase,
 )
 from config.loader import load_market_config
+from domain.exceptions import SourceThrottledError
 from domain.models import WeeklyReport
 
 
@@ -1387,9 +1388,16 @@ def resolve_wiki_articles(
 
     resolved_map: dict[str, str] = dict(existing)
 
-    counts = {"resolved": 0, "no_name": 0, "no_article": 0, "skipped_existing": 0}
+    counts = {
+        "resolved": 0,
+        "no_name": 0,
+        "no_article": 0,
+        "skipped_existing": 0,
+        "throttled": 0,
+    }
     no_name_tickers: list[str] = []
     no_article_tickers: list[str] = []
+    throttled_tickers: list[str] = []
 
     resolver = WikipediaArticleResolver(throttle_s=throttle_s)
 
@@ -1405,7 +1413,19 @@ def resolve_wiki_articles(
             logger.debug("resolve-wiki-articles: no name for {}", ticker)
             continue
 
-        article = resolver.resolve_validated(name, val_start, val_end, min_views)
+        try:
+            article = resolver.resolve_validated(name, val_start, val_end, min_views)
+        except SourceThrottledError as exc:
+            counts["throttled"] += 1
+            throttled_tickers.append(ticker)
+            logger.warning(
+                "resolve-wiki-articles: throttled for {} ({}), skipping: {}",
+                ticker,
+                name,
+                exc,
+            )
+            continue
+
         if article:
             resolved_map[ticker] = article
             counts["resolved"] += 1
@@ -1436,6 +1456,7 @@ def resolve_wiki_articles(
         f"resolved={counts['resolved']} "
         f"no_name={counts['no_name']} "
         f"no_article={counts['no_article']} "
+        f"throttled={counts['throttled']} "
         f"skipped_existing={counts['skipped_existing']}"
     )
     if no_name_tickers:
@@ -1445,6 +1466,10 @@ def resolve_wiki_articles(
     if no_article_tickers:
         click.echo(
             f"  no valid article ({len(no_article_tickers)}): {', '.join(sorted(no_article_tickers))}"
+        )
+    if throttled_tickers:
+        click.echo(
+            f"  throttled / skipped ({len(throttled_tickers)}): {', '.join(sorted(throttled_tickers))}"
         )
     click.echo(f"Output: {out_path}")
 
