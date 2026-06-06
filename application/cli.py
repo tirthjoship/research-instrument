@@ -1258,7 +1258,8 @@ def _load_spine_tickers(market: str) -> list[str]:
     "--source",
     "source_filter",
     default=None,
-    help="Restrict to a single source: wikipedia | google_trends",
+    type=click.Choice(["wikipedia", "google_trends"]),
+    help="Restrict to a single source (default: all)",
 )
 def drip_backfill(
     market: str,
