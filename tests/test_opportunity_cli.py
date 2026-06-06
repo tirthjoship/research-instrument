@@ -234,3 +234,38 @@ def test_validate_divergence_ic_runs(monkeypatch: object) -> None:
     assert result.exit_code == 0, result.output
     assert "mean_ic" in result.output.lower() or "IC" in result.output
     assert "PROCEED" in result.output or "KILL" in result.output
+
+
+def test_validate_divergence_ic_passes_naive_dates(monkeypatch: object) -> None:
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    captured: dict = {}
+
+    class _UC:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def execute(self, dates: list, tickers: list, horizon_label: str) -> dict:
+            captured["dates"] = dates
+            return {
+                "horizon": horizon_label,
+                "mean_ic": 0.0,
+                "ic_ir": 0.0,
+                "pct_positive_dates": 0.0,
+                "n_dates": 0,
+                "bootstrap": {},
+                "date_level": {},
+            }
+
+    monkeypatch.setattr(climod, "DivergenceICBacktestUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["validate-divergence-ic", "--limit", "2", "--quick"])
+    assert result.exit_code == 0, result.output
+    assert captured["dates"], "no dates generated"
+    assert all(
+        d.tzinfo is None for d in captured["dates"]
+    ), "dates must be naive-UTC to match price/attention layers"
