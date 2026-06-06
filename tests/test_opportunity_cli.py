@@ -202,3 +202,35 @@ def test_drip_backfill_invalid_source_rejected() -> None:
     )
     assert result.exit_code != 0
     assert "nonsense" in result.output or "Invalid value" in result.output
+
+
+def test_validate_divergence_ic_runs(monkeypatch: object) -> None:
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    class _UC:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def execute(self, dates: list, tickers: list, horizon_label: str) -> dict:
+            return {
+                "horizon": horizon_label,
+                "mean_ic": 0.031,
+                "ic_ir": 0.5,
+                "pct_positive_dates": 0.6,
+                "n_dates": 40,
+                "bootstrap": {"ci_low": 0.01, "ci_high": 0.05, "p_value_ge_0": 0.01},
+                "date_level": {},
+            }
+
+    import pytest  # noqa: F401  (monkeypatch type hint workaround)
+
+    monkeypatch.setattr(climod, "DivergenceICBacktestUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["validate-divergence-ic", "--limit", "5", "--quick"])
+    assert result.exit_code == 0, result.output
+    assert "mean_ic" in result.output.lower() or "IC" in result.output
+    assert "PROCEED" in result.output or "KILL" in result.output
