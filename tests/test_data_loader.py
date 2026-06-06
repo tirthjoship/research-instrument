@@ -276,6 +276,48 @@ class TestLoadScanDistribution:
         rows = load_scan_distribution(store, scan_date="2026-06-05")
         assert rows == []
 
+    def test_empty_state_distribution_scoped_to_today_only(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """Empty-state must show only today's scan candidates, not all history.
+
+        Regression: _render_empty_state previously called load_scan_distribution
+        with no scan_date, causing get_scan_candidates(scan_date=None) to return
+        every candidate from every past scan (stale/duplicate accumulation).
+        """
+        from adapters.data.sqlite_store import SQLiteStore
+        from adapters.visualization.data_loader import load_scan_distribution
+
+        store = SQLiteStore(db_path=str(tmp_path / "t.db"))
+        # Yesterday's stale candidate — must NOT appear in today's empty-state
+        store.save_scan_candidate(
+            scan_date="2026-06-04",
+            ticker="STALE",
+            conviction=7.0,
+            divergence=8.0,
+            sub_scores={"smart_money": 7.0},
+            surfaced=True,
+            theme="ai",
+            cap_tier="large",
+        )
+        # Today's candidate — must appear
+        store.save_scan_candidate(
+            scan_date="2026-06-05",
+            ticker="TODAY",
+            conviction=3.0,
+            divergence=2.0,
+            sub_scores={"smart_money": 3.0},
+            surfaced=False,
+            theme="space",
+            cap_tier="small",
+        )
+        rows = load_scan_distribution(store, scan_date="2026-06-05")
+        tickers = [r["ticker"] for r in rows]
+        assert "TODAY" in tickers, "today's candidate must be in the distribution"
+        assert (
+            "STALE" not in tickers
+        ), "stale candidates from prior scans must be excluded"
+
 
 class TestLoadScanTimestamp:
     def test_returns_none_when_no_reports_dir(self) -> None:
