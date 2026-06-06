@@ -189,3 +189,16 @@ def test_backfill_history_command_runs(monkeypatch: object, tmp_path: object) ->
     )
     assert result.exit_code == 0, result.output
     assert "Backfill complete" in result.output
+
+
+def test_drip_backfill_invalid_source_rejected() -> None:
+    from click.testing import CliRunner
+
+    from application.cli import cli
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["drip-backfill", "--source", "nonsense", "--limit", "1"]
+    )
+    assert result.exit_code != 0
+    assert "nonsense" in result.output or "Invalid value" in result.output
