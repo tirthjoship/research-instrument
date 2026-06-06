@@ -469,6 +469,32 @@ Every scanned candidate's scores (conviction, blended divergence, per-dimension 
 ### Conviction Signal Cache
 A 24h-TTL cache (`signal_cache` table) wrapping the event/analyst conviction dimensions: scan checks the cache, reuses a fresh hit, else computes and stores. On fetch failure a dimension falls to an honest neutral 5.0 **with a logged flag row** — never a silent pin. Lifts bulk-scan conviction from 6/8 to 7/8 live dimensions (`analyst_signal` wired via yfinance analyst-rating events; `event_signal` still held neutral — per-ticker Gemini cost/keys deferred).
 
+## Glossary — Honest Ingestion & Source Health Terms (Leg-2 Sub-Project B, ADR-042)
+
+### SourceHealth
+A domain value object (sibling of `ConvictionSignalCache.flags`) that tracks per-source ingestion accounting across one drip/delta-sweep run: `source`, `attempts`, `ok`, `empty`, `throttled`, `failed`. Returned as a structured report after every `DripBackfillUseCase` or `DailyDeltaSweepUseCase` run; displayed in the dashboard source-health panel. A source that throttled or failed is always visible — never silently swallowed into a `[]`. Two `SourceHealth` objects for the same source can be merged (sum counts); mismatched sources raise `ValueError`.
+
+### SourceThrottledError (throttle ≠ empty)
+A distinguishable error / structured outcome that adapters return when a rate-limit (HTTP 429 or equivalent) prevents a real observation from being fetched. **Must never be written as a zero or an empty array into the attention store.** Writing a throttle as `0` poisons the divergence base window: the base rate appears lower than reality, artificially inflating future acceleration scores. This is a look-ahead-adjacent data-integrity rule — the base window must reflect genuine attention patterns, not the health of the network connection at fetch time. The correct adapter contract: throttle → return `SourceThrottledError` / `"throttled"` outcome and write nothing; empty → return `[]` and write nothing (both write nothing, but the distinction is preserved in `SourceHealth`).
+
+### has_min_history
+A pure domain predicate: `has_min_history(ticker, store, min_days=MIN_HISTORY_DAYS) -> bool`. Returns `True` only when a ticker has ≥ `MIN_HISTORY_DAYS` (proposal: 21) distinct observation days in its base window. Tickers that fail this gate are ineligible to surface regardless of conviction or divergence scores. Prevents day-1 noise spikes: with fewer than ~21 days, the acceleration ratio is unstable because a single article can inflate the base rate to near-zero, producing a spuriously high divergence score.
+
+### Slow-drip backfill (cold-start vs warm)
+The rate-aware, resumable strategy for seeding the divergence base window across the full universe.
+
+- **Cold (day 1):** The first time a ticker is ingested, ~90 days of base-window history must be fetched. For Google Trends (1 request / 45–60s jittered), the **thematic spine (~40 tickers) takes roughly one night** — this is the cold-start cost.
+- **Warm (steady state):** Once a ticker has been ingested, the `DailyDeltaSweepUseCase` fetches only the window since the last stored observation — typically 1 new day. This is trivially cheap under any rate budget.
+- **Resumability:** The store is append-only + deduped on `(ticker, source, ts)`. `DripBackfillUseCase` checkpoints by checking whether the latest row for a ticker is already today — no separate state file. A crash at ticker N resumes at N+1 for free.
+- **Spine-first order:** The scan universe (thematic spine first, then discovery overlay) is processed before the broader 350-ticker universe so that scored tickers have a populated base window as early as possible.
+- **No proxies / multi-account:** ToS-evasion, fragile, directly contradicts the honesty thesis.
+
+### Discrimination audit
+A one-shot diagnostic use case (`DiscriminationAuditUseCase`, not in the daily path) that, for the current candidate set, measures per-dimension and per-source distributions: variance, percentage of neutral scores, and contribution to final conviction. Output is a human-readable report. The human reads the evidence and decides which dimensions or sources to prune — no automatic pruning. The audit answers: "which dims/sources are actually varying and contributing?" Applied as a follow-up so Sub-Project B stays scoped.
+
+### Honest empty-state
+The dashboard rendering shown when the opportunity engine abstains (no candidate clears the conviction × divergence bar). Displays: (1) the full ranked `--show-all` candidate distribution, (2) the top near-misses with scores, (3) the source-health panel showing per-source `SourceHealth` tallies. The framing: "here is everything I looked at, and here is why nothing cleared the bar." Abstention is a valid, evidence-backed outcome; the honest empty-state makes it legible as analytical rigor rather than a broken tool.
+
 ---
 
 ## Portfolio platform enhancements (2026-05-30)

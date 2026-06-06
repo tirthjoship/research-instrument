@@ -48,6 +48,15 @@ class LookAheadBiasError(DomainError):
         self.prediction_time = prediction_time
 
 
+class SourceThrottledError(Exception):
+    """Raised by a data adapter when a source rate-limits us.
+
+    Distinct from returning [] (genuinely no data). Callers MUST treat a
+    throttle as "no observation" — never write a 0/empty value to the store
+    on a throttle, or the divergence base window gets poisoned.
+    """
+
+
 class InsufficientDataError(DomainError):
     """Raised when too few qualified tickers or data points for pipeline."""
 

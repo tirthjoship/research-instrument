@@ -21,6 +21,7 @@ from adapters.ml.feature_engineer import FeatureEngineer
 from adapters.ml.fundamental_feature_engineer import FundamentalFeatureEngineer
 from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
+from application.drip_backfill_use_case import DripBackfillUseCase
 from application.opportunity_scan_use_case import OpportunityScanUseCase
 from application.use_cases import (
     PretrainingUseCase,
@@ -1221,6 +1222,89 @@ def _load_wiki_map(market: str) -> dict[str, str]:
         }
     except Exception:
         return {}
+
+
+def _load_spine_tickers(market: str) -> list[str]:
+    """Return the thematic spine tickers from config/universe/themes.yaml.
+
+    Mirrors the loading HybridUniverseProvider uses: iterate themes.values() and
+    collect each theme's tickers list.  Falls back to _load_wiki_map keys if the
+    themes block is missing or malformed.
+    """
+    import yaml
+
+    themes_path = Path(__file__).parent.parent / "config" / "universe" / "themes.yaml"
+    if not themes_path.exists():
+        return list(_load_wiki_map(market).keys())
+    try:
+        data = yaml.safe_load(themes_path.read_text())
+        tickers: list[str] = []
+        for theme in data.get("themes", {}).values():
+            tickers.extend(
+                theme if isinstance(theme, list) else theme.get("tickers", [])
+            )
+        return tickers if tickers else list(_load_wiki_map(market).keys())
+    except Exception:
+        return list(_load_wiki_map(market).keys())
+
+
+@cli.command("drip-backfill")
+@click.option("--market", default="us", help="Market config to use")
+@click.option("--days", default=90, show_default=True, type=int)
+@click.option("--limit", default=0, type=int, help="Max tickers (0 = all)")
+@click.option("--spine-only", is_flag=True, help="Restrict to the thematic spine")
+@click.option("--throttle-s", default=45.0, type=float, help="Seconds between requests")
+def drip_backfill(
+    market: str, days: int, limit: int, spine_only: bool, throttle_s: float
+) -> None:
+    """Resumable slow-drip backfill aligned to the scan universe (rate-safe)."""
+    import time
+    from datetime import timezone
+
+    from adapters.data.google_trends_adapter import GoogleTrendsAdapter
+    from adapters.data.wikipedia_pageviews_adapter import WikipediaPageviewsAdapter
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+    config = deps["config"]
+    if spine_only:
+        tickers = _load_spine_tickers(market)
+    else:
+        tickers = _get_ticker_universe(config)
+    if limit:
+        tickers = tickers[:limit]
+    sources: dict[str, Any] = {
+        "google_trends": GoogleTrendsAdapter(),
+        "wikipedia": WikipediaPageviewsAdapter(article_map=_load_wiki_map(market)),
+    }
+    uc = DripBackfillUseCase(
+        sources=sources, store=store, sleep=time.sleep, throttle_s=throttle_s
+    )
+    report = uc.execute(tickers, now=datetime.now(timezone.utc), days=days)
+    click.echo("Drip backfill complete. Source health:")
+    for name, h in report.items():
+        click.echo(
+            f"  {name}: attempts={h.attempts} ok={h.ok} "
+            f"empty={h.empty} throttled={h.throttled} failed={h.failed}"
+        )
+
+
+@cli.command("audit-dimensions")
+@click.option("--market", default="us")
+@click.option("--date", "date_", default=None, help="scan_date (default: latest)")
+def audit_dimensions(market: str, date_: str | None) -> None:
+    """Per-dim variance + neutral share over logged candidates (prune evidence)."""
+    from application.discrimination_audit_use_case import DiscriminationAuditUseCase
+
+    deps = _build_dependencies(market)
+    rows = deps["store"].get_scan_candidates(scan_date=date_)
+    report = DiscriminationAuditUseCase().execute(rows)
+    click.echo("Dimension discrimination (prune dead dims):")
+    for dim, stats in sorted(report.items(), key=lambda kv: kv[1]["variance"]):
+        click.echo(
+            f"  {dim:16s} var={stats['variance']:.3f} "
+            f"neutral_share={stats['neutral_share']:.2f} n={int(stats['n'])}"
+        )
 
 
 @cli.command("backfill-history")

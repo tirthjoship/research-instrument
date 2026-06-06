@@ -344,6 +344,30 @@ class EventCategory(Enum):
 
 
 @dataclass(frozen=True)
+class SourceHealth:
+    """Per-source ingestion tally. Makes throttling visible, never silent."""
+
+    source: str
+    attempts: int = 0
+    ok: int = 0
+    empty: int = 0
+    throttled: int = 0
+    failed: int = 0
+
+    def merge(self, other: "SourceHealth") -> "SourceHealth":
+        if other.source != self.source:
+            raise ValueError("cannot merge SourceHealth across different sources")
+        return SourceHealth(
+            source=self.source,
+            attempts=self.attempts + other.attempts,
+            ok=self.ok + other.ok,
+            empty=self.empty + other.empty,
+            throttled=self.throttled + other.throttled,
+            failed=self.failed + other.failed,
+        )
+
+
+@dataclass(frozen=True)
 class ClassifiedEvent:
     """A news event classified into a category with direction."""
 
