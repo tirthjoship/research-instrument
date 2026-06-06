@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
@@ -285,10 +285,12 @@ def _render_empty_state(db_path: str) -> None:
         unsafe_allow_html=True,
     )
 
-    # Full candidate distribution table
+    # Full candidate distribution table — scoped to today's scan only (UTC date,
+    # matching the scan_date written by OpportunityScanUseCase: now.date().isoformat())
+    today_scan_date = datetime.now(timezone.utc).date().isoformat()
     try:
         store = SQLiteStore(db_path)
-        rows = load_scan_distribution(store)
+        rows = load_scan_distribution(store, scan_date=today_scan_date)
     except Exception:
         rows = []
 
