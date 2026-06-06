@@ -20,6 +20,7 @@ from adapters.visualization.components.onboarding import (
 from adapters.visualization.data_loader import (
     load_holdings,
     load_recommendations_latest,
+    load_scan_distribution,
     load_spy_sparkline,
     load_watchlist,
 )
@@ -65,7 +66,11 @@ def render(db_path: str = DB_PATH) -> None:
 
     # Mode A or Mode B
     cards = cache.get_results()
-    if cache.is_stale() or len(cards) < 5:
+    scan_was_run = not cache.is_stale()
+    if scan_was_run and len(cards) == 0:
+        # Honest empty-state: scan ran but nothing cleared the bar
+        _render_empty_state(db_path)
+    elif cache.is_stale() or len(cards) < 5:
         # Mode A: market overview with recommendation cards
         _render_mode_a(db_path)
     else:
@@ -261,6 +266,113 @@ def _render_spy_sparkline_chart(spy_data: dict[str, Any]) -> None:
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
     except Exception:
         pass  # never crash if plotly fails
+
+
+# ---------------------------------------------------------------------------
+# Honest empty-state: scan ran but nothing cleared the conviction/divergence bar
+# ---------------------------------------------------------------------------
+
+
+def _render_empty_state(db_path: str) -> None:
+    """Render honest empty-state: verdict + full candidate distribution + source health."""
+    from adapters.data.sqlite_store import SQLiteStore
+
+    # Verdict line
+    st.markdown(
+        '<div style="color:#64748B;font-size:13px;margin:12px 0 8px;">'
+        "No name cleared the bar today — here is everything the engine looked at."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    # Full candidate distribution table
+    try:
+        store = SQLiteStore(db_path)
+        rows = load_scan_distribution(store)
+    except Exception:
+        rows = []
+
+    if rows:
+        # Sort by conviction desc
+        rows_sorted = sorted(
+            rows, key=lambda r: float(r.get("conviction", 0)), reverse=True
+        )
+        st.markdown(
+            '<div style="color:#374151;font-size:13px;font-weight:600;margin:8px 0 4px;">'
+            "Candidate distribution (all scanned)"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        col_headers = [
+            "Ticker",
+            "Conviction",
+            "Divergence",
+            "Cap Tier",
+            "Theme",
+            "Surfaced",
+        ]
+        header_row = "".join(
+            f'<th style="padding:6px 10px;text-align:left;color:#64748B;font-size:12px;'
+            f'font-weight:600;border-bottom:1px solid #E2E8F0;">{h}</th>'
+            for h in col_headers
+        )
+        data_rows_html = ""
+        for row in rows_sorted:
+            surfaced = row.get("surfaced", False)
+            surfaced_html = (
+                '<span style="color:#16A34A;font-weight:600;">Yes</span>'
+                if surfaced
+                else '<span style="color:#94A3B8;">No</span>'
+            )
+            data_rows_html += (
+                "<tr>"
+                f'<td style="padding:6px 10px;font-size:13px;font-weight:600;">'
+                f'{row.get("ticker", "")}</td>'
+                f"<td style=\"padding:6px 10px;font-size:13px;font-family:'JetBrains Mono',monospace;\">"
+                f'{float(row.get("conviction", 0)):.2f}</td>'
+                f"<td style=\"padding:6px 10px;font-size:13px;font-family:'JetBrains Mono',monospace;\">"
+                f'{float(row.get("divergence", 0)):.2f}</td>'
+                f'<td style="padding:6px 10px;font-size:13px;color:#475569;">'
+                f'{row.get("cap_tier", "")}</td>'
+                f'<td style="padding:6px 10px;font-size:13px;color:#475569;">'
+                f'{row.get("theme", "")}</td>'
+                f'<td style="padding:6px 10px;">{surfaced_html}</td>'
+                "</tr>"
+            )
+        table_html = (
+            '<div style="overflow-x:auto;margin-bottom:16px;">'
+            '<table style="width:100%;border-collapse:collapse;">'
+            f"<thead><tr>{header_row}</tr></thead>"
+            f"<tbody>{data_rows_html}</tbody>"
+            "</table>"
+            "</div>"
+        )
+        st.markdown(table_html, unsafe_allow_html=True)
+    else:
+        st.markdown(
+            '<div style="color:#94A3B8;font-size:13px;margin:8px 0;">'
+            "No candidates logged yet — run a scan to populate the distribution."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    # Source health line (from session state if set by the scan runner)
+    source_health = st.session_state.get("last_source_health")
+    if source_health and isinstance(source_health, dict):
+        parts = []
+        for name, h in source_health.items():
+            parts.append(
+                f"{name}: ok={getattr(h, 'ok', '?')} "
+                f"throttled={getattr(h, 'throttled', '?')} "
+                f"empty={getattr(h, 'empty', '?')}"
+            )
+        health_text = " &nbsp;·&nbsp; ".join(parts)
+        st.markdown(
+            f'<div style="color:#94A3B8;font-size:12px;margin-top:4px;">'
+            f"Source health: {health_text}"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
 
 # ---------------------------------------------------------------------------
