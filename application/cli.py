@@ -1289,6 +1289,24 @@ def drip_backfill(
         )
 
 
+@cli.command("audit-dimensions")
+@click.option("--market", default="us")
+@click.option("--date", "date_", default=None, help="scan_date (default: latest)")
+def audit_dimensions(market: str, date_: str | None) -> None:
+    """Per-dim variance + neutral share over logged candidates (prune evidence)."""
+    from application.discrimination_audit_use_case import DiscriminationAuditUseCase
+
+    deps = _build_dependencies(market)
+    rows = deps["store"].get_scan_candidates(scan_date=date_)
+    report = DiscriminationAuditUseCase().execute(rows)
+    click.echo("Dimension discrimination (prune dead dims):")
+    for dim, stats in sorted(report.items(), key=lambda kv: kv[1]["variance"]):
+        click.echo(
+            f"  {dim:16s} var={stats['variance']:.3f} "
+            f"neutral_share={stats['neutral_share']:.2f} n={int(stats['n'])}"
+        )
+
+
 @cli.command("backfill-history")
 @click.option("--market", default="us", help="Market config to use")
 @click.option(

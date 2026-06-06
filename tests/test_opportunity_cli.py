@@ -108,6 +108,36 @@ def test_drip_backfill_command_runs(monkeypatch: object) -> None:
     assert "google_trends" in result.output
 
 
+def test_audit_command_runs(monkeypatch: object) -> None:
+    import application.cli as climod
+
+    class _Store:
+        def get_scan_candidates(
+            self, scan_date: object = None
+        ) -> list[dict[str, object]]:
+            return [
+                {
+                    "ticker": "A",
+                    "sub_scores": {"smart_money": 8.0, "event_signal": 5.0},
+                },
+                {
+                    "ticker": "B",
+                    "sub_scores": {"smart_money": 3.0, "event_signal": 5.0},
+                },
+            ]
+
+    def _deps(market: str) -> dict[str, object]:
+        return {"store": _Store(), "config": {}}
+
+    monkeypatch.setattr(climod, "_build_dependencies", _deps, raising=False)  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["audit-dimensions"])
+    assert result.exit_code == 0, result.output
+    assert "event_signal" in result.output
+    assert "neutral" in result.output.lower()
+
+
 def test_backfill_history_command_runs(monkeypatch: object, tmp_path: object) -> None:
     import application.cli as climod
 
