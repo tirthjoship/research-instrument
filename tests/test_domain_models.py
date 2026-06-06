@@ -476,3 +476,35 @@ def test_attention_point_rejects_negative_value():
 
     with pytest.raises(ValueError):
         AttentionPoint("ASTS", datetime(2026, 6, 1), -1.0, "wikipedia")
+
+
+def test_source_health_tally_and_merge():
+    from domain.models import SourceHealth
+
+    a = SourceHealth(
+        source="google_trends", attempts=2, ok=1, empty=0, throttled=1, failed=0
+    )
+    b = SourceHealth(
+        source="google_trends", attempts=1, ok=0, empty=1, throttled=0, failed=0
+    )
+    merged = a.merge(b)
+    assert merged.attempts == 3
+    assert merged.ok == 1
+    assert merged.throttled == 1
+    assert merged.empty == 1
+    assert merged.source == "google_trends"
+
+
+def test_source_health_merge_rejects_mismatched_source():
+    import pytest
+
+    from domain.models import SourceHealth
+
+    a = SourceHealth(
+        source="wikipedia", attempts=1, ok=1, empty=0, throttled=0, failed=0
+    )
+    b = SourceHealth(
+        source="google_news", attempts=1, ok=1, empty=0, throttled=0, failed=0
+    )
+    with pytest.raises(ValueError):
+        a.merge(b)
