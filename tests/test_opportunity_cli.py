@@ -75,6 +75,39 @@ def test_daily_cycle_invokes_scan_then_resolve(monkeypatch: object) -> None:
     assert "daily cycle" in result.output.lower()
 
 
+def test_drip_backfill_command_runs(monkeypatch: object) -> None:
+    import application.cli as climod
+    from domain.models import SourceHealth
+
+    class _UC:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def execute(
+            self, tickers: list[str], now: object, days: int = 90
+        ) -> dict[str, object]:
+            return {"google_trends": SourceHealth("google_trends", attempts=1, ok=1)}
+
+    monkeypatch.setattr(climod, "DripBackfillUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "drip-backfill",
+            "--market",
+            "us",
+            "--days",
+            "30",
+            "--limit",
+            "2",
+            "--spine-only",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "google_trends" in result.output
+
+
 def test_backfill_history_command_runs(monkeypatch: object, tmp_path: object) -> None:
     import application.cli as climod
 
