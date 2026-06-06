@@ -1346,7 +1346,6 @@ def validate_divergence_ic(
     """Pre-registered cross-sectional IC test of intensity-divergence (spec D §4)."""
     import json as _json
     import os
-    from datetime import timezone
 
     deps = _build_dependencies(market)
     store = deps["store"]
@@ -1354,8 +1353,10 @@ def validate_divergence_ic(
     if limit:
         tickers = tickers[:limit]
 
-    start_dt = datetime.fromisoformat(start).replace(tzinfo=timezone.utc)
-    end_dt = datetime.fromisoformat(end).replace(tzinfo=timezone.utc)
+    start_dt = datetime.fromisoformat(
+        start
+    )  # naive UTC — matches price/attention layers
+    end_dt = datetime.fromisoformat(end)
     step = 28 if quick else 7
     dates: list[datetime] = []
     d = start_dt
