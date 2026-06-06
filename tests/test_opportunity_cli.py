@@ -108,6 +108,37 @@ def test_drip_backfill_command_runs(monkeypatch: object) -> None:
     assert "google_trends" in result.output
 
 
+def test_drip_backfill_source_filter(monkeypatch: object) -> None:
+    import application.cli as climod
+    from domain.models import SourceHealth
+
+    captured: dict[str, object] = {}
+
+    class _UC:
+        def __init__(
+            self,
+            sources: dict[str, object],
+            store: object,
+            sleep: object,
+            throttle_s: float = 45.0,
+        ) -> None:
+            captured["sources"] = list(sources.keys())
+
+        def execute(
+            self, tickers: list[str], now: object, days: int = 90
+        ) -> dict[str, object]:
+            return {"wikipedia": SourceHealth("wikipedia", attempts=1, ok=1)}
+
+    monkeypatch.setattr(climod, "DripBackfillUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["drip-backfill", "--source", "wikipedia", "--limit", "3"]
+    )
+    assert result.exit_code == 0, result.output
+    assert captured["sources"] == ["wikipedia"]  # only wikipedia wired
+
+
 def test_audit_command_runs(monkeypatch: object) -> None:
     import application.cli as climod
 

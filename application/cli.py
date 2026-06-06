@@ -1254,8 +1254,19 @@ def _load_spine_tickers(market: str) -> list[str]:
 @click.option("--limit", default=0, type=int, help="Max tickers (0 = all)")
 @click.option("--spine-only", is_flag=True, help="Restrict to the thematic spine")
 @click.option("--throttle-s", default=45.0, type=float, help="Seconds between requests")
+@click.option(
+    "--source",
+    "source_filter",
+    default=None,
+    help="Restrict to a single source: wikipedia | google_trends",
+)
 def drip_backfill(
-    market: str, days: int, limit: int, spine_only: bool, throttle_s: float
+    market: str,
+    days: int,
+    limit: int,
+    spine_only: bool,
+    throttle_s: float,
+    source_filter: str | None,
 ) -> None:
     """Resumable slow-drip backfill aligned to the scan universe (rate-safe)."""
     import time
@@ -1277,6 +1288,8 @@ def drip_backfill(
         "google_trends": GoogleTrendsAdapter(),
         "wikipedia": WikipediaPageviewsAdapter(article_map=_load_wiki_map(market)),
     }
+    if source_filter:
+        sources = {k: v for k, v in sources.items() if k == source_filter}
     uc = DripBackfillUseCase(
         sources=sources, store=store, sleep=time.sleep, throttle_s=throttle_s
     )
