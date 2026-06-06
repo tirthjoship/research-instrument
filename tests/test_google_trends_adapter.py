@@ -300,6 +300,26 @@ def test_google_trends_conforms_to_attention_series_port() -> None:
     assert isinstance(GoogleTrendsAdapter(), AttentionSeriesPort)
 
 
+def test_google_trends_raises_throttled_on_429() -> None:
+    from datetime import datetime
+    from unittest.mock import patch
+
+    import pytest
+
+    from adapters.data.google_trends_adapter import GoogleTrendsAdapter
+    from domain.exceptions import SourceThrottledError
+
+    a = GoogleTrendsAdapter()
+    # get_historical_interest currently catches and returns []; make 429 raise instead
+    with patch.object(
+        a,
+        "_get_pytrends",
+        side_effect=Exception("Google returned a response with code 429"),
+    ):
+        with pytest.raises(SourceThrottledError):
+            a.get_attention_series("ASTS", datetime(2026, 4, 1), datetime(2026, 6, 1))
+
+
 def test_get_attention_series_maps_historical_interest() -> None:
     from domain.models import AttentionPoint
 

@@ -169,6 +169,52 @@ to `.github/workflows/`.
 
 ---
 
+## Laptop sleep
+
+launchd will **not** fire a scheduled job while the Mac is asleep or the lid is closed. This is a
+direct consequence of the ADR-007 local-scheduler decision: a cloud runner would sidestep the
+problem, but cloud runners cannot reach the local SQLite file, so we accept the trade-off.
+
+**Mitigation — wrap the job in `caffeinate`:**
+
+Replace the `ProgramArguments` in the plist with:
+
+```xml
+<key>ProgramArguments</key>
+<array>
+    <string>/usr/bin/caffeinate</string>
+    <string>-i</string>
+    <string>/PATH/TO/venv/bin/python</string>
+    <string>-m</string>
+    <string>application.cli</string>
+    <string>daily-cycle</string>
+</array>
+```
+
+`caffeinate -i` holds a system-sleep assertion for the lifetime of the child process. launchd
+launches `caffeinate`, which keeps the machine awake just long enough to complete the daily cycle,
+then releases the assertion and lets the system sleep normally. No external tool is required —
+`/usr/bin/caffeinate` ships with macOS.
+
+**Alternative — Energy Saver / `pmset`:**
+
+If you prefer a schedule-based approach rather than per-job wrapping, you can use `pmset` to
+schedule a wake window around 08:00:
+
+```bash
+# Wake at 07:55, allow natural sleep afterwards
+sudo pmset repeat wakeorpoweron MTWRFSU 07:55:00
+```
+
+This is coarser but works without modifying the plist. The `caffeinate` wrapper is recommended
+because it is scoped to the daily-cycle process and requires no `sudo`.
+
+**Honest caveat:** if the machine is powered off (not just sleeping), neither approach helps.
+The daily cycle will simply be skipped for that day. This is acceptable for a local research
+tool — see ADR-007 for the rationale behind the local-scheduler decision.
+
+---
+
 ## ADR-007 deviation note
 
 ADR-007 chose local SQLite as the persistence layer to keep the project self-contained and avoid

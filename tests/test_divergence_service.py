@@ -153,3 +153,35 @@ def test_blended_monotonic_in_attention(extra_recent):
     s_base = blended_divergence_score(base, [], prices, 0.5, now)
     s_more = blended_divergence_score(more, [], prices, 0.5, now)
     assert s_more >= s_base - 1e-9
+
+
+# --- has_min_history tests ---
+
+
+def test_has_min_history_true_when_span_sufficient():
+    from datetime import datetime, timedelta, timezone
+
+    from domain.divergence_service import has_min_history
+
+    now = datetime(2026, 6, 5, tzinfo=timezone.utc)
+    series = [(now - timedelta(days=d), 1.0) for d in range(0, 25)]
+    assert has_min_history(series, now, min_days=21) is True
+
+
+def test_has_min_history_false_when_too_thin():
+    from datetime import datetime, timedelta, timezone
+
+    from domain.divergence_service import has_min_history
+
+    now = datetime(2026, 6, 5, tzinfo=timezone.utc)
+    series = [(now - timedelta(days=d), 1.0) for d in range(0, 5)]
+    assert has_min_history(series, now, min_days=21) is False
+
+
+def test_has_min_history_false_when_empty():
+    from datetime import datetime, timezone
+
+    from domain.divergence_service import has_min_history
+
+    now = datetime(2026, 6, 5, tzinfo=timezone.utc)
+    assert has_min_history([], now, min_days=21) is False
