@@ -116,6 +116,24 @@ def blended_divergence_score(
     return max(1.0, min(10.0, score))
 
 
+def intensity_divergence_raw(
+    intensity_series: list[tuple[datetime, float]],
+    price_series: list[tuple[datetime, float]],
+    now: datetime,
+) -> float:
+    """Continuous intensity-divergence signal under test (no [1,10] mapping,
+    no sentiment): attention acceleration minus clamped recent up-price-move.
+
+    Positive => attention rising faster than price (the hypothesis's 'lead').
+    Returns 0.0 when there is no attention data.
+    """
+    if not intensity_series:
+        return 0.0
+    accel = intensity_acceleration(intensity_series, now)
+    price_move = max(_recent_return(price_series, now), 0.0)
+    return accel - price_move * 2.0
+
+
 def has_min_history(
     series: list[tuple[datetime, float]], now: datetime, min_days: int = 21
 ) -> bool:
