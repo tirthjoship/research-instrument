@@ -148,3 +148,95 @@ def test_mean_daily_views_skips_bad_items() -> None:
 
     r = WikipediaArticleResolver(http_get=http_get, sleep=lambda s: None)
     assert r.mean_daily_views("X", datetime(2024, 1, 1), datetime(2024, 1, 3)) == 200.0
+
+
+# ── 429 backoff tests ────────────────────────────────────────────────────────
+
+
+import requests  # noqa: E402
+
+
+def _err_resp(status: int):  # type: ignore[no-untyped-def]
+    """Fake response whose raise_for_status() raises HTTPError with the status code in the message."""
+
+    class _R:
+        status_code = status
+
+        def raise_for_status(self) -> None:
+            raise requests.HTTPError(f"{status} Too Many Requests")
+
+        def json(self):  # type: ignore[no-untyped-def]
+            return {}
+
+    return _R()
+
+
+def test_resolve_429_then_200_retries() -> None:
+    from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
+
+    calls: dict[str, int] = {"n": 0}
+
+    def http_get(url, headers=None, timeout=None):  # type: ignore[no-untyped-def]
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return _err_resp(429)
+        return _resp(["Apple Inc.", ["Apple Inc."], [""], ["u"]])
+
+    r = WikipediaArticleResolver(
+        http_get=http_get, sleep=lambda s: None, throttle_s=0.0, max_retries=3
+    )
+    assert r.resolve("Apple Inc.") == "Apple Inc."
+    assert calls["n"] == 2
+
+
+def test_resolve_persistent_429_raises_throttled() -> None:
+    import pytest
+
+    from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
+    from domain.exceptions import SourceThrottledError
+
+    def http_get(url, headers=None, timeout=None):  # type: ignore[no-untyped-def]
+        return _err_resp(429)
+
+    r = WikipediaArticleResolver(
+        http_get=http_get, sleep=lambda s: None, throttle_s=0.0, max_retries=2
+    )
+    with pytest.raises(SourceThrottledError):
+        r.resolve("Apple Inc.")
+
+
+def test_mean_daily_views_persistent_429_raises_throttled() -> None:
+    import pytest
+
+    from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
+    from domain.exceptions import SourceThrottledError
+
+    def http_get(url, headers=None, timeout=None):  # type: ignore[no-untyped-def]
+        return _err_resp(429)
+
+    r = WikipediaArticleResolver(
+        http_get=http_get, sleep=lambda s: None, throttle_s=0.0, max_retries=2
+    )
+    with pytest.raises(SourceThrottledError):
+        r.mean_daily_views("Apple Inc.", datetime(2024, 1, 1), datetime(2024, 1, 3))
+
+
+def test_resolve_validated_propagates_throttle_not_reject() -> None:
+    """A 429 on the pageviews validation must RAISE, not return None (no false rejection)."""
+    import pytest
+
+    from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
+    from domain.exceptions import SourceThrottledError
+
+    def http_get(url, headers=None, timeout=None):  # type: ignore[no-untyped-def]
+        if "opensearch" in url:
+            return _resp(["Apple Inc.", ["Apple Inc."], [""], ["u"]])
+        return _err_resp(429)  # pageviews throttled
+
+    r = WikipediaArticleResolver(
+        http_get=http_get, sleep=lambda s: None, throttle_s=0.0, max_retries=2
+    )
+    with pytest.raises(SourceThrottledError):
+        r.resolve_validated(
+            "Apple Inc.", datetime(2024, 1, 1), datetime(2024, 1, 3), min_views=50.0
+        )
