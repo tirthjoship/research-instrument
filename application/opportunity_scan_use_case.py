@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any, Callable
 
-from domain.divergence_service import blended_divergence_score
+from domain.divergence_service import blended_divergence_score, has_min_history
 from domain.surfaced_call import (
     EvidenceItem,
     OpportunityDirection,
@@ -50,6 +50,7 @@ class OpportunityScanUseCase:
         attention_provider: Any = None,
         cmin: float = 6.0,
         dmin: float = 6.0,
+        min_history_days: int = 21,
     ) -> None:
         self._universe = universe_provider
         self._conviction = conviction_provider
@@ -59,6 +60,7 @@ class OpportunityScanUseCase:
         self._attn = attention_provider
         self._cmin = cmin
         self._dmin = dmin
+        self._min_history_days = min_history_days
 
     def _intensity_series(
         self, ticker: str, now: datetime
@@ -108,7 +110,12 @@ class OpportunityScanUseCase:
             )
             info = self._md.get_ticker_info(entry.ticker)
             cap = _cap_tier(float(info.get("market_cap", 0.0)))
-            surfaced_flag = conviction >= self._cmin and divergence >= self._dmin
+            eligible = self._attn is None or has_min_history(
+                intensity, now, self._min_history_days
+            )
+            surfaced_flag = (
+                eligible and conviction >= self._cmin and divergence >= self._dmin
+            )
             self._store.save_scan_candidate(
                 scan_date=now.date().isoformat(),
                 ticker=entry.ticker,

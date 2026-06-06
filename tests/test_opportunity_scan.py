@@ -117,9 +117,18 @@ def test_naive_stored_timestamps_with_aware_now_does_not_crash():
 
 
 def test_scan_persists_full_candidate_distribution():
-    """All universe candidates are logged with surfaced flag; only ASTS passes cmin."""
+    """All universe candidates are logged with surfaced flag; only ASTS passes cmin.
+
+    ASTS is given 25 days of attention history so it clears the min-history gate
+    (default 21 days). DUD has no attention history so it stays ineligible.
+    """
+    from domain.models import AttentionPoint
     from tests.fakes.fake_attention_series import FakeAttentionSeries
 
+    asts_attention = [
+        AttentionPoint("ASTS", NOW - timedelta(days=d), 5.0, "google_trends")
+        for d in range(25)
+    ]
     store = FakeSurfacedCallStore()
     uc = OpportunityScanUseCase(
         universe_provider=FakeUniverseProvider(
@@ -131,7 +140,7 @@ def test_scan_persists_full_candidate_distribution():
         ),
         market_data=_md(),
         store=store,
-        attention_provider=FakeAttentionSeries([]),
+        attention_provider=FakeAttentionSeries(asts_attention),
         cmin=6.0,
         dmin=0.0,
     )
@@ -155,6 +164,32 @@ def test_abstention_returns_empty():
     )
     assert uc.execute(NOW) == []
     assert store.saved == []
+
+
+def test_scan_skips_thin_history_names():
+    from domain.models import AttentionPoint
+    from tests.fakes.fake_attention_series import FakeAttentionSeries
+
+    NOW_T = datetime(2026, 6, 5, tzinfo=timezone.utc)
+    thin = [AttentionPoint("NEW", NOW_T - timedelta(days=2), 9.0, "google_trends")]
+    store = FakeSurfacedCallStore()
+    uc = OpportunityScanUseCase(
+        universe_provider=FakeUniverseProvider([UniverseEntry("NEW", "space")]),
+        conviction_provider=lambda t, now: (9.0, {"smart_money": 9.0}),
+        buzz_discovery=FakeBuzzDiscovery([]),
+        market_data=FakeMarketData(
+            signals={"NEW": [], "SPY": [], "QQQ": []},
+            ticker_info={"NEW": {"market_cap": 3e9}},
+        ),
+        store=store,
+        attention_provider=FakeAttentionSeries(thin),
+        cmin=1.0,
+        dmin=1.0,
+        min_history_days=21,
+    )
+    uc.execute(NOW_T)
+    # thin-history name is logged as a candidate but NOT surfaced
+    assert all(not c["surfaced"] for c in store.candidates if c["ticker"] == "NEW")
 
 
 def test_cap_tier_uses_marketcap_for_large():
