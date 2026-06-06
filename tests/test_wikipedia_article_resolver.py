@@ -126,3 +126,25 @@ def test_url_encoding_handles_special_chars() -> None:
     r.resolve("Arthur J. Gallagher & Co.")
     # name must be URL-encoded — no raw spaces or ampersand breaking the URL
     assert " " not in seen["url"]
+
+
+def test_resolve_malformed_payload_returns_none() -> None:
+    from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
+
+    def http_get(url, headers=None, timeout=None):  # type: ignore[no-untyped-def]
+        return _resp({"error": "unexpected"})  # dict, not the [q,[titles],...] list
+
+    r = WikipediaArticleResolver(http_get=http_get, sleep=lambda s: None)
+    assert r.resolve("Anything") is None
+
+
+def test_mean_daily_views_skips_bad_items() -> None:
+    from datetime import datetime
+
+    from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
+
+    def http_get(url, headers=None, timeout=None):  # type: ignore[no-untyped-def]
+        return _resp({"items": [{"views": 100}, {"nope": 1}, {"views": 300}]})
+
+    r = WikipediaArticleResolver(http_get=http_get, sleep=lambda s: None)
+    assert r.mean_daily_views("X", datetime(2024, 1, 1), datetime(2024, 1, 3)) == 200.0

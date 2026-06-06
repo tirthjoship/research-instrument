@@ -82,7 +82,14 @@ class WikipediaArticleResolver:
             items = resp.json().get("items", [])
             if not items:
                 return 0.0
-            return sum(float(it["views"]) for it in items) / len(items)
+            vals = [
+                float(it["views"])
+                for it in items
+                if isinstance(it, dict) and "views" in it
+            ]
+            if not vals:
+                return 0.0
+            return sum(vals) / len(vals)
         except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "WikipediaArticleResolver.mean_daily_views failed for {}: {}",
