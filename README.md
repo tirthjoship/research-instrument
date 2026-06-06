@@ -20,6 +20,8 @@ Production-grade ML system predicting multi-horizon stock returns using a 5-laye
 
 **Phases 7-9 reframe:** Direction prediction alone shows no edge (~49% accuracy on mega-caps). The system now surfaces opportunities via multi-signal conviction scoring with adaptive learning — catching trends before mainstream awareness through SEC filing analysis, sentiment convergence, and pattern memory.
 
+**Current engine status (2026-06-05):** A discrimination audit over 63 warmed thematic mid-cap candidates found that 6 of 8 conviction dimensions are completely non-discriminating on this universe (smart-money, signal-agreement, sentiment-momentum, ml-direction, event-signal, analyst-signal all returned var=0.000). Only `temporal_freshness` and `fundamental_basis` vary, meaning conviction currently ranks by data recency, not opportunity quality. The engine honestly abstains on the spine. Sub-project C will pivot to **divergence-led surfacing** — attention-acceleration vs price as the primary trigger, with conviction demoted to a light tiebreaker — so the daily forward-tracking loop can finally accumulate resolved out-of-sample outcomes. See [ADR-043](docs/adr/043-conviction-dims-dead-divergence-led-surfacing.md).
+
 ---
 
 ## What It Does
