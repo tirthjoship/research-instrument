@@ -8,6 +8,7 @@ wrong stub or disambiguation page gets single digits.  Mean daily views >= min_v
 
 from __future__ import annotations
 
+import re
 import time
 from datetime import datetime
 from typing import Any, Callable, cast
@@ -27,6 +28,56 @@ _PAGEVIEWS = (
     "en.wikipedia/all-access/all-agents/{article}/daily/{start}/{end}"
 )
 _HEADERS = {"User-Agent": "multi-modal-stock-recommender/1.0 (research)"}
+
+# Legal suffixes to iteratively strip from company names.
+# Order matters: longer/more specific first to avoid partial matches.
+_LEGAL_SUFFIXES = (
+    r"Incorporated",
+    r"Corporation",
+    r"Holdings",
+    r"Limited",
+    r"Company",
+    r"Group",
+    r"& Co\.",
+    r"& Co",
+    r"Corp\.",
+    r"Corp",
+    r"Inc\.",
+    r"Inc",
+    r"Ltd\.",
+    r"Ltd",
+    r"LLC",
+    r"L\.P\.",
+    r"N\.V\.",
+    r"S\.A\.",
+    r"plc",
+    r"Co\.",
+    r"Co",
+)
+# Single regex: comma + optional space + suffix OR just suffix, anchored at end, case-insensitive
+_SUFFIX_RE = re.compile(
+    r"[,\s]+(?:" + "|".join(_LEGAL_SUFFIXES) + r")\.?\s*$",
+    re.IGNORECASE,
+)
+
+
+def normalize_company_name(name: str) -> str:
+    """Strip a leading 'The ' and trailing legal suffixes from a company name.
+
+    Loops until stable so stacked suffixes (e.g. "& Co., Inc.") are fully removed.
+    Returns the cleaned name; if nothing was stripped, returns the original unchanged.
+    """
+    result = name.strip()
+    # Strip leading "The "
+    if result.lower().startswith("the "):
+        result = result[4:].strip()
+    # Iteratively strip trailing legal suffixes
+    while True:
+        cleaned = _SUFFIX_RE.sub("", result).strip()
+        if cleaned == result:
+            break
+        result = cleaned
+    return result
 
 
 class WikipediaArticleResolver:
@@ -148,11 +199,19 @@ class WikipediaArticleResolver:
         Raises SourceThrottledError if either the OpenSearch or pageviews call is throttled —
         a throttle must never masquerade as a rejection.
         """
+        # Raw-first: try the name as-is
         art = self.resolve(name)  # SourceThrottledError propagates
-        if art is None:
-            return None
-        if (
-            self.mean_daily_views(art, start, end) >= min_views
-        ):  # SourceThrottledError propagates
-            return art
+        if art is not None and self.mean_daily_views(art, start, end) >= min_views:
+            return art  # SourceThrottledError propagates
+
+        # Cleaned-fallback: only if the cleaned name differs from the raw name
+        cleaned = normalize_company_name(name)
+        if cleaned and cleaned != name:
+            art2 = self.resolve(cleaned)  # SourceThrottledError propagates
+            if (
+                art2 is not None
+                and self.mean_daily_views(art2, start, end) >= min_views
+            ):
+                return art2  # SourceThrottledError propagates
+
         return None
