@@ -244,6 +244,39 @@ class TestLoadOutcomes:
         assert result == []
 
 
+class TestLoadScanDistribution:
+    def test_loader_returns_distribution_for_empty_state(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        from adapters.data.sqlite_store import SQLiteStore
+        from adapters.visualization.data_loader import load_scan_distribution
+
+        store = SQLiteStore(db_path=str(tmp_path / "t.db"))
+        store.save_scan_candidate(
+            scan_date="2026-06-05",
+            ticker="DUD",
+            conviction=3.0,
+            divergence=4.0,
+            sub_scores={"smart_money": 3.0},
+            surfaced=False,
+            theme="space",
+            cap_tier="small",
+        )
+        rows = load_scan_distribution(store, scan_date="2026-06-05")
+        assert len(rows) == 1
+        assert rows[0]["ticker"] == "DUD"
+
+    def test_loader_returns_empty_list_when_no_candidates(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        from adapters.data.sqlite_store import SQLiteStore
+        from adapters.visualization.data_loader import load_scan_distribution
+
+        store = SQLiteStore(db_path=str(tmp_path / "t.db"))
+        rows = load_scan_distribution(store, scan_date="2026-06-05")
+        assert rows == []
+
+
 class TestLoadScanTimestamp:
     def test_returns_none_when_no_reports_dir(self) -> None:
         from adapters.visualization.data_loader import load_scan_timestamp
