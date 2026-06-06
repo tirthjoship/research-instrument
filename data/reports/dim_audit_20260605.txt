@@ -1,0 +1,9 @@
+Dimension discrimination (prune dead dims):
+  smart_money      var=0.000 neutral_share=0.00 n=63
+  signal_agreement var=0.000 neutral_share=0.00 n=63
+  sentiment_momentum var=0.000 neutral_share=1.00 n=63
+  ml_direction     var=0.000 neutral_share=1.00 n=63
+  event_signal     var=0.000 neutral_share=1.00 n=63
+  analyst_signal   var=0.000 neutral_share=1.00 n=63
+  fundamental_basis var=0.250 neutral_share=0.02 n=63
+  temporal_freshness var=2.649 neutral_share=0.00 n=63

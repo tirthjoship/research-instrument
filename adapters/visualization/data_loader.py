@@ -243,6 +243,22 @@ def load_learned_rules(db_path: str) -> list[Any]:
         return []
 
 
+def load_scan_distribution(
+    store: Any, scan_date: str | None = None
+) -> list[dict[str, Any]]:
+    """Return the full candidate distribution for the given scan_date.
+
+    Thin wrapper over store.get_scan_candidates. Returns all rows (surfaced
+    and non-surfaced) so the dashboard can render an honest empty-state when
+    the surfaced list is empty.
+    """
+    try:
+        return store.get_scan_candidates(scan_date=scan_date)  # type: ignore[no-any-return]
+    except Exception as e:
+        logger.warning("Failed to load scan distribution: %s", e)
+        return []
+
+
 def load_scan_timestamp(reports_dir: str = "data/reports") -> str | None:
     """Find most recent backtest report and return formatted timestamp string.
 
