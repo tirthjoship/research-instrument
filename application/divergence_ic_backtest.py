@@ -59,16 +59,11 @@ class DivergenceICBacktestUseCase:
         # date_level_significance(model_basket_returns, spy_returns) — two lists.
         # We test mean IC > 0 by passing ic_series as "model" and zeros as "spy"
         # so excess[i] = ic[i] - 0 = ic[i], one-sided H1: mean IC > 0.
-        date_level: dict[str, Any]
-        try:
-            date_level = (
-                date_level_significance(ic_series, [0.0] * len(ic_series))
-                if ic_series
-                else {}
-            )
-        except Exception:
-            # Graceful degradation on tiny/degenerate series (e.g. n < 2)
-            date_level = {}
+        date_level: dict[str, Any] = (
+            date_level_significance(ic_series, [0.0] * len(ic_series))
+            if ic_series
+            else {}
+        )
 
         return {
             "horizon": horizon_label,

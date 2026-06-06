@@ -59,3 +59,22 @@ def test_ic_backtest_noise_signal_near_zero():
     )
     report = uc.execute(dates, tickers, horizon_label="1m")
     assert abs(report["mean_ic"]) < 0.2
+
+
+def test_ic_backtest_empty_attention_yields_zero_report():
+    from datetime import datetime, timezone
+
+    from application.divergence_ic_backtest import DivergenceICBacktestUseCase
+
+    now = datetime(2026, 1, 5, tzinfo=timezone.utc)
+    uc = DivergenceICBacktestUseCase(
+        attention_fn=lambda ticker, t: [],  # no attention for anyone
+        price_fn=lambda ticker, t: [(t, 100.0)],
+        forward_return_fn=lambda ticker, t: 0.0,
+        min_names=50,
+    )
+    report = uc.execute([now], ["A", "B"], horizon_label="1m")
+    assert report["n_dates"] == 0
+    assert report["mean_ic"] == 0.0
+    assert report["bootstrap"] == {}
+    assert report["date_level"] == {}
