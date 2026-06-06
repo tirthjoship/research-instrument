@@ -334,7 +334,9 @@ def test_resolve_wiki_articles_skips_existing_alias(
 
     monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
     monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: "Name " + t, raising=False)  # type: ignore[attr-defined]
-    # RKLB is in themes.yaml aliases — must be skipped
+    # Pin the curated skip set in-test (isolate from live on-disk wiki_articles_us.yaml):
+    # RKLB as a curated alias must be skipped, resolver never called for it.
+    monkeypatch.setattr(climod, "_load_wiki_map", lambda market: {"RKLB": "Rocket_Lab"}, raising=False)  # type: ignore[attr-defined]
     monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["RKLB"], raising=False)  # type: ignore[attr-defined]
 
     from pathlib import Path
