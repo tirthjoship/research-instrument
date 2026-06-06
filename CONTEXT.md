@@ -35,6 +35,15 @@ The disagreement between technical_signal and sentiment_signal for a given stock
 - `divergence_score` — magnitude of disagreement (0.0 = aligned, 2.0 = max divergence)
 - `divergence_type` — "bullish_divergence" (sentiment bullish, technicals bearish), "bearish_divergence" (sentiment bearish, technicals bullish), or "aligned"
 
+### Dead Dimension (discrimination audit)
+A conviction dimension that produces zero variance across all scored candidates — typically because the underlying data source structurally returns nothing for the target universe. On the thematic mid-cap spine, a discrimination audit (2026-06-05, n=63 warmed candidates) found 6 of 8 conviction dimensions dead: `smart_money` (var=0.000, SEC EDGAR 13D/Form-4 absent for mid-caps), `signal_agreement` (var=0.000, derived from dead dims), `sentiment_momentum` (var=0.000, neutral_share=1.00 — not computed in bulk), `ml_direction` (var=0.000, neutral_share=1.00 — no per-ticker inference in bulk), `event_signal` (var=0.000, neutral_share=1.00 — Gemini per-ticker cost deferred), and `analyst_signal` (var=0.000, neutral_share=1.00 — no coverage for these names). Only `temporal_freshness` (var=2.649) and `fundamental_basis` (var=0.250) vary. Dead dimensions are not pruned from the domain model — they are marked inactive for the specific universe and excluded from the surface trigger. See ADR-043.
+
+### Divergence-Led Surfacing (sub-project C, pending)
+An alternative surfacing strategy in which **attention-acceleration vs price** (the `divergence_score` from `blended_divergence_score()`, combining event-acceleration + intensity-acceleration) is the **primary** trigger, and conviction (from live dims only) is a **light tiebreaker**. This inverts the Phase 7–9 design (`conviction × divergence` layered trigger) to resolve the finding that conviction is freshness-dominated on the thematic spine. A candidate surfaces when divergence clears `dmin` and conviction — computed from whatever dims are live — ranks above competing candidates at the same divergence level. Honest abstention and the minimum-history gate (`has_min_history`) are retained. Implementation is pending (sub-project C). See ADR-043.
+
+### Conviction (engine status, 2026-06-05)
+On the thematic mid-cap spine, conviction is freshness-dominated: with 6 of 8 dims dead, the engine effectively ranks names by how recently their data was fetched (`temporal_freshness`), not by opportunity quality. Conviction remains in the architecture as a tiebreaker but should not be read as "opportunity confidence" on this universe until sub-project C wires divergence as the primary gate. See ADR-043 for the discrimination audit numbers and the decision to pivot.
+
 ### StockRecommendation
 A graded pick for a specific stock in a specific week. Contains the grade, composite score, predicted 5-day return, confidence, supporting indicators, and human-readable reasoning.
 
