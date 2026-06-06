@@ -67,10 +67,12 @@ No new model dims. No paid sources. No proxies.
 - **KILL:** CI spans 0, or sign negative, or |mean IC| < 0.02. → divergence is **falsified on a sample biased in its favor**; stop building on it. Pivot honestly (research/monitoring tool; or test a different primary signal; or accept index investing).
 - **Multiple-testing control:** ONE primary horizon, ONE signal config decide the gate. All other horizons/variants are exploratory and reported as such; they cannot flip the decision.
 
-**Open pre-registration choices needing your sign-off (set defaults, confirm or adjust):**
-1. Primary horizon = 1 month? (vs 1 week / 3 months)
-2. Kill threshold |IC| ≥ 0.02? (0.02 is a modest "worth forward-tracking" bar; 0.03–0.05 is "genuinely tradeable")
-3. Broad universe (605) for the test — agreed? (the thematic spine is too hindsight-loaded for the IC test; it returns as the *forward-tracking* universe in the conditional Phase)
+**LOCKED 2026-06-05 (user sign-off, before any result existed):**
+1. **Primary horizon = 1 month (21 trading days).** 1w + 3m reported as exploratory only.
+2. **Kill threshold = |mean IC| ≥ 0.02 with bootstrap CI excluding 0, positive sign.**
+3. **Universe = broad ~605 (S&P 500 + NASDAQ-100)** for the gate. Thematic spine (27) returns as the forward-tracking universe in the conditional Phase if PROCEED.
+
+These three are now frozen. No change after results.
 
 ---
 
