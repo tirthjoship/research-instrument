@@ -1,0 +1,30 @@
+{
+  "report": {
+    "strategy": {
+      "cagr": 0.16187778530700192,
+      "sharpe": 0.9959489876272725,
+      "sortino": 1.3780200664472837,
+      "max_drawdown": 0.21852389670267913
+    },
+    "buy_hold": {
+      "cagr": 0.1623743631784207,
+      "sharpe": 0.8806218883726997,
+      "sortino": 1.243187417645031,
+      "max_drawdown": 0.3817944862453576
+    },
+    "spy": {
+      "cagr": 0.14878309964591718,
+      "sharpe": 0.8185396136238202,
+      "sortino": 1.1522338282538003,
+      "max_drawdown": 0.33717264821380666
+    }
+  },
+  "universe_size": 570,
+  "verdict": {
+    "decision": "KILL",
+    "sharpe_diff_ci_low": -0.000484,
+    "drawdown_reduction": 0.4276399880687479,
+    "beats_sharpe": false,
+    "cuts_drawdown": true
+  }
+}
