@@ -56,3 +56,52 @@ def test_strategy_pays_for_the_triggering_crash_bar_no_lookahead():
         f"but got {report['strategy']['max_drawdown']:.4f}. "
         "This indicates look-ahead bias: the stop fired before the loss was booked."
     )
+
+
+def test_verdict_proceed_when_better_sharpe_and_lower_dd(monkeypatch):
+    from application import momentum_exit_backtest as m
+
+    uc = m.MomentumExitBacktestUseCase(price_provider=lambda t: [])
+    report = {
+        "strategy": {
+            "sharpe": 1.2,
+            "max_drawdown": 0.20,
+            "equity": [1.0, 1.1, 1.2],
+            "cagr": 0.1,
+            "sortino": 1.5,
+        },
+        "buy_hold": {
+            "sharpe": 0.6,
+            "max_drawdown": 0.50,
+            "equity": [1.0, 0.9, 1.1],
+            "cagr": 0.1,
+            "sortino": 0.7,
+        },
+    }
+    verdict = uc.verdict(report, sharpe_diff_ci_low=0.1)  # CI excludes 0
+    assert verdict["decision"] == "PROCEED"
+    assert verdict["drawdown_reduction"] >= 0.30
+
+
+def test_verdict_kill_when_dd_not_reduced_enough():
+    from application import momentum_exit_backtest as m
+
+    uc = m.MomentumExitBacktestUseCase(price_provider=lambda t: [])
+    report = {
+        "strategy": {
+            "sharpe": 1.2,
+            "max_drawdown": 0.45,
+            "equity": [1.0],
+            "cagr": 0,
+            "sortino": 0,
+        },
+        "buy_hold": {
+            "sharpe": 0.6,
+            "max_drawdown": 0.50,
+            "equity": [1.0],
+            "cagr": 0,
+            "sortino": 0,
+        },
+    }
+    verdict = uc.verdict(report, sharpe_diff_ci_low=0.1)
+    assert verdict["decision"] == "KILL"  # only 10% dd reduction < 30%
