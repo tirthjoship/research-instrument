@@ -61,6 +61,20 @@ For each of the user's 20 current holdings, compute and tabulate **today's** rul
 
 This is **application, not validation** — stated explicitly in the output. It is the actionable read on the user's real money; it does not prove anything by itself (n=20, outcome-selected).
 
+## Phase 2 — Screener + Daily Decision Feed (CONDITIONAL on Phase-1 PROCEED)
+
+> Builds ONLY if the Phase-1 backtest passes the locked success bar. If Phase 1 returns KILL, there is no validated rule set to recommend from, and Phase 2 does not exist. This is the same conditional discipline as ADR-044's Phase 5.
+
+The user wants the engine to **surface new candidates** (not just manage held names), give **buy/sell/horizon** per name, and **update daily** — without false positives. The honest realization of that, gated on validated rules:
+
+- **Candidate screener (SCREEN, not PREDICT):** rank the full US+TSX universe by the *same* pre-registered momentum/trend/quality filters. Output = "names currently meeting the criteria your winners shared," with entry zone, Chandelier exit, and momentum percentile. Framed explicitly as a **filter, never a forecast.** It would plausibly have surfaced MCK/WMT/COST/TXN/STN/HXL while they trended, and would ride IRDM/LUNR/ASTS/RKLB-type names **only once a confirmed uptrend exists** — never predicting them cold.
+- **Dynamic horizon, not fixed:** "how long to hold" = "until the trend breaks" (the trailing stop defines it). Long-term for runners (MU-style), short for quick breaks. No fake fixed horizons.
+- **Daily decision feed:** recompute trend status, trailing stops, and momentum rank for held names + screened candidates; surface only **state changes** (a holding broke trend → exit alert; a name entered the top tercile → new candidate). Reuses the existing daily-scan infra.
+- **LLM as narrator, never picker:** news/broker-rating context is summarized by the LLM to explain *why* a name moved or what changed — it does **not** generate or rank picks (StockBench/KDD-2026: LLM agents predict badly, explain well). Analyst-rating *changes* (not levels) may appear as one context input, clearly labeled low-weight.
+- **Calibrated, not confident:** every surfaced name carries an honest confidence and the engine **abstains** when signals are weak (extends ADR-039's abstention). No "strong buy" theater. The "no false positives" goal is reframed as **cheap false positives**: the trailing-stop discipline makes a wrong call exit fast and small — wrong cheaply, right big.
+
+**The hard line:** "false-positive-free recommendation" is impossible and is explicitly NOT promised. The engine's value is the asymmetry (cut losers cheap, ride winners), not predictive accuracy. Any feature that would require predicting which name rises is out of scope — that is the falsified thesis.
+
 ## Honesty constraints (non-negotiable)
 
 1. **Rules frozen before results** — no tuning to LULU/MU/the 20 holdings.
