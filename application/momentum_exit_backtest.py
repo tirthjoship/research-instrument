@@ -77,7 +77,7 @@ class MomentumExitBacktestUseCase:
         last_month: dict[str, tuple[int, int]] = {}  # (year, month) last appended
 
         # Strategy state per ticker
-        # held[ticker] = True means currently held
+        # held[ticker] = True means currently held (positions decided at END of prior day)
         held: dict[str, bool] = {t: False for t in date_closes}
         entry_closes: dict[str, list[float]] = {
             t: [] for t in date_closes
@@ -97,13 +97,42 @@ class MomentumExitBacktestUseCase:
             elif (today.year, today.month) != (prev_date.year, prev_date.month):
                 is_new_month = True
 
-            # ── Update closes_so_far for today ───────────────────────────────
+            # ── STEP 1: Append close[today] to closes_so_far ─────────────────
             for ticker, dc in date_closes.items():
                 if today in dc:
                     closes_so_far[ticker].append(dc[today])
 
-            # ── On month boundary: update month_end_closes with the previous
-            #    month's last close (which is now fully observed) ──────────────
+            # ── STEP 2: Book daily return using PRIOR-DAY held state ─────────
+            # The positions in `held`/`entry_closes` were decided at the end of
+            # day t-1. We pay today's move before making any new decisions.
+            if i > 0:
+                # Strategy return: mean of held names' daily returns
+                strat_rets: list[float] = []
+                for ticker, dc in date_closes.items():
+                    if not held[ticker]:
+                        continue
+                    c = closes_so_far[ticker]
+                    if len(c) < 2:
+                        continue
+                    ret = (c[-1] - c[-2]) / c[-2] if c[-2] != 0 else 0.0
+                    strat_rets.append(ret)
+                strat_ret = sum(strat_rets) / len(strat_rets) if strat_rets else 0.0
+                strat_eq.append(strat_eq[-1] * (1.0 + strat_ret))
+
+                # Buy-hold return: mean of all names' daily returns (if data available)
+                bh_rets: list[float] = []
+                for ticker, dc in date_closes.items():
+                    c = closes_so_far[ticker]
+                    if len(c) < 2:
+                        continue
+                    ret = (c[-1] - c[-2]) / c[-2] if c[-2] != 0 else 0.0
+                    bh_rets.append(ret)
+                bh_ret = sum(bh_rets) / len(bh_rets) if bh_rets else 0.0
+                bh_eq.append(bh_eq[-1] * (1.0 + bh_ret))
+
+            # ── STEP 3: Update month_end_closes on month boundary ────────────
+            # On the first trading day of a new month, the previous month's
+            # last close is now fully observed — record it.
             if is_new_month and prev_date is not None:
                 for ticker in date_closes:
                     c = closes_so_far[ticker]
@@ -114,7 +143,7 @@ class MomentumExitBacktestUseCase:
                             month_end_closes[ticker].append(c[-1])
                             last_month[ticker] = prev_ym
 
-            # ── Monthly rebalance: recompute held set ─────────────────────────
+            # ── STEP 4: Monthly rebalance — update held set for tomorrow ─────
             if is_new_month:
                 # Compute momentum for all tickers with enough data
                 mom_vals: dict[str, float] = {}
@@ -129,7 +158,7 @@ class MomentumExitBacktestUseCase:
                     list(mom_vals.values()), self._mom_fraction
                 )
 
-                # Decide new held set
+                # Decide new held set (takes effect from tomorrow)
                 for ticker in date_closes:
                     c = closes_so_far[ticker]
                     if not c:
@@ -160,7 +189,9 @@ class MomentumExitBacktestUseCase:
                         held[ticker] = False
                         entry_closes[ticker] = []
 
-            # ── Intra-month Chandelier stop check ────────────────────────────
+            # ── STEP 5: Intra-month Chandelier stop — update held for tomorrow
+            # A stop that triggers on today still costs today's move (already
+            # booked above). The exit takes effect from tomorrow.
             for ticker in list(date_closes.keys()):
                 if not held[ticker]:
                     continue
@@ -179,36 +210,6 @@ class MomentumExitBacktestUseCase:
                     if close < stop:
                         held[ticker] = False
                         entry_closes[ticker] = []
-
-            # ── Daily returns for equity curves ──────────────────────────────
-            if i == 0:
-                # No previous day → no return to compute
-                prev_date = today
-                continue
-
-            # Strategy return: mean of held names' daily returns
-            strat_rets: list[float] = []
-            for ticker, dc in date_closes.items():
-                if not held[ticker]:
-                    continue
-                c = closes_so_far[ticker]
-                if len(c) < 2:
-                    continue
-                ret = (c[-1] - c[-2]) / c[-2] if c[-2] != 0 else 0.0
-                strat_rets.append(ret)
-            strat_ret = sum(strat_rets) / len(strat_rets) if strat_rets else 0.0
-            strat_eq.append(strat_eq[-1] * (1.0 + strat_ret))
-
-            # Buy-hold return: mean of all names' daily returns (if data available)
-            bh_rets: list[float] = []
-            for ticker, dc in date_closes.items():
-                c = closes_so_far[ticker]
-                if len(c) < 2:
-                    continue
-                ret = (c[-1] - c[-2]) / c[-2] if c[-2] != 0 else 0.0
-                bh_rets.append(ret)
-            bh_ret = sum(bh_rets) / len(bh_rets) if bh_rets else 0.0
-            bh_eq.append(bh_eq[-1] * (1.0 + bh_ret))
 
             prev_date = today
 
