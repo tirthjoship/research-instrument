@@ -51,3 +51,19 @@ def sortino(
     if dd == 0.0:
         return 0.0
     return (mean / dd) * math.sqrt(periods_per_year)
+
+
+def max_drawdown(equity: list[float]) -> float:
+    """Largest peak-to-trough decline as a positive fraction (0.40 = -40%)."""
+    if not equity:
+        return 0.0
+    peak = equity[0]
+    mdd = 0.0
+    for v in equity:
+        if v > peak:
+            peak = v
+        if peak > 0:
+            dd = (peak - v) / peak
+            if dd > mdd:
+                mdd = dd
+    return mdd
