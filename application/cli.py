@@ -1852,7 +1852,9 @@ def validate_momentum_discipline(
         "report": {
             k: {m: _safe(report[k][m]) for m in report[k] if m != "equity"}
             for k in report
+            if isinstance(report[k], dict)
         },
+        "universe_size": len(report.get("universe", [])),
         "verdict": {kk: _safe(vv) for kk, vv in v.items()},
     }
     with open("data/reports/momentum_discipline.json", "w") as f:
