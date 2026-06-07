@@ -418,6 +418,38 @@ def test_backtest_universe_includes_tsx(monkeypatch: object) -> None:
     assert any(t.endswith(".TO") for t in uni)  # TSX names carry .TO suffix
 
 
+def test_portfolio_verdict_cli(monkeypatch: object, tmp_path: object) -> None:
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    holdings = tmp_path / "holdings.csv"  # type: ignore[operator]
+    holdings.write_text("ticker,shares\nMU,25\nRIVN,80\n")
+
+    class _UC:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def verdict_for(self, ticker: str) -> dict:
+            return {
+                "ticker": ticker,
+                "price": 100.0,
+                "verdict": "HOLD" if ticker == "MU" else "EXIT",
+                "trend_intact": ticker == "MU",
+                "trailing_stop": 90.0,
+                "why": "test",
+            }
+
+    monkeypatch.setattr(climod, "PortfolioVerdictUseCase", _UC, raising=False)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["portfolio-verdict", "--holdings", str(holdings)])
+    assert result.exit_code == 0, result.output
+    assert "MU" in result.output and "HOLD" in result.output
+    assert "RIVN" in result.output and "EXIT" in result.output
+
+
 def test_validate_momentum_discipline_runs(monkeypatch: object) -> None:
     from click.testing import CliRunner
 

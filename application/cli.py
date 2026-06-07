@@ -26,6 +26,7 @@ from application.divergence_ic_backtest import DivergenceICBacktestUseCase
 from application.drip_backfill_use_case import DripBackfillUseCase
 from application.momentum_exit_backtest import MomentumExitBacktestUseCase
 from application.opportunity_scan_use_case import OpportunityScanUseCase
+from application.portfolio_verdict import PortfolioVerdictUseCase
 from application.use_cases import (
     PretrainingUseCase,
     TrackRecommendationsUseCase,
@@ -1968,6 +1969,47 @@ def _print_report(report: WeeklyReport) -> None:
             f"score={rec.composite_score:.3f} ({signals_str})"
         )
     click.echo(f"{'=' * 60}\n")
+
+
+@cli.command("portfolio-verdict")
+@click.option(
+    "--holdings",
+    default="data/personal/holdings.csv",
+    show_default=True,
+    help="Local CSV (ticker,shares[,entry]) — gitignored, never committed",
+)
+@click.option("--market", default="us")
+def portfolio_verdict(holdings: str, market: str) -> None:
+    """Apply validated trend/exit rules to your current holdings (decision-support)."""
+    import csv
+    import os
+    from datetime import datetime, timezone
+
+    from application.price_returns import load_price_series
+
+    if not os.path.exists(holdings):
+        click.echo(
+            f"No holdings file at {holdings}. Create it (ticker,shares) — it is gitignored."
+        )
+        return
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.fromisoformat("2026-06-01")
+
+    def provider(ticker: str) -> list[tuple[datetime, float]]:
+        return load_price_series(ticker, start_dt, end_dt)
+
+    uc = PortfolioVerdictUseCase(provider)
+    with open(holdings) as f:
+        rows = [r for r in csv.DictReader(f) if r.get("ticker")]
+    click.echo(f"{'TICKER':8} {'VERDICT':16} {'TREND':6} STOP / WHY")
+    for r in rows:
+        v = uc.verdict_for(r["ticker"].strip().upper())
+        stop = v.get("trailing_stop")
+        stop_s = f"{stop:.2f}" if stop else "-"
+        click.echo(
+            f"{v['ticker']:8} {v['verdict']:16} "
+            f"{'yes' if v['trend_intact'] else 'no':6} {stop_s}  {v.get('why','')}"
+        )
 
 
 if __name__ == "__main__":
