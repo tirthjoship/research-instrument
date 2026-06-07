@@ -20,3 +20,30 @@ def test_above_trend_false_when_sma_none():
     from domain.trend_rules import above_trend
 
     assert above_trend(105.0, None) is False
+
+
+def test_true_range_uses_max_of_three():
+    from domain.trend_rules import true_range
+
+    assert true_range(105.0, 100.0, 101.0) == 5.0
+
+
+def test_atr_averages_true_ranges():
+    from domain.trend_rules import atr
+
+    highs = [10.0, 11.0, 12.0]
+    lows = [9.0, 10.0, 11.0]
+    closes = [9.5, 10.5, 11.5]
+    assert atr(highs, lows, closes, 3) == (1.0 + 1.5 + 1.5) / 3
+
+
+def test_atr_insufficient_returns_none():
+    from domain.trend_rules import atr
+
+    assert atr([1.0], [1.0], [1.0], 5) is None
+
+
+def test_chandelier_stop_below_high():
+    from domain.trend_rules import chandelier_stop
+
+    assert chandelier_stop(120.0, 4.0, 3.0) == 108.0
