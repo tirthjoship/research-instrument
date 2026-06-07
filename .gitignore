@@ -2,6 +2,9 @@
 LOCAL_PROJECT_STORY.md
 .kiro/
 
+# Personal financial data — never commit
+data/personal/
+
 # Internal AI config — keep locally (agent scaffolding is implementation detail)
 .claude/settings.json
 .claude/settings.local.json
