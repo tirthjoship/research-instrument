@@ -21,6 +21,17 @@ The asymmetry — *win by holding momentum, bleed by holding broken trends* — 
 
 This is **not** a claim of beating SPY by 20–30%. It is a claim of *better risk-adjusted* outcomes and *drawdown reduction* — the documented value of trend-following (AQR TSMOM; Antonacci dual momentum: 17.4%/yr vs 8.85%, max DD 22.7% vs 60% over 39 yrs).
 
+## What's possible — evidence tiers (honest scope of ambition)
+
+The guiding principle of this whole pivot: **a retail investor's edge is better PROCESS, not better PREDICTION.** The user's own account proves the point — his picks are excellent (MU +863%, PLTR +447%, AMD +195%); his losses come from *process* (holding broken-trend names down 30–57%). So the engine's job is to enforce process, not to forecast.
+
+What the literature says is actually achievable, in three tiers:
+- **Tier 1 — reliable, retail-accessible:** risk management / drawdown reduction (trend filters); behaviour-gap closure (avg investor lags S&P ~848 bps/yr from disposition effect); factor premia — momentum (Jegadeesh-Titman), quality (Novy-Marx), value, low-vol — a few %/yr over long horizons, lagging by nature.
+- **Tier 2 — earlier but modest & decaying:** post-earnings-announcement drift (PEAD), analyst-revision momentum, fundamental acceleration. Enter *earlier* than price-trend; real evidence, smaller, fading. **Each must pass its own falsification test before use.**
+- **Tier 3 — NOT possible for anyone honest (explicitly out of scope):** predicting ignition before it happens (a BlackBerry-at-the-bottom call); a learning loop that compounds to high accuracy (markets are non-stationary + adversarial — McLean & Pontiff 2016: published anomalies decay ~58% post-publication; Renaissance Medallion is the capacity-capped, closed-to-outsiders exception, not a template); beating SPY by 20–30% reliably.
+
+"Learning over time," honestly defined, means **regime-conditional factor weighting + self-calibration** (track hit-rate, abstain when wrong-prone) — NOT "gets better at picking winners." Phase 9 already built an adaptive loop; it did not manufacture edge, and this design does not assume one can.
+
 ## Pre-registered rules (LOCKED before any result — textbook defaults, NO tuning to the user's trades)
 
 1. **Absolute-momentum trend filter:** hold a name only while `close > SMA(200)`. Below it → out (to cash). (Standard 200-day / 10-month trend filter.)
@@ -67,7 +78,8 @@ This is **application, not validation** — stated explicitly in the output. It 
 
 The user wants the engine to **surface new candidates** (not just manage held names), give **buy/sell/horizon** per name, and **update daily** — without false positives. The honest realization of that, gated on validated rules:
 
-- **Candidate screener (SCREEN, not PREDICT):** rank the full US+TSX universe by the *same* pre-registered momentum/trend/quality filters. Output = "names currently meeting the criteria your winners shared," with entry zone, Chandelier exit, and momentum percentile. Framed explicitly as a **filter, never a forecast.** It would plausibly have surfaced MCK/WMT/COST/TXN/STN/HXL while they trended, and would ride IRDM/LUNR/ASTS/RKLB-type names **only once a confirmed uptrend exists** — never predicting them cold.
+- **Multi-factor candidate screener (SCREEN, not PREDICT):** rank the full US+TSX universe by a *composite* of falsified factors — **price/time-series momentum + earnings-revision & PEAD drift (Tier 2, earlier than price) + quality/profitability acceleration** — plus the trend filter. **Each factor must independently pass the IC/event-study falsification harness before it is allowed into the composite** (no factor ships unproven; same discipline that killed divergence). Output = "names currently meeting the evidence-backed criteria your winners shared," with entry zone, Chandelier exit, and per-factor contribution. Framed explicitly as a **filter, never a forecast.** The multi-factor blend answers the "screening is too late" critique honestly: revision/earnings factors lead price somewhat, so entries are *earlier than pure trend* — but it still **rides** IRDM/LUNR/ASTS/RKLB-type names only once a confirmed move exists, never predicting them cold.
+- **Regime-conditional weighting + calibration (the honest "learning"):** factor weights adapt to the detected regime (reuse `RegimeSplitter`); the engine tracks its own hit-rate per factor/regime and **abstains when wrong-prone**. This is adaptation, not accuracy-compounding (Tier-3 fantasy, excluded).
 - **Dynamic horizon, not fixed:** "how long to hold" = "until the trend breaks" (the trailing stop defines it). Long-term for runners (MU-style), short for quick breaks. No fake fixed horizons.
 - **Daily decision feed:** recompute trend status, trailing stops, and momentum rank for held names + screened candidates; surface only **state changes** (a holding broke trend → exit alert; a name entered the top tercile → new candidate). Reuses the existing daily-scan infra.
 - **LLM as narrator, never picker:** news/broker-rating context is summarized by the LLM to explain *why* a name moved or what changed — it does **not** generate or rank picks (StockBench/KDD-2026: LLM agents predict badly, explain well). Analyst-rating *changes* (not levels) may appear as one context input, clearly labeled low-weight.
