@@ -408,3 +408,11 @@ def test_resolve_wiki_articles_skips_throttled(
     assert "AAPL" not in data  # throttled -> skipped, NOT written
     assert data.get("ABT") == "Abbott Laboratories"
     assert "AAPL" in result.output  # throttled ticker named in summary
+
+
+def test_backtest_universe_includes_tsx(monkeypatch: object) -> None:
+    import application.cli as climod
+
+    uni = climod._get_backtest_universe("us")
+    assert "AAPL" in uni
+    assert any(t.endswith(".TO") for t in uni)  # TSX names carry .TO suffix
