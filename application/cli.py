@@ -24,6 +24,7 @@ from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
 from application.divergence_ic_backtest import DivergenceICBacktestUseCase
 from application.drip_backfill_use_case import DripBackfillUseCase
+from application.momentum_exit_backtest import MomentumExitBacktestUseCase
 from application.opportunity_scan_use_case import OpportunityScanUseCase
 from application.use_cases import (
     PretrainingUseCase,
@@ -1783,6 +1784,90 @@ def daily_cycle(ctx: click.Context, market: str, skip_backfill: bool) -> None:
         ctx.invoke(backfill_history, market=market, days=14, limit=0)
 
     click.echo("Daily cycle complete.")
+
+
+@cli.command("validate-momentum-discipline")
+@click.option("--market", default="us")
+@click.option("--start", default="2018-01-01", show_default=True)
+@click.option("--end", default="2026-06-01", show_default=True)
+@click.option("--limit", default=0, type=int, help="Cap universe (0 = all)")
+@click.option(
+    "--quick", is_flag=True, help="Smaller universe sample for a fast dry run"
+)
+def validate_momentum_discipline(
+    market: str, start: str, end: str, limit: int, quick: bool
+) -> None:
+    """Pre-registered momentum + trailing-exit backtest (spec 2026-06-07). PROCEED/KILL."""
+    import json as _json
+    import math
+    import os
+    from datetime import datetime as _dt
+
+    from application.precision_metrics import moving_block_bootstrap
+    from application.price_returns import load_price_series
+    from domain.backtest_metrics import daily_returns
+
+    start_dt = _dt.fromisoformat(start)
+    end_dt = _dt.fromisoformat(end)
+    universe = _get_backtest_universe(market)
+    if quick:
+        universe = universe[:50]
+    if limit:
+        universe = universe[:limit]
+
+    _cache: dict[str, list[tuple[_dt, float]]] = {}
+
+    def provider(ticker: str) -> list[tuple[_dt, float]]:
+        if ticker not in _cache:
+            _cache[ticker] = load_price_series(ticker, start_dt, end_dt)
+        return _cache[ticker]
+
+    uc = MomentumExitBacktestUseCase(provider)
+    report = uc.execute(universe, start_dt, end_dt)
+
+    s_ret = daily_returns(report["strategy"]["equity"])
+    b_ret = daily_returns(report["buy_hold"]["equity"])
+    n = min(len(s_ret), len(b_ret))
+    diff = [s_ret[i] - b_ret[i] for i in range(n)]
+    boot = moving_block_bootstrap(diff) if diff else {}
+    ci_low_raw = boot.get("ci_low", 0.0)
+    ci_low: float = float(ci_low_raw) if isinstance(ci_low_raw, (int, float)) else 0.0
+
+    v = uc.verdict(report, sharpe_diff_ci_low=ci_low)
+    os.makedirs("data/reports", exist_ok=True)
+
+    def _safe(x: object) -> object:
+        if isinstance(x, bool):
+            return x
+        if isinstance(x, int):
+            return x
+        if isinstance(x, str):
+            return x
+        if isinstance(x, float):
+            return x if math.isfinite(x) else 0.0
+        return x
+
+    out = {
+        "report": {
+            k: {m: _safe(report[k][m]) for m in report[k] if m != "equity"}
+            for k in report
+        },
+        "verdict": {kk: _safe(vv) for kk, vv in v.items()},
+    }
+    with open("data/reports/momentum_discipline.json", "w") as f:
+        _json.dump(out, f, indent=2, default=str)
+
+    for name in ("strategy", "buy_hold", "spy"):
+        if name in report:
+            r = report[name]
+            click.echo(
+                f"{name:10} sharpe={r['sharpe']:.2f} cagr={r['cagr']:.2%} "
+                f"maxDD={r['max_drawdown']:.2%}"
+            )
+    click.echo(
+        f"VERDICT: {v['decision']}  (drawdown_reduction={v['drawdown_reduction']:.0%}, "
+        f"sharpe_diff_ci_low={v['sharpe_diff_ci_low']:.4f})"
+    )
 
 
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:

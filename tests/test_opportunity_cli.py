@@ -416,3 +416,65 @@ def test_backtest_universe_includes_tsx(monkeypatch: object) -> None:
     uni = climod._get_backtest_universe("us")
     assert "AAPL" in uni
     assert any(t.endswith(".TO") for t in uni)  # TSX names carry .TO suffix
+
+
+def test_validate_momentum_discipline_runs(monkeypatch: object) -> None:
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    class _UC:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def execute(
+            self, universe: object, start: object, end: object
+        ) -> dict[str, object]:
+            return {
+                "strategy": {
+                    "sharpe": 1.1,
+                    "max_drawdown": 0.2,
+                    "cagr": 0.12,
+                    "sortino": 1.3,
+                    "equity": [1.0, 1.05, 1.1],
+                },
+                "buy_hold": {
+                    "sharpe": 0.6,
+                    "max_drawdown": 0.5,
+                    "cagr": 0.10,
+                    "sortino": 0.7,
+                    "equity": [1.0, 0.95, 1.0],
+                },
+                "spy": {
+                    "sharpe": 0.7,
+                    "max_drawdown": 0.34,
+                    "cagr": 0.11,
+                    "sortino": 0.8,
+                    "equity": [1.0, 0.98, 1.05],
+                },
+            }
+
+        def verdict(
+            self, report: object, sharpe_diff_ci_low: float
+        ) -> dict[str, object]:
+            return {
+                "decision": "PROCEED",
+                "drawdown_reduction": 0.6,
+                "sharpe_diff_ci_low": sharpe_diff_ci_low,
+                "beats_sharpe": True,
+                "cuts_drawdown": True,
+            }
+
+    monkeypatch.setattr(climod, "MomentumExitBacktestUseCase", _UC, raising=False)
+    monkeypatch.setattr(
+        climod, "_get_backtest_universe", lambda m: ["AAPL", "MSFT"], raising=False
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["validate-momentum-discipline", "--limit", "2", "--quick"]
+    )
+    assert result.exit_code == 0, result.output
+    assert "PROCEED" in result.output or "KILL" in result.output
+    assert "sharpe" in result.output.lower()
