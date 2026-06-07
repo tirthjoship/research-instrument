@@ -325,4 +325,12 @@ Five hard stops — see `AGENTS.md` for full details:
 - Plan: `docs/superpowers/plans/2026-06-06-leg2-subproject-d-phase35-attention-resolver.md` (+ `2026-06-05-leg2-subproject-d-divergence-ic-validation.md`)
 - ADR-044: `docs/adr/044-divergence-ic-verdict.md`
 
-**Planned (Phase 4):** Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing
+**PIVOT (2026-06-07, ADR-045): Return-Prediction → Exit-Discipline + Evidence-Bounded Screening**
+- Three falsification tests (ADR-039/043/044) killed the "predict winners from public sentiment/attention/conviction" thesis. Convergent negative: no retail-accessible alpha in public attention.
+- Reframe: **a retail edge is better PROCESS, not better PREDICTION.** User's picks are excellent (MU +863%, PLTR +447%); losses come from process (holding broken-trend names down 30–57%; mistimed exits). Behavior gap = avg investor lags S&P ~848 bps/yr (disposition effect).
+- New direction: momentum + 200-day trend filter + ATR Chandelier trailing exit (rides runners, ejects breaks) + relative-momentum selection. Evidence-tier-bounded ambition (Tier 1 risk/behavior/factors; Tier 2 PEAD/revisions each falsified; Tier 3 = ignition-prediction/accuracy-compounding/SPY+20-30% explicitly OUT).
+- Screening NOT prediction; "cheap false positives" not "no false positives"; calibrated + abstain; LLM narrates the why, never picks.
+- Spec: `docs/superpowers/specs/2026-06-07-personal-momentum-exit-discipline-backtest-design.md`. Plan: `docs/superpowers/plans/2026-06-07-momentum-exit-discipline-phase1.md` (12 tasks). ADR-045.
+- **NEXT SESSION (start LOW effort, conserve for implementation):** execute the Phase-1 plan via subagent-driven-development (Sonnet) — pure trend/metric primitives → MomentumExitBacktestUseCase → verdict gate → CLI → PortfolioVerdictUseCase. Then live backtest run → PROCEED/KILL. **THEN switch to MAX effort to dissect the findings.** Phase 2 (screener/daily feed) is gated on a PROCEED verdict — not yet planned. User provides `data/personal/holdings.csv` (gitignored) for the per-holding verdict.
+
+**Superseded (Phase 4 old plan):** ~~Tracking & Intelligence — accuracy trends, long-short ranking, conformal prediction, Canadian market, LLM analyst layer, risk management, position sizing~~ — the prediction-centric parts are abandoned per ADR-045; risk management + position sizing fold into the discipline engine; Canadian market (TSX) folds into the backtest universe.
