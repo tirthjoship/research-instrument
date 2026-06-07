@@ -1817,6 +1817,60 @@ def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     return load_ticker_universe(existing)
 
 
+def _get_backtest_universe(market: str) -> list[str]:
+    """US S&P 500 + NASDAQ-100 (existing) plus TSX 60 with .TO suffix for the backtest.
+
+    Reads ticker files directly (offline-safe — no network, no config object needed).
+    """
+    config_dir = Path(__file__).parent.parent / "config" / "tickers"
+    us_files = [
+        config_dir / "sp500.txt",
+        config_dir / "nasdaq100.txt",
+    ]
+    us_existing = [f for f in us_files if f.exists()]
+
+    us: list[str]
+    if us_existing:
+        from application.ticker_universe import load_ticker_universe
+
+        us = load_ticker_universe(us_existing)
+    else:
+        # Minimal fallback identical to _get_ticker_universe's hardcoded list
+        us = [
+            "AAPL",
+            "MSFT",
+            "GOOG",
+            "AMZN",
+            "META",
+            "TSLA",
+            "NVDA",
+            "JPM",
+            "JNJ",
+            "V",
+            "UNH",
+            "HD",
+            "PG",
+            "MA",
+            "XOM",
+        ]
+
+    tsx_path = config_dir / "tsx60.txt"
+    tsx: list[str] = []
+    if tsx_path.exists():
+        for line in tsx_path.read_text().splitlines():
+            s = line.strip()
+            if s and not s.startswith("#"):
+                tsx.append(f"{s}.TO")
+
+    seen: set[str] = set()
+    out: list[str] = []
+    for t in [*us, *tsx]:
+        if t not in seen:
+            seen.add(t)
+            out.append(t)
+    return out
+
+
 def _print_report(report: WeeklyReport) -> None:
     """Pretty-print a weekly report."""
     click.echo(f"\n{'=' * 60}")
