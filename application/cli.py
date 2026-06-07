@@ -15,12 +15,14 @@ import click
 from loguru import logger
 
 from adapters.data.sqlite_store import SQLiteStore
+from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
 from adapters.data.yfinance_adapter import YFinanceAdapter
 from adapters.ml.ensemble_predictor import EnsemblePredictor
 from adapters.ml.feature_engineer import FeatureEngineer
 from adapters.ml.fundamental_feature_engineer import FundamentalFeatureEngineer
 from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
+from application.divergence_ic_backtest import DivergenceICBacktestUseCase
 from application.drip_backfill_use_case import DripBackfillUseCase
 from application.opportunity_scan_use_case import OpportunityScanUseCase
 from application.use_cases import (
@@ -29,6 +31,7 @@ from application.use_cases import (
     WeeklyTournamentUseCase,
 )
 from config.loader import load_market_config
+from domain.exceptions import SourceThrottledError
 from domain.models import WeeklyReport
 
 
@@ -1206,22 +1209,83 @@ class _CombinedAttention:
 
 
 def _load_wiki_map(market: str) -> dict[str, str]:
-    """Build {ticker: wiki_article} from config/universe/themes.yaml aliases block."""
+    """Build {ticker: wiki_article} merging themes.yaml aliases + resolved YAML.
+
+    Aliases from themes.yaml are authoritative and win on conflict.
+    Also loads config/universe/wiki_articles_<market>.yaml if it exists.
+    """
+    return _load_wiki_map_merged(market)
+
+
+def _load_wiki_map_merged(
+    market: str, resolved_path: str | None = None
+) -> dict[str, str]:
+    """Merge curated themes.yaml aliases (authoritative) with a resolved YAML.
+
+    Args:
+        market: Market identifier (e.g. "us").
+        resolved_path: Override path to the resolved YAML.  Defaults to
+            config/universe/wiki_articles_<market>.yaml.
+
+    Returns:
+        Merged {ticker: wiki_article} with curated aliases winning on conflict.
+    """
     import yaml
 
     themes_path = Path(__file__).parent.parent / "config" / "universe" / "themes.yaml"
-    if not themes_path.exists():
-        return {}
+    curated: dict[str, str] = {}
+    if themes_path.exists():
+        try:
+            data = yaml.safe_load(themes_path.read_text())
+            aliases = data.get("aliases", {})
+            curated = {
+                ticker: str(info.get("wiki", ""))
+                for ticker, info in aliases.items()
+                if info.get("wiki")
+            }
+        except Exception as exc:
+            logger.warning(
+                "_load_wiki_map_merged: failed to load curated aliases from {}: {}",
+                themes_path,
+                exc,
+            )
+
+    if resolved_path is None:
+        resolved_path = str(
+            Path(__file__).parent.parent
+            / "config"
+            / "universe"
+            / f"wiki_articles_{market}.yaml"
+        )
+
+    resolved: dict[str, str] = {}
+    rp = Path(resolved_path)
+    if rp.exists():
+        try:
+            raw = yaml.safe_load(rp.read_text()) or {}
+            resolved = {str(k): str(v) for k, v in raw.items()}
+        except Exception as exc:
+            logger.warning(
+                "_load_wiki_map_merged: failed to load resolved YAML from {}: {}",
+                rp,
+                exc,
+            )
+
+    # Merge: start with resolved, then let curated win on conflict
+    merged = {**resolved, **curated}
+    return merged
+
+
+def _get_company_name(deps: dict[str, Any], ticker: str) -> str | None:
+    """Look up the company's display name via the market_data adapter."""
     try:
-        data = yaml.safe_load(themes_path.read_text())
-        aliases = data.get("aliases", {})
-        return {
-            ticker: str(info.get("wiki", ""))
-            for ticker, info in aliases.items()
-            if info.get("wiki")
-        }
+        adapter: Any = deps.get("market_data")
+        if adapter is not None and hasattr(adapter, "get_company_name"):
+            result: str | None = adapter.get_company_name(ticker)
+            return result
+        return None
     except Exception:
-        return {}
+        return None
 
 
 def _load_spine_tickers(market: str) -> list[str]:
@@ -1248,14 +1312,188 @@ def _load_spine_tickers(market: str) -> list[str]:
         return list(_load_wiki_map(market).keys())
 
 
+@cli.command("resolve-wiki-articles")
+@click.option("--market", default="us", help="Market config to use")
+@click.option("--limit", default=0, type=int, help="Max tickers to process (0 = all)")
+@click.option(
+    "--min-views",
+    default=50.0,
+    type=float,
+    show_default=True,
+    help="Minimum mean daily pageviews to accept an article",
+)
+@click.option(
+    "--throttle-s",
+    default=1.5,
+    type=float,
+    show_default=True,
+    help="Seconds to wait between Wikipedia API calls",
+)
+@click.option(
+    "--out",
+    default=None,
+    help=("Output YAML path (default: config/universe/wiki_articles_<market>.yaml)"),
+)
+def resolve_wiki_articles(
+    market: str,
+    limit: int,
+    min_views: float,
+    throttle_s: float,
+    out: str | None,
+) -> None:
+    """Resolve the ticker universe to Wikipedia article titles and write a YAML map.
+
+    For each ticker not already covered by a curated alias in themes.yaml or the
+    existing output file, the company name is looked up via yfinance and then
+    resolved + validated via WikipediaArticleResolver.  The output YAML is written
+    incrementally (each success is persisted immediately) so the command is resumable.
+    """
+    import yaml
+
+    deps = _build_dependencies(market)
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+    if limit:
+        tickers = tickers[:limit]
+
+    # Validation window: stable 30-day window used to check article identity
+    val_start = datetime(2024, 1, 1)
+    val_end = datetime(2024, 1, 31)
+
+    # Output path
+    out_path = (
+        Path(out)
+        if out
+        else (
+            Path(__file__).parent.parent
+            / "config"
+            / "universe"
+            / f"wiki_articles_{market}.yaml"
+        )
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load curated aliases (skip set — authoritative, never re-resolve)
+    curated_map = _load_wiki_map(market)
+    curated_tickers = set(curated_map.keys())
+
+    # Load existing resolved entries (resumable skip set)
+    existing: dict[str, str] = {}
+    if out_path.exists():
+        try:
+            raw = yaml.safe_load(out_path.read_text()) or {}
+            existing = {str(k): str(v) for k, v in raw.items()}
+        except Exception:
+            pass
+
+    resolved_map: dict[str, str] = dict(existing)
+
+    counts = {
+        "resolved": 0,
+        "no_name": 0,
+        "no_article": 0,
+        "skipped_existing": 0,
+        "throttled": 0,
+    }
+    no_name_tickers: list[str] = []
+    no_article_tickers: list[str] = []
+    throttled_tickers: list[str] = []
+
+    resolver = WikipediaArticleResolver(throttle_s=throttle_s)
+
+    for ticker in tickers:
+        if ticker in curated_tickers or ticker in existing:
+            counts["skipped_existing"] += 1
+            continue
+
+        name = _get_company_name(deps, ticker)
+        if not name:
+            counts["no_name"] += 1
+            no_name_tickers.append(ticker)
+            logger.debug("resolve-wiki-articles: no name for {}", ticker)
+            continue
+
+        try:
+            article = resolver.resolve_validated(name, val_start, val_end, min_views)
+        except SourceThrottledError as exc:
+            counts["throttled"] += 1
+            throttled_tickers.append(ticker)
+            logger.warning(
+                "resolve-wiki-articles: throttled for {} ({}), skipping: {}",
+                ticker,
+                name,
+                exc,
+            )
+            continue
+
+        if article:
+            resolved_map[ticker] = article
+            counts["resolved"] += 1
+            # Incremental write — crash-safe / resumable
+            try:
+                out_path.write_text(
+                    yaml.dump(dict(sorted(resolved_map.items())), allow_unicode=True)
+                )
+            except Exception as exc:
+                logger.warning("resolve-wiki-articles: write failed: {}", exc)
+        else:
+            counts["no_article"] += 1
+            no_article_tickers.append(ticker)
+            logger.debug(
+                "resolve-wiki-articles: no validated article for {} ({})", ticker, name
+            )
+
+    # Final write (sorted keys)
+    try:
+        out_path.write_text(
+            yaml.dump(dict(sorted(resolved_map.items())), allow_unicode=True)
+        )
+    except Exception as exc:
+        logger.warning("resolve-wiki-articles: final write failed: {}", exc)
+
+    click.echo(
+        f"resolve-wiki-articles complete: "
+        f"resolved={counts['resolved']} "
+        f"no_name={counts['no_name']} "
+        f"no_article={counts['no_article']} "
+        f"throttled={counts['throttled']} "
+        f"skipped_existing={counts['skipped_existing']}"
+    )
+    if no_name_tickers:
+        click.echo(
+            f"  no company name ({len(no_name_tickers)}): {', '.join(sorted(no_name_tickers))}"
+        )
+    if no_article_tickers:
+        click.echo(
+            f"  no valid article ({len(no_article_tickers)}): {', '.join(sorted(no_article_tickers))}"
+        )
+    if throttled_tickers:
+        click.echo(
+            f"  throttled / skipped ({len(throttled_tickers)}): {', '.join(sorted(throttled_tickers))}"
+        )
+    click.echo(f"Output: {out_path}")
+
+
 @cli.command("drip-backfill")
 @click.option("--market", default="us", help="Market config to use")
 @click.option("--days", default=90, show_default=True, type=int)
 @click.option("--limit", default=0, type=int, help="Max tickers (0 = all)")
 @click.option("--spine-only", is_flag=True, help="Restrict to the thematic spine")
 @click.option("--throttle-s", default=45.0, type=float, help="Seconds between requests")
+@click.option(
+    "--source",
+    "source_filter",
+    default=None,
+    type=click.Choice(["wikipedia", "google_trends"]),
+    help="Restrict to a single source (default: all)",
+)
 def drip_backfill(
-    market: str, days: int, limit: int, spine_only: bool, throttle_s: float
+    market: str,
+    days: int,
+    limit: int,
+    spine_only: bool,
+    throttle_s: float,
+    source_filter: str | None,
 ) -> None:
     """Resumable slow-drip backfill aligned to the scan universe (rate-safe)."""
     import time
@@ -1277,6 +1515,8 @@ def drip_backfill(
         "google_trends": GoogleTrendsAdapter(),
         "wikipedia": WikipediaPageviewsAdapter(article_map=_load_wiki_map(market)),
     }
+    if source_filter:
+        sources = {k: v for k, v in sources.items() if k == source_filter}
     uc = DripBackfillUseCase(
         sources=sources, store=store, sleep=time.sleep, throttle_s=throttle_s
     )
@@ -1305,6 +1545,102 @@ def audit_dimensions(market: str, date_: str | None) -> None:
             f"  {dim:16s} var={stats['variance']:.3f} "
             f"neutral_share={stats['neutral_share']:.2f} n={int(stats['n'])}"
         )
+
+
+@cli.command("validate-divergence-ic")
+@click.option("--market", default="us")
+@click.option("--start", default="2016-01-01", show_default=True)
+@click.option("--end", default="2025-12-31", show_default=True)
+@click.option("--horizon-days", default=21, show_default=True, type=int)
+@click.option("--min-names", default=50, show_default=True, type=int)
+@click.option("--limit", default=0, type=int, help="Cap universe (0 = all ~605)")
+@click.option(
+    "--quick",
+    is_flag=True,
+    help="Monthly cadence sample (faster) instead of weekly",
+)
+def validate_divergence_ic(
+    market: str,
+    start: str,
+    end: str,
+    horizon_days: int,
+    min_names: int,
+    limit: int,
+    quick: bool,
+) -> None:
+    """Pre-registered cross-sectional IC test of intensity-divergence (spec D §4)."""
+    import json as _json
+    import os
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+    tickers = _get_ticker_universe(deps["config"])
+    if limit:
+        tickers = tickers[:limit]
+
+    start_dt = datetime.fromisoformat(
+        start
+    )  # naive UTC — matches price/attention layers
+    end_dt = datetime.fromisoformat(end)
+    step = 28 if quick else 7
+    dates: list[datetime] = []
+    d = start_dt
+    while d <= end_dt - timedelta(days=horizon_days):
+        dates.append(d)
+        d += timedelta(days=step)
+
+    def attention_fn(ticker: str, t: datetime) -> list[tuple[datetime, float]]:
+        pts = store.get_attention_series(ticker, t - timedelta(days=40), t)
+        return [(p.timestamp, p.value) for p in pts]
+
+    _price_cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def _prices(ticker: str) -> list[tuple[datetime, float]]:
+        if ticker not in _price_cache:
+            from application.price_returns import load_price_series
+
+            _price_cache[ticker] = load_price_series(
+                ticker,
+                start_dt - timedelta(days=60),
+                end_dt + timedelta(days=horizon_days + 5),
+            )
+        return _price_cache[ticker]
+
+    def price_fn(ticker: str, t: datetime) -> list[tuple[datetime, float]]:
+        return [
+            (ts, px) for ts, px in _prices(ticker) if t - timedelta(days=40) <= ts <= t
+        ]
+
+    def forward_return_fn(ticker: str, t: datetime) -> float:
+        from application.price_returns import compute_forward_return
+
+        return compute_forward_return(_prices(ticker), t, horizon_days)
+
+    uc = DivergenceICBacktestUseCase(
+        attention_fn, price_fn, forward_return_fn, min_names=min_names
+    )
+    report = uc.execute(dates, tickers, horizon_label=f"{horizon_days}d")
+
+    boot = report.get("bootstrap") or {}
+    ci_low = boot.get("ci_low")
+    mean_ic: float = report["mean_ic"]
+    proceed = mean_ic >= 0.02 and ci_low is not None and ci_low > 0.0
+    verdict = "PROCEED" if proceed else "KILL"
+    report["verdict"] = verdict
+
+    os.makedirs("data/reports", exist_ok=True)
+    out_path = f"data/reports/divergence_ic_{horizon_days}d.json"
+    with open(out_path, "w") as f:
+        _json.dump(report, f, indent=2, default=str)
+
+    click.echo(
+        f"mean_ic={mean_ic:.4f} ic_ir={report['ic_ir']:.3f} "
+        f"n_dates={report['n_dates']} CI=[{boot.get('ci_low')},{boot.get('ci_high')}]"
+    )
+    click.echo(
+        f"VERDICT: {verdict}  (gate: |IC|>=0.02 & bootstrap CI excludes 0, positive)"
+    )
+    click.echo(f"report -> {out_path}")
 
 
 @cli.command("backfill-history")

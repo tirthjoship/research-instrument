@@ -80,6 +80,16 @@ class YFinanceAdapter(CachingMixin):
         signals = self._df_to_signals(symbol, df, prediction_time)
         return signals
 
+    def get_company_name(self, symbol: str) -> str | None:
+        """Return the company's long name (or short name) from yfinance, or None on error."""
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            return info.get("longName") or info.get("shortName") or None
+        except Exception:
+            logger.warning("Failed to fetch company name for %s", symbol)
+            return None
+
     def get_ticker_info(self, symbol: str) -> dict[str, float]:
         """Map yfinance info fields to standardised feature names."""
         ticker = yf.Ticker(symbol)

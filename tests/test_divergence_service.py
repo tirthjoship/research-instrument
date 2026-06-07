@@ -185,3 +185,45 @@ def test_has_min_history_false_when_empty():
 
     now = datetime(2026, 6, 5, tzinfo=timezone.utc)
     assert has_min_history([], now, min_days=21) is False
+
+
+# --- intensity_divergence_raw tests ---
+
+
+def test_intensity_divergence_raw_rising_attention_flat_price_positive():
+    from datetime import datetime, timedelta, timezone
+
+    from domain.divergence_service import intensity_divergence_raw
+
+    now = datetime(2026, 6, 5, tzinfo=timezone.utc)
+    attn = [(now - timedelta(days=d), 10.0) for d in range(8, 30)]
+    attn += [(now - timedelta(days=d), 90.0) for d in range(0, 7)]  # attention surging
+    price = [(now - timedelta(days=d), 100.0) for d in range(0, 40)]  # price flat
+    assert intensity_divergence_raw(attn, price, now) > 0.4
+
+
+def test_intensity_divergence_raw_rising_price_cancels():
+    from datetime import datetime, timedelta, timezone
+
+    from domain.divergence_service import intensity_divergence_raw
+
+    now = datetime(2026, 6, 5, tzinfo=timezone.utc)
+    attn = [(now - timedelta(days=d), 10.0) for d in range(8, 30)]
+    attn += [(now - timedelta(days=d), 90.0) for d in range(0, 7)]
+    # price ALSO surged 20% over the last 7d -> not a divergence
+    price = [(now - timedelta(days=d), 100.0) for d in range(7, 40)]
+    price += [(now - timedelta(days=d), 120.0) for d in range(0, 7)]
+    rising = intensity_divergence_raw(attn, price, now)
+    flat_price = [(now - timedelta(days=d), 100.0) for d in range(0, 40)]
+    flat = intensity_divergence_raw(attn, flat_price, now)
+    assert rising < flat
+
+
+def test_intensity_divergence_raw_no_attention_is_zero():
+    from datetime import datetime, timezone
+
+    from domain.divergence_service import intensity_divergence_raw
+
+    now = datetime(2026, 6, 5, tzinfo=timezone.utc)
+    price = [(now, 100.0)]
+    assert intensity_divergence_raw([], price, now) == 0.0
