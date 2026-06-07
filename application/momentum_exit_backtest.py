@@ -213,8 +213,41 @@ class MomentumExitBacktestUseCase:
 
             prev_date = today
 
-        return {
+        result: dict[str, Any] = {
             "strategy": self._metrics(strat_eq),
             "buy_hold": self._metrics(bh_eq),
             "universe": universe,
+        }
+
+        # SPY buy-hold baseline (optional — omitted when provider returns no data)
+        spy_raw = self._prices("SPY")
+        if spy_raw:
+            spy_filtered = [(d, c) for d, c in spy_raw if start <= d <= end]
+            if spy_filtered:
+                spy_eq: list[float] = [1.0]
+                spy_closes = [c for _, c in sorted(spy_filtered)]
+                for j in range(1, len(spy_closes)):
+                    prev_c = spy_closes[j - 1]
+                    ret = (spy_closes[j] - prev_c) / prev_c if prev_c != 0 else 0.0
+                    spy_eq.append(spy_eq[-1] * (1.0 + ret))
+                result["spy"] = self._metrics(spy_eq)
+
+        return result
+
+    def verdict(
+        self, report: dict[str, Any], sharpe_diff_ci_low: float
+    ) -> dict[str, Any]:
+        strat = report["strategy"]
+        bh = report["buy_hold"]
+        bh_dd = bh["max_drawdown"]
+        dd_reduction = (bh_dd - strat["max_drawdown"]) / bh_dd if bh_dd > 0 else 0.0
+        beats_sharpe = sharpe_diff_ci_low > 0.0  # bootstrap CI excludes 0, positive
+        cuts_drawdown = dd_reduction >= 0.30
+        decision = "PROCEED" if (beats_sharpe and cuts_drawdown) else "KILL"
+        return {
+            "decision": decision,
+            "sharpe_diff_ci_low": sharpe_diff_ci_low,
+            "drawdown_reduction": dd_reduction,
+            "beats_sharpe": beats_sharpe,
+            "cuts_drawdown": cuts_drawdown,
         }
