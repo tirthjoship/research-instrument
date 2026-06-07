@@ -50,6 +50,18 @@ A pre-registered IC test can **falsify cheaply** but cannot **validate**. A non-
 ### Forward Clock
 The live, leakage-free track record a signal must accumulate *after* passing falsification, before any real-money consideration. Started only on a PROCEED verdict (scan → resolve outcomes daily, slice by signal bucket). **Not started for divergence** — ADR-044 returned KILL, so there is nothing to forward-track.
 
+### Process > Prediction (ADR-045)
+The guiding principle after three falsified prediction theses: a retail investor's available edge is **better process** (disciplined entries/exits, risk management, no anchoring), **not better prediction**. The user's picks are excellent; his losses come from process (holding broken-trend losers). The engine's job is to enforce process, not forecast.
+
+### Trend Filter / Chandelier Trailing Exit
+**Trend filter (absolute momentum):** hold a name only while `close > SMA(200)`; step aside below it. **Chandelier stop:** trailing exit = `highest_high_since_entry − 3×ATR(22)`. Together they "let winners run, cut losers" — ride MU-style runners until the trend breaks, eject LULU-style breaks early. A *trailing* stop (not a fixed profit cap) is the fix for both selling-winners-too-early and holding-losers-too-long.
+
+### Factor Premia / Evidence Tiers (ADR-045)
+What is honestly achievable, ranked: **Tier 1** (reliable, retail-accessible) — risk management, behavior-gap closure, factor premia (momentum, quality, value, low-vol; a few %/yr over long horizons). **Tier 2** (earlier, modest, decaying; each independently falsified before use) — PEAD/earnings-revision drift, fundamental acceleration. **Tier 3** (out of scope, no honest model delivers) — predicting ignition before it happens, a learning loop that compounds to high accuracy (markets non-stationary + adversarial; anomalies decay ~58% post-publication, McLean & Pontiff 2016), beating SPY by 20–30%.
+
+### Behavior Gap
+The documented gap between fund returns and the returns actual investors *realize*, caused by bad timing (disposition effect: sell winners early, hold losers). Average equity investor lagged the S&P by ~848 bps in 2024 (Barclays/DALBAR). Closing this gap — not predicting winners — is the largest reliable improvement available to a retail investor.
+
 ### Conviction (engine status, 2026-06-05)
 On the thematic mid-cap spine, conviction is freshness-dominated: with 6 of 8 dims dead, the engine effectively ranks names by how recently their data was fetched (`temporal_freshness`), not by opportunity quality. Conviction remains in the architecture as a tiebreaker but should not be read as "opportunity confidence" on this universe. Sub-project C (divergence-as-primary-gate) is shelved because sub-project D falsified the divergence signal itself (ADR-044) — see the Divergence-Led Surfacing entry above. See ADR-043 for the discrimination audit numbers.
 
