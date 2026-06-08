@@ -2382,7 +2382,9 @@ def screen_candidates(top: int, report_dir: str) -> None:
         narrator=_NarratorAdapter(),
     )
     as_of = date.today().isoformat()
-    result = uc.run(universe=tickers, as_of=as_of, top_n=top)
+    # Run with full universe length so rank_universe returns ALL eligible candidates.
+    # --top applies ONLY to the stdout masked summary and the surfaced-calls slice.
+    result = uc.run(universe=tickers, as_of=as_of, top_n=len(tickers))
 
     # --- verdict-driven label: read latest backtest verdict and relabel candidates ---
     verdict_label = label_from_verdict_file(report_dir)
@@ -2399,12 +2401,23 @@ def screen_candidates(top: int, report_dir: str) -> None:
         universe_size=result.universe_size,
         regime=result.regime,
         scorecard_ref=result.scorecard_ref,
+        abstained=result.abstained,
     )
 
-    # --- surface each candidate as a SurfacedCall for forward-tracking ---
+    # --- surface ONLY the top-N candidates as SurfacedCalls for forward-tracking ---
     store = deps["store"]
     as_of_dt = datetime.now(timezone.utc)
-    uc.surface_calls(result, as_of_dt=as_of_dt, store=store)
+    from domain.screen_models import ScreenResult as _SR
+
+    top_result = _SR(
+        as_of=result.as_of,
+        candidates=result.candidates[:top],
+        universe_size=result.universe_size,
+        regime=result.regime,
+        scorecard_ref=result.scorecard_ref,
+        abstained=result.abstained,
+    )
+    uc.surface_calls(top_result, as_of_dt=as_of_dt, store=store)
 
     # --- persist FULL distribution (honesty rule) ---
     report_path = Path(report_dir)
@@ -2415,6 +2428,7 @@ def screen_candidates(top: int, report_dir: str) -> None:
         "universe_size": result.universe_size,
         "top_n": top,
         "regime": result.regime,
+        "abstained": result.abstained,
         "candidates": [
             {
                 "ticker": c.ticker,
@@ -2432,7 +2446,7 @@ def screen_candidates(top: int, report_dir: str) -> None:
                     for f in c.factor_scores
                 ],
             }
-            for c in result.candidates
+            for c in result.candidates  # ALL candidates (full distribution)
         ],
     }
     out_file.write_text(json.dumps(payload, indent=2))
@@ -2441,9 +2455,10 @@ def screen_candidates(top: int, report_dir: str) -> None:
     from collections import Counter
 
     label_counts = Counter(c.label.value for c in result.candidates)
+    abstain_note = "  [abstaining: thin factor coverage]" if result.abstained else ""
     click.echo(
         f"\nScreen complete ({as_of}): {len(result.candidates)} candidates "
-        f"from {result.universe_size} universe  [top_n={top}]"
+        f"from {result.universe_size} universe  [top_n={top}]{abstain_note}"
     )
     for label, count in sorted(label_counts.items()):
         click.echo(f"  {label}: {count}")

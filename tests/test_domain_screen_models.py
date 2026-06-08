@@ -25,3 +25,26 @@ def test_result_rejects_negative_universe():
             regime="NEUTRAL",
             scorecard_ref=None,
         )
+
+
+def test_result_abstained_defaults_false():
+    r = ScreenResult(
+        as_of="2026-06-08",
+        candidates=(),
+        universe_size=0,
+        regime="NEUTRAL",
+        scorecard_ref=None,
+    )
+    assert r.abstained is False
+
+
+def test_result_abstained_can_be_true():
+    r = ScreenResult(
+        as_of="2026-06-08",
+        candidates=(),
+        universe_size=5,
+        regime="NEUTRAL",
+        scorecard_ref=None,
+        abstained=True,
+    )
+    assert r.abstained is True
