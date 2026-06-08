@@ -87,7 +87,7 @@ Domain stays pure (stdlib only — no numpy, per the hard rule). Adapters and us
 ### 4.3 Adapters
 
 - `NarratorPort` (domain port): `narrate(verdict, context) -> str`. Input is the **already-computed** verdict — the port **cannot influence** the score, only explain it (structural guarantee LLM never picks).
-- `OllamaNarratorAdapter`: calls a local Ollama model over HTTP; **no-op graceful default** if Ollama is not running (returns a templated why-string), mirroring the existing Reddit/Gemini optional-adapter pattern. Zero API cost.
+- `OllamaNarratorAdapter`: calls a local Ollama model over HTTP; **no-op graceful default** if Ollama is not running (returns a templated why-string), mirroring the existing Reddit/Gemini optional-adapter pattern. Zero API cost, on-device (holdings context never leaves the machine). Local is the right default: the narrator only turns already-computed numbers into prose, so a small model suffices and a constrained model is *safer* (less likely to drift into prediction). Because `NarratorPort` is a port, a cloud-API adapter (Claude/Gemini) can be swapped in later **without touching the core** for any heavier Phase-2 feature (e.g. 10-K / multi-article digestion) that genuinely needs a stronger model — narration only, never picking.
 - `HoldingsReader`: reads the gitignored brokerage CSV; maps Symbol→yfinance ticker (TSX `.TO`, class-share dot→dash), extracts shares + cost basis + account type; skips non-numeric/blank rows. (Generalizes the sanitizer already written.)
 
 ### 4.4 CLI & cadence
