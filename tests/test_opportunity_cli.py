@@ -510,3 +510,56 @@ def test_validate_momentum_discipline_runs(monkeypatch: object) -> None:
     assert result.exit_code == 0, result.output
     assert "PROCEED" in result.output or "KILL" in result.output
     assert "sharpe" in result.output.lower()
+
+
+def test_holdings_risk_cli_masked_summary(monkeypatch, tmp_path):
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+    from domain.discipline import Verdict
+    from domain.models import PortfolioRisk, PositionRisk
+
+    holdings = tmp_path / "h.csv"
+    holdings.write_text(
+        "Symbol,Quantity,Book Value (CAD),Account Type,Exchange\nMU,10,3000,TFSA,NASDAQ\n"
+    )
+
+    class _UC:
+        def __init__(self, *a, **k):
+            pass
+
+        def execute(self, hold, start, end):
+            pos = PositionRisk(
+                ticker="MU",
+                price=100.0,
+                verdict=Verdict.REDUCE,
+                confidence=0.8,
+                trend_health=-3.0,
+                vol_signal=0.5,
+                relative_strength=-0.2,
+                downside_to_stop=0.1,
+                upside_to_recover=0.3,
+                behavior_flags=("disposition_risk",),
+                unrealized_pct=-0.31,
+                account_type="TFSA",
+                abstained=False,
+                why="broke trend",
+            )
+            return {
+                "positions": [pos],
+                "portfolio": PortfolioRisk(1, 1.0, 1.0, {"REDUCE": 1}),
+            }
+
+    monkeypatch.setattr(climod, "HoldingsRiskAssessmentUseCase", _UC, raising=False)
+
+    runner = CliRunner()
+    out_file = tmp_path / "detail.txt"
+    result = runner.invoke(
+        cli, ["holdings-risk", "--holdings", str(holdings), "--out", str(out_file)]
+    )
+    assert result.exit_code == 0, result.output
+    assert "REDUCE" in result.output
+    assert "MU" not in result.output
+    assert out_file.exists()
+    assert "MU" in out_file.read_text()
