@@ -156,6 +156,13 @@ class MomentumExitBacktestUseCase:
                 bh_ret = sum(bh_rets) / len(bh_rets) if bh_rets else 0.0
                 bh_eq.append(bh_eq[-1] * (1.0 + bh_ret))
 
+            # Snapshot the held set that just booked today's return (it was decided
+            # at the END of t-1), BEFORE STEP 4/5 rebalance/stop mutate it below.
+            # This becomes prev_held for tomorrow, so tomorrow's turnover compares
+            # (held decided end of t) vs (held decided end of t-1) — both known
+            # before the next open. No look-ahead.
+            prev_held = dict(held)
+
             # ── STEP 3: Update month_end_closes on month boundary ────────────
             # On the first trading day of a new month, the previous month's
             # last close is now fully observed — record it.
@@ -236,9 +243,6 @@ class MomentumExitBacktestUseCase:
                     if close < stop:
                         held[ticker] = False
                         entry_closes[ticker] = []
-
-            # Snapshot held state at end of today (becomes prev_held for tomorrow)
-            prev_held = dict(held)
 
             prev_date = today
 

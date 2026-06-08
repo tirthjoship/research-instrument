@@ -125,4 +125,7 @@ def test_transaction_costs_reduce_strategy_return():
     costed = MomentumExitBacktestUseCase(prov, cost_per_trade=0.01).execute(
         ["A"], start, start + timedelta(days=len(vals))
     )
-    assert costed["strategy"]["equity"][-1] <= free["strategy"]["equity"][-1]
+    # STRICT: the name enters (and is held), so real one-way turnover is incurred and
+    # costs MUST reduce the terminal equity. A `<=` here would silently pass even if
+    # turnover were structurally zero (the prev_held snapshot-timing bug).
+    assert costed["strategy"]["equity"][-1] < free["strategy"]["equity"][-1]
