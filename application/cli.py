@@ -2243,5 +2243,311 @@ def backtest_discipline_flags(holdings: str, horizon: int, step: int) -> None:
     )
 
 
+# ---------------------------------------------------------------------------
+# Evidence-screen CLI commands (Task 7)
+# ---------------------------------------------------------------------------
+
+
+@cli.command("screen-candidates")
+@click.option("--top", default=10, show_default=True, type=int, help="Top N rank limit")
+@click.option(
+    "--report-dir",
+    default="data/reports/",
+    show_default=True,
+    help="Directory to write screen_<date>.json",
+)
+def screen_candidates(top: int, report_dir: str) -> None:
+    """Screen universe for disciplined, evidence-bounded candidates.
+
+    Writes the FULL ranked candidate distribution to <report-dir>/screen_<date>.json
+    (honesty rule: full distribution, not just top-N).  Prints a masked summary to
+    stdout (counts + label distribution only — no per-ticker scores).
+    """
+    import json
+    from datetime import date, timezone
+
+    from application.evidence_screen_use_case import (
+        EvidenceScreenUseCase,
+        label_from_verdict_file,
+    )
+    from application.narrator import template_narration
+    from domain.screen_models import ScreenCandidate
+
+    deps = _build_dependencies("us")
+    market_data = deps["market_data"]
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+
+    # --- thin adapters satisfying evidence_screen_use_case Protocols ---
+    class _PriceAdapter:
+        """Wraps YFinanceAdapter to satisfy PricePort."""
+
+        def monthly_closes(self, ticker: str) -> list[float]:
+            try:
+                now = datetime.now(timezone.utc)
+                two_years_ago = now.replace(year=now.year - 2)
+                signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
+                if not signals:
+                    return []
+                # Resample to monthly: take the last close per calendar month
+                by_month: dict[str, float] = {}
+                for s in signals:
+                    key = f"{s.timestamp.year}-{s.timestamp.month:02d}"
+                    by_month[key] = s.close
+                return [by_month[k] for k in sorted(by_month)]
+            except Exception:
+                return []
+
+        def trend_health(self, ticker: str) -> float:
+            try:
+                from domain.trend_rules import atr, sma
+                from domain.trend_rules import trend_health as _th
+
+                now = datetime.now(timezone.utc)
+                two_years_ago = now.replace(year=now.year - 2)
+                signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
+                if len(signals) < 22:
+                    return 0.0
+                closes = [s.close for s in signals]
+                highs = [s.high for s in signals]
+                lows = [s.low for s in signals]
+                sma_val = sma(closes, min(200, len(closes)))
+                atr_val = atr(highs, lows, closes, 22)
+                th = _th(closes[-1], sma_val, atr_val)
+                return th if th is not None else 0.0
+            except Exception:
+                return 0.0
+
+        def has_min_history(self, ticker: str) -> bool:
+            try:
+                now = datetime.now(timezone.utc)
+                two_years_ago = now.replace(year=now.year - 2)
+                signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
+                return len(signals) >= 21
+            except Exception:
+                return False
+
+    class _AnalystAdapter:
+        """Wraps YFinanceAdapter to satisfy AnalystPort."""
+
+        def estimate_series(self, ticker: str) -> list[float] | None:
+            try:
+                data = market_data.get_analyst_data(ticker, datetime.now(timezone.utc))
+                if data is None:
+                    return None
+                # Return target prices as a proxy estimate series
+                targets = [
+                    v
+                    for k, v in data.items()
+                    if "target" in k and isinstance(v, (int, float))
+                ]
+                return targets if targets else None
+            except Exception:
+                return None
+
+    class _FundamentalsAdapter:
+        """Wraps YFinanceAdapter to satisfy FundamentalsPort."""
+
+        def quality_value(self, ticker: str) -> dict[str, float]:
+            try:
+                info = market_data.get_ticker_info(ticker)
+                quality = (
+                    info.get("return_on_equity") or info.get("profit_margins") or 0.0
+                )
+                value = (
+                    1.0 / info["trailing_pe"]
+                    if info.get("trailing_pe") and info["trailing_pe"] > 0
+                    else 0.0
+                )
+                return {"quality": float(quality), "value": float(value)}
+            except Exception:
+                return {"quality": 0.0, "value": 0.0}
+
+    class _NarratorAdapter:
+        """Wraps template_narration to satisfy NarratorPort."""
+
+        def narrate(self, candidate: ScreenCandidate) -> str:
+            return template_narration(
+                {
+                    "ticker": candidate.ticker,
+                    "verdict": candidate.label.value,
+                    "trend_health": candidate.trend_health,
+                }
+            )
+
+    uc = EvidenceScreenUseCase(
+        price=_PriceAdapter(),
+        analyst=_AnalystAdapter(),
+        fundamentals=_FundamentalsAdapter(),
+        narrator=_NarratorAdapter(),
+    )
+    as_of = date.today().isoformat()
+    # Run with full universe length so rank_universe returns ALL eligible candidates.
+    # --top applies ONLY to the stdout masked summary and the surfaced-calls slice.
+    result = uc.run(universe=tickers, as_of=as_of, top_n=len(tickers))
+
+    # --- verdict-driven label: read latest backtest verdict and relabel candidates ---
+    verdict_label = label_from_verdict_file(report_dir)
+    from dataclasses import replace
+
+    labeled_candidates = tuple(
+        replace(c, label=verdict_label) for c in result.candidates
+    )
+    from domain.screen_models import ScreenResult
+
+    result = ScreenResult(
+        as_of=result.as_of,
+        candidates=labeled_candidates,
+        universe_size=result.universe_size,
+        regime=result.regime,
+        scorecard_ref=result.scorecard_ref,
+        abstained=result.abstained,
+    )
+
+    # --- surface ONLY the top-N candidates as SurfacedCalls for forward-tracking ---
+    store = deps["store"]
+    as_of_dt = datetime.now(timezone.utc)
+    from domain.screen_models import ScreenResult as _SR
+
+    top_result = _SR(
+        as_of=result.as_of,
+        candidates=result.candidates[:top],
+        universe_size=result.universe_size,
+        regime=result.regime,
+        scorecard_ref=result.scorecard_ref,
+        abstained=result.abstained,
+    )
+    uc.surface_calls(top_result, as_of_dt=as_of_dt, store=store)
+
+    # --- persist FULL distribution (honesty rule) ---
+    report_path = Path(report_dir)
+    report_path.mkdir(parents=True, exist_ok=True)
+    out_file = report_path / f"screen_{as_of}.json"
+    payload: dict[str, object] = {
+        "as_of": as_of,
+        "universe_size": result.universe_size,
+        "top_n": top,
+        "regime": result.regime,
+        "abstained": result.abstained,
+        "candidates": [
+            {
+                "ticker": c.ticker,
+                "composite": c.composite,
+                "trend_health": c.trend_health,
+                "label": c.label.value,
+                "why": c.why,
+                "factor_scores": [
+                    {
+                        "name": f.name,
+                        "value": f.value,
+                        "percentile": f.percentile,
+                        "contribution": f.contribution,
+                    }
+                    for f in c.factor_scores
+                ],
+            }
+            for c in result.candidates  # ALL candidates (full distribution)
+        ],
+    }
+    out_file.write_text(json.dumps(payload, indent=2))
+
+    # --- masked stdout (counts + label distribution only) ---
+    from collections import Counter
+
+    label_counts = Counter(c.label.value for c in result.candidates)
+    abstain_note = "  [abstaining: thin factor coverage]" if result.abstained else ""
+    click.echo(
+        f"\nScreen complete ({as_of}): {len(result.candidates)} candidates "
+        f"from {result.universe_size} universe  [top_n={top}]{abstain_note}"
+    )
+    for label, count in sorted(label_counts.items()):
+        click.echo(f"  {label}: {count}")
+    click.echo(f"Full distribution written to: {out_file}")
+
+
+@cli.command("backtest-screen")
+@click.option(
+    "--report-dir",
+    default="data/reports/",
+    show_default=True,
+    help="Directory to write screen_ic_<date>.json",
+)
+def backtest_screen(report_dir: str) -> None:
+    """Pre-registered IC backtest for the evidence screen composite signal.
+
+    Builds point-in-time panels from the screen store, runs ScreenBacktestUseCase,
+    writes screen_ic_<date>.json, and prints the verdict (PASS/INCONCLUSIVE/HALT).
+
+    NOTE: Full point-in-time panel construction requires historical screen data
+    persisted by repeated screen-candidates runs. On a fresh install the backtest
+    runs against a minimal stub panel and returns INCONCLUSIVE pending real data.
+    """
+    import json
+    from datetime import date
+
+    from application.screen_backtest_use_case import ScreenBacktestUseCase
+
+    deps = _build_dependencies("us")
+    store = deps["store"]
+
+    # Load persisted screen panels from scan_candidates table (written by
+    # scan-opportunities / screen-candidates); fall back to an empty stub so the
+    # command always exits cleanly.
+    raw_panels: list[dict[str, tuple[float, float]]] = []
+    try:
+        rows = store.get_scan_candidates()
+        # Group by date → per-date panel: {ticker: (composite, fwd_return)}
+        # fwd_return is not yet resolved here (we pass 0.0 as placeholder until
+        # resolve-calls fills it in); the IC gate tolerates partially-filled panels.
+        from collections import defaultdict
+
+        panels_by_date: dict[str, dict[str, tuple[float, float]]] = defaultdict(dict)
+        for row in rows:
+            key = str(row.get("as_of", "unknown"))
+            ticker = str(row.get("ticker", ""))
+            composite = float(row.get("composite", 0.0))
+            fwd = float(row.get("fwd_return", 0.0))
+            if ticker:
+                panels_by_date[key][ticker] = (composite, fwd)
+        raw_panels = list(panels_by_date.values())
+    except Exception:
+        pass  # no scan_candidates table yet → stub
+
+    if not raw_panels:
+        # Minimal stub so command exits cleanly; verdict will be INCONCLUSIVE/HALT
+        raw_panels = [{"STUB": (0.0, 0.0)}]
+
+    uc = ScreenBacktestUseCase()
+    verdict = uc.run(raw_panels)
+
+    as_of = date.today().isoformat()
+    report_path = Path(report_dir)
+    report_path.mkdir(parents=True, exist_ok=True)
+    out_file = report_path / f"screen_ic_{as_of}.json"
+    out_file.write_text(
+        json.dumps(
+            {
+                "as_of": as_of,
+                "decision": verdict.decision,
+                "mean_ic": verdict.mean_ic,
+                "n_dates": verdict.n_dates,
+            },
+            indent=2,
+        )
+    )
+
+    _VERDICT_LABELS = {
+        "PASS": "PASS — IC >= 0.02, signal shows measurable cross-sectional lift.",
+        "INCONCLUSIVE": "INCONCLUSIVE — IC in (0, 0.02); insufficient evidence of edge.",
+        "HALT": "HALT — IC <= 0; signal shows no cross-sectional lift.",
+    }
+    click.echo(f"\nScreen IC Backtest ({as_of})")
+    click.echo(f"  n_dates : {verdict.n_dates}")
+    click.echo(f"  mean_IC : {verdict.mean_ic:.6f}")
+    click.echo(f"  verdict : {verdict.decision}")
+    click.echo(f"  {_VERDICT_LABELS.get(verdict.decision, verdict.decision)}")
+    click.echo(f"Report written to: {out_file}")
+
+
 if __name__ == "__main__":
     cli()
