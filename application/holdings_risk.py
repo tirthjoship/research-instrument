@@ -50,7 +50,11 @@ class HoldingsRiskAssessmentUseCase:
         self._benchmark = benchmark
 
     def _closes_in(self, ticker: str, start: datetime, end: datetime) -> list[float]:
-        return [c for d, c in self._prices(ticker) if start <= d <= end]
+        # Normalize to naive UTC: live price providers (yfinance) return tz-naive
+        # datetimes while callers pass tz-aware bounds; comparing the two raises.
+        s = start.replace(tzinfo=None)
+        e = end.replace(tzinfo=None)
+        return [c for d, c in self._prices(ticker) if s <= d.replace(tzinfo=None) <= e]
 
     def _vol(self, returns: list[float], window: int) -> float:
         tail = returns[-window:]
