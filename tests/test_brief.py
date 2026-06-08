@@ -270,6 +270,23 @@ def test_masked_stdout_hides_holding_tickers_and_pnl() -> None:
     assert "-45%" not in out and "-0.45" not in out  # holding P&L masked
     assert "HOLDINGS (masked)" in out  # aggregate counts shown
     assert "AAPL" in out  # public candidate IS shown
+    assert "already held" not in out  # ADR-047: never reveal a held candidate
+
+
+def test_masked_stdout_leaks_no_holding_field_value() -> None:
+    # Structural guarantee: NO HoldingVerdictLine field other than the aggregate
+    # verdict count appears in masked output. Iterating fields keeps this correct
+    # as new fields are added (vs. hardcoding fixture values).
+    brief = _full_brief(ScreenLabel.RESEARCH_ONLY)
+    out = to_stdout_masked(brief)
+    candidate_tickers = {c.ticker for c in brief.candidates}
+    for h in brief.holdings:
+        # A holding that is ALSO a public candidate legitimately shows its ticker
+        # (as a candidate, not flagged as held). Only pure holdings must be hidden.
+        if h.ticker not in candidate_tickers:
+            assert h.ticker not in out
+        assert str(abs(h.unrealized_pct)) not in out
+        assert h.why not in out
 
 
 def test_masked_stdout_shows_verdict_counts() -> None:

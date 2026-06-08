@@ -101,7 +101,10 @@ _VERDICT_ORDER: dict[Verdict, int] = {
 def _factor_summary(cand: ScreenCandidate) -> str:
     parts: list[str] = []
     for fs in cand.factor_scores:
-        # A flagged-neutral factor has value==0 and percentile==0 (no coverage).
+        # A flagged-neutral factor has value==0 AND percentile==0 (no coverage).
+        # The AND guards the edge case of a genuine 0th-percentile name: a real
+        # z-scored value is ~never exactly 0.0, so the bottom-of-universe score
+        # (percentile 0.0, value != 0.0) still renders "p0", not "n/a".
         if fs.value == 0.0 and fs.percentile == 0.0:
             parts.append(f"{fs.name[:3]} n/a")
         else:
@@ -258,9 +261,12 @@ def to_markdown(brief: WeeklyBrief) -> str:
     lines.append("")
     lines.append("## SCORECARD")
     sc = brief.scorecard
-    if sc.screen_n == 0:
+    # Abstain whenever returns are unavailable, even if n>0 (records can exist
+    # before any forward window has resolved — top_ret/spy_ret are float|None).
+    if sc.screen_n == 0 or sc.screen_top_ret is None or sc.screen_spy_ret is None:
         lines.append(
-            f"- screen ({sc.screen_window}): n=0 — abstaining, no track record yet"
+            f"- screen ({sc.screen_window}): n={sc.screen_n} — "
+            f"abstaining, no resolved track record yet"
         )
     else:
         sig = "significant" if sc.screen_significant else "not significant"
@@ -298,8 +304,11 @@ def to_stdout_masked(brief: WeeklyBrief) -> str:
     lines.append(f"WEEKLY BRIEF — {brief.as_of}   REGIME: {brief.regime.value}")
     lines.append(_candidates_header(brief.screen_label))
     for c in brief.candidates:
-        held = "  [already held]" if c.already_held else ""
-        lines.append(f"  {c.ticker}  {c.factor_summary}{held}")
+        # NB: never emit the already_held flag here — it would reveal that the
+        # user holds a (public) candidate ticker, an ADR-047 leak. The flag lives
+        # only in the gitignored full markdown. Candidate tickers themselves are
+        # public (they come from the screen universe regardless of holdings).
+        lines.append(f"  {c.ticker}  {c.factor_summary}")
     counts = Counter(h.verdict.value for h in brief.holdings)
     lines.append(
         "HOLDINGS (masked): " + ", ".join(f"{v} {counts[v]}" for v in sorted(counts))
