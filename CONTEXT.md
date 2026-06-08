@@ -727,3 +727,54 @@ The product is an **honest evidence-aggregator + calibrated-abstention tool**: s
 ### Test Suite
 
 ~1052 tests passing (up from 996 at Phase 5.4).
+
+---
+
+## Leg-2 / Leg-3 Update (2026-06-08) — Alpha-Hunt Complete, Pivot to Discipline Tool
+
+The sections above (through ADR-039) are historical. This section is the current state.
+
+### Four pre-registered falsifications → the edge isn't there
+
+| ADR | Thesis tested | Verdict |
+|-----|---------------|---------|
+| 039 | Conviction aggregation predicts returns | No OOS edge (56%, p=0.13) |
+| 043 | Conviction dimensions discriminate | 6/8 dead/degenerate |
+| 044 | Intensity-divergence has cross-sectional IC | No IC any horizon (clean 430-ticker universe) |
+| 046 | Momentum + trailing-exit beats buy-hold risk-adjusted | KILL — Sharpe-diff CI spans 0; drawdown-cut real (40%) |
+
+All four converge: **semi-strong market efficiency holds for retail-accessible public signals.** A 2026-06-08 forensic data-layer audit confirmed **data is NOT the bottleneck** — the cleanest data (yfinance prices in ADR-046; clean 83% Wikipedia in ADR-044) killed hardest; dead/noisy sources (StockTwits, GDELT, Trends) were never load-bearing.
+
+### Pivot (ADR-045 → ADR-047): predict → discipline
+
+A cited deep-research pass settled the realistic retail landscape: profitability = **expectancy (asymmetry), not hit-rate**; ~70% accuracy is fantasy (Medallion ~50.75%); LLMs explain well / predict badly; real non-predictive edges = behavior-gap closure (~1%/yr), conditional vol-targeting (TSX-safe form), trend/stop drawdown reduction, decayed factor premia. **No single edge — a stack of small honest non-predictive edges.**
+
+**Decision (ADR-047):** stop hunting alpha; build an honest **discipline / risk decision-support tool**, measured vs the user's own behavior, not the market.
+
+### What shipped this session
+
+| Item | Detail |
+|------|--------|
+| Momentum/exit engine | Pure trend/metric domain (`trend_rules`, `backtest_metrics`), `MomentumExitBacktestUseCase`, verdict gate, `validate-momentum-discipline` + `portfolio-verdict` CLIs. Look-ahead bug + cost-charging bug + wrong-gate-statistic bug all caught in Opus review and fixed. Merged to develop (ADR-046, KILL). |
+| Holdings Discipline & Risk Engine | **Spec + plan written, NOT yet implemented.** Spec: `docs/superpowers/specs/2026-06-08-holdings-discipline-risk-engine-design.md`. Plan: `docs/superpowers/plans/2026-06-08-holdings-discipline-risk-engine.md` (13 TDD tasks). Branch `feat/holdings-discipline-risk-engine`. |
+
+### Holdings Discipline & Risk Engine — design summary
+
+Graded per-holding verdict (REDUCE/TRIM/REVIEW/HOLD/ADD_OK) + confidence, **abstains when signals conflict**. Pure domain scorers (trend_health, conditional_vol_signal, risk_asymmetry, behavior detectors, grade_position, base_rate_from_history, brier). `HoldingsRiskAssessmentUseCase`. `NarratorPort` + **local Ollama narrator** (graceful template fallback; narrate-never-pick; cloud-swappable for Phase 2). Forward-calibration log + `resolve-discipline-flags`. Privacy: holdings gitignored, masked stdout, only tickers → yfinance. **Tax-loss leg dropped** (user 65/66 registered accounts). Scope: v1 = holdings; **Phase 2 (factor screening) deferred**, gated on v1 calibration.
+
+### Next action (fresh session)
+
+Execute the 13-task plan via **subagent-driven-development** (Sonnet implementers, Opus reviewers). Then `make check` → live smoke on `data/personal/holdings-report-2026-06-07.csv` (gitignored) → use ~2–4 weeks → `resolve-discipline-flags` calibration gates trust + the Phase-2 decision. KILL clause if flags are no better than chance.
+
+### ADRs added (040–047)
+
+| ADR | Decision |
+|-----|----------|
+| 040 | Opportunity forward-tracking (evidence-first surfacing) |
+| 041 | Honest opportunity engine — attention sources, keyless-first |
+| 042 | Honest ingestion & source health (throttle ≠ empty) |
+| 043 | Conviction dims dead; divergence-led surfacing |
+| 044 | Divergence-IC verdict — KILL |
+| 045 | Pivot: return-prediction → exit-discipline |
+| 046 | Momentum/exit Phase-1 verdict — KILL (drawdown-cut real) |
+| 047 | Alpha-hunt complete → honest discipline/risk decision-support tool |
