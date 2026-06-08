@@ -215,6 +215,9 @@ def _candidates_header(label: ScreenLabel) -> str:
 def to_markdown(brief: WeeklyBrief) -> str:
     """Full brief as markdown — written to a gitignored file / rendered in the
     dashboard. Includes holding tickers + P&L (the file lives under data/personal/).
+
+    RESEARCH_ONLY label suppresses all 'buy' language — header reads
+    'EVIDENCE-RANKED CANDIDATES' instead.
     """
     tilt = brief.tilt
     tilt_str = " · ".join(
