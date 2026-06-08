@@ -24,7 +24,9 @@ from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
 from application.divergence_ic_backtest import DivergenceICBacktestUseCase
 from application.drip_backfill_use_case import DripBackfillUseCase
+from application.momentum_exit_backtest import MomentumExitBacktestUseCase
 from application.opportunity_scan_use_case import OpportunityScanUseCase
+from application.portfolio_verdict import PortfolioVerdictUseCase
 from application.use_cases import (
     PretrainingUseCase,
     TrackRecommendationsUseCase,
@@ -1785,6 +1787,110 @@ def daily_cycle(ctx: click.Context, market: str, skip_backfill: bool) -> None:
     click.echo("Daily cycle complete.")
 
 
+@cli.command("validate-momentum-discipline")
+@click.option("--market", default="us")
+@click.option("--start", default="2018-01-01", show_default=True)
+@click.option("--end", default="2026-06-01", show_default=True)
+@click.option("--limit", default=0, type=int, help="Cap universe (0 = all)")
+@click.option(
+    "--quick", is_flag=True, help="Smaller universe sample for a fast dry run"
+)
+def validate_momentum_discipline(
+    market: str, start: str, end: str, limit: int, quick: bool
+) -> None:
+    """Pre-registered momentum + trailing-exit backtest (spec 2026-06-07). PROCEED/KILL."""
+    import json as _json
+    import math
+    import os
+    from datetime import datetime as _dt
+
+    from application.precision_metrics import (
+        moving_block_bootstrap,
+        sharpe_difference_bootstrap,
+    )
+    from application.price_returns import load_price_series
+    from domain.backtest_metrics import daily_returns
+
+    start_dt = _dt.fromisoformat(start)
+    end_dt = _dt.fromisoformat(end)
+    universe = _get_backtest_universe(market)
+    if quick:
+        universe = universe[:50]
+    if limit:
+        universe = universe[:limit]
+
+    _cache: dict[str, list[tuple[_dt, float]]] = {}
+
+    def provider(ticker: str) -> list[tuple[_dt, float]]:
+        if ticker not in _cache:
+            _cache[ticker] = load_price_series(ticker, start_dt, end_dt)
+        return _cache[ticker]
+
+    uc = MomentumExitBacktestUseCase(provider)
+    report = uc.execute(universe, start_dt, end_dt)
+
+    s_ret = daily_returns(report["strategy"]["equity"])
+    b_ret = daily_returns(report["buy_hold"]["equity"])
+    n = min(len(s_ret), len(b_ret))
+    diff = [s_ret[i] - b_ret[i] for i in range(n)]
+
+    # Pre-registered gate statistic: Sharpe-difference CI (paired block bootstrap)
+    sharpe_boot = sharpe_difference_bootstrap(s_ret, b_ret) if (s_ret and b_ret) else {}
+    ci_low_raw = sharpe_boot.get("ci_low")
+    ci_low: float = ci_low_raw if isinstance(ci_low_raw, (int, float)) else 0.0
+
+    # Mean-excess bootstrap kept for transparency only — NOT the gate
+    mean_excess_boot = moving_block_bootstrap(diff) if diff else {}
+
+    v = uc.verdict(report, sharpe_diff_ci_low=ci_low)
+    os.makedirs("data/reports", exist_ok=True)
+
+    def _safe(x: object) -> object:
+        if isinstance(x, bool):
+            return x
+        if isinstance(x, int):
+            return x
+        if isinstance(x, str):
+            return x
+        if isinstance(x, float):
+            return x if math.isfinite(x) else 0.0
+        return x
+
+    out = {
+        "report": {
+            k: {m: _safe(report[k][m]) for m in report[k] if m != "equity"}
+            for k in report
+            if isinstance(report[k], dict)
+        },
+        "universe_size": len(report.get("universe", [])),
+        "verdict": {kk: _safe(vv) for kk, vv in v.items()},
+        "sharpe_diff_bootstrap": {
+            kk: _safe(vv) for kk, vv in sharpe_boot.items() if vv is not None
+        },
+        "mean_excess_return_bootstrap": {
+            kk: _safe(vv) for kk, vv in mean_excess_boot.items() if vv is not None
+        },
+    }
+    with open("data/reports/momentum_discipline.json", "w") as f:
+        _json.dump(out, f, indent=2, default=str)
+
+    for name in ("strategy", "buy_hold", "spy"):
+        if name in report:
+            r = report[name]
+            click.echo(
+                f"{name:10} sharpe={r['sharpe']:.2f} cagr={r['cagr']:.2%} "
+                f"maxDD={r['max_drawdown']:.2%}"
+            )
+    click.echo(
+        f"sharpe_diff point={sharpe_boot.get('point')} "
+        f"ci=[{sharpe_boot.get('ci_low')}, {sharpe_boot.get('ci_high')}]"
+    )
+    click.echo(
+        f"VERDICT: {v['decision']}  (drawdown_reduction={v['drawdown_reduction']:.0%}, "
+        f"sharpe_diff_ci_low={v['sharpe_diff_ci_low']:.4f})"
+    )
+
+
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     """Load ticker universe from config files, with hardcoded fallback."""
     config_dir = Path(__file__).parent.parent / "config" / "tickers"
@@ -1817,6 +1923,60 @@ def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     return load_ticker_universe(existing)
 
 
+def _get_backtest_universe(market: str) -> list[str]:
+    """US S&P 500 + NASDAQ-100 (existing) plus TSX 60 with .TO suffix for the backtest.
+
+    Reads ticker files directly (offline-safe — no network, no config object needed).
+    """
+    config_dir = Path(__file__).parent.parent / "config" / "tickers"
+    us_files = [
+        config_dir / "sp500.txt",
+        config_dir / "nasdaq100.txt",
+    ]
+    us_existing = [f for f in us_files if f.exists()]
+
+    us: list[str]
+    if us_existing:
+        from application.ticker_universe import load_ticker_universe
+
+        us = load_ticker_universe(us_existing)
+    else:
+        # Minimal fallback identical to _get_ticker_universe's hardcoded list
+        us = [
+            "AAPL",
+            "MSFT",
+            "GOOG",
+            "AMZN",
+            "META",
+            "TSLA",
+            "NVDA",
+            "JPM",
+            "JNJ",
+            "V",
+            "UNH",
+            "HD",
+            "PG",
+            "MA",
+            "XOM",
+        ]
+
+    tsx_path = config_dir / "tsx60.txt"
+    tsx: list[str] = []
+    if tsx_path.exists():
+        for line in tsx_path.read_text().splitlines():
+            s = line.strip()
+            if s and not s.startswith("#"):
+                tsx.append(f"{s}.TO")
+
+    seen: set[str] = set()
+    out: list[str] = []
+    for t in [*us, *tsx]:
+        if t not in seen:
+            seen.add(t)
+            out.append(t)
+    return out
+
+
 def _print_report(report: WeeklyReport) -> None:
     """Pretty-print a weekly report."""
     click.echo(f"\n{'=' * 60}")
@@ -1829,6 +1989,47 @@ def _print_report(report: WeeklyReport) -> None:
             f"score={rec.composite_score:.3f} ({signals_str})"
         )
     click.echo(f"{'=' * 60}\n")
+
+
+@cli.command("portfolio-verdict")
+@click.option(
+    "--holdings",
+    default="data/personal/holdings.csv",
+    show_default=True,
+    help="Local CSV (ticker,shares[,entry]) — gitignored, never committed",
+)
+@click.option("--market", default="us")
+def portfolio_verdict(holdings: str, market: str) -> None:
+    """Apply validated trend/exit rules to your current holdings (decision-support)."""
+    import csv
+    import os
+    from datetime import datetime, timezone
+
+    from application.price_returns import load_price_series
+
+    if not os.path.exists(holdings):
+        click.echo(
+            f"No holdings file at {holdings}. Create it (ticker,shares) — it is gitignored."
+        )
+        return
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.fromisoformat("2026-06-01")
+
+    def provider(ticker: str) -> list[tuple[datetime, float]]:
+        return load_price_series(ticker, start_dt, end_dt)
+
+    uc = PortfolioVerdictUseCase(provider)
+    with open(holdings) as f:
+        rows = [r for r in csv.DictReader(f) if r.get("ticker")]
+    click.echo(f"{'TICKER':8} {'VERDICT':16} {'TREND':6} STOP / WHY")
+    for r in rows:
+        v = uc.verdict_for(r["ticker"].strip().upper())
+        stop = v.get("trailing_stop")
+        stop_s = f"{stop:.2f}" if stop else "-"
+        click.echo(
+            f"{v['ticker']:8} {v['verdict']:16} "
+            f"{'yes' if v['trend_intact'] else 'no':6} {stop_s}  {v.get('why','')}"
+        )
 
 
 if __name__ == "__main__":
