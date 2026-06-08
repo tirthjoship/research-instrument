@@ -61,6 +61,11 @@ _TILTS: dict[Regime, dict[str, float]] = {
 }
 
 
+assert all(
+    set(w) == set(FACTOR_KEYS) for w in _TILTS.values()
+), "regime._TILTS keys must match FACTOR_KEYS exactly"
+
+
 def screen_tilt(regime: Regime) -> dict[str, float]:
     """Display-only factor-weight tilt for the brief (weights sum to 1).
 
@@ -71,4 +76,4 @@ def screen_tilt(regime: Regime) -> dict[str, float]:
     return dict(_TILTS[regime])
 
 
-__all__ = ["Regime", "classify_regime", "screen_tilt", "FACTOR_KEYS"]
+__all__ = ["Regime", "classify_regime", "screen_tilt"]
