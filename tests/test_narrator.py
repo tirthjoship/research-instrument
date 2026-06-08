@@ -16,6 +16,17 @@ def test_template_narration_mentions_verdict_and_ticker():
     assert "TFSA" in text
 
 
+def test_template_narration_trim_is_not_framed_as_a_down_call():
+    # ADR-048: TRIM is position-sizing / lock-gains, NOT a prediction of a drop.
+    from application.narrator import template_narration
+
+    text = template_narration(
+        {"ticker": "WIN", "verdict": "TRIM", "behavior_flags": ["winner_past_stop"]}
+    )
+    assert "TRIM" in text
+    assert "not a prediction" in text.lower()
+
+
 def test_fake_narrator_cannot_change_verdict():
     from application.narrator import FakeNarrator
 
