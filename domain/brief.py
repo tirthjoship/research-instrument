@@ -291,6 +291,8 @@ def to_stdout_masked(brief: WeeklyBrief) -> str:
     Shows: regime, public buy/evidence candidates (universe is public), aggregate
     holding verdict counts (NOT tickers or P&L), concentration as aggregate text,
     and the scorecard. Full detail goes only to the gitignored markdown file.
+
+    Holdings tickers and per-position P&L are NEVER written to stdout.
     """
     lines: list[str] = []
     lines.append(f"WEEKLY BRIEF — {brief.as_of}   REGIME: {brief.regime.value}")
