@@ -37,6 +37,14 @@ class RegimeReadUseCase:
 
 
 class WeeklyBriefUseCase:
+    """Compose a WeeklyBrief from screen, discipline, regime, and scorecard collaborators.
+
+    All collaborators are injected so tests remain network-free. The use case
+    drives four sub-operations point-in-time (screen.run, holdings_risk.execute,
+    regime_reader.read, cluster_peers_fn per candidate) then calls the pure
+    assemble_brief domain function.
+    """
+
     def __init__(
         self,
         screen: Any,  # EvidenceScreenUseCase
