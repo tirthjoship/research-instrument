@@ -1,30 +1,48 @@
 {
   "report": {
     "strategy": {
-      "cagr": 0.16187778530700192,
-      "sharpe": 0.9959489876272725,
-      "sortino": 1.3780200664472837,
-      "max_drawdown": 0.21852389670267913
+      "cagr": 0.13082451026683328,
+      "sharpe": 0.8308774204411364,
+      "sortino": 1.1408998455221544,
+      "max_drawdown": 0.22826449306326976
     },
     "buy_hold": {
-      "cagr": 0.1623743631784207,
-      "sharpe": 0.8806218883726997,
-      "sortino": 1.243187417645031,
-      "max_drawdown": 0.3817944862453576
+      "cagr": 0.162374372432198,
+      "sharpe": 0.8806219359410606,
+      "sortino": 1.243187500329035,
+      "max_drawdown": 0.3817944964157117
     },
     "spy": {
-      "cagr": 0.14878309964591718,
-      "sharpe": 0.8185396136238202,
-      "sortino": 1.1522338282538003,
-      "max_drawdown": 0.33717264821380666
+      "cagr": 0.1487831438527598,
+      "sharpe": 0.8185400325773682,
+      "sortino": 1.1522347334424867,
+      "max_drawdown": 0.3371727136342998
     }
   },
   "universe_size": 570,
   "verdict": {
     "decision": "KILL",
-    "sharpe_diff_ci_low": -0.000484,
-    "drawdown_reduction": 0.4276399880687479,
+    "sharpe_diff_ci_low": -0.787412,
+    "drawdown_reduction": 0.40212733497675385,
     "beats_sharpe": false,
     "cuts_drawdown": true
+  },
+  "sharpe_diff_bootstrap": {
+    "n": 2153,
+    "block_size": 13,
+    "n_resamples": 2000,
+    "point": -0.049745,
+    "ci_low": -0.787412,
+    "ci_high": 0.616282,
+    "p_value_le_0": 0.5555
+  },
+  "mean_excess_return_bootstrap": {
+    "n": 2153,
+    "block_size": 13,
+    "n_resamples": 2000,
+    "mean": -0.000129,
+    "ci_low": -0.00059,
+    "ci_high": 0.000327,
+    "p_value_ge_0": 0.699
   }
 }
