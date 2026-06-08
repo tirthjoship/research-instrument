@@ -21,3 +21,30 @@ def test_fake_narrator_cannot_change_verdict():
 
     n = FakeNarrator(canned="explained")
     assert n.narrate({"ticker": "X", "verdict": "HOLD"}) == "explained"
+
+
+def test_ollama_falls_back_to_template_when_unreachable():
+    from adapters.ml.ollama_narrator import OllamaNarratorAdapter
+
+    n = OllamaNarratorAdapter(base_url="http://127.0.0.1:9", model="x", timeout=0.2)
+    ctx = {
+        "ticker": "MU",
+        "verdict": "REDUCE",
+        "trend_health": -3.0,
+        "unrealized_pct": -0.31,
+        "account_type": "TFSA",
+        "behavior_flags": ["disposition_risk"],
+    }
+    text = n.narrate(ctx)
+    assert "MU" in text and "REDUCE" in text
+
+
+def test_ollama_uses_model_text_when_available(monkeypatch):
+    import adapters.ml.ollama_narrator as mod
+
+    def fake_call(self, prompt):
+        return "LLM SAYS: trim it"
+
+    monkeypatch.setattr(mod.OllamaNarratorAdapter, "_call", fake_call, raising=True)
+    n = mod.OllamaNarratorAdapter()
+    assert n.narrate({"ticker": "X", "verdict": "TRIM"}) == "LLM SAYS: trim it"
