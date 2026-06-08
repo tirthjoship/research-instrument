@@ -28,6 +28,7 @@ from application.holdings_risk import HoldingsRiskAssessmentUseCase
 from application.momentum_exit_backtest import MomentumExitBacktestUseCase
 from application.opportunity_scan_use_case import OpportunityScanUseCase
 from application.portfolio_verdict import PortfolioVerdictUseCase
+from application.price_returns import load_price_series
 from application.use_cases import (
     PretrainingUseCase,
     TrackRecommendationsUseCase,
@@ -2128,6 +2129,59 @@ def holdings_risk(holdings: str, out: str, log: str, narrate: bool) -> None:
         f"Broken-trend share: {pf.broken_trend_share:.0%}  Top concentration: {pf.top_concentration:.0%}"
     )
     click.echo(f"Full per-ticker detail written to {out} (gitignored).")
+
+
+@cli.command("resolve-discipline-flags")
+@click.option("--log", default="data/personal/discipline_log.jsonl", show_default=True)
+@click.option("--horizon", default=21, type=int, show_default=True)
+def resolve_discipline_flags(log: str, horizon: int) -> None:
+    """Forward-score past REDUCE/TRIM flags: were they followed by drops? (calibration)."""
+    from datetime import datetime, timezone
+
+    from application.discipline_log import read_assessments, resolve_flags
+
+    logged = read_assessments(log)
+    if not logged:
+        click.echo(f"No logged assessments at {log}.")
+        return
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+
+    def provider(ticker: str) -> list[tuple[datetime, float]]:
+        return load_price_series(ticker, start_dt, end_dt)
+
+    res = resolve_flags(logged, provider, horizon_days=horizon)
+    click.echo(
+        f"resolved={res['resolved']}  brier={res['brier']:.3f}  "
+        f"down_rate_on_reduce={res['down_rate_on_reduce']:.0%}"
+    )
+
+
+@cli.command("holdings-risk-calibrate")
+@click.option(
+    "--ticker", required=True, help="Symbol to compute history base rates for"
+)
+@click.option("--horizon", default=21, type=int, show_default=True)
+def holdings_risk_calibrate(ticker: str, horizon: int) -> None:
+    """Warm-start base rates from price history: what followed each trend state."""
+    from datetime import datetime, timezone
+
+    from domain.calibration import base_rate_from_history
+
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+    closes = [c for _, c in load_price_series(ticker, start_dt, end_dt)]
+    rates = base_rate_from_history(
+        closes, trend_window=200, atr_window=22, horizon=horizon
+    )
+    if not rates:
+        click.echo(f"Not enough history for {ticker}.")
+        return
+    for bucket, stats in rates.items():
+        click.echo(
+            f"{bucket:6} n={int(stats['n'])} mean_fwd={stats['mean_fwd_return']:+.2%} "
+            f"down_rate={stats['down_rate']:.0%}"
+        )
 
 
 if __name__ == "__main__":

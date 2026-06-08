@@ -563,3 +563,29 @@ def test_holdings_risk_cli_masked_summary(monkeypatch, tmp_path):
     assert "MU" not in result.output
     assert out_file.exists()
     assert "MU" in out_file.read_text()
+
+
+def test_resolve_discipline_flags_cli(monkeypatch, tmp_path):
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    log = tmp_path / "log.jsonl"
+    log.write_text(
+        '{"ticker": "MU", "verdict": "REDUCE", "price": 100.0, "as_of": "2026-01-01T00:00:00+00:00"}\n'
+    )
+    monkeypatch.setattr(
+        climod,
+        "load_price_series",
+        lambda t, s, e: [
+            (__import__("datetime").datetime(2026, 1, 1), 100.0),
+            (__import__("datetime").datetime(2026, 3, 1), 70.0),
+        ],
+        raising=False,
+    )
+    runner = CliRunner()
+    result = runner.invoke(cli, ["resolve-discipline-flags", "--log", str(log)])
+    assert result.exit_code == 0, result.output
+    assert "resolved" in result.output.lower()
+    assert "brier" in result.output.lower()
