@@ -6,6 +6,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Callable
 
+from application.evaluation import TransactionCostModel
 from domain.backtest_metrics import cagr, daily_returns, max_drawdown, sharpe, sortino
 from domain.trend_rules import (
     above_trend,
@@ -27,12 +28,14 @@ class MomentumExitBacktestUseCase:
         atr_window: int = 22,
         atr_mult: float = 3.0,
         mom_fraction: float = 1.0 / 3.0,
+        cost_per_trade: float = 0.001,
     ) -> None:
         self._prices = price_provider
         self._trend_window = trend_window
         self._atr_window = atr_window
         self._atr_mult = atr_mult
         self._mom_fraction = mom_fraction
+        self._cost = TransactionCostModel(cost_per_trade=cost_per_trade)
 
     def _metrics(self, equity: list[float]) -> dict[str, Any]:
         rets = daily_returns(equity)
@@ -83,6 +86,9 @@ class MomentumExitBacktestUseCase:
             t: [] for t in date_closes
         }  # closes since entry
 
+        # prev_held: snapshot of the held set from end of prior day (for turnover calc)
+        prev_held: dict[str, bool] = {t: False for t in date_closes}
+
         # ── equity curves ────────────────────────────────────────────────────
         strat_eq: list[float] = [1.0]
         bh_eq: list[float] = [1.0]
@@ -117,6 +123,26 @@ class MomentumExitBacktestUseCase:
                     ret = (c[-1] - c[-2]) / c[-2] if c[-2] != 0 else 0.0
                     strat_rets.append(ret)
                 strat_ret = sum(strat_rets) / len(strat_rets) if strat_rets else 0.0
+
+                # Compute one-way turnover entering today:
+                # turnover = 0.5 * sum_over_names |w_t(name) - w_{t-1}(name)|
+                # where w = 1/|held_set| for held names, else 0.
+                # held and prev_held reflect the decisions made at end of t-1 and
+                # t-2 respectively — both known before today's open. No look-ahead.
+                n_held_today = sum(1 for t in date_closes if held[t])
+                n_held_prev = sum(1 for t in date_closes if prev_held[t])
+                w_today = 1.0 / n_held_today if n_held_today > 0 else 0.0
+                w_prev = 1.0 / n_held_prev if n_held_prev > 0 else 0.0
+                turnover = 0.5 * sum(
+                    abs(
+                        (w_today if held[t] else 0.0)
+                        - (w_prev if prev_held[t] else 0.0)
+                    )
+                    for t in date_closes
+                )
+                cost_today = self._cost.cost_for_turnover(turnover)
+                strat_ret = strat_ret - cost_today
+
                 strat_eq.append(strat_eq[-1] * (1.0 + strat_ret))
 
                 # Buy-hold return: mean of all names' daily returns (if data available)
@@ -210,6 +236,9 @@ class MomentumExitBacktestUseCase:
                     if close < stop:
                         held[ticker] = False
                         entry_closes[ticker] = []
+
+            # Snapshot held state at end of today (becomes prev_held for tomorrow)
+            prev_held = dict(held)
 
             prev_date = today
 

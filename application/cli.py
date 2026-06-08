@@ -1804,7 +1804,10 @@ def validate_momentum_discipline(
     import os
     from datetime import datetime as _dt
 
-    from application.precision_metrics import moving_block_bootstrap
+    from application.precision_metrics import (
+        moving_block_bootstrap,
+        sharpe_difference_bootstrap,
+    )
     from application.price_returns import load_price_series
     from domain.backtest_metrics import daily_returns
 
@@ -1830,9 +1833,14 @@ def validate_momentum_discipline(
     b_ret = daily_returns(report["buy_hold"]["equity"])
     n = min(len(s_ret), len(b_ret))
     diff = [s_ret[i] - b_ret[i] for i in range(n)]
-    boot = moving_block_bootstrap(diff) if diff else {}
-    ci_low_raw = boot.get("ci_low", 0.0)
-    ci_low: float = float(ci_low_raw) if isinstance(ci_low_raw, (int, float)) else 0.0
+
+    # Pre-registered gate statistic: Sharpe-difference CI (paired block bootstrap)
+    sharpe_boot = sharpe_difference_bootstrap(s_ret, b_ret) if (s_ret and b_ret) else {}
+    ci_low_raw = sharpe_boot.get("ci_low")
+    ci_low: float = ci_low_raw if isinstance(ci_low_raw, (int, float)) else 0.0
+
+    # Mean-excess bootstrap kept for transparency only — NOT the gate
+    mean_excess_boot = moving_block_bootstrap(diff) if diff else {}
 
     v = uc.verdict(report, sharpe_diff_ci_low=ci_low)
     os.makedirs("data/reports", exist_ok=True)
@@ -1856,6 +1864,12 @@ def validate_momentum_discipline(
         },
         "universe_size": len(report.get("universe", [])),
         "verdict": {kk: _safe(vv) for kk, vv in v.items()},
+        "sharpe_diff_bootstrap": {
+            kk: _safe(vv) for kk, vv in sharpe_boot.items() if vv is not None
+        },
+        "mean_excess_return_bootstrap": {
+            kk: _safe(vv) for kk, vv in mean_excess_boot.items() if vv is not None
+        },
     }
     with open("data/reports/momentum_discipline.json", "w") as f:
         _json.dump(out, f, indent=2, default=str)
@@ -1867,6 +1881,10 @@ def validate_momentum_discipline(
                 f"{name:10} sharpe={r['sharpe']:.2f} cagr={r['cagr']:.2%} "
                 f"maxDD={r['max_drawdown']:.2%}"
             )
+    click.echo(
+        f"sharpe_diff point={sharpe_boot.get('point')} "
+        f"ci=[{sharpe_boot.get('ci_low')}, {sharpe_boot.get('ci_high')}]"
+    )
     click.echo(
         f"VERDICT: {v['decision']}  (drawdown_reduction={v['drawdown_reduction']:.0%}, "
         f"sharpe_diff_ci_low={v['sharpe_diff_ci_low']:.4f})"
