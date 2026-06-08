@@ -555,14 +555,28 @@ def test_holdings_risk_cli_masked_summary(monkeypatch, tmp_path):
 
     runner = CliRunner()
     out_file = tmp_path / "detail.txt"
+    log_file = tmp_path / "log.jsonl"
+    # Isolate --log to tmp: never append synthetic rows to the real personal log.
     result = runner.invoke(
-        cli, ["holdings-risk", "--holdings", str(holdings), "--out", str(out_file)]
+        cli,
+        [
+            "holdings-risk",
+            "--holdings",
+            str(holdings),
+            "--out",
+            str(out_file),
+            "--log",
+            str(log_file),
+        ],
     )
     assert result.exit_code == 0, result.output
     assert "REDUCE" in result.output
     assert "MU" not in result.output
     assert out_file.exists()
     assert "MU" in out_file.read_text()
+    # The forward-calibration log was written to the isolated tmp path, not the default.
+    assert log_file.exists()
+    assert "MU" in log_file.read_text()
 
 
 def test_resolve_discipline_flags_cli(monkeypatch, tmp_path):
