@@ -2266,7 +2266,10 @@ def screen_candidates(top: int, report_dir: str) -> None:
     import json
     from datetime import date, timezone
 
-    from application.evidence_screen_use_case import EvidenceScreenUseCase
+    from application.evidence_screen_use_case import (
+        EvidenceScreenUseCase,
+        label_from_verdict_file,
+    )
     from application.narrator import template_narration
     from domain.screen_models import ScreenCandidate
 
@@ -2380,6 +2383,28 @@ def screen_candidates(top: int, report_dir: str) -> None:
     )
     as_of = date.today().isoformat()
     result = uc.run(universe=tickers, as_of=as_of, top_n=top)
+
+    # --- verdict-driven label: read latest backtest verdict and relabel candidates ---
+    verdict_label = label_from_verdict_file(report_dir)
+    from dataclasses import replace
+
+    labeled_candidates = tuple(
+        replace(c, label=verdict_label) for c in result.candidates
+    )
+    from domain.screen_models import ScreenResult
+
+    result = ScreenResult(
+        as_of=result.as_of,
+        candidates=labeled_candidates,
+        universe_size=result.universe_size,
+        regime=result.regime,
+        scorecard_ref=result.scorecard_ref,
+    )
+
+    # --- surface each candidate as a SurfacedCall for forward-tracking ---
+    store = deps["store"]
+    as_of_dt = datetime.now(timezone.utc)
+    uc.surface_calls(result, as_of_dt=as_of_dt, store=store)
 
     # --- persist FULL distribution (honesty rule) ---
     report_path = Path(report_dir)

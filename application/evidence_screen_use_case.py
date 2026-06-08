@@ -5,12 +5,22 @@ Partial analyst coverage is flagged-neutral (ticker stays), not dropped.
 
 from __future__ import annotations
 
+import glob
+import json
+import os
+from datetime import datetime
 from typing import Protocol
 
 from domain import trend_rules
 from domain.factor_scores import FACTOR_KEYS, composite_score, revision_momentum, zscore
 from domain.screen import abstain_if_thin, eligible, rank_universe
 from domain.screen_models import FactorScore, ScreenCandidate, ScreenLabel, ScreenResult
+from domain.surfaced_call import (
+    EvidenceItem,
+    OpportunityDirection,
+    SurfacedCall,
+    make_call_id,
+)
 
 
 class PricePort(Protocol):
@@ -29,6 +39,12 @@ class FundamentalsPort(Protocol):
 
 class NarratorPort(Protocol):
     def narrate(self, candidate: ScreenCandidate) -> str: ...
+
+
+class CallStorePort(Protocol):
+    """Minimal protocol for persisting SurfacedCalls from the screen."""
+
+    def save_call(self, call: SurfacedCall) -> None: ...
 
 
 class EvidenceScreenUseCase:
@@ -126,6 +142,59 @@ class EvidenceScreenUseCase:
             scorecard_ref=None,
         )
 
+    def surface_calls(
+        self,
+        result: ScreenResult,
+        as_of_dt: datetime,
+        store: CallStorePort | None,
+        spy_at_surface: float = 5.0,
+        ndx_at_surface: float = 5.0,
+    ) -> list[SurfacedCall]:
+        """Persist each ranked ScreenCandidate as a SurfacedCall via *store*.
+
+        Maps factor scores → EvidenceItem(dimension, score, note) and sets
+        direction=BUY for all candidates (evidence-bounded screen, not a sell signal).
+
+        Args:
+            result:          The ScreenResult returned by run().
+            as_of_dt:        Timezone-aware datetime anchor (POINT-IN-TIME).
+            store:           SurfacedCallStorePort implementation, or None to skip.
+            spy_at_surface:  SPY price at surface time (placeholder 5.0 when unknown).
+            ndx_at_surface:  NDX price at surface time (placeholder 5.0 when unknown).
+
+        Returns:
+            List of SurfacedCall objects that were (attempted to be) persisted.
+        """
+        if store is None:
+            return []
+
+        calls: list[SurfacedCall] = []
+        for cand in result.candidates:
+            evidence: tuple[EvidenceItem, ...] = tuple(
+                EvidenceItem(
+                    dimension=fs.name,
+                    score=max(0.0, min(10.0, (fs.value + 3.0) * (10.0 / 6.0))),
+                    note=f"{fs.name} z-score {fs.value:+.2f}",
+                )
+                for fs in cand.factor_scores
+            )
+            call = SurfacedCall(
+                call_id=make_call_id(cand.ticker, as_of_dt),
+                ticker=cand.ticker,
+                surfaced_at=as_of_dt,
+                conviction=max(0.0, min(10.0, (cand.composite + 3.0) * (10.0 / 6.0))),
+                divergence_score=5.0,  # screen has no divergence signal; use neutral
+                direction=OpportunityDirection.BUY,
+                evidence=evidence,
+                theme=None,
+                cap_tier="unknown",
+                spy_at_surface=spy_at_surface,
+                ndx_at_surface=ndx_at_surface,
+            )
+            store.save_call(call)
+            calls.append(call)
+        return calls
+
     @staticmethod
     def _z(vals: list[float | None]) -> list[float | None]:
         present = [v for v in vals if v is not None]
@@ -134,3 +203,27 @@ class EvidenceScreenUseCase:
         zs = zscore(present)
         it = iter(zs)
         return [next(it) if v is not None else None for v in vals]
+
+
+def label_from_verdict_file(report_dir: str) -> ScreenLabel:
+    """Read the latest screen_ic_*.json in *report_dir* and return a ScreenLabel.
+
+    Returns:
+        VALIDATED  iff the latest verdict file has ``decision == "PASS"``.
+        RESEARCH_ONLY  otherwise (INCONCLUSIVE, HALT, or no file found).
+    """
+    pattern = os.path.join(report_dir, "screen_ic_*.json")
+    files = sorted(glob.glob(pattern))
+    if not files:
+        return ScreenLabel.RESEARCH_ONLY
+    latest = files[-1]
+    try:
+        with open(latest) as fh:
+            data = json.load(fh)
+        return (
+            ScreenLabel.VALIDATED
+            if data.get("decision") == "PASS"
+            else ScreenLabel.RESEARCH_ONLY
+        )
+    except Exception:
+        return ScreenLabel.RESEARCH_ONLY
