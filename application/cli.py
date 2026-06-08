@@ -2248,37 +2248,20 @@ def backtest_discipline_flags(holdings: str, horizon: int, step: int) -> None:
 # ---------------------------------------------------------------------------
 
 
-@cli.command("screen-candidates")
-@click.option("--top", default=10, show_default=True, type=int, help="Top N rank limit")
-@click.option(
-    "--report-dir",
-    default="data/reports/",
-    show_default=True,
-    help="Directory to write screen_<date>.json",
-)
-def screen_candidates(top: int, report_dir: str) -> None:
-    """Screen universe for disciplined, evidence-bounded candidates.
+def _build_evidence_screen(deps: dict[str, Any]) -> "Any":
+    """Wire the four thin adapter ports into an EvidenceScreenUseCase.
 
-    Writes the FULL ranked candidate distribution to <report-dir>/screen_<date>.json
-    (honesty rule: full distribution, not just top-N).  Prints a masked summary to
-    stdout (counts + label distribution only — no per-ticker scores).
+    Extracted so both `screen-candidates` and `weekly-brief` use the same
+    adapter wiring (DRY).  Returns an EvidenceScreenUseCase instance.
     """
-    import json
-    from datetime import date, timezone
+    from datetime import timezone
 
-    from application.evidence_screen_use_case import (
-        EvidenceScreenUseCase,
-        label_from_verdict_file,
-    )
+    from application.evidence_screen_use_case import EvidenceScreenUseCase
     from application.narrator import template_narration
     from domain.screen_models import ScreenCandidate
 
-    deps = _build_dependencies("us")
     market_data = deps["market_data"]
-    config = deps["config"]
-    tickers = _get_ticker_universe(config)
 
-    # --- thin adapters satisfying evidence_screen_use_case Protocols ---
     class _PriceAdapter:
         """Wraps YFinanceAdapter to satisfy PricePort."""
 
@@ -2289,7 +2272,6 @@ def screen_candidates(top: int, report_dir: str) -> None:
                 signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
                 if not signals:
                     return []
-                # Resample to monthly: take the last close per calendar month
                 by_month: dict[str, float] = {}
                 for s in signals:
                     key = f"{s.timestamp.year}-{s.timestamp.month:02d}"
@@ -2335,7 +2317,6 @@ def screen_candidates(top: int, report_dir: str) -> None:
                 data = market_data.get_analyst_data(ticker, datetime.now(timezone.utc))
                 if data is None:
                     return None
-                # Return target prices as a proxy estimate series
                 targets = [
                     v
                     for k, v in data.items()
@@ -2375,12 +2356,40 @@ def screen_candidates(top: int, report_dir: str) -> None:
                 }
             )
 
-    uc = EvidenceScreenUseCase(
+    return EvidenceScreenUseCase(
         price=_PriceAdapter(),
         analyst=_AnalystAdapter(),
         fundamentals=_FundamentalsAdapter(),
         narrator=_NarratorAdapter(),
     )
+
+
+@cli.command("screen-candidates")
+@click.option("--top", default=10, show_default=True, type=int, help="Top N rank limit")
+@click.option(
+    "--report-dir",
+    default="data/reports/",
+    show_default=True,
+    help="Directory to write screen_<date>.json",
+)
+def screen_candidates(top: int, report_dir: str) -> None:
+    """Screen universe for disciplined, evidence-bounded candidates.
+
+    Writes the FULL ranked candidate distribution to <report-dir>/screen_<date>.json
+    (honesty rule: full distribution, not just top-N).  Prints a masked summary to
+    stdout (counts + label distribution only — no per-ticker scores).
+    """
+    import json
+    from datetime import date, timezone
+
+    from application.evidence_screen_use_case import label_from_verdict_file
+
+    deps = _build_dependencies("us")
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+
+    # Reuse the shared helper so weekly-brief wires the same adapters (DRY).
+    uc = _build_evidence_screen(deps)
     as_of = date.today().isoformat()
     # Run with full universe length so rank_universe returns ALL eligible candidates.
     # --top applies ONLY to the stdout masked summary and the surfaced-calls slice.
@@ -2660,6 +2669,167 @@ def backtest_screen(
     click.echo(f"  {_VERDICT_LABELS.get(verdict.decision, verdict.decision)}")
     click.echo(f"\n  CAVEAT: {_CAVEAT}")
     click.echo(f"\nReport written to: {out_file}")
+
+
+# ---------------------------------------------------------------------------
+# Weekly Brief CLI command (Phase B)
+# ---------------------------------------------------------------------------
+
+
+def _build_weekly_brief(
+    market: str, holdings: "list[Any]", report_dir: str
+) -> "tuple[Any, list[str]]":
+    """Wire real adapters into a WeeklyBriefUseCase. Returns (use_case, universe)."""
+    from datetime import timezone
+
+    from adapters.ml.correlation_analyzer import CorrelationAnalyzer
+    from application.discipline_log import read_assessments, resolve_flags
+    from application.forward_tracking_use_case import ForwardTrackingUseCase
+    from application.narrator import FakeNarrator
+    from application.weekly_brief_use_case import RegimeReadUseCase, WeeklyBriefUseCase
+    from domain.trend_rules import sma as _sma
+    from domain.trend_rules import trend_health as _trend_health
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+    market_data = deps["market_data"]
+    universe = _get_backtest_universe(market)
+
+    # Screen ports: same adapters as screen-candidates (DRY via shared helper).
+    screen = _build_evidence_screen(deps)
+
+    def _price_provider(ticker: str) -> "list[tuple[Any, float]]":
+        end = datetime.now(timezone.utc)
+        start = end - timedelta(days=420)
+        return load_price_series(ticker, start, end)
+
+    # HoldingsRiskAssessmentUseCase requires a non-None narrator; use template fallback
+    # (same as holdings-risk command with --narrate off, ADR-047).
+    holdings_risk = HoldingsRiskAssessmentUseCase(_price_provider, FakeNarrator(""))
+
+    def _vix() -> float:
+        end = datetime.now(timezone.utc)
+        series = load_price_series("^VIX", end - timedelta(days=10), end)
+        return series[-1][1] if series else 20.0
+
+    def _spy_trend() -> float:
+        end = datetime.now(timezone.utc)
+        series = load_price_series("SPY", end - timedelta(days=420), end)
+        closes = [c for _, c in series]
+        if len(closes) < 200:
+            return 0.0
+        sma_val = _sma(closes, 200)
+        diffs = [abs(closes[i] - closes[i - 1]) for i in range(-20, 0)]
+        atr_val: float | None = sum(diffs) / len(diffs) if diffs else None
+        th = _trend_health(closes[-1], sma_val, atr_val)
+        return th if th is not None else 0.0
+
+    regime_reader = RegimeReadUseCase(vix_provider=_vix, spy_trend_provider=_spy_trend)
+
+    # Concentration: build a CorrelationAnalyzer graph over holdings + universe head.
+    analyzer = CorrelationAnalyzer()
+    held = [h.ticker for h in holdings]
+    graph_tickers = list(dict.fromkeys(held + universe[:100]))
+    signals_by_ticker = {}
+    for t in graph_tickers:
+        try:
+            signals_by_ticker[t] = market_data.get_signals(
+                t, datetime.now(timezone.utc)
+            )
+        except Exception:
+            signals_by_ticker[t] = []
+    try:
+        analyzer.build_graph(signals_by_ticker)
+    except Exception:
+        pass  # concentration overlaps degrade to empty if the graph can't build
+
+    def _cluster_peers(ticker: str) -> list[str]:
+        try:
+            return analyzer.get_cluster_peers(ticker)
+        except Exception:
+            return []
+
+    forward = ForwardTrackingUseCase(store, market_data)
+
+    def _screen_scorecard() -> "tuple[float | None, float | None, int, bool]":
+        records = forward.get_track_record()
+        return (None, None, len(records), False)
+
+    def _discipline_scorecard() -> "tuple[float | None, int, str]":
+        log_path = "data/personal/discipline_log.jsonl"
+        try:
+            logged = read_assessments(log_path)
+        except Exception:
+            return (None, 0, "NO-LOG")
+        res = resolve_flags(logged, _price_provider, horizon_days=21)
+        n = int(res.get("resolved", 0))
+        dr = res.get("down_rate_on_reduce")
+        brier = res.get("brier", 1.0)
+        gate = (
+            "PROCEED"
+            if (dr is not None and dr >= 0.55 and brier <= 0.45 and n >= 30)
+            else "PENDING"
+        )
+        return (dr, n, gate)
+
+    from application.evidence_screen_use_case import label_from_verdict_file
+
+    uc = WeeklyBriefUseCase(
+        screen=screen,
+        holdings_risk=holdings_risk,
+        regime_reader=regime_reader,
+        screen_label_fn=label_from_verdict_file,
+        cluster_peers_fn=_cluster_peers,
+        screen_scorecard_fn=_screen_scorecard,
+        discipline_scorecard_fn=_discipline_scorecard,
+    )
+    return uc, universe
+
+
+@cli.command("weekly-brief")
+@click.option("--market", default="us", show_default=True, help="Market config")
+@click.option(
+    "--holdings",
+    default="data/personal/holdings-report-2026-06-07.csv",
+    show_default=True,
+    help="Holdings CSV (gitignored).",
+)
+@click.option(
+    "--out",
+    default="data/personal/weekly_brief.md",
+    show_default=True,
+    help="Full markdown brief (gitignored — contains holdings detail).",
+)
+@click.option("--report-dir", default="data/reports/", show_default=True)
+@click.option("--top-n", default=10, type=int, show_default=True)
+def weekly_brief(
+    market: str, holdings: str, out: str, report_dir: str, top_n: int
+) -> None:
+    """Generate the unified weekly brief (masked stdout + gitignored full markdown).
+
+    Composes the Phase-A evidence screen, the discipline engine, a regime tilt,
+    a concentration warning, and the forward scorecard. Phase B adds no predictive
+    claim; a RESEARCH_ONLY screen renders no 'buy' language.
+    """
+    from application.holdings_reader import read_holdings
+    from domain.brief import to_markdown, to_stdout_masked
+
+    held = read_holdings(holdings)
+    uc, universe = _build_weekly_brief(market, held, report_dir)
+    brief = uc.execute(
+        universe=universe,
+        holdings=held,
+        as_of=datetime.now(),
+        report_dir=report_dir,
+        top_n=top_n,
+    )
+
+    out_path = Path(out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(to_markdown(brief))
+
+    click.echo(to_stdout_masked(brief))
+    click.echo(f"\nFull brief (gitignored) written to: {out_path}")
 
 
 if __name__ == "__main__":
