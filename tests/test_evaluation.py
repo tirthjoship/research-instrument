@@ -66,6 +66,14 @@ class TestTransactionCostModel:
         assert total == pytest.approx(0.104)
 
 
+def test_cost_for_turnover():
+    from application.evaluation import TransactionCostModel
+
+    m = TransactionCostModel(cost_per_trade=0.001)
+    assert abs(m.cost_for_turnover(0.5) - 0.0005) < 1e-12
+    assert m.cost_for_turnover(0.0) == 0.0
+
+
 class TestRegimeSplitter:
     def test_classify_bull(self) -> None:
         splitter = RegimeSplitter()
