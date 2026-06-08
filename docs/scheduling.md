@@ -215,6 +215,40 @@ tool — see ADR-007 for the rationale behind the local-scheduler decision.
 
 ---
 
+## Holdings Discipline daily run (ADR-048)
+
+A second, independent job logs a dated discipline assessment of the real holdings every weekday so
+the **forward-calibration gate** (ADR-048) accrues `REDUCE` flags to resolve. It writes only
+gitignored files (`data/personal/discipline_log.jsonl` for the dated flags,
+`data/personal/holdings_risk_detail.txt` for the per-ticker table) and a masked stdout cron log
+(`data/personal/holdings_risk_cron.log`). Nothing personal is committed.
+
+The plist is installed at `~/Library/LaunchAgents/com.tirthjoshi.holdings-risk-daily.plist`. It runs
+**weekdays (Mon–Fri) at 13:30 local** — ~30 min after the US close (16:00 ET) so yfinance has the
+day's final daily bar. Weekends are skipped so Friday's close is not re-logged on Sat/Sun.
+
+```bash
+# Already installed + loaded this session. To reload after edits:
+launchctl unload ~/Library/LaunchAgents/com.tirthjoshi.holdings-risk-daily.plist
+launchctl load -w ~/Library/LaunchAgents/com.tirthjoshi.holdings-risk-daily.plist
+launchctl list | grep holdings-risk            # confirm loaded (exit code 0)
+# Run once now to test:
+launchctl start com.tirthjoshi.holdings-risk-daily
+# Stop scheduling:
+launchctl unload -w ~/Library/LaunchAgents/com.tirthjoshi.holdings-risk-daily.plist
+```
+
+It reuses the same `caffeinate -i` sleep handling and the same powered-off caveat as the daily
+cycle above.
+
+**Calibration caveat (ADR-048):** daily re-logging produces *overlapping* 21-day windows for a
+name that stays broken — the gate's `n ≥ 30` is a nominal count of REDUCE observations, not 30
+independent events (consecutive days are autocorrelated). For a personal decision-support tool this
+is acceptable; the gate is a trust signal, not a publishable significance test. If a cleaner read is
+wanted later, de-duplicate to one flag per name per non-overlapping window before scoring.
+
+---
+
 ## ADR-007 deviation note
 
 ADR-007 chose local SQLite as the persistence layer to keep the project self-contained and avoid

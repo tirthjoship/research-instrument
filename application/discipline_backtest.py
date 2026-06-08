@@ -53,8 +53,9 @@ def backtest_discipline_calibration(
 ) -> dict[str, Any]:
     """Walk each ticker point-in-time every ~step_days, compute the verdict using ONLY
     past+current closes, then look horizon_days forward for the realized return.
-    Aggregate per-verdict n/down_rate/mean_fwd_return + a Brier for REDUCE+TRIM
-    (which assert 'down', p=1.0)."""
+    Aggregate per-verdict n/down_rate/mean_fwd_return + a directional Brier for
+    REDUCE only (the down-call, p=1.0). TRIM is position-sizing, not a down-call,
+    so it is reported in by_verdict but excluded from the Brier (ADR-048)."""
     s_naive = start.replace(tzinfo=None)
     e_naive = end.replace(tzinfo=None)
     bench = [(d.replace(tzinfo=None), c) for d, c in price_provider(benchmark)]
@@ -118,7 +119,10 @@ def backtest_discipline_calibration(
             b["down"] += 1 if fwd < 0 else 0
             b["sum_fwd"] += fwd
             total += 1
-            if verdict in (Verdict.REDUCE, Verdict.TRIM):
+            # ADR-048: only REDUCE is a directional down-call. TRIM is position-sizing
+            # (winner past stop) and historically keeps rising — it is shown in
+            # by_verdict for transparency but excluded from the directional Brier.
+            if verdict == Verdict.REDUCE:
                 probs.append(1.0)
                 outcomes.append(1 if fwd < 0 else 0)
 
@@ -129,6 +133,6 @@ def backtest_discipline_calibration(
     return {
         "total_verdicts": total,
         "by_verdict": by_verdict,
-        "brier_reduce_trim": brier_score(probs, outcomes),
-        "n_reduce_trim": len(outcomes),
+        "brier_reduce": brier_score(probs, outcomes),
+        "n_reduce": len(outcomes),
     }

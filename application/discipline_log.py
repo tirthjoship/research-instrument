@@ -44,15 +44,24 @@ def _price_on_or_after(
 def resolve_flags(
     logged: list[dict[str, Any]], price_provider: PriceProvider, horizon_days: int = 21
 ) -> dict[str, Any]:
-    """For each logged REDUCE/TRIM flag whose horizon has elapsed, check whether the
-    price fell over the horizon. Score with Brier (a REDUCE/TRIM predicts 'down', p=1.0).
-    Returns resolved count, brier, and down_rate_on_reduce."""
-    probs: list[float] = []
-    outcomes: list[int] = []
+    """Forward-score logged flags once their horizon has elapsed.
+
+    REDUCE is the only DIRECTIONAL down-call: it asserts the name will fall (p=1.0),
+    so it alone feeds the Brier and the calibration gate (ADR-048). TRIM is a
+    position-sizing action (trim a winner that breached its trailing stop), NOT a
+    prediction of a drop — historically TRIM names keep rising — so it is tracked
+    separately for transparency and excluded from the directional Brier.
+
+    Returns: resolved/brier/down_rate_on_reduce (REDUCE-only, the gate inputs) plus
+    informational trim_resolved/down_rate_on_trim."""
+    reduce_probs: list[float] = []
+    reduce_outcomes: list[int] = []
     down_on_reduce = 0
-    reduce_n = 0
+    trim_n = 0
+    down_on_trim = 0
     for row in logged:
-        if row.get("verdict") not in ("REDUCE", "TRIM"):
+        verdict = row.get("verdict")
+        if verdict not in ("REDUCE", "TRIM"):
             continue
         as_of = datetime.fromisoformat(str(row["as_of"])).replace(tzinfo=None)
         series = [
@@ -63,14 +72,21 @@ def resolve_flags(
         if entry is None or later is None or entry <= 0:
             continue
         went_down = 1 if (later / entry - 1.0) < 0 else 0
-        probs.append(1.0)
-        outcomes.append(went_down)
-        reduce_n += 1
-        down_on_reduce += went_down
+        if verdict == "REDUCE":
+            reduce_probs.append(1.0)
+            reduce_outcomes.append(went_down)
+            down_on_reduce += went_down
+        else:  # TRIM — informational only, never a down-call
+            trim_n += 1
+            down_on_trim += went_down
     from domain.calibration import brier_score
 
     return {
-        "resolved": len(outcomes),
-        "brier": brier_score(probs, outcomes),
-        "down_rate_on_reduce": (down_on_reduce / reduce_n) if reduce_n else 0.0,
+        "resolved": len(reduce_outcomes),
+        "brier": brier_score(reduce_probs, reduce_outcomes),
+        "down_rate_on_reduce": (
+            down_on_reduce / len(reduce_outcomes) if reduce_outcomes else 0.0
+        ),
+        "trim_resolved": trim_n,
+        "down_rate_on_trim": (down_on_trim / trim_n) if trim_n else 0.0,
     }
