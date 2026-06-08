@@ -94,8 +94,10 @@ class WeeklyBriefUseCase:
 
         top_ret, spy_ret, n, significant = self._screen_card()
         down_rate, disc_n, gate_status = self._disc_card()
+        # The screen scorecard is FORWARD-tracked (the engine is forward-accountable):
+        # the record accrues from when calls are first surfaced, so n=0 early is honest.
         scorecard = ScorecardSnapshot(
-            screen_window=f"since {as_of_iso}",
+            screen_window=f"forward since {as_of_iso}",
             screen_top_ret=top_ret,
             screen_spy_ret=spy_ret,
             screen_n=n,
