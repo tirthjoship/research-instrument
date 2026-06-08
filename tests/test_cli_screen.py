@@ -68,6 +68,9 @@ def test_screen_candidates_masked_summary(
         def run(self, universe: list[str], as_of: str, top_n: int = 10) -> ScreenResult:
             return fake_result
 
+        def surface_calls(self, result: object, **kw: object) -> list[object]:
+            return []
+
     monkeypatch.setattr(esc_module, "EvidenceScreenUseCase", lambda **kw: FakeUseCase())  # type: ignore[attr-defined]
 
     runner = CliRunner()
@@ -91,6 +94,9 @@ def test_screen_candidates_writes_full_distribution(
     class FakeUseCase:
         def run(self, universe: list[str], as_of: str, top_n: int = 10) -> ScreenResult:
             return fake_result
+
+        def surface_calls(self, result: object, **kw: object) -> list[object]:
+            return []
 
     monkeypatch.setattr(esc_module, "EvidenceScreenUseCase", lambda **kw: FakeUseCase())  # type: ignore[attr-defined]
 
@@ -118,6 +124,9 @@ def test_screen_candidates_stdout_masked(
     class FakeUseCase:
         def run(self, universe: list[str], as_of: str, top_n: int = 10) -> ScreenResult:
             return fake_result
+
+        def surface_calls(self, result: object, **kw: object) -> list[object]:
+            return []
 
     monkeypatch.setattr(esc_module, "EvidenceScreenUseCase", lambda **kw: FakeUseCase())  # type: ignore[attr-defined]
 
