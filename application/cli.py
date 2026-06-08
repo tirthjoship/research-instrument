@@ -2466,87 +2466,200 @@ def screen_candidates(top: int, report_dir: str) -> None:
 
 
 @cli.command("backtest-screen")
+@click.option("--market", default="us", show_default=True, help="Market config (us|ca)")
+@click.option(
+    "--start", default="2018-01-01", show_default=True, help="Backtest start date"
+)
+@click.option(
+    "--end", default="2026-01-01", show_default=True, help="Backtest end date"
+)
+@click.option(
+    "--horizon-days",
+    default=21,
+    show_default=True,
+    type=int,
+    help="Forward-return horizon in calendar days",
+)
+@click.option(
+    "--limit",
+    default=0,
+    type=int,
+    show_default=True,
+    help="Cap universe size (0 = all tickers from sp500+nasdaq100+tsx60)",
+)
 @click.option(
     "--report-dir",
     default="data/reports/",
     show_default=True,
     help="Directory to write screen_ic_<date>.json",
 )
-def backtest_screen(report_dir: str) -> None:
-    """Pre-registered IC backtest for the evidence screen composite signal.
+def backtest_screen(
+    market: str,
+    start: str,
+    end: str,
+    horizon_days: int,
+    limit: int,
+    report_dir: str,
+) -> None:
+    """Point-in-time IC backtest for the evidence-screen MOMENTUM composite.
 
-    Builds point-in-time panels from the screen store, runs ScreenBacktestUseCase,
-    writes screen_ic_<date>.json, and prints the verdict (PASS/INCONCLUSIVE/HALT).
+    HONESTY CONSTRAINT (project rule #2 — no look-ahead bias):
+    Only the MOMENTUM factor is backtested.  Revision, quality, and value
+    require point-in-time fundamental/analyst snapshots unavailable from
+    yfinance for 2018-2026.  Using current values at past dates would be
+    catastrophic look-ahead bias.  Those factors are flagged-neutral (None)
+    throughout, exactly as the live composite_score handles missing factors.
+    The caveat is printed to stdout and embedded in the JSON report every run.
 
-    NOTE: Full point-in-time panel construction requires historical screen data
-    persisted by repeated screen-candidates runs. On a fresh install the backtest
-    runs against a minimal stub panel and returns INCONCLUSIVE pending real data.
+    Universe: US S&P 500 + NASDAQ-100 (sp500.txt + nasdaq100.txt) plus TSX 60
+    (tsx60.txt with .TO suffix).  Monthly evaluation cadence.
     """
     import json
     from datetime import date
 
     from application.screen_backtest_use_case import ScreenBacktestUseCase
+    from application.screen_ic_panels import build_screen_panels
 
-    deps = _build_dependencies("us")
-    store = deps["store"]
+    _CAVEAT = (
+        "Composite tested on MOMENTUM leg only; revision/quality/value lack "
+        "point-in-time history for 2018-2026 and were flagged-neutral to avoid "
+        "look-ahead bias (project rule #2)."
+    )
 
-    # Load persisted screen panels from scan_candidates table (written by
-    # scan-opportunities / screen-candidates); fall back to an empty stub so the
-    # command always exits cleanly.
-    raw_panels: list[dict[str, tuple[float, float]]] = []
-    try:
-        rows = store.get_scan_candidates()
-        # Group by date → per-date panel: {ticker: (composite, fwd_return)}
-        # fwd_return is not yet resolved here (we pass 0.0 as placeholder until
-        # resolve-calls fills it in); the IC gate tolerates partially-filled panels.
-        from collections import defaultdict
+    # ------------------------------------------------------------------
+    # Build universe: SP500 + NASDAQ100 + TSX60 (reuse _get_backtest_universe)
+    # ------------------------------------------------------------------
+    tickers = _get_backtest_universe(market)
+    universe_size = len(tickers)
+    if limit:
+        tickers = tickers[:limit]
+        universe_size = len(tickers)
 
-        panels_by_date: dict[str, dict[str, tuple[float, float]]] = defaultdict(dict)
-        for row in rows:
-            key = str(row.get("as_of", "unknown"))
-            ticker = str(row.get("ticker", ""))
-            composite = float(row.get("composite", 0.0))
-            fwd = float(row.get("fwd_return", 0.0))
-            if ticker:
-                panels_by_date[key][ticker] = (composite, fwd)
-        raw_panels = list(panels_by_date.values())
-    except Exception:
-        pass  # no scan_candidates table yet → stub
+    click.echo(f"Universe: {universe_size} tickers (sp500+nasdaq100+tsx60, deduped)")
 
-    if not raw_panels:
-        # Minimal stub so command exits cleanly; verdict will be INCONCLUSIVE/HALT
-        raw_panels = [{"STUB": (0.0, 0.0)}]
+    # ------------------------------------------------------------------
+    # Date range: monthly cadence (first-of-month / 28-day steps)
+    # ------------------------------------------------------------------
+    start_dt = datetime.fromisoformat(start)
+    end_dt = datetime.fromisoformat(end)
+    dates: list[datetime] = []
+    d = start_dt
+    while d <= end_dt - timedelta(days=horizon_days):
+        dates.append(d)
+        d += timedelta(days=28)
 
+    click.echo(
+        f"Date range: {start} → {end}  |  {len(dates)} evaluation dates  |  horizon={horizon_days}d"
+    )
+
+    # ------------------------------------------------------------------
+    # Price cache (load once per ticker over [start-400d, end+horizon+5d])
+    # ------------------------------------------------------------------
+    price_start = start_dt - timedelta(days=400)
+    price_end = end_dt + timedelta(days=horizon_days + 5)
+
+    _price_cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def _prices(ticker: str) -> list[tuple[datetime, float]]:
+        if ticker not in _price_cache:
+            _price_cache[ticker] = load_price_series(ticker, price_start, price_end)
+        return _price_cache[ticker]
+
+    # Preload benchmark
+    click.echo("Loading price data (this is the network call — skipped in tests)...")
+    _prices("SPY")
+    all_tickers_to_load = list(tickers)
+    for i, t in enumerate(all_tickers_to_load, 1):
+        _prices(t)
+        if i % 50 == 0:
+            click.echo(f"  Loaded {i}/{len(all_tickers_to_load)} tickers...")
+
+    n_with_data = sum(1 for t in tickers if _price_cache.get(t))
+    click.echo(f"Tickers with price data: {n_with_data}/{len(tickers)}")
+
+    # ------------------------------------------------------------------
+    # Build panels
+    # ------------------------------------------------------------------
+    click.echo("Building point-in-time panels...")
+    panels, benchmark_returns = build_screen_panels(
+        tickers=list(tickers),
+        dates=dates,
+        price_series_fn=_prices,
+        horizon_days=horizon_days,
+        benchmark_ticker="SPY",
+    )
+
+    # ------------------------------------------------------------------
+    # Run ScreenBacktestUseCase
+    # ------------------------------------------------------------------
     uc = ScreenBacktestUseCase()
-    verdict = uc.run(raw_panels)
+    verdict = uc.run(panels, market_returns=benchmark_returns)
 
+    # ------------------------------------------------------------------
+    # Write report JSON
+    # ------------------------------------------------------------------
     as_of = date.today().isoformat()
     report_path = Path(report_dir)
     report_path.mkdir(parents=True, exist_ok=True)
     out_file = report_path / f"screen_ic_{as_of}.json"
-    out_file.write_text(
-        json.dumps(
-            {
-                "as_of": as_of,
-                "decision": verdict.decision,
-                "mean_ic": verdict.mean_ic,
-                "n_dates": verdict.n_dates,
-            },
-            indent=2,
-        )
-    )
-
-    _VERDICT_LABELS = {
-        "PASS": "PASS — IC >= 0.02, signal shows measurable cross-sectional lift.",
-        "INCONCLUSIVE": "INCONCLUSIVE — IC in (0, 0.02); insufficient evidence of edge.",
-        "HALT": "HALT — IC <= 0; signal shows no cross-sectional lift.",
+    report_data = {
+        "as_of": as_of,
+        "universe_size": universe_size,
+        "n_tickers_with_data": n_with_data,
+        "decision": verdict.decision,
+        "mean_ic": verdict.mean_ic,
+        "n_dates": verdict.n_dates,
+        "ic_ci_low": verdict.ic_ci_low,
+        "ic_ci_high": verdict.ic_ci_high,
+        "sharpe_diff_point": verdict.sharpe_diff_point,
+        "sharpe_diff_ci_low": verdict.sharpe_diff_ci_low,
+        "sharpe_diff_ci_high": verdict.sharpe_diff_ci_high,
+        "primary_pass": verdict.primary_pass,
+        "secondary_pass": verdict.secondary_pass,
+        "horizon_days": horizon_days,
+        "start": start,
+        "end": end,
+        "caveat": _CAVEAT,
     }
-    click.echo(f"\nScreen IC Backtest ({as_of})")
-    click.echo(f"  n_dates : {verdict.n_dates}")
-    click.echo(f"  mean_IC : {verdict.mean_ic:.6f}")
-    click.echo(f"  verdict : {verdict.decision}")
+    out_file.write_text(json.dumps(report_data, indent=2))
+
+    # ------------------------------------------------------------------
+    # Stdout (honest/full per ADR-042 — CI and caveat every run)
+    # ------------------------------------------------------------------
+    _VERDICT_LABELS = {
+        "PASS": "PASS — IC >= 0.02 and/or top-decile Sharpe-diff CI excludes 0.",
+        "INCONCLUSIVE": "INCONCLUSIVE — IC in (0, 0.02); insufficient evidence of edge.",
+        "HALT": "HALT — IC CI entirely negative; signal has no cross-sectional lift.",
+    }
+    click.echo(f"\nScreen IC Backtest  ({as_of})")
+    click.echo(
+        f"  universe        : {universe_size} tickers  ({n_with_data} with price data)"
+    )
+    click.echo(f"  n_dates         : {verdict.n_dates}")
+    click.echo(f"  mean_IC         : {verdict.mean_ic:.6f}")
+    ic_ci = (
+        f"[{verdict.ic_ci_low}, {verdict.ic_ci_high}]"
+        if verdict.ic_ci_low is not None
+        else "n/a (n<2)"
+    )
+    click.echo(f"  IC bootstrap CI : {ic_ci}")
+    sd_pt = (
+        f"{verdict.sharpe_diff_point:.4f}"
+        if verdict.sharpe_diff_point is not None
+        else "n/a"
+    )
+    sd_ci = (
+        f"[{verdict.sharpe_diff_ci_low:.4f}, {verdict.sharpe_diff_ci_high:.4f}]"
+        if verdict.sharpe_diff_ci_low is not None
+        else "n/a"
+    )
+    click.echo(f"  sharpe_diff     : {sd_pt}  CI={sd_ci}")
+    click.echo(f"  primary_pass    : {verdict.primary_pass}")
+    click.echo(f"  secondary_pass  : {verdict.secondary_pass}")
+    click.echo(f"  verdict         : {verdict.decision}")
     click.echo(f"  {_VERDICT_LABELS.get(verdict.decision, verdict.decision)}")
-    click.echo(f"Report written to: {out_file}")
+    click.echo(f"\n  CAVEAT: {_CAVEAT}")
+    click.echo(f"\nReport written to: {out_file}")
 
 
 if __name__ == "__main__":
