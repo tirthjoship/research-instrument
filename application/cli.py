@@ -22,11 +22,14 @@ from adapters.ml.feature_engineer import FeatureEngineer
 from adapters.ml.fundamental_feature_engineer import FundamentalFeatureEngineer
 from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
+from application.discipline_backtest import backtest_discipline_calibration
 from application.divergence_ic_backtest import DivergenceICBacktestUseCase
 from application.drip_backfill_use_case import DripBackfillUseCase
+from application.holdings_risk import HoldingsRiskAssessmentUseCase
 from application.momentum_exit_backtest import MomentumExitBacktestUseCase
 from application.opportunity_scan_use_case import OpportunityScanUseCase
 from application.portfolio_verdict import PortfolioVerdictUseCase
+from application.price_returns import load_price_series
 from application.use_cases import (
     PretrainingUseCase,
     TrackRecommendationsUseCase,
@@ -2030,6 +2033,208 @@ def portfolio_verdict(holdings: str, market: str) -> None:
             f"{v['ticker']:8} {v['verdict']:16} "
             f"{'yes' if v['trend_intact'] else 'no':6} {stop_s}  {v.get('why','')}"
         )
+
+
+@cli.command("holdings-risk")
+@click.option(
+    "--holdings",
+    default="data/personal/holdings-report-2026-06-07.csv",
+    show_default=True,
+    help="Local broker CSV — gitignored, never committed",
+)
+@click.option(
+    "--out",
+    default="data/personal/holdings_risk_detail.txt",
+    show_default=True,
+    help="Full per-ticker detail (gitignored). Stdout stays masked.",
+)
+@click.option(
+    "--log",
+    default="data/personal/discipline_log.jsonl",
+    show_default=True,
+    help="Append assessments here for forward calibration (gitignored)",
+)
+@click.option(
+    "--narrate", is_flag=True, help="Use local Ollama narrator (else template)"
+)
+def holdings_risk(holdings: str, out: str, log: str, narrate: bool) -> None:
+    """Graded risk/discipline assessment of your holdings (decision-support, not prediction).
+    Masked stdout (verdict distribution only); full detail to the gitignored --out file.
+    """
+    import os
+    from datetime import datetime, timezone
+
+    from application.discipline_log import append_assessments
+    from application.holdings_reader import read_holdings
+    from application.narrator import FakeNarrator
+    from application.price_returns import load_price_series
+    from domain.ports import NarratorPort
+
+    rows = read_holdings(holdings)
+    if not rows:
+        click.echo(
+            f"No holdings at {holdings} (ticker/Symbol + Quantity). It is gitignored."
+        )
+        return
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+
+    _cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def provider(ticker: str) -> list[tuple[datetime, float]]:
+        if ticker not in _cache:
+            _cache[ticker] = load_price_series(ticker, start_dt, end_dt)
+        return _cache[ticker]
+
+    narrator: NarratorPort
+    if narrate:
+        from adapters.ml.ollama_narrator import OllamaNarratorAdapter
+
+        narrator = OllamaNarratorAdapter()
+    else:
+        narrator = FakeNarrator("")
+
+    uc = HoldingsRiskAssessmentUseCase(provider, narrator)
+    report = uc.execute(rows, start_dt, end_dt)
+    positions = report["positions"]
+    pf = report["portfolio"]
+
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    with open(out, "w") as f:
+        f.write(f"{'TICKER':10} {'VERDICT':8} {'TREND':>6} {'UNREAL':>8}  WHY\n")
+        for p in positions:
+            th = f"{p.trend_health:+.1f}" if p.trend_health is not None else "  -"
+            f.write(
+                f"{p.ticker:10} {p.verdict.value:8} {th:>6} {p.unrealized_pct*100:+7.0f}%  {p.why}\n"
+            )
+
+    now_iso = end_dt.isoformat()
+    append_assessments(
+        log,
+        [
+            {
+                "ticker": p.ticker,
+                "verdict": p.verdict.value,
+                "price": p.price,
+                "trend_health": p.trend_health,
+                "as_of": now_iso,
+            }
+            for p in positions
+        ],
+    )
+
+    click.echo(
+        f"Assessed {pf.n_positions} positions. Verdict distribution: {pf.verdict_counts}"
+    )
+    click.echo(
+        f"Broken-trend share: {pf.broken_trend_share:.0%}  Top concentration: {pf.top_concentration:.0%}"
+    )
+    click.echo(f"Full per-ticker detail written to {out} (gitignored).")
+
+
+@cli.command("resolve-discipline-flags")
+@click.option("--log", default="data/personal/discipline_log.jsonl", show_default=True)
+@click.option("--horizon", default=21, type=int, show_default=True)
+def resolve_discipline_flags(log: str, horizon: int) -> None:
+    """Forward-score past REDUCE/TRIM flags: were they followed by drops? (calibration)."""
+    from datetime import datetime, timezone
+
+    from application.discipline_log import read_assessments, resolve_flags
+
+    logged = read_assessments(log)
+    if not logged:
+        click.echo(f"No logged assessments at {log}.")
+        return
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+
+    def provider(ticker: str) -> list[tuple[datetime, float]]:
+        return load_price_series(ticker, start_dt, end_dt)
+
+    res = resolve_flags(logged, provider, horizon_days=horizon)
+    click.echo(
+        f"resolved={res['resolved']}  brier={res['brier']:.3f}  "
+        f"down_rate_on_reduce={res['down_rate_on_reduce']:.0%}"
+    )
+
+
+@cli.command("holdings-risk-calibrate")
+@click.option(
+    "--ticker", required=True, help="Symbol to compute history base rates for"
+)
+@click.option("--horizon", default=21, type=int, show_default=True)
+def holdings_risk_calibrate(ticker: str, horizon: int) -> None:
+    """Warm-start base rates from price history: what followed each trend state."""
+    from datetime import datetime, timezone
+
+    from domain.calibration import base_rate_from_history
+
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+    closes = [c for _, c in load_price_series(ticker, start_dt, end_dt)]
+    rates = base_rate_from_history(
+        closes, trend_window=200, atr_window=22, horizon=horizon
+    )
+    if not rates:
+        click.echo(f"Not enough history for {ticker}.")
+        return
+    for bucket, stats in rates.items():
+        click.echo(
+            f"{bucket:6} n={int(stats['n'])} mean_fwd={stats['mean_fwd_return']:+.2%} "
+            f"down_rate={stats['down_rate']:.0%}"
+        )
+
+
+@cli.command("backtest-discipline-flags")
+@click.option(
+    "--holdings",
+    default="data/personal/holdings-report-2026-06-07.csv",
+    show_default=True,
+)
+@click.option("--horizon", default=21, type=int, show_default=True)
+@click.option("--step", default=21, type=int, show_default=True)
+def backtest_discipline_flags(holdings: str, horizon: int, step: int) -> None:
+    """Historical point-in-time calibration of the discipline flags across your holdings (day-1 evidence)."""
+    from datetime import datetime, timezone
+
+    from application.holdings_reader import read_holdings
+
+    rows = read_holdings(holdings)
+    if not rows:
+        click.echo(f"No holdings at {holdings}.")
+        return
+    tickers = [h.ticker for h in rows]
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+    _cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def provider(t: str) -> list[tuple[datetime, float]]:
+        if t not in _cache:
+            _cache[t] = load_price_series(t, start_dt, end_dt)
+        return _cache[t]
+
+    out = backtest_discipline_calibration(
+        tickers, provider, start_dt, end_dt, step_days=step, horizon_days=horizon
+    )
+    click.echo(
+        f"Historical calibration over {len(tickers)} holdings, "
+        f"{out['total_verdicts']} point-in-time verdicts:"
+    )
+    for v in ("REDUCE", "TRIM", "HOLD", "ADD_OK", "REVIEW"):
+        b = out["by_verdict"].get(v)
+        if b:
+            click.echo(
+                f"  {v:8} n={b['n']:4} down_rate={b['down_rate']:.0%} "
+                f"mean_fwd={b['mean_fwd_return']:+.2%}"
+            )
+    click.echo(
+        f"Brier(REDUCE+TRIM assert down)={out['brier_reduce_trim']:.3f} "
+        f"over n={out['n_reduce_trim']}"
+    )
+    click.echo(
+        "NOTE: calibrates flags vs the MARKET on history — NOT proof rules beat "
+        "buy-hold (ADR-046) nor your behavior (forward-tracked)."
+    )
 
 
 if __name__ == "__main__":

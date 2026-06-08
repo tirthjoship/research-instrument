@@ -59,6 +59,43 @@ def momentum_12_1(monthly_closes: list[float]) -> float | None:
     return one_ago / twelve_ago - 1.0
 
 
+def trend_health(
+    price: float, sma_value: float | None, atr_value: float | None
+) -> float | None:
+    """Signed distance of price from the trend line in ATR units.
+    Positive = above trend, negative = below. None if inputs unavailable."""
+    if sma_value is None or atr_value is None or atr_value <= 0:
+        return None
+    return (price - sma_value) / atr_value
+
+
+def ma_slope(values: list[float], window: int) -> float | None:
+    """Normalized change in the SMA from `window` bars ago to now.
+    Needs >= 2*window values. None if too few or the older SMA is non-positive."""
+    if window <= 0 or len(values) < 2 * window:
+        return None
+    sma_now = sum(values[-window:]) / window
+    sma_then = sum(values[-2 * window : -window]) / window
+    if sma_then <= 0:
+        return None
+    return (sma_now - sma_then) / sma_then
+
+
+def relative_strength(
+    asset_closes: list[float], benchmark_closes: list[float], window: int
+) -> float | None:
+    """Asset return minus benchmark return over the last `window` bars.
+    Needs > window closes in each. None if insufficient or a base price is non-positive.
+    """
+    if window <= 0 or len(asset_closes) <= window or len(benchmark_closes) <= window:
+        return None
+    a0, a1 = asset_closes[-window - 1], asset_closes[-1]
+    b0, b1 = benchmark_closes[-window - 1], benchmark_closes[-1]
+    if a0 <= 0 or b0 <= 0:
+        return None
+    return (a1 / a0 - 1.0) - (b1 / b0 - 1.0)
+
+
 def top_fraction_threshold(values: list[float], fraction: float) -> float | None:
     """Return the cutoff value such that the top `fraction` of values are >= it."""
     clean = [v for v in values if not math.isnan(v)]
