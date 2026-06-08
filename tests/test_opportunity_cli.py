@@ -589,3 +589,36 @@ def test_resolve_discipline_flags_cli(monkeypatch, tmp_path):
     assert result.exit_code == 0, result.output
     assert "resolved" in result.output.lower()
     assert "brier" in result.output.lower()
+
+
+def test_backtest_discipline_flags_cli(monkeypatch, tmp_path):
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    h = tmp_path / "h.csv"
+    h.write_text("Symbol,Quantity,Account Type,Exchange\nDOWN,10,TFSA,NASDAQ\n")
+    monkeypatch.setattr(
+        climod,
+        "backtest_discipline_calibration",
+        lambda *a, **k: {
+            "total_verdicts": 5,
+            "by_verdict": {
+                "REDUCE": {
+                    "n": 3,
+                    "down": 3,
+                    "down_rate": 1.0,
+                    "mean_fwd_return": -0.05,
+                }
+            },
+            "brier_reduce_trim": 0.1,
+            "n_reduce_trim": 3,
+        },
+        raising=False,
+    )
+    result = CliRunner().invoke(
+        cli, ["backtest-discipline-flags", "--holdings", str(h)]
+    )
+    assert result.exit_code == 0, result.output
+    assert "REDUCE" in result.output and "Brier" in result.output

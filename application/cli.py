@@ -22,6 +22,7 @@ from adapters.ml.feature_engineer import FeatureEngineer
 from adapters.ml.fundamental_feature_engineer import FundamentalFeatureEngineer
 from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
+from application.discipline_backtest import backtest_discipline_calibration
 from application.divergence_ic_backtest import DivergenceICBacktestUseCase
 from application.drip_backfill_use_case import DripBackfillUseCase
 from application.holdings_risk import HoldingsRiskAssessmentUseCase
@@ -2182,6 +2183,58 @@ def holdings_risk_calibrate(ticker: str, horizon: int) -> None:
             f"{bucket:6} n={int(stats['n'])} mean_fwd={stats['mean_fwd_return']:+.2%} "
             f"down_rate={stats['down_rate']:.0%}"
         )
+
+
+@cli.command("backtest-discipline-flags")
+@click.option(
+    "--holdings",
+    default="data/personal/holdings-report-2026-06-07.csv",
+    show_default=True,
+)
+@click.option("--horizon", default=21, type=int, show_default=True)
+@click.option("--step", default=21, type=int, show_default=True)
+def backtest_discipline_flags(holdings: str, horizon: int, step: int) -> None:
+    """Historical point-in-time calibration of the discipline flags across your holdings (day-1 evidence)."""
+    from datetime import datetime, timezone
+
+    from application.holdings_reader import read_holdings
+
+    rows = read_holdings(holdings)
+    if not rows:
+        click.echo(f"No holdings at {holdings}.")
+        return
+    tickers = [h.ticker for h in rows]
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+    _cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def provider(t: str) -> list[tuple[datetime, float]]:
+        if t not in _cache:
+            _cache[t] = load_price_series(t, start_dt, end_dt)
+        return _cache[t]
+
+    out = backtest_discipline_calibration(
+        tickers, provider, start_dt, end_dt, step_days=step, horizon_days=horizon
+    )
+    click.echo(
+        f"Historical calibration over {len(tickers)} holdings, "
+        f"{out['total_verdicts']} point-in-time verdicts:"
+    )
+    for v in ("REDUCE", "TRIM", "HOLD", "ADD_OK", "REVIEW"):
+        b = out["by_verdict"].get(v)
+        if b:
+            click.echo(
+                f"  {v:8} n={b['n']:4} down_rate={b['down_rate']:.0%} "
+                f"mean_fwd={b['mean_fwd_return']:+.2%}"
+            )
+    click.echo(
+        f"Brier(REDUCE+TRIM assert down)={out['brier_reduce_trim']:.3f} "
+        f"over n={out['n_reduce_trim']}"
+    )
+    click.echo(
+        "NOTE: calibrates flags vs the MARKET on history — NOT proof rules beat "
+        "buy-hold (ADR-046) nor your behavior (forward-tracked)."
+    )
 
 
 if __name__ == "__main__":
