@@ -12,7 +12,13 @@ from datetime import datetime
 from typing import Protocol
 
 from domain import trend_rules
-from domain.factor_scores import FACTOR_KEYS, composite_score, revision_momentum, zscore
+from domain.factor_scores import (
+    FACTOR_KEYS,
+    composite_score,
+    revision_momentum,
+    winsorize,
+    zscore,
+)
 from domain.screen import abstain_if_thin, eligible, rank_universe
 from domain.screen_models import FactorScore, ScreenCandidate, ScreenLabel, ScreenResult
 from domain.surfaced_call import (
@@ -96,6 +102,30 @@ class EvidenceScreenUseCase:
         cands: list[ScreenCandidate] = []
         present_fractions: list[float] = []
 
+        # --- cross-sectional percentiles per factor (rank fraction among present) ---
+        # Build sorted indices of present values for each factor key
+        factor_z_lists: dict[str, list[float | None]] = {
+            "momentum": zmom,
+            "revision": zrev,
+            "quality": zqual,
+            "value": zval,
+        }
+        # For each factor, compute rank of each value among present values (0-indexed)
+        factor_percentiles: dict[str, list[float]] = {}
+        for k in FACTOR_KEYS:
+            z_list = factor_z_lists[k]
+            present_vals = sorted((v for v in z_list if v is not None), reverse=False)
+            n_present = len(present_vals)
+            per_item: list[float] = []
+            for v in z_list:
+                if v is None or n_present == 0:
+                    per_item.append(0.0)
+                else:
+                    # rank position (0-indexed) in sorted present values
+                    rank = sum(1 for pv in present_vals if pv < v)
+                    per_item.append(rank / max(n_present - 1, 1))
+            factor_percentiles[k] = per_item
+
         for i, (t, _mom, _rev, _qv, th) in enumerate(raw):
             subs: dict[str, float | None] = {
                 "momentum": zmom[i],
@@ -111,7 +141,7 @@ class EvidenceScreenUseCase:
                 FactorScore(
                     name=k,
                     value=v if (v := subs[k]) is not None else 0.0,
-                    percentile=0.0,
+                    percentile=factor_percentiles[k][i],
                     contribution=(v if (v := subs[k]) is not None else 0.0)
                     / len(FACTOR_KEYS),
                 )
@@ -129,9 +159,11 @@ class EvidenceScreenUseCase:
                 )
             )
 
-        ranked = rank_universe(cands, top_n=top_n)
+        # rank_universe returns ALL candidates (full distribution) — top_n handled
+        # by the caller (CLI slices for stdout/surface_calls, JSON gets full dist)
+        ranked = rank_universe(cands, top_n=len(cands))
 
-        # thin-coverage flag (informational — doesn't drop candidates)
+        # thin-coverage flag — wired into ScreenResult.abstained
         _thin = abstain_if_thin(min(present_fractions) if present_fractions else 0.0)
 
         return ScreenResult(
@@ -140,6 +172,7 @@ class EvidenceScreenUseCase:
             universe_size=len(universe),
             regime="NEUTRAL",
             scorecard_ref=None,
+            abstained=_thin,
         )
 
     def surface_calls(
@@ -200,7 +233,9 @@ class EvidenceScreenUseCase:
         present = [v for v in vals if v is not None]
         if not present:
             return [None] * len(vals)
-        zs = zscore(present)
+        # winsorize at 5th/95th percentile BEFORE z-scoring (robust z-scores)
+        win = winsorize(present)
+        zs = zscore(win)
         it = iter(zs)
         return [next(it) if v is not None else None for v in vals]
 

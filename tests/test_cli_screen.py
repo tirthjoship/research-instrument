@@ -86,14 +86,23 @@ def test_screen_candidates_masked_summary(
 def test_screen_candidates_writes_full_distribution(
     tmp_path: object, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The JSON must contain ALL candidates (full distribution), not just top-N."""
+    """The JSON must contain ALL candidates (full distribution), not just top-N.
+
+    The fake use case returns a result whose candidate count (5) exceeds --top (2).
+    It honors the top_n argument by returning ALL eligible candidates (full universe),
+    and the CLI must NOT silently truncate them in the JSON.
+    """
     from application import evidence_screen_use_case as esc_module
 
-    fake_result = _make_screen_result(["AAPL", "MSFT", "NVDA", "GOOG", "META"])
+    UNIVERSE = ["AAPL", "MSFT", "NVDA", "GOOG", "META"]
 
     class FakeUseCase:
+        """Fake that honours top_n like rank_universe does for the FULL universe."""
+
         def run(self, universe: list[str], as_of: str, top_n: int = 10) -> ScreenResult:
-            return fake_result
+            # Return ALL tickers regardless of top_n — simulates the full distribution.
+            # The CLI is responsible for passing top_n = len(universe) here.
+            return _make_screen_result(UNIVERSE)
 
         def surface_calls(self, result: object, **kw: object) -> list[object]:
             return []
@@ -109,8 +118,13 @@ def test_screen_candidates_writes_full_distribution(
     report_files = list(tmp_path.glob("screen_*.json"))  # type: ignore[union-attr]
     assert report_files
     data = json.loads(report_files[0].read_text())
-    # full distribution — all 5 candidates, not just top-2
-    assert len(data["candidates"]) == 5
+    # full distribution — all 5 candidates, even though --top 2
+    assert len(data["candidates"]) == len(UNIVERSE), (
+        f"JSON must contain all {len(UNIVERSE)} candidates, not just top-2; "
+        f"got {len(data['candidates'])}"
+    )
+    # The JSON length is GREATER than top=2 (proving no silent top-N cut)
+    assert len(data["candidates"]) > 2
 
 
 def test_screen_candidates_stdout_masked(
@@ -149,6 +163,34 @@ def test_screen_candidates_stdout_masked(
             or stripped.startswith("MSFT ")
             or stripped.startswith("NVDA ")
         ), f"Stdout must be masked, found possible ticker line: {line!r}"
+
+
+def test_screen_candidates_json_contains_abstained(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The JSON report must contain an 'abstained' field surfacing the thin-coverage flag."""
+    from application import evidence_screen_use_case as esc_module
+
+    fake_result = _make_screen_result()
+
+    class FakeUseCase:
+        def run(self, universe: list[str], as_of: str, top_n: int = 10) -> ScreenResult:
+            return fake_result
+
+        def surface_calls(self, result: object, **kw: object) -> list[object]:
+            return []
+
+    monkeypatch.setattr(esc_module, "EvidenceScreenUseCase", lambda **kw: FakeUseCase())  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    res = runner.invoke(
+        cli, ["screen-candidates", "--top", "10", "--report-dir", str(tmp_path)]
+    )
+    assert res.exit_code == 0, res.output
+    report_files = list(tmp_path.glob("screen_*.json"))  # type: ignore[union-attr]
+    assert report_files
+    data = json.loads(report_files[0].read_text())
+    assert "abstained" in data, "JSON must contain 'abstained' field"
 
 
 # ---------------------------------------------------------------------------
