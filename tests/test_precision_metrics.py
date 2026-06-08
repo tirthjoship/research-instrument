@@ -90,3 +90,37 @@ def test_date_level_all_equal_returns_wilcoxon_none() -> None:
     # Should not raise
     assert "n_dates" in result
     assert result["n_dates"] == n
+
+
+# ---------------------------------------------------------------------------
+# sharpe_difference_bootstrap tests
+# ---------------------------------------------------------------------------
+
+
+def test_sharpe_diff_bootstrap_positive_when_strategy_dominates():
+    from application.precision_metrics import sharpe_difference_bootstrap
+
+    # strategy: steady positive low-vol; buy_hold: noisier same-ish mean -> strategy higher Sharpe
+    strat = [0.001] * 300
+    bh = [0.02 if i % 2 == 0 else -0.018 for i in range(300)]  # high vol, ~flat
+    out = sharpe_difference_bootstrap(strat, bh)
+    assert out["point"] > 0
+    assert out["ci_low"] is not None
+    assert out["ci_low"] > 0  # CI excludes 0 -> strategy robustly higher Sharpe
+
+
+def test_sharpe_diff_bootstrap_spans_zero_for_identical_series():
+    from application.precision_metrics import sharpe_difference_bootstrap
+
+    series = [0.001, -0.0005, 0.002, -0.001, 0.0015] * 60
+    out = sharpe_difference_bootstrap(series, list(series))
+    assert abs(out["point"]) < 1e-9  # identical -> zero diff
+    assert out["ci_low"] <= 0 <= out["ci_high"]  # CI spans 0
+
+
+def test_sharpe_diff_bootstrap_deterministic():
+    from application.precision_metrics import sharpe_difference_bootstrap
+
+    a = [0.001 * i for i in range(-50, 50)]
+    b = [0.0005 * i for i in range(-50, 50)]
+    assert sharpe_difference_bootstrap(a, b) == sharpe_difference_bootstrap(a, b)

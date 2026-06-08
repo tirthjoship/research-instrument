@@ -1,0 +1,79 @@
+# TSX 60 constituents — snapshot 2026-06-07
+# Source: S&P/TSX 60 Index (current composition)
+# Symbols WITHOUT the .TO suffix (added at runtime via _get_backtest_universe)
+# Refresh annually or when index rebalances
+# Class-share tickers use dotted notation (e.g. GIB.A → GIB.A.TO in yfinance)
+
+# Banks
+RY
+TD
+BNS
+BMO
+CM
+NA
+
+# Energy
+ENB
+TRP
+CNQ
+SU
+CVE
+IMO
+TOU
+
+# Rail
+CNR
+CP
+
+# Consumer
+ATD
+L
+DOL
+QSR
+MRU
+
+# Technology
+SHOP
+CSU
+GIB.A
+OTEX
+
+# Telecom
+BCE
+T
+RCI.B
+
+# Insurance / Diversified Financials
+MFC
+SLF
+IFC
+GWO
+BAM
+BN
+FFH
+
+# Materials / Mining / Royalties
+NTR
+CCO
+AEM
+ABX
+FNV
+WPM
+TECK.B
+FM
+
+# Industrials / Waste / Engineering
+WCN
+GFL
+STN
+WSP
+CAE
+
+# Utilities
+FTS
+EMA
+H
+AQN
+
+# Consumer Discretionary
+DOO

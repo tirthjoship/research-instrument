@@ -15,20 +15,28 @@ import click
 from loguru import logger
 
 from adapters.data.sqlite_store import SQLiteStore
+from adapters.data.wikipedia_article_resolver import WikipediaArticleResolver
 from adapters.data.yfinance_adapter import YFinanceAdapter
 from adapters.ml.ensemble_predictor import EnsemblePredictor
 from adapters.ml.feature_engineer import FeatureEngineer
 from adapters.ml.fundamental_feature_engineer import FundamentalFeatureEngineer
 from application.backfill_use_case import BackfillHistoryUseCase
 from application.backtest_runner import run_backtest_report
+from application.discipline_backtest import backtest_discipline_calibration
+from application.divergence_ic_backtest import DivergenceICBacktestUseCase
 from application.drip_backfill_use_case import DripBackfillUseCase
+from application.holdings_risk import HoldingsRiskAssessmentUseCase
+from application.momentum_exit_backtest import MomentumExitBacktestUseCase
 from application.opportunity_scan_use_case import OpportunityScanUseCase
+from application.portfolio_verdict import PortfolioVerdictUseCase
+from application.price_returns import load_price_series
 from application.use_cases import (
     PretrainingUseCase,
     TrackRecommendationsUseCase,
     WeeklyTournamentUseCase,
 )
 from config.loader import load_market_config
+from domain.exceptions import SourceThrottledError
 from domain.models import WeeklyReport
 
 
@@ -1206,22 +1214,83 @@ class _CombinedAttention:
 
 
 def _load_wiki_map(market: str) -> dict[str, str]:
-    """Build {ticker: wiki_article} from config/universe/themes.yaml aliases block."""
+    """Build {ticker: wiki_article} merging themes.yaml aliases + resolved YAML.
+
+    Aliases from themes.yaml are authoritative and win on conflict.
+    Also loads config/universe/wiki_articles_<market>.yaml if it exists.
+    """
+    return _load_wiki_map_merged(market)
+
+
+def _load_wiki_map_merged(
+    market: str, resolved_path: str | None = None
+) -> dict[str, str]:
+    """Merge curated themes.yaml aliases (authoritative) with a resolved YAML.
+
+    Args:
+        market: Market identifier (e.g. "us").
+        resolved_path: Override path to the resolved YAML.  Defaults to
+            config/universe/wiki_articles_<market>.yaml.
+
+    Returns:
+        Merged {ticker: wiki_article} with curated aliases winning on conflict.
+    """
     import yaml
 
     themes_path = Path(__file__).parent.parent / "config" / "universe" / "themes.yaml"
-    if not themes_path.exists():
-        return {}
+    curated: dict[str, str] = {}
+    if themes_path.exists():
+        try:
+            data = yaml.safe_load(themes_path.read_text())
+            aliases = data.get("aliases", {})
+            curated = {
+                ticker: str(info.get("wiki", ""))
+                for ticker, info in aliases.items()
+                if info.get("wiki")
+            }
+        except Exception as exc:
+            logger.warning(
+                "_load_wiki_map_merged: failed to load curated aliases from {}: {}",
+                themes_path,
+                exc,
+            )
+
+    if resolved_path is None:
+        resolved_path = str(
+            Path(__file__).parent.parent
+            / "config"
+            / "universe"
+            / f"wiki_articles_{market}.yaml"
+        )
+
+    resolved: dict[str, str] = {}
+    rp = Path(resolved_path)
+    if rp.exists():
+        try:
+            raw = yaml.safe_load(rp.read_text()) or {}
+            resolved = {str(k): str(v) for k, v in raw.items()}
+        except Exception as exc:
+            logger.warning(
+                "_load_wiki_map_merged: failed to load resolved YAML from {}: {}",
+                rp,
+                exc,
+            )
+
+    # Merge: start with resolved, then let curated win on conflict
+    merged = {**resolved, **curated}
+    return merged
+
+
+def _get_company_name(deps: dict[str, Any], ticker: str) -> str | None:
+    """Look up the company's display name via the market_data adapter."""
     try:
-        data = yaml.safe_load(themes_path.read_text())
-        aliases = data.get("aliases", {})
-        return {
-            ticker: str(info.get("wiki", ""))
-            for ticker, info in aliases.items()
-            if info.get("wiki")
-        }
+        adapter: Any = deps.get("market_data")
+        if adapter is not None and hasattr(adapter, "get_company_name"):
+            result: str | None = adapter.get_company_name(ticker)
+            return result
+        return None
     except Exception:
-        return {}
+        return None
 
 
 def _load_spine_tickers(market: str) -> list[str]:
@@ -1248,14 +1317,188 @@ def _load_spine_tickers(market: str) -> list[str]:
         return list(_load_wiki_map(market).keys())
 
 
+@cli.command("resolve-wiki-articles")
+@click.option("--market", default="us", help="Market config to use")
+@click.option("--limit", default=0, type=int, help="Max tickers to process (0 = all)")
+@click.option(
+    "--min-views",
+    default=50.0,
+    type=float,
+    show_default=True,
+    help="Minimum mean daily pageviews to accept an article",
+)
+@click.option(
+    "--throttle-s",
+    default=1.5,
+    type=float,
+    show_default=True,
+    help="Seconds to wait between Wikipedia API calls",
+)
+@click.option(
+    "--out",
+    default=None,
+    help=("Output YAML path (default: config/universe/wiki_articles_<market>.yaml)"),
+)
+def resolve_wiki_articles(
+    market: str,
+    limit: int,
+    min_views: float,
+    throttle_s: float,
+    out: str | None,
+) -> None:
+    """Resolve the ticker universe to Wikipedia article titles and write a YAML map.
+
+    For each ticker not already covered by a curated alias in themes.yaml or the
+    existing output file, the company name is looked up via yfinance and then
+    resolved + validated via WikipediaArticleResolver.  The output YAML is written
+    incrementally (each success is persisted immediately) so the command is resumable.
+    """
+    import yaml
+
+    deps = _build_dependencies(market)
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+    if limit:
+        tickers = tickers[:limit]
+
+    # Validation window: stable 30-day window used to check article identity
+    val_start = datetime(2024, 1, 1)
+    val_end = datetime(2024, 1, 31)
+
+    # Output path
+    out_path = (
+        Path(out)
+        if out
+        else (
+            Path(__file__).parent.parent
+            / "config"
+            / "universe"
+            / f"wiki_articles_{market}.yaml"
+        )
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load curated aliases (skip set — authoritative, never re-resolve)
+    curated_map = _load_wiki_map(market)
+    curated_tickers = set(curated_map.keys())
+
+    # Load existing resolved entries (resumable skip set)
+    existing: dict[str, str] = {}
+    if out_path.exists():
+        try:
+            raw = yaml.safe_load(out_path.read_text()) or {}
+            existing = {str(k): str(v) for k, v in raw.items()}
+        except Exception:
+            pass
+
+    resolved_map: dict[str, str] = dict(existing)
+
+    counts = {
+        "resolved": 0,
+        "no_name": 0,
+        "no_article": 0,
+        "skipped_existing": 0,
+        "throttled": 0,
+    }
+    no_name_tickers: list[str] = []
+    no_article_tickers: list[str] = []
+    throttled_tickers: list[str] = []
+
+    resolver = WikipediaArticleResolver(throttle_s=throttle_s)
+
+    for ticker in tickers:
+        if ticker in curated_tickers or ticker in existing:
+            counts["skipped_existing"] += 1
+            continue
+
+        name = _get_company_name(deps, ticker)
+        if not name:
+            counts["no_name"] += 1
+            no_name_tickers.append(ticker)
+            logger.debug("resolve-wiki-articles: no name for {}", ticker)
+            continue
+
+        try:
+            article = resolver.resolve_validated(name, val_start, val_end, min_views)
+        except SourceThrottledError as exc:
+            counts["throttled"] += 1
+            throttled_tickers.append(ticker)
+            logger.warning(
+                "resolve-wiki-articles: throttled for {} ({}), skipping: {}",
+                ticker,
+                name,
+                exc,
+            )
+            continue
+
+        if article:
+            resolved_map[ticker] = article
+            counts["resolved"] += 1
+            # Incremental write — crash-safe / resumable
+            try:
+                out_path.write_text(
+                    yaml.dump(dict(sorted(resolved_map.items())), allow_unicode=True)
+                )
+            except Exception as exc:
+                logger.warning("resolve-wiki-articles: write failed: {}", exc)
+        else:
+            counts["no_article"] += 1
+            no_article_tickers.append(ticker)
+            logger.debug(
+                "resolve-wiki-articles: no validated article for {} ({})", ticker, name
+            )
+
+    # Final write (sorted keys)
+    try:
+        out_path.write_text(
+            yaml.dump(dict(sorted(resolved_map.items())), allow_unicode=True)
+        )
+    except Exception as exc:
+        logger.warning("resolve-wiki-articles: final write failed: {}", exc)
+
+    click.echo(
+        f"resolve-wiki-articles complete: "
+        f"resolved={counts['resolved']} "
+        f"no_name={counts['no_name']} "
+        f"no_article={counts['no_article']} "
+        f"throttled={counts['throttled']} "
+        f"skipped_existing={counts['skipped_existing']}"
+    )
+    if no_name_tickers:
+        click.echo(
+            f"  no company name ({len(no_name_tickers)}): {', '.join(sorted(no_name_tickers))}"
+        )
+    if no_article_tickers:
+        click.echo(
+            f"  no valid article ({len(no_article_tickers)}): {', '.join(sorted(no_article_tickers))}"
+        )
+    if throttled_tickers:
+        click.echo(
+            f"  throttled / skipped ({len(throttled_tickers)}): {', '.join(sorted(throttled_tickers))}"
+        )
+    click.echo(f"Output: {out_path}")
+
+
 @cli.command("drip-backfill")
 @click.option("--market", default="us", help="Market config to use")
 @click.option("--days", default=90, show_default=True, type=int)
 @click.option("--limit", default=0, type=int, help="Max tickers (0 = all)")
 @click.option("--spine-only", is_flag=True, help="Restrict to the thematic spine")
 @click.option("--throttle-s", default=45.0, type=float, help="Seconds between requests")
+@click.option(
+    "--source",
+    "source_filter",
+    default=None,
+    type=click.Choice(["wikipedia", "google_trends"]),
+    help="Restrict to a single source (default: all)",
+)
 def drip_backfill(
-    market: str, days: int, limit: int, spine_only: bool, throttle_s: float
+    market: str,
+    days: int,
+    limit: int,
+    spine_only: bool,
+    throttle_s: float,
+    source_filter: str | None,
 ) -> None:
     """Resumable slow-drip backfill aligned to the scan universe (rate-safe)."""
     import time
@@ -1277,6 +1520,8 @@ def drip_backfill(
         "google_trends": GoogleTrendsAdapter(),
         "wikipedia": WikipediaPageviewsAdapter(article_map=_load_wiki_map(market)),
     }
+    if source_filter:
+        sources = {k: v for k, v in sources.items() if k == source_filter}
     uc = DripBackfillUseCase(
         sources=sources, store=store, sleep=time.sleep, throttle_s=throttle_s
     )
@@ -1305,6 +1550,102 @@ def audit_dimensions(market: str, date_: str | None) -> None:
             f"  {dim:16s} var={stats['variance']:.3f} "
             f"neutral_share={stats['neutral_share']:.2f} n={int(stats['n'])}"
         )
+
+
+@cli.command("validate-divergence-ic")
+@click.option("--market", default="us")
+@click.option("--start", default="2016-01-01", show_default=True)
+@click.option("--end", default="2025-12-31", show_default=True)
+@click.option("--horizon-days", default=21, show_default=True, type=int)
+@click.option("--min-names", default=50, show_default=True, type=int)
+@click.option("--limit", default=0, type=int, help="Cap universe (0 = all ~605)")
+@click.option(
+    "--quick",
+    is_flag=True,
+    help="Monthly cadence sample (faster) instead of weekly",
+)
+def validate_divergence_ic(
+    market: str,
+    start: str,
+    end: str,
+    horizon_days: int,
+    min_names: int,
+    limit: int,
+    quick: bool,
+) -> None:
+    """Pre-registered cross-sectional IC test of intensity-divergence (spec D §4)."""
+    import json as _json
+    import os
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+    tickers = _get_ticker_universe(deps["config"])
+    if limit:
+        tickers = tickers[:limit]
+
+    start_dt = datetime.fromisoformat(
+        start
+    )  # naive UTC — matches price/attention layers
+    end_dt = datetime.fromisoformat(end)
+    step = 28 if quick else 7
+    dates: list[datetime] = []
+    d = start_dt
+    while d <= end_dt - timedelta(days=horizon_days):
+        dates.append(d)
+        d += timedelta(days=step)
+
+    def attention_fn(ticker: str, t: datetime) -> list[tuple[datetime, float]]:
+        pts = store.get_attention_series(ticker, t - timedelta(days=40), t)
+        return [(p.timestamp, p.value) for p in pts]
+
+    _price_cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def _prices(ticker: str) -> list[tuple[datetime, float]]:
+        if ticker not in _price_cache:
+            from application.price_returns import load_price_series
+
+            _price_cache[ticker] = load_price_series(
+                ticker,
+                start_dt - timedelta(days=60),
+                end_dt + timedelta(days=horizon_days + 5),
+            )
+        return _price_cache[ticker]
+
+    def price_fn(ticker: str, t: datetime) -> list[tuple[datetime, float]]:
+        return [
+            (ts, px) for ts, px in _prices(ticker) if t - timedelta(days=40) <= ts <= t
+        ]
+
+    def forward_return_fn(ticker: str, t: datetime) -> float:
+        from application.price_returns import compute_forward_return
+
+        return compute_forward_return(_prices(ticker), t, horizon_days)
+
+    uc = DivergenceICBacktestUseCase(
+        attention_fn, price_fn, forward_return_fn, min_names=min_names
+    )
+    report = uc.execute(dates, tickers, horizon_label=f"{horizon_days}d")
+
+    boot = report.get("bootstrap") or {}
+    ci_low = boot.get("ci_low")
+    mean_ic: float = report["mean_ic"]
+    proceed = mean_ic >= 0.02 and ci_low is not None and ci_low > 0.0
+    verdict = "PROCEED" if proceed else "KILL"
+    report["verdict"] = verdict
+
+    os.makedirs("data/reports", exist_ok=True)
+    out_path = f"data/reports/divergence_ic_{horizon_days}d.json"
+    with open(out_path, "w") as f:
+        _json.dump(report, f, indent=2, default=str)
+
+    click.echo(
+        f"mean_ic={mean_ic:.4f} ic_ir={report['ic_ir']:.3f} "
+        f"n_dates={report['n_dates']} CI=[{boot.get('ci_low')},{boot.get('ci_high')}]"
+    )
+    click.echo(
+        f"VERDICT: {verdict}  (gate: |IC|>=0.02 & bootstrap CI excludes 0, positive)"
+    )
+    click.echo(f"report -> {out_path}")
 
 
 @cli.command("backfill-history")
@@ -1449,6 +1790,110 @@ def daily_cycle(ctx: click.Context, market: str, skip_backfill: bool) -> None:
     click.echo("Daily cycle complete.")
 
 
+@cli.command("validate-momentum-discipline")
+@click.option("--market", default="us")
+@click.option("--start", default="2018-01-01", show_default=True)
+@click.option("--end", default="2026-06-01", show_default=True)
+@click.option("--limit", default=0, type=int, help="Cap universe (0 = all)")
+@click.option(
+    "--quick", is_flag=True, help="Smaller universe sample for a fast dry run"
+)
+def validate_momentum_discipline(
+    market: str, start: str, end: str, limit: int, quick: bool
+) -> None:
+    """Pre-registered momentum + trailing-exit backtest (spec 2026-06-07). PROCEED/KILL."""
+    import json as _json
+    import math
+    import os
+    from datetime import datetime as _dt
+
+    from application.precision_metrics import (
+        moving_block_bootstrap,
+        sharpe_difference_bootstrap,
+    )
+    from application.price_returns import load_price_series
+    from domain.backtest_metrics import daily_returns
+
+    start_dt = _dt.fromisoformat(start)
+    end_dt = _dt.fromisoformat(end)
+    universe = _get_backtest_universe(market)
+    if quick:
+        universe = universe[:50]
+    if limit:
+        universe = universe[:limit]
+
+    _cache: dict[str, list[tuple[_dt, float]]] = {}
+
+    def provider(ticker: str) -> list[tuple[_dt, float]]:
+        if ticker not in _cache:
+            _cache[ticker] = load_price_series(ticker, start_dt, end_dt)
+        return _cache[ticker]
+
+    uc = MomentumExitBacktestUseCase(provider)
+    report = uc.execute(universe, start_dt, end_dt)
+
+    s_ret = daily_returns(report["strategy"]["equity"])
+    b_ret = daily_returns(report["buy_hold"]["equity"])
+    n = min(len(s_ret), len(b_ret))
+    diff = [s_ret[i] - b_ret[i] for i in range(n)]
+
+    # Pre-registered gate statistic: Sharpe-difference CI (paired block bootstrap)
+    sharpe_boot = sharpe_difference_bootstrap(s_ret, b_ret) if (s_ret and b_ret) else {}
+    ci_low_raw = sharpe_boot.get("ci_low")
+    ci_low: float = ci_low_raw if isinstance(ci_low_raw, (int, float)) else 0.0
+
+    # Mean-excess bootstrap kept for transparency only — NOT the gate
+    mean_excess_boot = moving_block_bootstrap(diff) if diff else {}
+
+    v = uc.verdict(report, sharpe_diff_ci_low=ci_low)
+    os.makedirs("data/reports", exist_ok=True)
+
+    def _safe(x: object) -> object:
+        if isinstance(x, bool):
+            return x
+        if isinstance(x, int):
+            return x
+        if isinstance(x, str):
+            return x
+        if isinstance(x, float):
+            return x if math.isfinite(x) else 0.0
+        return x
+
+    out = {
+        "report": {
+            k: {m: _safe(report[k][m]) for m in report[k] if m != "equity"}
+            for k in report
+            if isinstance(report[k], dict)
+        },
+        "universe_size": len(report.get("universe", [])),
+        "verdict": {kk: _safe(vv) for kk, vv in v.items()},
+        "sharpe_diff_bootstrap": {
+            kk: _safe(vv) for kk, vv in sharpe_boot.items() if vv is not None
+        },
+        "mean_excess_return_bootstrap": {
+            kk: _safe(vv) for kk, vv in mean_excess_boot.items() if vv is not None
+        },
+    }
+    with open("data/reports/momentum_discipline.json", "w") as f:
+        _json.dump(out, f, indent=2, default=str)
+
+    for name in ("strategy", "buy_hold", "spy"):
+        if name in report:
+            r = report[name]
+            click.echo(
+                f"{name:10} sharpe={r['sharpe']:.2f} cagr={r['cagr']:.2%} "
+                f"maxDD={r['max_drawdown']:.2%}"
+            )
+    click.echo(
+        f"sharpe_diff point={sharpe_boot.get('point')} "
+        f"ci=[{sharpe_boot.get('ci_low')}, {sharpe_boot.get('ci_high')}]"
+    )
+    click.echo(
+        f"VERDICT: {v['decision']}  (drawdown_reduction={v['drawdown_reduction']:.0%}, "
+        f"sharpe_diff_ci_low={v['sharpe_diff_ci_low']:.4f})"
+    )
+
+
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     """Load ticker universe from config files, with hardcoded fallback."""
     config_dir = Path(__file__).parent.parent / "config" / "tickers"
@@ -1481,6 +1926,60 @@ def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     return load_ticker_universe(existing)
 
 
+def _get_backtest_universe(market: str) -> list[str]:
+    """US S&P 500 + NASDAQ-100 (existing) plus TSX 60 with .TO suffix for the backtest.
+
+    Reads ticker files directly (offline-safe — no network, no config object needed).
+    """
+    config_dir = Path(__file__).parent.parent / "config" / "tickers"
+    us_files = [
+        config_dir / "sp500.txt",
+        config_dir / "nasdaq100.txt",
+    ]
+    us_existing = [f for f in us_files if f.exists()]
+
+    us: list[str]
+    if us_existing:
+        from application.ticker_universe import load_ticker_universe
+
+        us = load_ticker_universe(us_existing)
+    else:
+        # Minimal fallback identical to _get_ticker_universe's hardcoded list
+        us = [
+            "AAPL",
+            "MSFT",
+            "GOOG",
+            "AMZN",
+            "META",
+            "TSLA",
+            "NVDA",
+            "JPM",
+            "JNJ",
+            "V",
+            "UNH",
+            "HD",
+            "PG",
+            "MA",
+            "XOM",
+        ]
+
+    tsx_path = config_dir / "tsx60.txt"
+    tsx: list[str] = []
+    if tsx_path.exists():
+        for line in tsx_path.read_text().splitlines():
+            s = line.strip()
+            if s and not s.startswith("#"):
+                tsx.append(f"{s}.TO")
+
+    seen: set[str] = set()
+    out: list[str] = []
+    for t in [*us, *tsx]:
+        if t not in seen:
+            seen.add(t)
+            out.append(t)
+    return out
+
+
 def _print_report(report: WeeklyReport) -> None:
     """Pretty-print a weekly report."""
     click.echo(f"\n{'=' * 60}")
@@ -1493,6 +1992,249 @@ def _print_report(report: WeeklyReport) -> None:
             f"score={rec.composite_score:.3f} ({signals_str})"
         )
     click.echo(f"{'=' * 60}\n")
+
+
+@cli.command("portfolio-verdict")
+@click.option(
+    "--holdings",
+    default="data/personal/holdings.csv",
+    show_default=True,
+    help="Local CSV (ticker,shares[,entry]) — gitignored, never committed",
+)
+@click.option("--market", default="us")
+def portfolio_verdict(holdings: str, market: str) -> None:
+    """Apply validated trend/exit rules to your current holdings (decision-support)."""
+    import csv
+    import os
+    from datetime import datetime, timezone
+
+    from application.price_returns import load_price_series
+
+    if not os.path.exists(holdings):
+        click.echo(
+            f"No holdings file at {holdings}. Create it (ticker,shares) — it is gitignored."
+        )
+        return
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.fromisoformat("2026-06-01")
+
+    def provider(ticker: str) -> list[tuple[datetime, float]]:
+        return load_price_series(ticker, start_dt, end_dt)
+
+    uc = PortfolioVerdictUseCase(provider)
+    with open(holdings) as f:
+        rows = [r for r in csv.DictReader(f) if r.get("ticker")]
+    click.echo(f"{'TICKER':8} {'VERDICT':16} {'TREND':6} STOP / WHY")
+    for r in rows:
+        v = uc.verdict_for(r["ticker"].strip().upper())
+        stop = v.get("trailing_stop")
+        stop_s = f"{stop:.2f}" if stop else "-"
+        click.echo(
+            f"{v['ticker']:8} {v['verdict']:16} "
+            f"{'yes' if v['trend_intact'] else 'no':6} {stop_s}  {v.get('why','')}"
+        )
+
+
+@cli.command("holdings-risk")
+@click.option(
+    "--holdings",
+    default="data/personal/holdings-report-2026-06-07.csv",
+    show_default=True,
+    help="Local broker CSV — gitignored, never committed",
+)
+@click.option(
+    "--out",
+    default="data/personal/holdings_risk_detail.txt",
+    show_default=True,
+    help="Full per-ticker detail (gitignored). Stdout stays masked.",
+)
+@click.option(
+    "--log",
+    default="data/personal/discipline_log.jsonl",
+    show_default=True,
+    help="Append assessments here for forward calibration (gitignored)",
+)
+@click.option(
+    "--narrate", is_flag=True, help="Use local Ollama narrator (else template)"
+)
+def holdings_risk(holdings: str, out: str, log: str, narrate: bool) -> None:
+    """Graded risk/discipline assessment of your holdings (decision-support, not prediction).
+    Masked stdout (verdict distribution only); full detail to the gitignored --out file.
+    """
+    import os
+    from datetime import datetime, timezone
+
+    from application.discipline_log import append_assessments
+    from application.holdings_reader import read_holdings
+    from application.narrator import FakeNarrator
+    from application.price_returns import load_price_series
+    from domain.ports import NarratorPort
+
+    rows = read_holdings(holdings)
+    if not rows:
+        click.echo(
+            f"No holdings at {holdings} (ticker/Symbol + Quantity). It is gitignored."
+        )
+        return
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+
+    _cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def provider(ticker: str) -> list[tuple[datetime, float]]:
+        if ticker not in _cache:
+            _cache[ticker] = load_price_series(ticker, start_dt, end_dt)
+        return _cache[ticker]
+
+    narrator: NarratorPort
+    if narrate:
+        from adapters.ml.ollama_narrator import OllamaNarratorAdapter
+
+        narrator = OllamaNarratorAdapter()
+    else:
+        narrator = FakeNarrator("")
+
+    uc = HoldingsRiskAssessmentUseCase(provider, narrator)
+    report = uc.execute(rows, start_dt, end_dt)
+    positions = report["positions"]
+    pf = report["portfolio"]
+
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    with open(out, "w") as f:
+        f.write(f"{'TICKER':10} {'VERDICT':8} {'TREND':>6} {'UNREAL':>8}  WHY\n")
+        for p in positions:
+            th = f"{p.trend_health:+.1f}" if p.trend_health is not None else "  -"
+            f.write(
+                f"{p.ticker:10} {p.verdict.value:8} {th:>6} {p.unrealized_pct*100:+7.0f}%  {p.why}\n"
+            )
+
+    now_iso = end_dt.isoformat()
+    append_assessments(
+        log,
+        [
+            {
+                "ticker": p.ticker,
+                "verdict": p.verdict.value,
+                "price": p.price,
+                "trend_health": p.trend_health,
+                "as_of": now_iso,
+            }
+            for p in positions
+        ],
+    )
+
+    click.echo(
+        f"Assessed {pf.n_positions} positions. Verdict distribution: {pf.verdict_counts}"
+    )
+    click.echo(
+        f"Broken-trend share: {pf.broken_trend_share:.0%}  Top concentration: {pf.top_concentration:.0%}"
+    )
+    click.echo(f"Full per-ticker detail written to {out} (gitignored).")
+
+
+@cli.command("resolve-discipline-flags")
+@click.option("--log", default="data/personal/discipline_log.jsonl", show_default=True)
+@click.option("--horizon", default=21, type=int, show_default=True)
+def resolve_discipline_flags(log: str, horizon: int) -> None:
+    """Forward-score past REDUCE/TRIM flags: were they followed by drops? (calibration)."""
+    from datetime import datetime, timezone
+
+    from application.discipline_log import read_assessments, resolve_flags
+
+    logged = read_assessments(log)
+    if not logged:
+        click.echo(f"No logged assessments at {log}.")
+        return
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+
+    def provider(ticker: str) -> list[tuple[datetime, float]]:
+        return load_price_series(ticker, start_dt, end_dt)
+
+    res = resolve_flags(logged, provider, horizon_days=horizon)
+    click.echo(
+        f"resolved={res['resolved']}  brier={res['brier']:.3f}  "
+        f"down_rate_on_reduce={res['down_rate_on_reduce']:.0%}"
+    )
+
+
+@cli.command("holdings-risk-calibrate")
+@click.option(
+    "--ticker", required=True, help="Symbol to compute history base rates for"
+)
+@click.option("--horizon", default=21, type=int, show_default=True)
+def holdings_risk_calibrate(ticker: str, horizon: int) -> None:
+    """Warm-start base rates from price history: what followed each trend state."""
+    from datetime import datetime, timezone
+
+    from domain.calibration import base_rate_from_history
+
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+    closes = [c for _, c in load_price_series(ticker, start_dt, end_dt)]
+    rates = base_rate_from_history(
+        closes, trend_window=200, atr_window=22, horizon=horizon
+    )
+    if not rates:
+        click.echo(f"Not enough history for {ticker}.")
+        return
+    for bucket, stats in rates.items():
+        click.echo(
+            f"{bucket:6} n={int(stats['n'])} mean_fwd={stats['mean_fwd_return']:+.2%} "
+            f"down_rate={stats['down_rate']:.0%}"
+        )
+
+
+@cli.command("backtest-discipline-flags")
+@click.option(
+    "--holdings",
+    default="data/personal/holdings-report-2026-06-07.csv",
+    show_default=True,
+)
+@click.option("--horizon", default=21, type=int, show_default=True)
+@click.option("--step", default=21, type=int, show_default=True)
+def backtest_discipline_flags(holdings: str, horizon: int, step: int) -> None:
+    """Historical point-in-time calibration of the discipline flags across your holdings (day-1 evidence)."""
+    from datetime import datetime, timezone
+
+    from application.holdings_reader import read_holdings
+
+    rows = read_holdings(holdings)
+    if not rows:
+        click.echo(f"No holdings at {holdings}.")
+        return
+    tickers = [h.ticker for h in rows]
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+    _cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def provider(t: str) -> list[tuple[datetime, float]]:
+        if t not in _cache:
+            _cache[t] = load_price_series(t, start_dt, end_dt)
+        return _cache[t]
+
+    out = backtest_discipline_calibration(
+        tickers, provider, start_dt, end_dt, step_days=step, horizon_days=horizon
+    )
+    click.echo(
+        f"Historical calibration over {len(tickers)} holdings, "
+        f"{out['total_verdicts']} point-in-time verdicts:"
+    )
+    for v in ("REDUCE", "TRIM", "HOLD", "ADD_OK", "REVIEW"):
+        b = out["by_verdict"].get(v)
+        if b:
+            click.echo(
+                f"  {v:8} n={b['n']:4} down_rate={b['down_rate']:.0%} "
+                f"mean_fwd={b['mean_fwd_return']:+.2%}"
+            )
+    click.echo(
+        f"Brier(REDUCE+TRIM assert down)={out['brier_reduce_trim']:.3f} "
+        f"over n={out['n_reduce_trim']}"
+    )
+    click.echo(
+        "NOTE: calibrates flags vs the MARKET on history — NOT proof rules beat "
+        "buy-hold (ADR-046) nor your behavior (forward-tracked)."
+    )
 
 
 if __name__ == "__main__":
