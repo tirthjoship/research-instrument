@@ -194,23 +194,80 @@ def test_screen_candidates_json_contains_abstained(
 
 
 # ---------------------------------------------------------------------------
-# Task 7b: backtest-screen
+# Task 7b: backtest-screen  (point-in-time panel builder, rewired CLI)
 # ---------------------------------------------------------------------------
+
+# Common fake helpers for backtest-screen tests.
+# We patch both load_price_series (used in the _prices closure) and
+# build_screen_panels + ScreenBacktestUseCase so no network calls occur.
+
+_FAKE_PANELS: list[dict[str, tuple[float, float]]] = [
+    {"AAPL": (0.5, 0.02), "MSFT": (-0.5, -0.01)},
+]
+_FAKE_BENCH: list[float] = [0.01]
+
+
+def _patch_backtest_screen(
+    monkeypatch: pytest.MonkeyPatch, decision: str = "PASS"
+) -> None:
+    """Patch everything that backtest-screen touches so no network calls are made."""
+    # Patch load_price_series in cli module (used in the _prices closure)
+    from datetime import datetime
+
+    import application.cli as cli_module
+    import application.screen_ic_panels as panels_module
+    from application import screen_backtest_use_case as sbu_module
+
+    def fake_load_price_series(
+        ticker: str, start: datetime, end: datetime
+    ) -> list[tuple[datetime, float]]:
+        return [(datetime(2020, 1, i + 1), 100.0 + i) for i in range(5)]
+
+    monkeypatch.setattr(cli_module, "load_price_series", fake_load_price_series)
+
+    # Patch build_screen_panels on its own module (the CLI does a local import so
+    # patching the module attribute is the correct injection point)
+    monkeypatch.setattr(
+        panels_module,
+        "build_screen_panels",
+        lambda tickers, dates, price_series_fn, horizon_days=21, benchmark_ticker="SPY": (
+            _FAKE_PANELS,
+            _FAKE_BENCH,
+        ),
+    )
+
+    # Patch ScreenBacktestUseCase.run
+    class FakeBacktestUC:
+        _d = decision
+
+        def run(
+            self, panels: list[dict], market_returns: list[float] | None = None  # type: ignore[type-arg]
+        ) -> ScreenVerdict:
+            return ScreenVerdict(decision=self._d, mean_ic=0.035, n_dates=len(panels))
+
+    monkeypatch.setattr(sbu_module, "ScreenBacktestUseCase", lambda: FakeBacktestUC())  # type: ignore[attr-defined]
 
 
 def test_backtest_screen_writes_ic_report(
     tmp_path: object, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from application import screen_backtest_use_case as sbu_module
-
-    class FakeBacktestUC:
-        def run(self, panels: list[dict]) -> ScreenVerdict:  # type: ignore[type-arg]
-            return ScreenVerdict(decision="PASS", mean_ic=0.035, n_dates=60)
-
-    monkeypatch.setattr(sbu_module, "ScreenBacktestUseCase", lambda: FakeBacktestUC())  # type: ignore[attr-defined]
+    _patch_backtest_screen(monkeypatch)
 
     runner = CliRunner()
-    res = runner.invoke(cli, ["backtest-screen", "--report-dir", str(tmp_path)])
+    res = runner.invoke(
+        cli,
+        [
+            "backtest-screen",
+            "--report-dir",
+            str(tmp_path),
+            "--limit",
+            "3",
+            "--start",
+            "2020-01-01",
+            "--end",
+            "2020-06-01",
+        ],
+    )
     assert res.exit_code == 0, res.output
     ic_files = list(tmp_path.glob("screen_ic_*.json"))  # type: ignore[union-attr]
     assert ic_files, "Expected a screen_ic_<date>.json report"
@@ -219,19 +276,129 @@ def test_backtest_screen_writes_ic_report(
 def test_backtest_screen_prints_verdict(
     tmp_path: object, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from application import screen_backtest_use_case as sbu_module
-
     for decision in ("PASS", "INCONCLUSIVE", "HALT"):
-
-        class FakeBacktestUC:
-            _d = decision
-
-            def run(self, panels: list[dict]) -> ScreenVerdict:  # type: ignore[type-arg]
-                return ScreenVerdict(decision=self._d, mean_ic=0.01, n_dates=5)
-
-        monkeypatch.setattr(sbu_module, "ScreenBacktestUseCase", lambda: FakeBacktestUC())  # type: ignore[attr-defined]
+        _patch_backtest_screen(monkeypatch, decision)
 
         runner = CliRunner()
-        res = runner.invoke(cli, ["backtest-screen", "--report-dir", str(tmp_path)])
+        res = runner.invoke(
+            cli,
+            [
+                "backtest-screen",
+                "--report-dir",
+                str(tmp_path),
+                "--limit",
+                "3",
+                "--start",
+                "2020-01-01",
+                "--end",
+                "2020-06-01",
+            ],
+        )
         assert res.exit_code == 0, res.output
         assert decision in res.output
+
+
+def test_backtest_screen_report_json_has_required_fields(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """JSON report must contain all pre-registered fields including caveat."""
+    _patch_backtest_screen(monkeypatch, "INCONCLUSIVE")
+
+    runner = CliRunner()
+    res = runner.invoke(
+        cli,
+        [
+            "backtest-screen",
+            "--report-dir",
+            str(tmp_path),
+            "--limit",
+            "3",
+            "--start",
+            "2020-01-01",
+            "--end",
+            "2020-06-01",
+        ],
+    )
+    assert res.exit_code == 0, res.output
+
+    ic_files = list(tmp_path.glob("screen_ic_*.json"))  # type: ignore[union-attr]
+    assert ic_files
+    data = json.loads(ic_files[0].read_text())
+
+    required = {
+        "as_of",
+        "universe_size",
+        "n_tickers_with_data",
+        "decision",
+        "mean_ic",
+        "n_dates",
+        "ic_ci_low",
+        "ic_ci_high",
+        "sharpe_diff_point",
+        "sharpe_diff_ci_low",
+        "sharpe_diff_ci_high",
+        "primary_pass",
+        "secondary_pass",
+        "horizon_days",
+        "start",
+        "end",
+        "caveat",
+    }
+    missing = required - set(data.keys())
+    assert not missing, f"Missing JSON fields: {missing}"
+
+
+def test_backtest_screen_stdout_includes_caveat(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Stdout must contain the look-ahead-bias caveat on every run (ADR-042)."""
+    _patch_backtest_screen(monkeypatch)
+
+    runner = CliRunner()
+    res = runner.invoke(
+        cli,
+        [
+            "backtest-screen",
+            "--report-dir",
+            str(tmp_path),
+            "--limit",
+            "3",
+            "--start",
+            "2020-01-01",
+            "--end",
+            "2020-06-01",
+        ],
+    )
+    assert res.exit_code == 0, res.output
+    assert "CAVEAT" in res.output or "caveat" in res.output.lower()
+    assert (
+        "look-ahead" in res.output.lower()
+        or "point-in-time" in res.output.lower()
+        or "MOMENTUM" in res.output
+    )
+
+
+def test_backtest_screen_stdout_includes_ci(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Stdout must print IC CI every run (ADR-042)."""
+    _patch_backtest_screen(monkeypatch)
+
+    runner = CliRunner()
+    res = runner.invoke(
+        cli,
+        [
+            "backtest-screen",
+            "--report-dir",
+            str(tmp_path),
+            "--limit",
+            "3",
+            "--start",
+            "2020-01-01",
+            "--end",
+            "2020-06-01",
+        ],
+    )
+    assert res.exit_code == 0, res.output
+    # CI should appear in some form
+    assert "CI" in res.output or "ci" in res.output.lower()
