@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
+from .discipline import Verdict
 from .exceptions import InvalidMarketDataError, InvalidPredictionError
 
 
@@ -400,3 +401,40 @@ class EventSectorImpact:
             raise ValueError("half_life_days must be positive")
         if self.sample_count < 0:
             raise ValueError("sample_count must be non-negative")
+
+
+@dataclass(frozen=True)
+class PositionRisk:
+    """Graded risk/discipline assessment for one held position (decision-support,
+    not a prediction)."""
+
+    ticker: str
+    price: float
+    verdict: Verdict
+    confidence: float
+    trend_health: float | None
+    vol_signal: float
+    relative_strength: float | None
+    downside_to_stop: float
+    upside_to_recover: float
+    behavior_flags: tuple[str, ...]
+    unrealized_pct: float
+    account_type: str
+    abstained: bool
+    why: str
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.confidence <= 1.0:
+            raise InvalidPredictionError(
+                f"Confidence must be in [0, 1], got {self.confidence}"
+            )
+
+
+@dataclass(frozen=True)
+class PortfolioRisk:
+    """Book-level risk summary across all held positions."""
+
+    n_positions: int
+    broken_trend_share: float
+    top_concentration: float
+    verdict_counts: dict[str, int]

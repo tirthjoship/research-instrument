@@ -84,6 +84,10 @@ class TransactionCostModel:
         total_cost = self.cost_per_trade * n_trades_per_period
         return [r - total_cost for r in gross_returns]
 
+    def cost_for_turnover(self, turnover: float) -> float:
+        """Cost for trading `turnover` fraction of the portfolio (one-way)."""
+        return self.cost_per_trade * turnover
+
     def total_costs(self, n_periods: int, n_trades_per_period: int = 2) -> float:
         """Total cumulative cost over all periods."""
         return self.cost_per_trade * n_trades_per_period * n_periods

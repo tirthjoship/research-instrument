@@ -108,6 +108,37 @@ def test_drip_backfill_command_runs(monkeypatch: object) -> None:
     assert "google_trends" in result.output
 
 
+def test_drip_backfill_source_filter(monkeypatch: object) -> None:
+    import application.cli as climod
+    from domain.models import SourceHealth
+
+    captured: dict[str, object] = {}
+
+    class _UC:
+        def __init__(
+            self,
+            sources: dict[str, object],
+            store: object,
+            sleep: object,
+            throttle_s: float = 45.0,
+        ) -> None:
+            captured["sources"] = list(sources.keys())
+
+        def execute(
+            self, tickers: list[str], now: object, days: int = 90
+        ) -> dict[str, object]:
+            return {"wikipedia": SourceHealth("wikipedia", attempts=1, ok=1)}
+
+    monkeypatch.setattr(climod, "DripBackfillUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["drip-backfill", "--source", "wikipedia", "--limit", "3"]
+    )
+    assert result.exit_code == 0, result.output
+    assert captured["sources"] == ["wikipedia"]  # only wikipedia wired
+
+
 def test_audit_command_runs(monkeypatch: object) -> None:
     import application.cli as climod
 
@@ -158,3 +189,436 @@ def test_backfill_history_command_runs(monkeypatch: object, tmp_path: object) ->
     )
     assert result.exit_code == 0, result.output
     assert "Backfill complete" in result.output
+
+
+def test_drip_backfill_invalid_source_rejected() -> None:
+    from click.testing import CliRunner
+
+    from application.cli import cli
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["drip-backfill", "--source", "nonsense", "--limit", "1"]
+    )
+    assert result.exit_code != 0
+    assert "nonsense" in result.output or "Invalid value" in result.output
+
+
+def test_validate_divergence_ic_runs(monkeypatch: object) -> None:
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    class _UC:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def execute(self, dates: list, tickers: list, horizon_label: str) -> dict:
+            return {
+                "horizon": horizon_label,
+                "mean_ic": 0.031,
+                "ic_ir": 0.5,
+                "pct_positive_dates": 0.6,
+                "n_dates": 40,
+                "bootstrap": {"ci_low": 0.01, "ci_high": 0.05, "p_value_ge_0": 0.01},
+                "date_level": {},
+            }
+
+    import pytest  # noqa: F401  (monkeypatch type hint workaround)
+
+    monkeypatch.setattr(climod, "DivergenceICBacktestUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["validate-divergence-ic", "--limit", "5", "--quick"])
+    assert result.exit_code == 0, result.output
+    assert "mean_ic" in result.output.lower() or "IC" in result.output
+    assert "PROCEED" in result.output or "KILL" in result.output
+
+
+def test_validate_divergence_ic_passes_naive_dates(monkeypatch: object) -> None:
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    captured: dict = {}
+
+    class _UC:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def execute(self, dates: list, tickers: list, horizon_label: str) -> dict:
+            captured["dates"] = dates
+            return {
+                "horizon": horizon_label,
+                "mean_ic": 0.0,
+                "ic_ir": 0.0,
+                "pct_positive_dates": 0.0,
+                "n_dates": 0,
+                "bootstrap": {},
+                "date_level": {},
+            }
+
+    monkeypatch.setattr(climod, "DivergenceICBacktestUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["validate-divergence-ic", "--limit", "2", "--quick"])
+    assert result.exit_code == 0, result.output
+    assert captured["dates"], "no dates generated"
+    assert all(
+        d.tzinfo is None for d in captured["dates"]
+    ), "dates must be naive-UTC to match price/attention layers"
+
+
+# ── R3: resolve-wiki-articles + _load_wiki_map merge ────────────────────────
+
+
+def test_resolve_wiki_articles_writes_yaml(
+    monkeypatch: object, tmp_path: object
+) -> None:
+    import yaml
+
+    import application.cli as climod
+    from application.cli import cli
+
+    class _FakeResolver:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def resolve_validated(
+            self, name: str, start: object, end: object, min_views: float = 50.0
+        ) -> str | None:
+            return "Apple Inc." if name == "Apple Inc." else None
+
+    monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
+    # Prevent the test from reading the real wiki_articles_us.yaml (which may have AAPL already)
+    monkeypatch.setattr(climod, "_load_wiki_map", lambda market: {}, raising=False)  # type: ignore[attr-defined]
+
+    names = {"AAPL": "Apple Inc.", "AIZ": "Assurant"}
+    monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: names.get(t), raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["AAPL", "AIZ"], raising=False)  # type: ignore[attr-defined]
+
+    from pathlib import Path
+
+    out = Path(str(tmp_path)) / "wiki_articles_us.yaml"  # type: ignore[arg-type]
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["resolve-wiki-articles", "--out", str(out), "--throttle-s", "0"]
+    )
+    assert result.exit_code == 0, result.output
+    data = yaml.safe_load(out.read_text())
+    assert data["AAPL"] == "Apple Inc."
+    assert "AIZ" not in data
+    # FIX 1: dropped ticker symbols must appear in the CLI output
+    assert "AIZ" in result.output
+
+
+def test_resolve_wiki_articles_skips_existing_alias(
+    monkeypatch: object, tmp_path: object
+) -> None:
+    import application.cli as climod
+    from application.cli import cli
+
+    seen: list[str] = []
+
+    class _FakeResolver:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def resolve_validated(
+            self, name: str, start: object, end: object, min_views: float = 50.0
+        ) -> str | None:
+            seen.append(name)
+            return "X"
+
+    monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: "Name " + t, raising=False)  # type: ignore[attr-defined]
+    # Pin the curated skip set in-test (isolate from live on-disk wiki_articles_us.yaml):
+    # RKLB as a curated alias must be skipped, resolver never called for it.
+    monkeypatch.setattr(climod, "_load_wiki_map", lambda market: {"RKLB": "Rocket_Lab"}, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["RKLB"], raising=False)  # type: ignore[attr-defined]
+
+    from pathlib import Path
+
+    out = Path(str(tmp_path)) / "wiki_articles_us.yaml"  # type: ignore[arg-type]
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["resolve-wiki-articles", "--out", str(out), "--throttle-s", "0"]
+    )
+    assert result.exit_code == 0, result.output
+    assert "Name RKLB" not in seen
+
+
+def test_load_wiki_map_merged_aliases_win(
+    monkeypatch: object, tmp_path: object
+) -> None:
+    """_load_wiki_map_merged: curated aliases win over resolved YAML; resolved entries added."""
+    from pathlib import Path
+
+    import application.cli as climod
+
+    resolved = Path(str(tmp_path)) / "wiki_articles_us.yaml"  # type: ignore[arg-type]
+    resolved.write_text("RKLB: WRONG_Override\nAAPL: Apple Inc.\n")
+
+    m = climod._load_wiki_map_merged(market="us", resolved_path=str(resolved))
+    # RKLB has a curated alias in themes.yaml ("Rocket_Lab") — must not be overridden
+    assert m.get("RKLB") != "WRONG_Override"
+    # AAPL is not in themes aliases → resolved entry present
+    assert m.get("AAPL") == "Apple Inc."
+
+
+def test_resolve_wiki_articles_skips_throttled(
+    monkeypatch: object, tmp_path: object
+) -> None:
+    import yaml
+
+    import application.cli as climod
+    from application.cli import cli
+    from domain.exceptions import SourceThrottledError
+
+    class _FakeResolver:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def resolve_validated(
+            self, name: str, start: object, end: object, min_views: float = 50.0
+        ) -> str | None:
+            if name == "Apple Inc.":
+                raise SourceThrottledError("throttled")
+            return "Abbott Laboratories"
+
+    monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
+    # Prevent reading real wiki_articles_us.yaml which may contain AAPL/ABT
+    monkeypatch.setattr(climod, "_load_wiki_map", lambda market: {}, raising=False)  # type: ignore[attr-defined]
+
+    names = {"AAPL": "Apple Inc.", "ABT": "Abbott Laboratories"}
+    monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: names.get(t), raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["AAPL", "ABT"], raising=False)  # type: ignore[attr-defined]
+
+    from pathlib import Path
+
+    out = Path(str(tmp_path)) / "w.yaml"  # type: ignore[arg-type]
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["resolve-wiki-articles", "--out", str(out), "--throttle-s", "0"]
+    )
+    assert result.exit_code == 0, result.output
+    data = yaml.safe_load(out.read_text()) or {}
+    assert "AAPL" not in data  # throttled -> skipped, NOT written
+    assert data.get("ABT") == "Abbott Laboratories"
+    assert "AAPL" in result.output  # throttled ticker named in summary
+
+
+def test_backtest_universe_includes_tsx(monkeypatch: object) -> None:
+    import application.cli as climod
+
+    uni = climod._get_backtest_universe("us")
+    assert "AAPL" in uni
+    assert any(t.endswith(".TO") for t in uni)  # TSX names carry .TO suffix
+
+
+def test_portfolio_verdict_cli(monkeypatch: object, tmp_path: object) -> None:
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    holdings = tmp_path / "holdings.csv"  # type: ignore[operator]
+    holdings.write_text("ticker,shares\nMU,25\nRIVN,80\n")
+
+    class _UC:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def verdict_for(self, ticker: str) -> dict:
+            return {
+                "ticker": ticker,
+                "price": 100.0,
+                "verdict": "HOLD" if ticker == "MU" else "EXIT",
+                "trend_intact": ticker == "MU",
+                "trailing_stop": 90.0,
+                "why": "test",
+            }
+
+    monkeypatch.setattr(climod, "PortfolioVerdictUseCase", _UC, raising=False)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["portfolio-verdict", "--holdings", str(holdings)])
+    assert result.exit_code == 0, result.output
+    assert "MU" in result.output and "HOLD" in result.output
+    assert "RIVN" in result.output and "EXIT" in result.output
+
+
+def test_validate_momentum_discipline_runs(monkeypatch: object) -> None:
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    class _UC:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        def execute(
+            self, universe: object, start: object, end: object
+        ) -> dict[str, object]:
+            return {
+                "strategy": {
+                    "sharpe": 1.1,
+                    "max_drawdown": 0.2,
+                    "cagr": 0.12,
+                    "sortino": 1.3,
+                    "equity": [1.0, 1.05, 1.1],
+                },
+                "buy_hold": {
+                    "sharpe": 0.6,
+                    "max_drawdown": 0.5,
+                    "cagr": 0.10,
+                    "sortino": 0.7,
+                    "equity": [1.0, 0.95, 1.0],
+                },
+                "spy": {
+                    "sharpe": 0.7,
+                    "max_drawdown": 0.34,
+                    "cagr": 0.11,
+                    "sortino": 0.8,
+                    "equity": [1.0, 0.98, 1.05],
+                },
+            }
+
+        def verdict(
+            self, report: object, sharpe_diff_ci_low: float
+        ) -> dict[str, object]:
+            return {
+                "decision": "PROCEED",
+                "drawdown_reduction": 0.6,
+                "sharpe_diff_ci_low": sharpe_diff_ci_low,
+                "beats_sharpe": True,
+                "cuts_drawdown": True,
+            }
+
+    monkeypatch.setattr(climod, "MomentumExitBacktestUseCase", _UC, raising=False)
+    monkeypatch.setattr(
+        climod, "_get_backtest_universe", lambda m: ["AAPL", "MSFT"], raising=False
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["validate-momentum-discipline", "--limit", "2", "--quick"]
+    )
+    assert result.exit_code == 0, result.output
+    assert "PROCEED" in result.output or "KILL" in result.output
+    assert "sharpe" in result.output.lower()
+
+
+def test_holdings_risk_cli_masked_summary(monkeypatch, tmp_path):
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+    from domain.discipline import Verdict
+    from domain.models import PortfolioRisk, PositionRisk
+
+    holdings = tmp_path / "h.csv"
+    holdings.write_text(
+        "Symbol,Quantity,Book Value (CAD),Account Type,Exchange\nMU,10,3000,TFSA,NASDAQ\n"
+    )
+
+    class _UC:
+        def __init__(self, *a, **k):
+            pass
+
+        def execute(self, hold, start, end):
+            pos = PositionRisk(
+                ticker="MU",
+                price=100.0,
+                verdict=Verdict.REDUCE,
+                confidence=0.8,
+                trend_health=-3.0,
+                vol_signal=0.5,
+                relative_strength=-0.2,
+                downside_to_stop=0.1,
+                upside_to_recover=0.3,
+                behavior_flags=("disposition_risk",),
+                unrealized_pct=-0.31,
+                account_type="TFSA",
+                abstained=False,
+                why="broke trend",
+            )
+            return {
+                "positions": [pos],
+                "portfolio": PortfolioRisk(1, 1.0, 1.0, {"REDUCE": 1}),
+            }
+
+    monkeypatch.setattr(climod, "HoldingsRiskAssessmentUseCase", _UC, raising=False)
+
+    runner = CliRunner()
+    out_file = tmp_path / "detail.txt"
+    result = runner.invoke(
+        cli, ["holdings-risk", "--holdings", str(holdings), "--out", str(out_file)]
+    )
+    assert result.exit_code == 0, result.output
+    assert "REDUCE" in result.output
+    assert "MU" not in result.output
+    assert out_file.exists()
+    assert "MU" in out_file.read_text()
+
+
+def test_resolve_discipline_flags_cli(monkeypatch, tmp_path):
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    log = tmp_path / "log.jsonl"
+    log.write_text(
+        '{"ticker": "MU", "verdict": "REDUCE", "price": 100.0, "as_of": "2026-01-01T00:00:00+00:00"}\n'
+    )
+    monkeypatch.setattr(
+        climod,
+        "load_price_series",
+        lambda t, s, e: [
+            (__import__("datetime").datetime(2026, 1, 1), 100.0),
+            (__import__("datetime").datetime(2026, 3, 1), 70.0),
+        ],
+        raising=False,
+    )
+    runner = CliRunner()
+    result = runner.invoke(cli, ["resolve-discipline-flags", "--log", str(log)])
+    assert result.exit_code == 0, result.output
+    assert "resolved" in result.output.lower()
+    assert "brier" in result.output.lower()
+
+
+def test_backtest_discipline_flags_cli(monkeypatch, tmp_path):
+    from click.testing import CliRunner
+
+    import application.cli as climod
+    from application.cli import cli
+
+    h = tmp_path / "h.csv"
+    h.write_text("Symbol,Quantity,Account Type,Exchange\nDOWN,10,TFSA,NASDAQ\n")
+    monkeypatch.setattr(
+        climod,
+        "backtest_discipline_calibration",
+        lambda *a, **k: {
+            "total_verdicts": 5,
+            "by_verdict": {
+                "REDUCE": {
+                    "n": 3,
+                    "down": 3,
+                    "down_rate": 1.0,
+                    "mean_fwd_return": -0.05,
+                }
+            },
+            "brier_reduce_trim": 0.1,
+            "n_reduce_trim": 3,
+        },
+        raising=False,
+    )
+    result = CliRunner().invoke(
+        cli, ["backtest-discipline-flags", "--holdings", str(h)]
+    )
+    assert result.exit_code == 0, result.output
+    assert "REDUCE" in result.output and "Brier" in result.output

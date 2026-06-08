@@ -300,3 +300,12 @@ class AttentionSeriesPort(Protocol):
     ) -> list[AttentionPoint]:
         """Return intensity observations for ticker in [start, end]."""
         ...
+
+
+@runtime_checkable
+class NarratorPort(Protocol):
+    """Explains an ALREADY-COMPUTED verdict in plain English. Receives the computed
+    context only; it cannot influence the verdict (structural guarantee the LLM
+    narrates, never picks)."""
+
+    def narrate(self, context: dict[str, object]) -> str: ...

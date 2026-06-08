@@ -6,6 +6,8 @@ import math
 import random
 import warnings
 
+from domain.backtest_metrics import sharpe
+
 
 def _rank_desc(scores: list[float], wins: list[int]) -> list[int]:
     order = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
@@ -119,6 +121,85 @@ def moving_block_bootstrap(
         "ci_low": ci_low,
         "ci_high": ci_high,
         "p_value_ge_0": p_value_ge_0,
+    }
+
+
+def sharpe_difference_bootstrap(
+    strategy_returns: list[float],
+    buy_hold_returns: list[float],
+    periods_per_year: int = 252,
+    n_resamples: int = 2000,
+    block_size: int | None = None,
+    seed: int = 12345,
+) -> dict[str, object]:
+    """Moving-block bootstrap CI on the Sharpe DIFFERENCE (strategy - buy_hold).
+
+    Pairs the two daily-return series by index and resamples SHARED contiguous
+    blocks (same index-block applied to both legs) so cross-leg correlation and
+    within-leg time-structure are preserved. Recomputes annualized Sharpe of each
+    leg on each resample and takes the difference. Deterministic given seed.
+    Returns: n, block_size, n_resamples, point (full-sample Sharpe diff),
+    ci_low (2.5%), ci_high (97.5%), p_value_le_0 (fraction of resampled diffs <= 0).
+    Safe on n < 2: ci_* None, n_resamples 0.
+    """
+    n = min(len(strategy_returns), len(buy_hold_returns))
+    strat = strategy_returns[:n]
+    bh = buy_hold_returns[:n]
+
+    if n < 2:
+        return {
+            "n": n,
+            "block_size": None,
+            "n_resamples": 0,
+            "point": 0.0,
+            "ci_low": None,
+            "ci_high": None,
+            "p_value_le_0": None,
+        }
+
+    point = round(sharpe(strat, periods_per_year) - sharpe(bh, periods_per_year), 6)
+
+    # Determine block size: default max(2, round(n^(1/3))), clamped to <= n
+    if block_size is None:
+        bs = max(2, round(n ** (1 / 3)))
+    else:
+        bs = block_size
+    bs = min(bs, n)
+
+    max_start = n - bs
+    rng = random.Random(seed)
+
+    diffs: list[float] = []
+    for _ in range(n_resamples):
+        # Build shared index list by repeatedly picking a block start
+        indices: list[int] = []
+        while len(indices) < n:
+            start = rng.randint(0, max_start)
+            indices.extend(range(start, start + bs))
+        indices = indices[:n]
+
+        # Apply SAME indices to both series (preserves cross-leg pairing)
+        strat_sample = [strat[i] for i in indices]
+        bh_sample = [bh[i] for i in indices]
+
+        diff = sharpe(strat_sample, periods_per_year) - sharpe(
+            bh_sample, periods_per_year
+        )
+        diffs.append(diff)
+
+    diffs.sort()
+    ci_low = round(diffs[int(0.025 * n_resamples)], 6)
+    ci_high = round(diffs[int(0.975 * n_resamples)], 6)
+    p_value_le_0 = round(sum(1 for d in diffs if d <= 0) / n_resamples, 4)
+
+    return {
+        "n": n,
+        "block_size": bs,
+        "n_resamples": n_resamples,
+        "point": point,
+        "ci_low": ci_low,
+        "ci_high": ci_high,
+        "p_value_le_0": p_value_le_0,
     }
 
 

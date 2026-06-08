@@ -35,6 +35,36 @@ The disagreement between technical_signal and sentiment_signal for a given stock
 - `divergence_score` — magnitude of disagreement (0.0 = aligned, 2.0 = max divergence)
 - `divergence_type` — "bullish_divergence" (sentiment bullish, technicals bearish), "bearish_divergence" (sentiment bearish, technicals bullish), or "aligned"
 
+### Dead Dimension (discrimination audit)
+A conviction dimension that produces zero variance across all scored candidates — typically because the underlying data source structurally returns nothing for the target universe. On the thematic mid-cap spine, a discrimination audit (2026-06-05, n=63 warmed candidates) found 6 of 8 conviction dimensions dead: `smart_money` (var=0.000, SEC EDGAR 13D/Form-4 absent for mid-caps), `signal_agreement` (var=0.000, derived from dead dims), `sentiment_momentum` (var=0.000, neutral_share=1.00 — not computed in bulk), `ml_direction` (var=0.000, neutral_share=1.00 — no per-ticker inference in bulk), `event_signal` (var=0.000, neutral_share=1.00 — Gemini per-ticker cost deferred), and `analyst_signal` (var=0.000, neutral_share=1.00 — no coverage for these names). Only `temporal_freshness` (var=2.649) and `fundamental_basis` (var=0.250) vary. Dead dimensions are not pruned from the domain model — they are marked inactive for the specific universe and excluded from the surface trigger. See ADR-043.
+
+### Divergence-Led Surfacing (sub-project C — SHELVED, signal falsified)
+~~An alternative surfacing strategy in which attention-acceleration vs price is the primary trigger...~~ **Not built.** Sub-project C was gated behind sub-project D's falsification test of the divergence signal it would surface. Sub-project D (ADR-044, 2026-06-06) **KILLED** the intensity-divergence signal: cross-sectional rank-IC on the clean 430-ticker universe was 0.0040 at the 1-month primary horizon (CI spans 0), with no economically meaningful edge at 1w (0.0072) or 3m (−0.0046). Building divergence-led surfacing on a falsified signal would manufacture false confidence, so C is shelved. The original design (attention-acceleration vs price as the primary trigger, conviction as a light tiebreaker, inverting the Phase 7–9 `conviction × divergence` layered trigger) is preserved here for the record only. See ADR-043 (the hypothesis) and ADR-044 (the falsification).
+
+### Cross-Sectional Information Coefficient (IC)
+The standard quant measure of a signal's monotonic predictive power: on a single date, the **Spearman rank correlation** between the signal across all names and those names' forward returns; then aggregated (mean, IC-IR = mean/std, % positive dates) over many dates. Robust to a few outlier names. Implemented in `application/ic_analysis.py` (`spearman_ic`, `aggregate_ic`) and driven point-in-time by `DivergenceICBacktestUseCase`. A mean |IC| around 0.02–0.05 is a weak-but-real signal; below ~0.01 with a CI spanning zero is noise.
+
+### Falsification vs Validation
+A pre-registered IC test can **falsify cheaply** but cannot **validate**. A non-positive IC on a survivor-biased (flattering) sample *kills* a signal outright. A *positive* IC merely earns the right to forward-track — it is **not** proof of tradeable edge, because transaction costs, turnover, and capacity are unmodeled. This asymmetry is why the divergence test was framed as falsification: the cheapest way to stop wasting effort on a dead hypothesis. Pre-registering the horizon, gate threshold, and universe *before seeing results* removes researcher degrees of freedom.
+
+### Forward Clock
+The live, leakage-free track record a signal must accumulate *after* passing falsification, before any real-money consideration. Started only on a PROCEED verdict (scan → resolve outcomes daily, slice by signal bucket). **Not started for divergence** — ADR-044 returned KILL, so there is nothing to forward-track.
+
+### Process > Prediction (ADR-045)
+The guiding principle after three falsified prediction theses: a retail investor's available edge is **better process** (disciplined entries/exits, risk management, no anchoring), **not better prediction**. The user's picks are excellent; his losses come from process (holding broken-trend losers). The engine's job is to enforce process, not forecast.
+
+### Trend Filter / Chandelier Trailing Exit
+**Trend filter (absolute momentum):** hold a name only while `close > SMA(200)`; step aside below it. **Chandelier stop:** trailing exit = `highest_high_since_entry − 3×ATR(22)`. Together they "let winners run, cut losers" — ride MU-style runners until the trend breaks, eject LULU-style breaks early. A *trailing* stop (not a fixed profit cap) is the fix for both selling-winners-too-early and holding-losers-too-long.
+
+### Factor Premia / Evidence Tiers (ADR-045)
+What is honestly achievable, ranked: **Tier 1** (reliable, retail-accessible) — risk management, behavior-gap closure, factor premia (momentum, quality, value, low-vol; a few %/yr over long horizons). **Tier 2** (earlier, modest, decaying; each independently falsified before use) — PEAD/earnings-revision drift, fundamental acceleration. **Tier 3** (out of scope, no honest model delivers) — predicting ignition before it happens, a learning loop that compounds to high accuracy (markets non-stationary + adversarial; anomalies decay ~58% post-publication, McLean & Pontiff 2016), beating SPY by 20–30%.
+
+### Behavior Gap
+The documented gap between fund returns and the returns actual investors *realize*, caused by bad timing (disposition effect: sell winners early, hold losers). Average equity investor lagged the S&P by ~848 bps in 2024 (Barclays/DALBAR). Closing this gap — not predicting winners — is the largest reliable improvement available to a retail investor.
+
+### Conviction (engine status, 2026-06-05)
+On the thematic mid-cap spine, conviction is freshness-dominated: with 6 of 8 dims dead, the engine effectively ranks names by how recently their data was fetched (`temporal_freshness`), not by opportunity quality. Conviction remains in the architecture as a tiebreaker but should not be read as "opportunity confidence" on this universe. Sub-project C (divergence-as-primary-gate) is shelved because sub-project D falsified the divergence signal itself (ADR-044) — see the Divergence-Led Surfacing entry above. See ADR-043 for the discrimination audit numbers.
+
 ### StockRecommendation
 A graded pick for a specific stock in a specific week. Contains the grade, composite score, predicted 5-day return, confidence, supporting indicators, and human-readable reasoning.
 
@@ -697,3 +727,54 @@ The product is an **honest evidence-aggregator + calibrated-abstention tool**: s
 ### Test Suite
 
 ~1052 tests passing (up from 996 at Phase 5.4).
+
+---
+
+## Leg-2 / Leg-3 Update (2026-06-08) — Alpha-Hunt Complete, Pivot to Discipline Tool
+
+The sections above (through ADR-039) are historical. This section is the current state.
+
+### Four pre-registered falsifications → the edge isn't there
+
+| ADR | Thesis tested | Verdict |
+|-----|---------------|---------|
+| 039 | Conviction aggregation predicts returns | No OOS edge (56%, p=0.13) |
+| 043 | Conviction dimensions discriminate | 6/8 dead/degenerate |
+| 044 | Intensity-divergence has cross-sectional IC | No IC any horizon (clean 430-ticker universe) |
+| 046 | Momentum + trailing-exit beats buy-hold risk-adjusted | KILL — Sharpe-diff CI spans 0; drawdown-cut real (40%) |
+
+All four converge: **semi-strong market efficiency holds for retail-accessible public signals.** A 2026-06-08 forensic data-layer audit confirmed **data is NOT the bottleneck** — the cleanest data (yfinance prices in ADR-046; clean 83% Wikipedia in ADR-044) killed hardest; dead/noisy sources (StockTwits, GDELT, Trends) were never load-bearing.
+
+### Pivot (ADR-045 → ADR-047): predict → discipline
+
+A cited deep-research pass settled the realistic retail landscape: profitability = **expectancy (asymmetry), not hit-rate**; ~70% accuracy is fantasy (Medallion ~50.75%); LLMs explain well / predict badly; real non-predictive edges = behavior-gap closure (~1%/yr), conditional vol-targeting (TSX-safe form), trend/stop drawdown reduction, decayed factor premia. **No single edge — a stack of small honest non-predictive edges.**
+
+**Decision (ADR-047):** stop hunting alpha; build an honest **discipline / risk decision-support tool**, measured vs the user's own behavior, not the market.
+
+### What shipped this session
+
+| Item | Detail |
+|------|--------|
+| Momentum/exit engine | Pure trend/metric domain (`trend_rules`, `backtest_metrics`), `MomentumExitBacktestUseCase`, verdict gate, `validate-momentum-discipline` + `portfolio-verdict` CLIs. Look-ahead bug + cost-charging bug + wrong-gate-statistic bug all caught in Opus review and fixed. Merged to develop (ADR-046, KILL). |
+| Holdings Discipline & Risk Engine | **Spec + plan written, NOT yet implemented.** Spec: `docs/superpowers/specs/2026-06-08-holdings-discipline-risk-engine-design.md`. Plan: `docs/superpowers/plans/2026-06-08-holdings-discipline-risk-engine.md` (14 TDD tasks, incl. historical flag-calibration). Branch `feat/holdings-discipline-risk-engine`. |
+
+### Holdings Discipline & Risk Engine — design summary
+
+Graded per-holding verdict (REDUCE/TRIM/REVIEW/HOLD/ADD_OK) + confidence, **abstains when signals conflict**. Pure domain scorers (trend_health, conditional_vol_signal, risk_asymmetry, behavior detectors, grade_position, base_rate_from_history, brier). `HoldingsRiskAssessmentUseCase`. `NarratorPort` + **local Ollama narrator** (graceful template fallback; narrate-never-pick; cloud-swappable for Phase 2). Forward-calibration log + `resolve-discipline-flags`. Privacy: holdings gitignored, masked stdout, only tickers → yfinance. **Tax-loss leg dropped** (user 65/66 registered accounts). Scope: v1 = holdings; **Phase 2 (factor screening) deferred**, gated on v1 calibration.
+
+### Next action (fresh session)
+
+Execute the 14-task plan via **subagent-driven-development** (Sonnet implementers, Opus reviewers). Then `make check` → live smoke (`holdings-risk`) + **day-1 historical flag calibration (`backtest-discipline-flags`)** on `data/personal/holdings-report-2026-06-07.csv` (gitignored). The engine RUNS and is validated against history on day 1; only the personal "beats-your-behavior" metric is forward-tracked (`resolve-discipline-flags`, ~2–4 wks) and gates the Phase-2 decision. KILL clause if BOTH historical and forward calibration are no better than chance.
+
+### ADRs added (040–047)
+
+| ADR | Decision |
+|-----|----------|
+| 040 | Opportunity forward-tracking (evidence-first surfacing) |
+| 041 | Honest opportunity engine — attention sources, keyless-first |
+| 042 | Honest ingestion & source health (throttle ≠ empty) |
+| 043 | Conviction dims dead; divergence-led surfacing |
+| 044 | Divergence-IC verdict — KILL |
+| 045 | Pivot: return-prediction → exit-discipline |
+| 046 | Momentum/exit Phase-1 verdict — KILL (drawdown-cut real) |
+| 047 | Alpha-hunt complete → honest discipline/risk decision-support tool |
