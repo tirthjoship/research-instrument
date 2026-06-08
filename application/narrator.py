@@ -24,6 +24,10 @@ def template_narration(context: dict[str, object]) -> str:
         parts.append("This is the hold-a-loser pattern — broken trend held at a loss.")
     if "winner_past_stop" in flags:
         parts.append("Winner that breached its trailing stop — consider trimming.")
+    if str(v).upper() == "TRIM":
+        parts.append(
+            "TRIM manages position size / locks gains — not a prediction the name will fall."
+        )
     if acct and str(acct).upper() in {"TFSA", "RRSP", "FHSA"}:
         parts.append(f"In a {acct}, there is no capital-gains tax friction on selling.")
     return " ".join(parts)

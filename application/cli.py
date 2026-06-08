@@ -2154,7 +2154,13 @@ def resolve_discipline_flags(log: str, horizon: int) -> None:
     res = resolve_flags(logged, provider, horizon_days=horizon)
     click.echo(
         f"resolved={res['resolved']}  brier={res['brier']:.3f}  "
-        f"down_rate_on_reduce={res['down_rate_on_reduce']:.0%}"
+        f"down_rate_on_reduce={res['down_rate_on_reduce']:.0%}  "
+        "(REDUCE-only — the calibration gate, ADR-048)"
+    )
+    click.echo(
+        f"(informational) trim_resolved={res['trim_resolved']}  "
+        f"down_rate_on_trim={res['down_rate_on_trim']:.0%}  "
+        "— TRIM is position-sizing, excluded from the gate"
     )
 
 
@@ -2228,8 +2234,8 @@ def backtest_discipline_flags(holdings: str, horizon: int, step: int) -> None:
                 f"mean_fwd={b['mean_fwd_return']:+.2%}"
             )
     click.echo(
-        f"Brier(REDUCE+TRIM assert down)={out['brier_reduce_trim']:.3f} "
-        f"over n={out['n_reduce_trim']}"
+        f"Brier(REDUCE asserts down)={out['brier_reduce']:.3f} "
+        f"over n={out['n_reduce']}  (TRIM excluded — position-sizing, ADR-048)"
     )
     click.echo(
         "NOTE: calibrates flags vs the MARKET on history — NOT proof rules beat "

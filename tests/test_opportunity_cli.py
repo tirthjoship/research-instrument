@@ -626,8 +626,8 @@ def test_backtest_discipline_flags_cli(monkeypatch, tmp_path):
                     "mean_fwd_return": -0.05,
                 }
             },
-            "brier_reduce_trim": 0.1,
-            "n_reduce_trim": 3,
+            "brier_reduce": 0.1,
+            "n_reduce": 3,
         },
         raising=False,
     )

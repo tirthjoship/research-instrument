@@ -38,7 +38,9 @@ def test_backtest_calibration_reduce_flags_precede_drops_on_falling_name():
     assert out["total_verdicts"] > 0
     assert "REDUCE" in out["by_verdict"]
     assert out["by_verdict"]["REDUCE"]["down_rate"] >= 0.5
-    assert 0.0 <= out["brier_reduce_trim"] <= 1.0
+    # ADR-048: directional Brier is REDUCE-only (TRIM excluded — position-sizing)
+    assert 0.0 <= out["brier_reduce"] <= 1.0
+    assert out["n_reduce"] >= 0
 
 
 def test_backtest_calibration_empty_when_no_history():
