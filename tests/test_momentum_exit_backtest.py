@@ -105,3 +105,24 @@ def test_verdict_kill_when_dd_not_reduced_enough():
     }
     verdict = uc.verdict(report, sharpe_diff_ci_low=0.1)
     assert verdict["decision"] == "KILL"  # only 10% dd reduction < 30%
+
+
+def test_transaction_costs_reduce_strategy_return():
+    from datetime import datetime, timedelta, timezone
+
+    from application.momentum_exit_backtest import MomentumExitBacktestUseCase
+
+    start = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    vals = list(range(100, 500)) + list(range(500, 480, -1))
+    prices = {"A": [(start + timedelta(days=i), float(v)) for i, v in enumerate(vals)]}
+
+    def prov(t):
+        return prices.get(t, [])
+
+    free = MomentumExitBacktestUseCase(prov, cost_per_trade=0.0).execute(
+        ["A"], start, start + timedelta(days=len(vals))
+    )
+    costed = MomentumExitBacktestUseCase(prov, cost_per_trade=0.01).execute(
+        ["A"], start, start + timedelta(days=len(vals))
+    )
+    assert costed["strategy"]["equity"][-1] <= free["strategy"]["equity"][-1]
