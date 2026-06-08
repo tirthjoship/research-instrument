@@ -144,7 +144,8 @@ def test_execute_returns_weekly_brief() -> None:
 
 
 def test_execute_is_deterministic() -> None:
-    uc = _make_uc()
+    # Two INDEPENDENT instances (not the same uc twice) so the test catches any
+    # cross-instance ordering variance, not just re-entrant stability.
     holdings = [Holding("AAPL", 10, 1000, "TFSA"), Holding("RIVN", 5, 500, "Margin")]
     kwargs = dict(
         universe=["AAPL", "NEW1"],
@@ -153,6 +154,6 @@ def test_execute_is_deterministic() -> None:
         report_dir="data/reports/",
         top_n=10,
     )
-    b1 = uc.execute(**kwargs)  # type: ignore[arg-type]
-    b2 = uc.execute(**kwargs)  # type: ignore[arg-type]
+    b1 = _make_uc().execute(**kwargs)  # type: ignore[arg-type]
+    b2 = _make_uc().execute(**kwargs)  # type: ignore[arg-type]
     assert to_markdown(b1) == to_markdown(b2)
