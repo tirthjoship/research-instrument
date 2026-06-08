@@ -26,8 +26,9 @@
 - Create `application/holdings_reader.py` — `Holding` dataclass + `read_holdings`.
 - Create `application/holdings_risk.py` — `HoldingsRiskAssessmentUseCase`.
 - Create `application/discipline_log.py` — append/read JSONL assessment log + `resolve_flags`.
-- Modify `application/cli.py` — `holdings-risk`, `holdings-risk-calibrate`, `resolve-discipline-flags` commands.
-- Tests: `tests/test_trend_rules.py` (additions), `tests/test_discipline.py`, `tests/test_calibration.py`, `tests/test_models.py` (additions or new `tests/test_discipline_models.py`), `tests/test_narrator.py`, `tests/test_holdings_reader.py`, `tests/test_holdings_risk.py`, `tests/test_discipline_log.py`, `tests/test_opportunity_cli.py` (additions).
+- Create `application/discipline_backtest.py` — historical point-in-time calibration replay of the verdicts across the holdings' price history (day-1 evidence).
+- Modify `application/cli.py` — `holdings-risk`, `holdings-risk-calibrate`, `resolve-discipline-flags`, `backtest-discipline-flags` commands.
+- Tests: `tests/test_trend_rules.py` (additions), `tests/test_discipline.py`, `tests/test_calibration.py`, `tests/test_models.py` (additions or new `tests/test_discipline_models.py`), `tests/test_narrator.py`, `tests/test_holdings_reader.py`, `tests/test_holdings_risk.py`, `tests/test_discipline_log.py`, `tests/test_discipline_backtest.py`, `tests/test_opportunity_cli.py` (additions).
 
 ---
 
@@ -1499,9 +1500,251 @@ git commit -m "feat: resolve-discipline-flags + holdings-risk-calibrate CLIs"
 
 ---
 
+### Task 13: `backtest-discipline-flags` — historical point-in-time calibration (day-1 evidence)
+
+**Files:**
+- Create: `application/discipline_backtest.py`
+- Modify: `application/cli.py`
+- Test: `tests/test_discipline_backtest.py`, `tests/test_opportunity_cli.py`
+
+Replays the SAME verdict scoring across each holding's price history, point-in-time, and checks whether REDUCE/TRIM flags were followed by drops over the horizon. Cost-basis-INDEPENDENT (disposition overlay excluded — it flags YOUR behavior, not a market move — so it's computable on any history). This is the day-1 evidence on the flags. It is NOT a claim the rules beat buy-hold (that is ADR-046) nor that they beat the user's behavior (forward-tracked only).
+
+- [ ] **Step 1: Write the failing tests**
+
+`tests/test_discipline_backtest.py`:
+```python
+from datetime import datetime, timedelta, timezone
+
+def _series(start, vals):
+    return [(start + timedelta(days=i), float(v)) for i, v in enumerate(vals)]
+
+def test_backtest_calibration_reduce_flags_precede_drops_on_falling_name():
+    from application.discipline_backtest import backtest_discipline_calibration
+    start = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    # name rises then falls for a long stretch; SPY steady up (market healthy)
+    name = list(range(100, 400)) + list(range(400, 150, -1))
+    spy = list(range(100, 100 + len(name)))
+    series = {"DOWN": _series(start, name), "SPY": _series(start, spy)}
+    out = backtest_discipline_calibration(
+        ["DOWN"], lambda t: series.get(t, []), start, start + timedelta(days=len(name)),
+        step_days=10, horizon_days=21,
+    )
+    assert out["total_verdicts"] > 0
+    assert "REDUCE" in out["by_verdict"]
+    assert out["by_verdict"]["REDUCE"]["down_rate"] >= 0.5
+    assert 0.0 <= out["brier_reduce_trim"] <= 1.0
+
+def test_backtest_calibration_empty_when_no_history():
+    from application.discipline_backtest import backtest_discipline_calibration
+    start = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    out = backtest_discipline_calibration(["X"], lambda t: [], start, start + timedelta(days=10))
+    assert out["total_verdicts"] == 0
+```
+
+- [ ] **Step 2: Run to verify fail**
+
+Run: `pytest tests/test_discipline_backtest.py -v`
+Expected: FAIL `ModuleNotFoundError`
+
+- [ ] **Step 3: Implement**
+
+Create `application/discipline_backtest.py`:
+```python
+"""Historical (point-in-time) calibration of the discipline verdicts. Replays the
+SAME scoring used live across price history and checks whether REDUCE/TRIM flags
+were followed by drops. Cost-basis-INDEPENDENT (disposition overlay excluded — it
+flags YOUR behavior, not a market move), so it is computable on any history. Day-1
+evidence on the flags; NOT proof the rules beat buy-hold (ADR-046) nor the user's
+behavior (forward-tracked only)."""
+
+from __future__ import annotations
+
+import statistics
+from datetime import datetime
+from typing import Any, Callable
+
+from domain.backtest_metrics import daily_returns
+from domain.calibration import brier_score
+from domain.discipline import (
+    Verdict,
+    conditional_vol_signal,
+    grade_position,
+    is_winner_past_stop,
+)
+from domain.trend_rules import atr, chandelier_stop, relative_strength, sma, trend_health
+
+PriceProvider = Callable[[str], list[tuple[datetime, float]]]
+
+_TREND_WINDOW = 200
+_ATR_WINDOW = 22
+_ATR_MULT = 3.0
+_RECENT_VOL = 22
+_BASE_VOL = 252
+_RS_WINDOW = 126
+
+
+def _vol(returns: list[float], window: int) -> float:
+    tail = returns[-window:]
+    return statistics.pstdev(tail) if len(tail) >= 2 else 0.0
+
+
+def backtest_discipline_calibration(
+    tickers: list[str],
+    price_provider: PriceProvider,
+    start: datetime,
+    end: datetime,
+    step_days: int = 21,
+    horizon_days: int = 21,
+    benchmark: str = "SPY",
+) -> dict[str, Any]:
+    """Walk each ticker point-in-time every ~step_days, compute the verdict using ONLY
+    past+current closes, then look horizon_days forward for the realized return.
+    Aggregate per-verdict n/down_rate/mean_fwd_return + a Brier for REDUCE+TRIM
+    (which assert 'down', p=1.0)."""
+    s_naive = start.replace(tzinfo=None)
+    e_naive = end.replace(tzinfo=None)
+    bench = [(d.replace(tzinfo=None), c) for d, c in price_provider(benchmark)]
+    bench_dates = [d for d, _ in bench]
+    bench_closes = [c for _, c in bench]
+
+    by_verdict: dict[str, dict[str, Any]] = {}
+    probs: list[float] = []
+    outcomes: list[int] = []
+    total = 0
+
+    for tkr in tickers:
+        series = [
+            (d.replace(tzinfo=None), c)
+            for d, c in price_provider(tkr)
+            if s_naive <= d.replace(tzinfo=None) <= e_naive
+        ]
+        closes = [c for _, c in series]
+        dates = [d for d, _ in series]
+        n = len(closes)
+        if n < _TREND_WINDOW + horizon_days:
+            continue
+        for i in range(_TREND_WINDOW, n - horizon_days, max(1, step_days)):
+            window = closes[: i + 1]
+            th = trend_health(
+                closes[i], sma(window, _TREND_WINDOW), atr(window, window, window, _ATR_WINDOW)
+            )
+            if th is None:
+                continue
+            atr_v = atr(window, window, window, _ATR_WINDOW)
+            highest = max(window[-_TREND_WINDOW:])
+            stop = chandelier_stop(highest, atr_v, _ATR_MULT) if atr_v else None
+            rets = daily_returns(window)
+            vol_sig = conditional_vol_signal(_vol(rets, _RECENT_VOL), _vol(rets, _BASE_VOL), th)
+            bclose_to_i = [c for d, c in zip(bench_dates, bench_closes) if d <= dates[i]]
+            rs = relative_strength(window, bclose_to_i, _RS_WINDOW) if len(bclose_to_i) > _RS_WINDOW else None
+            market_th = None
+            if len(bclose_to_i) >= _TREND_WINDOW:
+                market_th = trend_health(
+                    bclose_to_i[-1],
+                    sma(bclose_to_i, _TREND_WINDOW),
+                    atr(bclose_to_i, bclose_to_i, bclose_to_i, _ATR_WINDOW),
+                )
+            wps = is_winner_past_stop(th, closes[i], stop)
+            # disposition=False: cost-basis-free historical calibration
+            verdict, _conf, _ab = grade_position(th, vol_sig, rs, False, wps, market_th)
+            fwd = closes[i + horizon_days] / closes[i] - 1.0 if closes[i] > 0 else 0.0
+            b = by_verdict.setdefault(verdict.value, {"n": 0, "down": 0, "sum_fwd": 0.0})
+            b["n"] += 1
+            b["down"] += 1 if fwd < 0 else 0
+            b["sum_fwd"] += fwd
+            total += 1
+            if verdict in (Verdict.REDUCE, Verdict.TRIM):
+                probs.append(1.0)
+                outcomes.append(1 if fwd < 0 else 0)
+
+    for b in by_verdict.values():
+        b["down_rate"] = b["down"] / b["n"] if b["n"] else 0.0
+        b["mean_fwd_return"] = b["sum_fwd"] / b["n"] if b["n"] else 0.0
+
+    return {
+        "total_verdicts": total,
+        "by_verdict": by_verdict,
+        "brier_reduce_trim": brier_score(probs, outcomes),
+        "n_reduce_trim": len(outcomes),
+    }
+```
+
+Add a module-level import in `application/cli.py` (so the CLI test can monkeypatch it):
+```python
+from application.discipline_backtest import backtest_discipline_calibration
+```
+Add the command:
+```python
+@cli.command("backtest-discipline-flags")
+@click.option("--holdings", default="data/personal/holdings-report-2026-06-07.csv", show_default=True)
+@click.option("--horizon", default=21, type=int, show_default=True)
+@click.option("--step", default=21, type=int, show_default=True)
+def backtest_discipline_flags(holdings, horizon, step):
+    """Historical point-in-time calibration of the discipline flags across your holdings (day-1 evidence)."""
+    from datetime import datetime, timezone
+    from application.holdings_reader import read_holdings
+
+    rows = read_holdings(holdings)
+    if not rows:
+        click.echo(f"No holdings at {holdings}.")
+        return
+    tickers = [h.ticker for h in rows]
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+    _cache: dict[str, list] = {}
+    def provider(t):
+        if t not in _cache:
+            _cache[t] = load_price_series(t, start_dt, end_dt)
+        return _cache[t]
+    out = backtest_discipline_calibration(tickers, provider, start_dt, end_dt, step_days=step, horizon_days=horizon)
+    click.echo(f"Historical calibration over {len(tickers)} holdings, {out['total_verdicts']} point-in-time verdicts:")
+    for v in ("REDUCE", "TRIM", "HOLD", "ADD_OK", "REVIEW"):
+        b = out["by_verdict"].get(v)
+        if b:
+            click.echo(f"  {v:8} n={b['n']:4} down_rate={b['down_rate']:.0%} mean_fwd={b['mean_fwd_return']:+.2%}")
+    click.echo(f"Brier(REDUCE+TRIM assert down)={out['brier_reduce_trim']:.3f} over n={out['n_reduce_trim']}")
+    click.echo("NOTE: calibrates flags vs the MARKET on history — NOT proof rules beat buy-hold (ADR-046) nor your behavior (forward-tracked).")
+```
+
+- [ ] **Step 4: Write + run the CLI test** (append to `tests/test_opportunity_cli.py`)
+
+```python
+def test_backtest_discipline_flags_cli(monkeypatch, tmp_path):
+    from click.testing import CliRunner
+    from application.cli import cli
+    import application.cli as climod
+
+    h = tmp_path / "h.csv"
+    h.write_text("Symbol,Quantity,Account Type,Exchange\nDOWN,10,TFSA,NASDAQ\n")
+    monkeypatch.setattr(
+        climod, "backtest_discipline_calibration",
+        lambda *a, **k: {
+            "total_verdicts": 5,
+            "by_verdict": {"REDUCE": {"n": 3, "down": 3, "down_rate": 1.0, "mean_fwd_return": -0.05}},
+            "brier_reduce_trim": 0.1, "n_reduce_trim": 3,
+        },
+        raising=False,
+    )
+    result = CliRunner().invoke(cli, ["backtest-discipline-flags", "--holdings", str(h)])
+    assert result.exit_code == 0, result.output
+    assert "REDUCE" in result.output and "Brier" in result.output
+```
+
+Run: `pytest tests/test_discipline_backtest.py tests/test_opportunity_cli.py -k "calibration or backtest_discipline" -v`
+Expected: PASS. Then `mypy application/discipline_backtest.py application/cli.py` — clean.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add application/discipline_backtest.py application/cli.py tests/test_discipline_backtest.py tests/test_opportunity_cli.py
+git commit -m "feat: backtest-discipline-flags historical point-in-time calibration (day-1 evidence)"
+```
+
+---
+
 ## Phase F — Quality gate + live smoke (after code green)
 
-### Task 13: `make check` + privacy assertion + live smoke
+### Task 14: `make check` + privacy assertion + live smoke
 
 **Files:** none (verification; may touch `.gitignore`)
 
@@ -1510,15 +1753,17 @@ git commit -m "feat: resolve-discipline-flags + holdings-risk-calibrate CLIs"
 - [ ] **Step 3:** Live smoke on the real holdings (writes only gitignored files):
   `python -m application.cli holdings-risk --holdings data/personal/holdings-report-2026-06-07.csv`
   Confirm masked stdout (distribution + book risk, NO tickers) and that `data/personal/holdings_risk_detail.txt` contains the per-ticker table.
-- [ ] **Step 4:** Warm-start sanity: `python -m application.cli holdings-risk-calibrate --ticker SPY` — prints above/below base rates.
-- [ ] **Step 5:** Verify NOTHING personal is staged: `git status --porcelain | grep -i personal` returns empty. Commit only code/tests. The forward-calibration loop (`resolve-discipline-flags`) accrues evidence over the coming weeks; the PROCEED/expand-to-Phase-2 decision is gated on that calibration, not on this build.
+- [ ] **Step 4 (day-1 evidence):** Historical calibration of the flags across the real holdings:
+  `python -m application.cli backtest-discipline-flags --holdings data/personal/holdings-report-2026-06-07.csv`
+  Read the per-verdict down-rates + Brier. This is the immediate evidence the flags discriminate (REDUCE/TRIM should show higher down-rates than HOLD/ADD_OK). Also warm-start sanity: `python -m application.cli holdings-risk-calibrate --ticker SPY`.
+- [ ] **Step 5:** Verify NOTHING personal is staged: `git status --porcelain | grep -i personal` returns empty. Commit only code/tests. **Day-1 state:** the engine RUNS and is USEFUL immediately (graded verdicts via `holdings-risk`) AND validated against history immediately (`backtest-discipline-flags`). The ONLY thing that is forward-only is the personal "beats your behavior" metric (`resolve-discipline-flags`, no trade history exists to backtest it) — that accrues over weeks and gates the Phase-2 decision. KILL clause: if the historical flag calibration AND the forward calibration are both no better than chance, drop this layer honestly.
 
 ---
 
 ## Self-Review (completed by plan author)
 
-**Spec coverage:** graded per-holding verdict → T1-T3,T8; conditional vol-targeting (TSX-safe) → T2,T8; relative-strength/regime + abstention → T1,T3,T8; behavior flags → T3,T8; portfolio concentration → T8 (lightweight per spec §9.1); cost-basis/account context → T7,T8; LLM narrator port + local adapter + graceful fallback → T6,T9; warm-start calibration from history → T4,T12; forward outcome logging + calibration/Brier → T10,T12; daily/hourly report-only cadence → T11 (run via existing scheduler); privacy (gitignored, masked stdout, tickers-only-to-yfinance) → T7,T11,T13; honest validation (forward-track, KILL clause) → T10,T12,T13. Phase-2 screening explicitly excluded. Tax leg excluded (registered accounts).
+**Spec coverage:** graded per-holding verdict → T1-T3,T8; conditional vol-targeting (TSX-safe) → T2,T8; relative-strength/regime + abstention → T1,T3,T8; behavior flags → T3,T8; portfolio concentration → T8 (lightweight per spec §9.1); cost-basis/account context → T7,T8; LLM narrator port + local adapter + graceful fallback → T6,T9; warm-start calibration from history → T4,T12; historical flag calibration (day-1 evidence) → T13; forward outcome logging + calibration/Brier → T10,T12; daily/hourly report-only cadence → T11 (run via existing scheduler); privacy (gitignored, masked stdout, tickers-only-to-yfinance) → T7,T11,T14; honest validation — historical flag calibration → T13, forward personal-behavior track + KILL clause → T10,T12,T14. Phase-2 screening explicitly excluded. Tax leg excluded (registered accounts).
 
 **Placeholder scan:** no TBD/TODO; every code step has complete code; the only behavioral test that relies on a generated series (T8) pins a property (broken-trend name → REDUCE/REVIEW) rather than an exact value.
 
-**Type consistency:** `trend_health/ma_slope/relative_strength` (T1) consumed in T8/T4 with matching signatures; `Verdict` enum (T3) used in models (T5) + use case (T8) + CLI test (T11); `grade_position(th, vol_signal, rs, disposition, winner_past_stop, market_trend_health) -> (Verdict, float, bool)` (T3) called identically in T8; `conditional_vol_signal(recent_vol, baseline_vol, trend_health)` (T2) called in T8; `risk_asymmetry(price, trailing_stop, recent_high)` (T2) returns `downside_to_stop`/`upside_to_recover` consumed in T8; `Holding(ticker, shares, cost_basis, account_type)` (T7) consumed in T8; `PositionRisk`/`PortfolioRisk` (T5) produced in T8 and consumed in T11; `NarratorPort.narrate(context)->str` (T6) implemented by `FakeNarrator` (T6) + `OllamaNarratorAdapter` (T9); `append_assessments`/`read_assessments`/`resolve_flags` (T10) used in T11/T12; `base_rate_from_history(closes, trend_window, atr_window, horizon)` (T4) called in T12; `brier_score` (T4) used in T10. FROZEN params (200/22/3.0) identical in T8 and the calibration CLI (T12).
+**Type consistency:** `trend_health/ma_slope/relative_strength` (T1) consumed in T8/T4 with matching signatures; `Verdict` enum (T3) used in models (T5) + use case (T8) + CLI test (T11); `grade_position(th, vol_signal, rs, disposition, winner_past_stop, market_trend_health) -> (Verdict, float, bool)` (T3) called identically in T8; `conditional_vol_signal(recent_vol, baseline_vol, trend_health)` (T2) called in T8; `risk_asymmetry(price, trailing_stop, recent_high)` (T2) returns `downside_to_stop`/`upside_to_recover` consumed in T8; `Holding(ticker, shares, cost_basis, account_type)` (T7) consumed in T8; `PositionRisk`/`PortfolioRisk` (T5) produced in T8 and consumed in T11; `NarratorPort.narrate(context)->str` (T6) implemented by `FakeNarrator` (T6) + `OllamaNarratorAdapter` (T9); `append_assessments`/`read_assessments`/`resolve_flags` (T10) used in T11/T12; `base_rate_from_history(closes, trend_window, atr_window, horizon)` (T4) called in T12; `brier_score` (T4) used in T10. FROZEN params (200/22/3.0) identical in T8 and the calibration CLI (T12). T13's `backtest_discipline_calibration` reuses `grade_position`/`conditional_vol_signal`/`trend_health`/`relative_strength`/`is_winner_past_stop`/`brier_score` with the identical signatures from T1-T4 (passing `disposition=False` for a cost-basis-free historical replay) and the same FROZEN params; `backtest_discipline_calibration` is imported at module level in `cli.py` so the T13 CLI test can monkeypatch it.

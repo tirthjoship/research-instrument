@@ -756,7 +756,7 @@ A cited deep-research pass settled the realistic retail landscape: profitability
 | Item | Detail |
 |------|--------|
 | Momentum/exit engine | Pure trend/metric domain (`trend_rules`, `backtest_metrics`), `MomentumExitBacktestUseCase`, verdict gate, `validate-momentum-discipline` + `portfolio-verdict` CLIs. Look-ahead bug + cost-charging bug + wrong-gate-statistic bug all caught in Opus review and fixed. Merged to develop (ADR-046, KILL). |
-| Holdings Discipline & Risk Engine | **Spec + plan written, NOT yet implemented.** Spec: `docs/superpowers/specs/2026-06-08-holdings-discipline-risk-engine-design.md`. Plan: `docs/superpowers/plans/2026-06-08-holdings-discipline-risk-engine.md` (13 TDD tasks). Branch `feat/holdings-discipline-risk-engine`. |
+| Holdings Discipline & Risk Engine | **Spec + plan written, NOT yet implemented.** Spec: `docs/superpowers/specs/2026-06-08-holdings-discipline-risk-engine-design.md`. Plan: `docs/superpowers/plans/2026-06-08-holdings-discipline-risk-engine.md` (14 TDD tasks, incl. historical flag-calibration). Branch `feat/holdings-discipline-risk-engine`. |
 
 ### Holdings Discipline & Risk Engine — design summary
 
@@ -764,7 +764,7 @@ Graded per-holding verdict (REDUCE/TRIM/REVIEW/HOLD/ADD_OK) + confidence, **abst
 
 ### Next action (fresh session)
 
-Execute the 13-task plan via **subagent-driven-development** (Sonnet implementers, Opus reviewers). Then `make check` → live smoke on `data/personal/holdings-report-2026-06-07.csv` (gitignored) → use ~2–4 weeks → `resolve-discipline-flags` calibration gates trust + the Phase-2 decision. KILL clause if flags are no better than chance.
+Execute the 14-task plan via **subagent-driven-development** (Sonnet implementers, Opus reviewers). Then `make check` → live smoke (`holdings-risk`) + **day-1 historical flag calibration (`backtest-discipline-flags`)** on `data/personal/holdings-report-2026-06-07.csv` (gitignored). The engine RUNS and is validated against history on day 1; only the personal "beats-your-behavior" metric is forward-tracked (`resolve-discipline-flags`, ~2–4 wks) and gates the Phase-2 decision. KILL clause if BOTH historical and forward calibration are no better than chance.
 
 ### ADRs added (040–047)
 
