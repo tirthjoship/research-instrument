@@ -767,11 +767,22 @@ A cited deep-research pass settled the realistic retail landscape: profitability
 
 Graded per-holding verdict (REDUCE/TRIM/REVIEW/HOLD/ADD_OK) + confidence, **abstains when signals conflict**. Pure domain scorers (trend_health, conditional_vol_signal, risk_asymmetry, behavior detectors, grade_position, base_rate_from_history, brier). `HoldingsRiskAssessmentUseCase`. `NarratorPort` + **local Ollama narrator** (graceful template fallback; narrate-never-pick; cloud-swappable for Phase 2). Forward-calibration log + `resolve-discipline-flags`. Privacy: holdings gitignored, masked stdout, only tickers → yfinance. **Tax-loss leg dropped** (user 65/66 registered accounts). Scope: v1 = holdings; **Phase 2 (factor screening) deferred**, gated on v1 calibration.
 
-### Next action — accumulate the forward-gate sample, then let it decide
+### Direction set (2026-06-09, ADR-052) — Deterministic Risk/CRO Engine
+
+Alpha hunt **formally closed**: 6 falsifications + this session's live `weekly-brief` dogfood (discipline side rendered real output; evidence-screen side n=0/abstained; also exposed a stale screen universe — delisted SIVB/PXD/SPLK/WBA/WRK + `.TO` names) + independent ChatGPT **and** Gemini reviews on honest ground-truth prompts that **both converged** with our analysis — "deterministic risk/behavior is the ceiling; your code becomes your CRO." Product = honest CRO (risk + behavior-gap closure + abstaining RESEARCH_ONLY screen + discipline), not a market-beater.
+
+**Execution order (next session starts Unit A):**
+- **Unit A — Portfolio Risk pillar (CRO):** macro-beta scrubber (Ridge-regress holdings on TLT/UUP/USO/XLE/SPY → hidden macro bet) → cluster exposure caps (reuse `correlation_analyzer` + `config/relationships/supply_chain.yaml` + networkx → hidden concentration) → fold into `weekly-brief` + fix the stale universe.
+- **Unit B — sub-$1B non-routine insider-cluster IC falsification** (SEC Form-4, market-cap-tercile split, pre-registered, killable — the only idea with a structural non-arbitrage argument; LOW odds; last sanctioned predictive swing).
+- **Unit C — behavior plumbing:** anti-overtrade throttle + cash-buffer/deployment policy, folded into discipline.
+
+**Caveats next session MUST know:** 65/66 accounts REGISTERED → tax-loss/wash-sale ideas MOOT; the disposition-auditor both external models proposed is **already built** (`resolve-discipline-flags` + the ADR-048 gate — don't rebuild); `domain/brief.py` already fuses 5 pillars (extend, don't rebuild); no FinBERT/LangChain/Neo4j/paid data; flow = brainstorm→spec→plan→Sonnet build→Opus verify.
+
+### Background — the forward gate accrues, then decides
 
 The terminal bet is the ADR-048 discipline REDUCE-flag forward gate; the ADR-051 harness made its one requirement visible: the REDUCE sample must span ≥3 distinct `as_of` dates over ≥10 days before the LOCKED thresholds are evaluated (else `INCONCLUSIVE_THIN_DATES`). As of 2026-06-09 the log has 2 distinct dates (June 8/9) → THIN. **Weekly Saturday review** (`scripts/discipline_weekly_review.sh`, launchd `com.tirthjoshi.stockrec.discipline-weekly`) logs + resolves + reports each Saturday; Saturdays June 13 + 20 reach READY. Each Saturday: read `data/reports/discipline_weekly_review.log` — how flagged names reacted, does the approach need revision. **Build nothing new** — the gate result decides the terminal shape (discipline tool validated vs the honest terminal state of research + abstaining screen + discipline-without-proven-edge). Phase C/D stay gated.
 
-### ADRs added (040–051)
+### ADRs added (040–052)
 
 | ADR | Decision |
 |-----|----------|
@@ -787,3 +798,4 @@ The terminal bet is the ADR-048 discipline REDUCE-flag forward gate; the ADR-051
 | 049 | Decision-support engine consolidation (Phase A–D, evidence-screen + weekly-brief) |
 | 050 | Trend-following sleeve verdict — INCONCLUSIVE (real diversifier, under the bar) |
 | 051 | Calibration-readiness — date-diversity precondition for the ADR-048 gate (thresholds unchanged) |
+| 052 | Course of action — deterministic Risk/CRO engine; alpha hunt closed (3-model convergence); execution order A→B→C |
