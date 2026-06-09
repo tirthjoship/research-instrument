@@ -127,7 +127,6 @@ def test_build_flags_systematic_dominant():
     flags = build_flags(
         net_beta_by_factor={"SPY": 0.2, "TLT": 0.0},
         systematic_share=0.72,
-        per_holding=[],
         factor_move_std={"SPY": 0.01, "TLT": 0.01},
         book_drift_by_factor={"SPY": 0.0, "TLT": 0.0},
         beta_headline_by_factor={"SPY": 0.2, "TLT": 0.0},
@@ -143,7 +142,6 @@ def test_build_flags_factor_dominance_and_drift():
     flags = build_flags(
         net_beta_by_factor={"TLT": 2.0},
         systematic_share=0.30,
-        per_holding=[],
         factor_move_std={"TLT": 0.20},
         book_drift_by_factor={"TLT": 0.6},
         beta_headline_by_factor={"TLT": 1.0},
@@ -290,7 +288,6 @@ def test_drift_suppressed_for_negligible_beta():
     flags = build_flags(
         net_beta_by_factor={"UUP": 0.03},
         systematic_share=0.30,
-        per_holding=[],
         factor_move_std={"UUP": 0.01},
         book_drift_by_factor={"UUP": 0.17},  # recent = 0.03 + 0.17 = 0.20
         beta_headline_by_factor={"UUP": 0.03},
@@ -306,7 +303,6 @@ def test_drift_fires_for_material_beta():
     flags = build_flags(
         net_beta_by_factor={"TLT": 1.0},
         systematic_share=0.30,
-        per_holding=[],
         factor_move_std={"TLT": 0.01},
         book_drift_by_factor={"TLT": 0.6},  # recent = 1.6, ratio 0.6 > 0.5
         beta_headline_by_factor={"TLT": 1.0},

@@ -90,7 +90,6 @@ def build_flags(
     *,
     net_beta_by_factor: dict[str, float],
     systematic_share: float,
-    per_holding: list[HoldingMacroExposure],
     factor_move_std: dict[str, float],
     book_drift_by_factor: dict[str, float],
     beta_headline_by_factor: dict[str, float],
@@ -133,7 +132,7 @@ def build_flags(
 
     for f, drift in book_drift_by_factor.items():
         headline = beta_headline_by_factor.get(f, 0.0)
-        beta_recent = headline + drift  # noqa: F841  (used for gate documentation)
+        # Negligible 1-year exposure → drift ratio is noise (denominator ~0); skip.
         if abs(headline) < _MIN_DRIFT_BETA:
             continue
         denom = max(abs(headline), 1e-6)
@@ -175,7 +174,6 @@ def aggregate_macro_exposure(
     flags = build_flags(
         net_beta_by_factor=nb,
         systematic_share=share,
-        per_holding=per_holding,
         factor_move_std=factor_move_std,
         book_drift_by_factor=book_drift_by_factor,
         beta_headline_by_factor=beta_headline_by_factor,
