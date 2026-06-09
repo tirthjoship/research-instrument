@@ -2549,5 +2549,104 @@ def backtest_screen(report_dir: str) -> None:
     click.echo(f"Report written to: {out_file}")
 
 
+@cli.command("backtest-trend-sleeve")
+@click.option("--start", default="2008-01-01", show_default=True)
+@click.option("--end", default="2026-01-01", show_default=True)
+@click.option("--report-dir", default="data/reports/", show_default=True)
+def backtest_trend_sleeve(start: str, end: str, report_dir: str) -> None:
+    """Pre-registered trend-following sleeve falsification test (spec 2026-06-08).
+
+    80% SPY + 20% 12-mo time-series-momentum sleeve (7 liquid ETFs, long/flat,
+    inverse-vol). LOCKED gate: PASS if blended Sharpe-diff CI excludes 0 OR max
+    drawdown cut >=25% net of cost; KILL if strictly worse; else INCONCLUSIVE.
+    Backtest only — no product. Honest non-claim: diversifier sleeve, not alpha.
+    """
+    import json
+    from datetime import date, datetime, timedelta
+
+    from application import trend_sleeve_backtest as tsb
+    from application.trend_sleeve_backtest import UNIVERSE, TrendSleeveBacktestUseCase
+
+    start_dt = datetime.fromisoformat(start)
+    end_dt = datetime.fromisoformat(end)
+
+    # Month-end dates (28th as a stable in-month sentinel), monthly cadence.
+    months: list[datetime] = []
+    d = start_dt
+    while d <= end_dt:
+        months.append(datetime(d.year, d.month, 28))
+        d = datetime(d.year + (d.month // 12), (d.month % 12) + 1, 1)
+
+    price_start = start_dt - timedelta(days=420)  # 12-mo lookback + buffer
+    cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def _prices(ticker: str) -> list[tuple[datetime, float]]:
+        if ticker not in cache:
+            # Reference via the module so tests can patch load_price_series.
+            cache[ticker] = tsb.load_price_series(ticker, price_start, end_dt)
+        return cache[ticker]
+
+    click.echo(f"Loading {len(UNIVERSE)} ETFs ({', '.join(UNIVERSE)})...")
+    uc = TrendSleeveBacktestUseCase(price_series_fn=_prices)
+    v = uc.execute(months)
+
+    as_of = date.today().isoformat()
+    out_dir = Path(report_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = out_dir / f"trend_sleeve_{as_of}.json"
+    report = {
+        "as_of": as_of,
+        "start": start,
+        "end": end,
+        "n_months": v.n_months,
+        "decision": v.decision,
+        "sharpe_spy": v.sharpe_spy,
+        "sharpe_sleeve": v.sharpe_sleeve,
+        "sharpe_blended": v.sharpe_blended,
+        "maxdd_spy": v.maxdd_spy,
+        "maxdd_sleeve": v.maxdd_sleeve,
+        "maxdd_blended": v.maxdd_blended,
+        "cagr_spy": v.cagr_spy,
+        "cagr_sleeve": v.cagr_sleeve,
+        "cagr_blended": v.cagr_blended,
+        "sharpe_diff_point": v.sharpe_diff_point,
+        "sharpe_diff_ci_low": v.sharpe_diff_ci_low,
+        "sharpe_diff_ci_high": v.sharpe_diff_ci_high,
+        "dd_reduction": v.dd_reduction,
+        "sharpe_blended_6040": v.sharpe_blended_6040,
+        "maxdd_blended_6040": v.maxdd_blended_6040,
+        "claim": "diversifier sleeve (risk control), NOT alpha — see spec 2026-06-08",
+    }
+    out_file.write_text(json.dumps(report, indent=2))
+
+    click.echo(f"\nTrend-Following Sleeve Backtest ({as_of})  n_months={v.n_months}")
+    click.echo(
+        f"  SPY-core    : Sharpe {v.sharpe_spy:+.3f}  maxDD {v.maxdd_spy:+.1%}"
+        f"  CAGR {v.cagr_spy:+.1%}"
+    )
+    click.echo(
+        f"  sleeve      : Sharpe {v.sharpe_sleeve:+.3f}  maxDD {v.maxdd_sleeve:+.1%}"
+        f"  CAGR {v.cagr_sleeve:+.1%}"
+    )
+    click.echo(
+        f"  blended80/20: Sharpe {v.sharpe_blended:+.3f}  maxDD {v.maxdd_blended:+.1%}"
+        f"  CAGR {v.cagr_blended:+.1%}"
+    )
+    sd_ci = (
+        f"[{v.sharpe_diff_ci_low}, {v.sharpe_diff_ci_high}]"
+        if v.sharpe_diff_ci_low is not None
+        else "n/a"
+    )
+    click.echo(f"  Sharpe-diff (blended-SPY): {v.sharpe_diff_point}  CI={sd_ci}")
+    click.echo(f"  drawdown reduction: {v.dd_reduction:+.1%}  (gate >= 25%)")
+    click.echo(
+        f"  [sensitivity 60/40, not gated] Sharpe {v.sharpe_blended_6040}"
+        f"  maxDD {v.maxdd_blended_6040}"
+    )
+    click.echo(f"  VERDICT: {v.decision}")
+    click.echo("  (diversifier sleeve = risk control, NOT alpha)")
+    click.echo(f"Report -> {out_file}")
+
+
 if __name__ == "__main__":
     cli()
