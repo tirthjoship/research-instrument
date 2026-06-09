@@ -438,3 +438,58 @@ class PortfolioRisk:
     broken_trend_share: float
     top_concentration: float
     verdict_counts: dict[str, int]
+
+
+# --- Macro-beta scrubber (Unit A, ADR-052) -------------------------------
+
+
+@dataclass(frozen=True)
+class MacroFactorBeta:
+    """Per-factor sensitivity for one holding or the book.
+
+    beta_headline: 252-day window. beta_recent: 63-day window.
+    drift = beta_recent - beta_headline (positive = exposure rising).
+    """
+
+    factor: str
+    beta_headline: float
+    beta_recent: float
+    drift: float
+
+
+@dataclass(frozen=True)
+class HoldingMacroExposure:
+    """One holding's macro betas plus its systematic share (headline R^2)."""
+
+    ticker: str
+    weight: float  # fraction of covered book market value
+    betas: tuple[MacroFactorBeta, ...]
+    r_squared: float
+
+
+@dataclass(frozen=True)
+class MacroBetaFlag:
+    """A surfaced CRO flag. value/threshold are heuristic dials, not edges."""
+
+    kind: str  # "SYSTEMATIC_DOMINANT" | "FACTOR_DOMINANCE" | "DRIFT"
+    factor: str | None
+    message: str
+    value: float
+    threshold: float
+
+
+@dataclass(frozen=True)
+class BookMacroExposure:
+    """Book-level macro exposure summary for the weekly brief."""
+
+    as_of: str
+    factors: tuple[str, ...]
+    net_beta_by_factor: dict[str, float]  # dollar-weighted Sum w_i * beta_i
+    systematic_share: float  # book-level R^2 (macro-explained variance)
+    idiosyncratic_share: float  # 1 - systematic_share
+    dominant_factor: str | None
+    flags: tuple[MacroBetaFlag, ...]
+    holdings: tuple[HoldingMacroExposure, ...]
+    coverage_holdings: int
+    total_holdings: int
+    coverage_value_frac: float
