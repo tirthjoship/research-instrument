@@ -730,11 +730,11 @@ The product is an **honest evidence-aggregator + calibrated-abstention tool**: s
 
 ---
 
-## Leg-2 / Leg-3 Update (2026-06-08) — Alpha-Hunt Complete, Pivot to Discipline Tool
+## Leg-2 / Leg-3 Update (2026-06-09) — Alpha-Hunt Complete, Discipline is the Terminal Bet
 
 The sections above (through ADR-039) are historical. This section is the current state.
 
-### Four pre-registered falsifications → the edge isn't there
+### Six pre-registered falsifications → the edge isn't there
 
 | ADR | Thesis tested | Verdict |
 |-----|---------------|---------|
@@ -742,8 +742,10 @@ The sections above (through ADR-039) are historical. This section is the current
 | 043 | Conviction dimensions discriminate | 6/8 dead/degenerate |
 | 044 | Intensity-divergence has cross-sectional IC | No IC any horizon (clean 430-ticker universe) |
 | 046 | Momentum + trailing-exit beats buy-hold risk-adjusted | KILL — Sharpe-diff CI spans 0; drawdown-cut real (40%) |
+| 049 | Evidence-screen momentum-leg has cross-sectional IC | INCONCLUSIVE — IC 0.0107, CI spans 0; screen ships RESEARCH_ONLY |
+| 050 | 80/20 SPY + TSMOM trend sleeve diversifies (risk, not alpha) | INCONCLUSIVE — Sharpe-diff CI [−0.001, +0.058] spans 0; DD-cut 17% < 25% gate |
 
-All four converge: **semi-strong market efficiency holds for retail-accessible public signals.** A 2026-06-08 forensic data-layer audit confirmed **data is NOT the bottleneck** — the cleanest data (yfinance prices in ADR-046; clean 83% Wikipedia in ADR-044) killed hardest; dead/noisy sources (StockTwits, GDELT, Trends) were never load-bearing.
+All six converge: **semi-strong market efficiency holds for retail-accessible public signals.** Trend-following (ADR-050) is a real, literature-consistent diversifier (it cut the GFC drawdown) but did not clear our own pre-registered bar at 20% — OFF the table as a validated feature; the discipline engine is the terminal bet. A 2026-06-08 forensic data-layer audit confirmed **data is NOT the bottleneck** — the cleanest data (yfinance prices in ADR-046; clean 83% Wikipedia in ADR-044) killed hardest; dead/noisy sources (StockTwits, GDELT, Trends) were never load-bearing.
 
 ### Pivot (ADR-045 → ADR-047): predict → discipline
 
@@ -756,17 +758,20 @@ A cited deep-research pass settled the realistic retail landscape: profitability
 | Item | Detail |
 |------|--------|
 | Momentum/exit engine | Pure trend/metric domain (`trend_rules`, `backtest_metrics`), `MomentumExitBacktestUseCase`, verdict gate, `validate-momentum-discipline` + `portfolio-verdict` CLIs. Look-ahead bug + cost-charging bug + wrong-gate-statistic bug all caught in Opus review and fixed. Merged to develop (ADR-046, KILL). |
-| Holdings Discipline & Risk Engine | **Spec + plan written, NOT yet implemented.** Spec: `docs/superpowers/specs/2026-06-08-holdings-discipline-risk-engine-design.md`. Plan: `docs/superpowers/plans/2026-06-08-holdings-discipline-risk-engine.md` (14 TDD tasks, incl. historical flag-calibration). Branch `feat/holdings-discipline-risk-engine`. |
+| Holdings Discipline & Risk Engine | **SHIPPED + MERGED to main (ADR-047).** Graded REDUCE/TRIM/REVIEW/HOLD/ADD_OK verdict + confidence + abstain-when-mixed; pure domain scorers; `HoldingsRiskAssessmentUseCase`; local Ollama narrator (template fallback); forward-calibration log + `resolve-discipline-flags`; historical `backtest-discipline-flags`. Live (66 holdings): REDUCE discriminates in-sample (down-rate 58%, fwd −1.71%; TRIM miscalibrated winner-trim). 1284 tests. ADR-048 forward gate LOCKED (down-rate≥55% AND brier≤0.45 AND n≥30, 21d). |
+| Engine consolidation (ADR-049) | Two-sided forward-accountable decision-support engine. Phase A evidence-screen MVP shipped RESEARCH_ONLY (IC INCONCLUSIVE); Phase B weekly-brief shipped (regime classifier + masked brief + `weekly-brief` CLI). 4 phase specs (A–D); D conditional on A/C/discipline-July-gate. |
+| Trend-following sleeve (ADR-050) | Pre-registered falsification of 80/20 SPY + 12-mo TSMOM diversifier. Pure `trend_following.py` + `TrendSleeveBacktestUseCase` + `backtest-trend-sleeve`. Live 2008–2026: blended Sharpe 0.780 vs SPY 0.748, maxDD −38.2% vs −46.1%; **INCONCLUSIVE** (CI spans 0, DD-cut 17%<25%). Off the table. |
+| Calibration-readiness harness (ADR-051) | Protects the ADR-048 July gate from a single-`as_of` confound. Pure `calibration_readiness.py` + `discipline-calibration-status` CLI + symmetric date-diversity guard (`INCONCLUSIVE_THIN_DATES` until REDUCE sample spans ≥3 dates / ≥10 days, then LOCKED thresholds) + weekly-Saturday review (`scripts/discipline_weekly_review.sh`). No threshold changed. 1417 tests, 93.96% cov. |
 
 ### Holdings Discipline & Risk Engine — design summary
 
 Graded per-holding verdict (REDUCE/TRIM/REVIEW/HOLD/ADD_OK) + confidence, **abstains when signals conflict**. Pure domain scorers (trend_health, conditional_vol_signal, risk_asymmetry, behavior detectors, grade_position, base_rate_from_history, brier). `HoldingsRiskAssessmentUseCase`. `NarratorPort` + **local Ollama narrator** (graceful template fallback; narrate-never-pick; cloud-swappable for Phase 2). Forward-calibration log + `resolve-discipline-flags`. Privacy: holdings gitignored, masked stdout, only tickers → yfinance. **Tax-loss leg dropped** (user 65/66 registered accounts). Scope: v1 = holdings; **Phase 2 (factor screening) deferred**, gated on v1 calibration.
 
-### Next action (fresh session)
+### Next action — accumulate the forward-gate sample, then let it decide
 
-Execute the 14-task plan via **subagent-driven-development** (Sonnet implementers, Opus reviewers). Then `make check` → live smoke (`holdings-risk`) + **day-1 historical flag calibration (`backtest-discipline-flags`)** on `data/personal/holdings-report-2026-06-07.csv` (gitignored). The engine RUNS and is validated against history on day 1; only the personal "beats-your-behavior" metric is forward-tracked (`resolve-discipline-flags`, ~2–4 wks) and gates the Phase-2 decision. KILL clause if BOTH historical and forward calibration are no better than chance.
+The terminal bet is the ADR-048 discipline REDUCE-flag forward gate; the ADR-051 harness made its one requirement visible: the REDUCE sample must span ≥3 distinct `as_of` dates over ≥10 days before the LOCKED thresholds are evaluated (else `INCONCLUSIVE_THIN_DATES`). As of 2026-06-09 the log has 2 distinct dates (June 8/9) → THIN. **Weekly Saturday review** (`scripts/discipline_weekly_review.sh`, launchd `com.tirthjoshi.stockrec.discipline-weekly`) logs + resolves + reports each Saturday; Saturdays June 13 + 20 reach READY. Each Saturday: read `data/reports/discipline_weekly_review.log` — how flagged names reacted, does the approach need revision. **Build nothing new** — the gate result decides the terminal shape (discipline tool validated vs the honest terminal state of research + abstaining screen + discipline-without-proven-edge). Phase C/D stay gated.
 
-### ADRs added (040–047)
+### ADRs added (040–051)
 
 | ADR | Decision |
 |-----|----------|
@@ -778,3 +783,7 @@ Execute the 14-task plan via **subagent-driven-development** (Sonnet implementer
 | 045 | Pivot: return-prediction → exit-discipline |
 | 046 | Momentum/exit Phase-1 verdict — KILL (drawdown-cut real) |
 | 047 | Alpha-hunt complete → honest discipline/risk decision-support tool |
+| 048 | Discipline forward-calibration gate (LOCKED: down-rate≥55% AND brier≤0.45 AND n≥30) |
+| 049 | Decision-support engine consolidation (Phase A–D, evidence-screen + weekly-brief) |
+| 050 | Trend-following sleeve verdict — INCONCLUSIVE (real diversifier, under the bar) |
+| 051 | Calibration-readiness — date-diversity precondition for the ADR-048 gate (thresholds unchanged) |
