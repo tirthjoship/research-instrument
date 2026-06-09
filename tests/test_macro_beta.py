@@ -23,7 +23,12 @@ def _d(day: int) -> datetime:
     return datetime(2026, 1, day)
 
 
-def _hme(ticker, weight, betas, r2):  # type: ignore[no-untyped-def]
+def _hme(
+    ticker: str,
+    weight: float,
+    betas: list[tuple[str, float, float]],
+    r2: float,
+) -> HoldingMacroExposure:
     return HoldingMacroExposure(
         ticker=ticker,
         weight=weight,
