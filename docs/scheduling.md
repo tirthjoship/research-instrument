@@ -249,6 +249,99 @@ wanted later, de-duplicate to one flag per name per non-overlapping window befor
 
 ---
 
+## Discipline forward-calibration daily logging (ADR-048/051)
+
+The opportunity `daily-cycle` plist above does NOT log discipline verdicts. For the
+ADR-048 REDUCE-flag forward gate you must run `holdings-risk` itself daily so the
+forward log accrues date-diverse `as_of` snapshots. Save as
+`~/Library/LaunchAgents/com.tirthjoshi.stockrec.discipline-daily.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.tirthjoshi.stockrec.discipline-daily</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/scripts/discipline_daily.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>DISCIPLINE_PYTHON</key>
+    <string>/PATH/TO/venv/bin/python</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+  <key>StandardOutPath</key>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/discipline_daily.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/discipline_daily.log</string>
+</dict>
+</plist>
+```
+
+Load: `launchctl load -w ~/Library/LaunchAgents/com.tirthjoshi.stockrec.discipline-daily.plist`
+
+**Laptop sleep:** launchd will not fire while asleep. Keep the machine awake at the
+scheduled time (`caffeinate -i` during a known-awake window) or run `pmset schedule
+wake` before 18:00. Verify the cron is alive with
+`python -m application.cli discipline-calibration-status` — the "last logged … days
+ago" line is your dead-cron detector.
+
+## Discipline WEEKLY review (Saturdays) — log + resolve + readiness (ADR-048/051)
+
+Preferred cadence over the bare daily logger: a single Saturday job that (1) logs the
+week's snapshot, (2) forward-scores any flags whose 21-day horizon elapsed, and (3)
+prints readiness — so each Saturday you see how the week's flagged names reacted and
+whether the approach needs revision. Runs `scripts/discipline_weekly_review.sh`
+(appends a dated block to `data/reports/discipline_weekly_review.log`). Save as
+`~/Library/LaunchAgents/com.tirthjoshi.stockrec.discipline-weekly.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.tirthjoshi.stockrec.discipline-weekly</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/scripts/discipline_weekly_review.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>DISCIPLINE_PYTHON</key>
+    <string>/PATH/TO/venv/bin/python</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>6</integer>
+    <key>Hour</key><integer>9</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/discipline_weekly_review.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/discipline_weekly_review.log</string>
+</dict>
+</plist>
+```
+
+Load: `launchctl load -w ~/Library/LaunchAgents/com.tirthjoshi.stockrec.discipline-weekly.plist`
+(launchd Weekday 6 = Saturday). Smoke-test once now: `bash scripts/discipline_weekly_review.sh`.
+
+**Diversity note:** weekly-only logging banks ~1 as_of date per Saturday. With the
+existing 2026-06-08/09 snapshots already logged, Saturdays 2026-06-13 and 2026-06-20
+give ≥3 distinct dates spanning ≥10 days — enough to clear the ADR-051 date-diversity
+precondition before a mid-July resolution. If a Saturday is missed (laptop asleep), run
+`scripts/discipline_weekly_review.sh` manually so the date isn't skipped.
+
+---
+
 ## ADR-007 deviation note
 
 ADR-007 chose local SQLite as the persistence layer to keep the project self-contained and avoid

@@ -20,8 +20,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
+        "Weekly Brief",
         "Today's Opportunities",
         "Watchlist",
         "My Portfolio",
@@ -31,6 +32,10 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     ]
 )
 
+with tab0:
+    from adapters.visualization.tabs.weekly_brief import render as render_brief
+
+    render_brief()
 with tab1:
     from adapters.visualization.tabs.command_center import render as render_opps
 

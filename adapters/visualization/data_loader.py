@@ -284,3 +284,11 @@ def load_scan_timestamp(reports_dir: str = "data/reports") -> str | None:
         return dt.strftime("%b %d, %Y at %I:%M %p")
     except ValueError:
         return None
+
+
+def load_weekly_brief(path: str = "data/personal/weekly_brief.md") -> str | None:
+    """Read the generated weekly-brief markdown; None if not yet generated."""
+    p = Path(path)
+    if not p.exists():
+        return None
+    return p.read_text()
