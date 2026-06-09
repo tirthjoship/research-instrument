@@ -33,3 +33,23 @@ def test_resolve_flags_cli_thin_dates_label(tmp_path, monkeypatch):  # type: ign
     result = CliRunner().invoke(cli_mod.cli, ["resolve-discipline-flags", "--log", log])
     assert result.exit_code == 0, result.output
     assert "INCONCLUSIVE_THIN_DATES" in result.output
+
+
+def test_calibration_status_reports_thin_single_date(tmp_path):  # type: ignore[no-untyped-def]
+    log = _log(tmp_path, [datetime(2026, 6, 8, tzinfo=timezone.utc).isoformat()] * 46)
+    result = CliRunner().invoke(
+        cli_mod.cli,
+        [
+            "discipline-calibration-status",
+            "--log",
+            log,
+            "--today",
+            "2026-06-09",
+            "--gate-date",
+            "2026-07-15",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "VERDICT: THIN" in result.output
+    assert "distinct" in result.output.lower()
+    assert "AAA" not in result.output  # masked: no tickers on stdout

@@ -2176,6 +2176,78 @@ def resolve_discipline_flags(log: str, horizon: int) -> None:
     )
 
 
+@cli.command("discipline-calibration-status")
+@click.option("--log", default="data/personal/discipline_log.jsonl", show_default=True)
+@click.option("--horizon", default=21, type=int, show_default=True)
+@click.option(
+    "--gate-date",
+    default="2026-07-15",
+    show_default=True,
+    help="Pre-committed gate resolution date (ADR-048 window).",
+)
+@click.option("--today", default=None, help="Override today (ISO date) for projection.")
+def discipline_calibration_status(
+    log: str, horizon: int, gate_date: str, today: str | None
+) -> None:
+    """Is the discipline forward-gate sample date-diverse enough to resolve honestly?
+
+    Masked (no tickers). Reports verdict counts, REDUCE as_of diversity, resolvable
+    vs pending, log freshness (dead-cron detector), and a READY/THIN readiness
+    projection to the gate date. Changes no ADR-048 threshold (see ADR-051).
+    """
+    from datetime import date, datetime, timezone
+
+    from application.calibration_readiness import (
+        as_of_spread,
+        freshness,
+        readiness,
+        resolvable_split,
+    )
+    from application.discipline_log import read_assessments
+
+    rows = read_assessments(log)
+    if not rows:
+        click.echo(f"No logged assessments at {log}.")
+        return
+    today_d = date.fromisoformat(today) if today else datetime.now(timezone.utc).date()
+    gate_d = date.fromisoformat(gate_date)
+
+    counts: dict[str, int] = {}
+    for r in rows:
+        v = str(r.get("verdict", "?"))
+        counts[v] = counts.get(v, 0) + 1
+    reduce_rows = [r for r in rows if r.get("verdict") == "REDUCE"]
+    sp = as_of_spread(reduce_rows)
+    split = resolvable_split(rows, today_d, horizon)
+    fresh = freshness(rows, today_d)
+    rep = readiness(rows, today_d, horizon, gate_d)
+
+    click.echo(f"Discipline Calibration Readiness (today {today_d.isoformat()})")
+    click.echo(
+        f"  logged: {len(rows)}  ("
+        + " / ".join(f"{k} {counts[k]}" for k in sorted(counts))
+        + ")"
+    )
+    click.echo(
+        f"  REDUCE as_of dates: {sp['distinct_dates']} distinct, "
+        f"span {sp['span_days']}d ({sp['min_date']} -> {sp['max_date']})"
+    )
+    click.echo(
+        f"  REDUCE resolvable now: {split['resolvable']}  "
+        f"pending: {split['pending']}  (horizon {horizon}d)"
+    )
+    click.echo(
+        f"  last logged: {sp['max_date'] or 'n/a'}  "
+        f"({fresh if fresh is not None else 'n/a'} days ago)"
+    )
+    click.echo(f"  projected n at gate {gate_d.isoformat()}: {rep.projected_n_at_gate}")
+    short = ("  -- shortfalls: " + "; ".join(rep.shortfalls)) if rep.shortfalls else ""
+    click.echo(f"  VERDICT: {rep.verdict}{short}")
+    click.echo(
+        "  (gate thresholds stay locked per ADR-048/051; log more dates if THIN)"
+    )
+
+
 @cli.command("holdings-risk-calibrate")
 @click.option(
     "--ticker", required=True, help="Symbol to compute history base rates for"
