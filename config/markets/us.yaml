@@ -36,6 +36,21 @@ sector_etfs:
   Real Estate: "XLRE"
   Communication Services: "XLC"
 
+# Macro-beta scrubber (Unit A, ADR-052). Independent of macro_symbols above:
+# those are yield/index LEVELS; these are tradeable ETFs whose daily RETURNS are
+# the factors. Thresholds are heuristic surfacing dials, NOT validated edges.
+macro_beta:
+  factors: [SPY, TLT, UUP, XLE]   # market / rates / dollar / energy-equity
+  headline_window_days: 252       # ~1 year
+  drift_window_days: 63           # ~1 quarter
+  # NOTE: ridge_alpha is NOT a literal sklearn alpha. The estimator scales it by
+  # mean factor-return variance, so it is a scale-invariant relative shrinkage
+  # fraction (0.2 = light shrinkage). Betas remain raw, dollar-interpretable.
+  ridge_alpha: 0.2
+  systematic_share_threshold: 0.60
+  factor_dominance_threshold: 0.25
+  drift_threshold: 0.50
+
 features:
   price_outlier_cap: 0.30
   volume_outlier_threshold: 20
