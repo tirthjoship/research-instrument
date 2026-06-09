@@ -2763,7 +2763,9 @@ def _build_weekly_brief(
             return (None, 0, "NO-LOG")
         res = resolve_flags(logged, _price_provider, horizon_days=21)
         n = int(res.get("resolved", 0))
-        dr = res.get("down_rate_on_reduce")
+        # resolve_flags returns 0.0 (not None) when no REDUCE flags resolved; restore
+        # the "None = no data" semantics so the brief renders down-rate "n/a", not "0%".
+        dr = res.get("down_rate_on_reduce") if n > 0 else None
         brier = res.get("brier", 1.0)
         gate = (
             "PROCEED"
