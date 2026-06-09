@@ -85,6 +85,34 @@ def test_use_case_all_factors_fail_returns_none():
     assert book is None
 
 
+def test_coverage_value_frac_below_one_when_holding_unpriced():
+    start = datetime(2025, 1, 1)
+    n = 320
+    series = {
+        "SPY": _trend(400, 0.5, n, start),
+        "TLT": _trend(90, -0.05, n, start),
+        "UUP": _trend(28, 0.0, n, start),
+        "XLE": _trend(85, 0.1, n, start),
+        "A": _trend(100, 0.4, n, start),
+        # "DEAD" has no series -> unpriced, must drag coverage below 100%
+    }
+
+    class _HC:
+        def __init__(self, ticker, shares, cost_basis):
+            self.ticker = ticker
+            self.shares = shares
+            self.cost_basis = cost_basis
+
+    uc = _make_uc(series)
+    book = uc.execute(
+        [_HC("A", 10, 50.0), _HC("DEAD", 100, 30.0)], datetime(2026, 1, 1)
+    )
+    assert book is not None
+    assert book.coverage_holdings == 1
+    assert book.total_holdings == 2
+    assert book.coverage_value_frac < 1.0  # DEAD's cost-basis value is in denominator
+
+
 def test_weekly_brief_use_case_accepts_macro_fn():
     import inspect
 

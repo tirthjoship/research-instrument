@@ -284,6 +284,39 @@ def test_brief_renders_macro_section():
     assert "NVDA" not in masked
 
 
+def test_drift_suppressed_for_negligible_beta():
+    # Huge drift RATIO but tiny absolute exposure (headline 0.03, recent ~0.20 drift):
+    # must NOT fire DRIFT — that's the UUP-562% alarm-fatigue case.
+    flags = build_flags(
+        net_beta_by_factor={"UUP": 0.03},
+        systematic_share=0.30,
+        per_holding=[],
+        factor_move_std={"UUP": 0.01},
+        book_drift_by_factor={"UUP": 0.17},  # recent = 0.03 + 0.17 = 0.20
+        beta_headline_by_factor={"UUP": 0.03},
+        systematic_share_threshold=0.60,
+        factor_dominance_threshold=0.25,
+        drift_threshold=0.50,
+    )
+    assert all(f.kind != "DRIFT" for f in flags)
+
+
+def test_drift_fires_for_material_beta():
+    # Material exposure (headline 1.0) with >50% drift: DRIFT SHOULD fire.
+    flags = build_flags(
+        net_beta_by_factor={"TLT": 1.0},
+        systematic_share=0.30,
+        per_holding=[],
+        factor_move_std={"TLT": 0.01},
+        book_drift_by_factor={"TLT": 0.6},  # recent = 1.6, ratio 0.6 > 0.5
+        beta_headline_by_factor={"TLT": 1.0},
+        systematic_share_threshold=0.60,
+        factor_dominance_threshold=0.25,
+        drift_threshold=0.50,
+    )
+    assert any(f.kind == "DRIFT" and f.factor == "TLT" for f in flags)
+
+
 def test_brief_macro_none_renders_safely():
     from domain.brief import ScorecardSnapshot, WeeklyBrief, to_markdown
     from domain.regime import Regime
