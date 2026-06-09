@@ -28,6 +28,13 @@ from domain.trend_following import (
     turnover,
 )
 
+__all__ = [
+    "UNIVERSE",
+    "SleeveVerdict",
+    "TrendSleeveBacktestUseCase",
+    "load_price_series",
+]
+
 UNIVERSE = ["SPY", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC"]
 _CORE = "SPY"
 _CORE_WEIGHT = 0.80
