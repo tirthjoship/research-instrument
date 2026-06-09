@@ -70,6 +70,9 @@ class MacroBetaUseCase:
         for h in holdings:
             series = self._prices(h.ticker, start, as_of)
             if not series:
+                logger.warning(
+                    f"macro-beta: holding {h.ticker} dropped (no price data)"
+                )
                 continue
             latest_close = series[-1][1]
             value = h.shares * latest_close
