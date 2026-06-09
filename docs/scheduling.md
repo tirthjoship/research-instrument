@@ -249,6 +249,50 @@ wanted later, de-duplicate to one flag per name per non-overlapping window befor
 
 ---
 
+## Discipline forward-calibration daily logging (ADR-048/051)
+
+The opportunity `daily-cycle` plist above does NOT log discipline verdicts. For the
+ADR-048 REDUCE-flag forward gate you must run `holdings-risk` itself daily so the
+forward log accrues date-diverse `as_of` snapshots. Save as
+`~/Library/LaunchAgents/com.tirthjoshi.stockrec.discipline-daily.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.tirthjoshi.stockrec.discipline-daily</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/scripts/discipline_daily.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>DISCIPLINE_PYTHON</key>
+    <string>/PATH/TO/venv/bin/python</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+  <key>StandardOutPath</key>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/discipline_daily.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/discipline_daily.log</string>
+</dict>
+</plist>
+```
+
+Load: `launchctl load -w ~/Library/LaunchAgents/com.tirthjoshi.stockrec.discipline-daily.plist`
+
+**Laptop sleep:** launchd will not fire while asleep. Keep the machine awake at the
+scheduled time (`caffeinate -i` during a known-awake window) or run `pmset schedule
+wake` before 18:00. Verify the cron is alive with
+`python -m application.cli discipline-calibration-status` — the "last logged … days
+ago" line is your dead-cron detector.
+
+---
+
 ## ADR-007 deviation note
 
 ADR-007 chose local SQLite as the persistence layer to keep the project self-contained and avoid
