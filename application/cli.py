@@ -2162,6 +2162,90 @@ def resolve_discipline_flags(log: str, horizon: int) -> None:
         f"down_rate_on_trim={res['down_rate_on_trim']:.0%}  "
         "— TRIM is position-sizing, excluded from the gate"
     )
+    from application.calibration_readiness import diversity_label
+
+    label = diversity_label(
+        res["reduce_resolved_as_ofs"],
+        down_rate=res["down_rate_on_reduce"],
+        brier=res["brier"],
+    )
+    click.echo(
+        f"GATE LABEL: {label}  "
+        "(INCONCLUSIVE_THIN_DATES = sample not date-diverse yet; "
+        "thresholds locked per ADR-048/051)"
+    )
+
+
+@cli.command("discipline-calibration-status")
+@click.option("--log", default="data/personal/discipline_log.jsonl", show_default=True)
+@click.option("--horizon", default=21, type=int, show_default=True)
+@click.option(
+    "--gate-date",
+    default="2026-07-15",
+    show_default=True,
+    help="Pre-committed gate resolution date (ADR-048 window).",
+)
+@click.option("--today", default=None, help="Override today (ISO date) for projection.")
+def discipline_calibration_status(
+    log: str, horizon: int, gate_date: str, today: str | None
+) -> None:
+    """Is the discipline forward-gate sample date-diverse enough to resolve honestly?
+
+    Masked (no tickers). Reports verdict counts, REDUCE as_of diversity, resolvable
+    vs pending, log freshness (dead-cron detector), and a READY/THIN readiness
+    projection to the gate date. Changes no ADR-048 threshold (see ADR-051).
+    """
+    from datetime import date, datetime, timezone
+
+    from application.calibration_readiness import (
+        as_of_spread,
+        freshness,
+        readiness,
+        resolvable_split,
+    )
+    from application.discipline_log import read_assessments
+
+    rows = read_assessments(log)
+    if not rows:
+        click.echo(f"No logged assessments at {log}.")
+        return
+    today_d = date.fromisoformat(today) if today else datetime.now(timezone.utc).date()
+    gate_d = date.fromisoformat(gate_date)
+
+    counts: dict[str, int] = {}
+    for r in rows:
+        v = str(r.get("verdict", "?"))
+        counts[v] = counts.get(v, 0) + 1
+    reduce_rows = [r for r in rows if r.get("verdict") == "REDUCE"]
+    sp = as_of_spread(reduce_rows)
+    split = resolvable_split(rows, today_d, horizon)
+    fresh = freshness(rows, today_d)
+    rep = readiness(rows, today_d, horizon, gate_d)
+
+    click.echo(f"Discipline Calibration Readiness (today {today_d.isoformat()})")
+    click.echo(
+        f"  logged: {len(rows)}  ("
+        + " / ".join(f"{k} {counts[k]}" for k in sorted(counts))
+        + ")"
+    )
+    click.echo(
+        f"  REDUCE as_of dates: {sp['distinct_dates']} distinct, "
+        f"span {sp['span_days']}d ({sp['min_date']} -> {sp['max_date']})"
+    )
+    click.echo(
+        f"  REDUCE resolvable now: {split['resolvable']}  "
+        f"pending: {split['pending']}  (horizon {horizon}d)"
+    )
+    click.echo(
+        f"  last logged: {sp['max_date'] or 'n/a'}  "
+        f"({fresh if fresh is not None else 'n/a'} days ago)"
+    )
+    click.echo(f"  projected n at gate {gate_d.isoformat()}: {rep.projected_n_at_gate}")
+    short = ("  -- shortfalls: " + "; ".join(rep.shortfalls)) if rep.shortfalls else ""
+    click.echo(f"  VERDICT: {rep.verdict}{short}")
+    click.echo(
+        "  (gate thresholds stay locked per ADR-048/051; log more dates if THIN)"
+    )
 
 
 @cli.command("holdings-risk-calibrate")
@@ -2248,37 +2332,20 @@ def backtest_discipline_flags(holdings: str, horizon: int, step: int) -> None:
 # ---------------------------------------------------------------------------
 
 
-@cli.command("screen-candidates")
-@click.option("--top", default=10, show_default=True, type=int, help="Top N rank limit")
-@click.option(
-    "--report-dir",
-    default="data/reports/",
-    show_default=True,
-    help="Directory to write screen_<date>.json",
-)
-def screen_candidates(top: int, report_dir: str) -> None:
-    """Screen universe for disciplined, evidence-bounded candidates.
+def _build_evidence_screen(deps: dict[str, Any]) -> "Any":
+    """Wire the four thin adapter ports into an EvidenceScreenUseCase.
 
-    Writes the FULL ranked candidate distribution to <report-dir>/screen_<date>.json
-    (honesty rule: full distribution, not just top-N).  Prints a masked summary to
-    stdout (counts + label distribution only — no per-ticker scores).
+    Extracted so both `screen-candidates` and `weekly-brief` use the same
+    adapter wiring (DRY).  Returns an EvidenceScreenUseCase instance.
     """
-    import json
-    from datetime import date, timezone
+    from datetime import timezone
 
-    from application.evidence_screen_use_case import (
-        EvidenceScreenUseCase,
-        label_from_verdict_file,
-    )
+    from application.evidence_screen_use_case import EvidenceScreenUseCase
     from application.narrator import template_narration
     from domain.screen_models import ScreenCandidate
 
-    deps = _build_dependencies("us")
     market_data = deps["market_data"]
-    config = deps["config"]
-    tickers = _get_ticker_universe(config)
 
-    # --- thin adapters satisfying evidence_screen_use_case Protocols ---
     class _PriceAdapter:
         """Wraps YFinanceAdapter to satisfy PricePort."""
 
@@ -2289,7 +2356,6 @@ def screen_candidates(top: int, report_dir: str) -> None:
                 signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
                 if not signals:
                     return []
-                # Resample to monthly: take the last close per calendar month
                 by_month: dict[str, float] = {}
                 for s in signals:
                     key = f"{s.timestamp.year}-{s.timestamp.month:02d}"
@@ -2335,7 +2401,6 @@ def screen_candidates(top: int, report_dir: str) -> None:
                 data = market_data.get_analyst_data(ticker, datetime.now(timezone.utc))
                 if data is None:
                     return None
-                # Return target prices as a proxy estimate series
                 targets = [
                     v
                     for k, v in data.items()
@@ -2375,12 +2440,40 @@ def screen_candidates(top: int, report_dir: str) -> None:
                 }
             )
 
-    uc = EvidenceScreenUseCase(
+    return EvidenceScreenUseCase(
         price=_PriceAdapter(),
         analyst=_AnalystAdapter(),
         fundamentals=_FundamentalsAdapter(),
         narrator=_NarratorAdapter(),
     )
+
+
+@cli.command("screen-candidates")
+@click.option("--top", default=10, show_default=True, type=int, help="Top N rank limit")
+@click.option(
+    "--report-dir",
+    default="data/reports/",
+    show_default=True,
+    help="Directory to write screen_<date>.json",
+)
+def screen_candidates(top: int, report_dir: str) -> None:
+    """Screen universe for disciplined, evidence-bounded candidates.
+
+    Writes the FULL ranked candidate distribution to <report-dir>/screen_<date>.json
+    (honesty rule: full distribution, not just top-N).  Prints a masked summary to
+    stdout (counts + label distribution only — no per-ticker scores).
+    """
+    import json
+    from datetime import date, timezone
+
+    from application.evidence_screen_use_case import label_from_verdict_file
+
+    deps = _build_dependencies("us")
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+
+    # Reuse the shared helper so weekly-brief wires the same adapters (DRY).
+    uc = _build_evidence_screen(deps)
     as_of = date.today().isoformat()
     # Run with full universe length so rank_universe returns ALL eligible candidates.
     # --top applies ONLY to the stdout masked summary and the surfaced-calls slice.
@@ -2466,87 +2559,363 @@ def screen_candidates(top: int, report_dir: str) -> None:
 
 
 @cli.command("backtest-screen")
+@click.option("--market", default="us", show_default=True, help="Market config (us|ca)")
+@click.option(
+    "--start", default="2018-01-01", show_default=True, help="Backtest start date"
+)
+@click.option(
+    "--end", default="2026-01-01", show_default=True, help="Backtest end date"
+)
+@click.option(
+    "--horizon-days",
+    default=21,
+    show_default=True,
+    type=int,
+    help="Forward-return horizon in calendar days",
+)
+@click.option(
+    "--limit",
+    default=0,
+    type=int,
+    show_default=True,
+    help="Cap universe size (0 = all tickers from sp500+nasdaq100+tsx60)",
+)
 @click.option(
     "--report-dir",
     default="data/reports/",
     show_default=True,
     help="Directory to write screen_ic_<date>.json",
 )
-def backtest_screen(report_dir: str) -> None:
-    """Pre-registered IC backtest for the evidence screen composite signal.
+def backtest_screen(
+    market: str,
+    start: str,
+    end: str,
+    horizon_days: int,
+    limit: int,
+    report_dir: str,
+) -> None:
+    """Point-in-time IC backtest for the evidence-screen MOMENTUM composite.
 
-    Builds point-in-time panels from the screen store, runs ScreenBacktestUseCase,
-    writes screen_ic_<date>.json, and prints the verdict (PASS/INCONCLUSIVE/HALT).
+    HONESTY CONSTRAINT (project rule #2 — no look-ahead bias):
+    Only the MOMENTUM factor is backtested.  Revision, quality, and value
+    require point-in-time fundamental/analyst snapshots unavailable from
+    yfinance for 2018-2026.  Using current values at past dates would be
+    catastrophic look-ahead bias.  Those factors are flagged-neutral (None)
+    throughout, exactly as the live composite_score handles missing factors.
+    The caveat is printed to stdout and embedded in the JSON report every run.
 
-    NOTE: Full point-in-time panel construction requires historical screen data
-    persisted by repeated screen-candidates runs. On a fresh install the backtest
-    runs against a minimal stub panel and returns INCONCLUSIVE pending real data.
+    Universe: US S&P 500 + NASDAQ-100 (sp500.txt + nasdaq100.txt) plus TSX 60
+    (tsx60.txt with .TO suffix).  Monthly evaluation cadence.
     """
     import json
     from datetime import date
 
     from application.screen_backtest_use_case import ScreenBacktestUseCase
+    from application.screen_ic_panels import build_screen_panels
 
-    deps = _build_dependencies("us")
-    store = deps["store"]
+    _CAVEAT = (
+        "Composite tested on MOMENTUM leg only; revision/quality/value lack "
+        "point-in-time history for 2018-2026 and were flagged-neutral to avoid "
+        "look-ahead bias (project rule #2)."
+    )
 
-    # Load persisted screen panels from scan_candidates table (written by
-    # scan-opportunities / screen-candidates); fall back to an empty stub so the
-    # command always exits cleanly.
-    raw_panels: list[dict[str, tuple[float, float]]] = []
-    try:
-        rows = store.get_scan_candidates()
-        # Group by date → per-date panel: {ticker: (composite, fwd_return)}
-        # fwd_return is not yet resolved here (we pass 0.0 as placeholder until
-        # resolve-calls fills it in); the IC gate tolerates partially-filled panels.
-        from collections import defaultdict
+    # ------------------------------------------------------------------
+    # Build universe: SP500 + NASDAQ100 + TSX60 (reuse _get_backtest_universe)
+    # ------------------------------------------------------------------
+    tickers = _get_backtest_universe(market)
+    universe_size = len(tickers)
+    if limit:
+        tickers = tickers[:limit]
+        universe_size = len(tickers)
 
-        panels_by_date: dict[str, dict[str, tuple[float, float]]] = defaultdict(dict)
-        for row in rows:
-            key = str(row.get("as_of", "unknown"))
-            ticker = str(row.get("ticker", ""))
-            composite = float(row.get("composite", 0.0))
-            fwd = float(row.get("fwd_return", 0.0))
-            if ticker:
-                panels_by_date[key][ticker] = (composite, fwd)
-        raw_panels = list(panels_by_date.values())
-    except Exception:
-        pass  # no scan_candidates table yet → stub
+    click.echo(f"Universe: {universe_size} tickers (sp500+nasdaq100+tsx60, deduped)")
 
-    if not raw_panels:
-        # Minimal stub so command exits cleanly; verdict will be INCONCLUSIVE/HALT
-        raw_panels = [{"STUB": (0.0, 0.0)}]
+    # ------------------------------------------------------------------
+    # Date range: monthly cadence (first-of-month / 28-day steps)
+    # ------------------------------------------------------------------
+    start_dt = datetime.fromisoformat(start)
+    end_dt = datetime.fromisoformat(end)
+    dates: list[datetime] = []
+    d = start_dt
+    while d <= end_dt - timedelta(days=horizon_days):
+        dates.append(d)
+        d += timedelta(days=28)
 
+    click.echo(
+        f"Date range: {start} → {end}  |  {len(dates)} evaluation dates  |  horizon={horizon_days}d"
+    )
+
+    # ------------------------------------------------------------------
+    # Price cache (load once per ticker over [start-400d, end+horizon+5d])
+    # ------------------------------------------------------------------
+    price_start = start_dt - timedelta(days=400)
+    price_end = end_dt + timedelta(days=horizon_days + 5)
+
+    _price_cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def _prices(ticker: str) -> list[tuple[datetime, float]]:
+        if ticker not in _price_cache:
+            _price_cache[ticker] = load_price_series(ticker, price_start, price_end)
+        return _price_cache[ticker]
+
+    # Preload benchmark
+    click.echo("Loading price data (this is the network call — skipped in tests)...")
+    _prices("SPY")
+    all_tickers_to_load = list(tickers)
+    for i, t in enumerate(all_tickers_to_load, 1):
+        _prices(t)
+        if i % 50 == 0:
+            click.echo(f"  Loaded {i}/{len(all_tickers_to_load)} tickers...")
+
+    n_with_data = sum(1 for t in tickers if _price_cache.get(t))
+    click.echo(f"Tickers with price data: {n_with_data}/{len(tickers)}")
+
+    # ------------------------------------------------------------------
+    # Build panels
+    # ------------------------------------------------------------------
+    click.echo("Building point-in-time panels...")
+    panels, benchmark_returns = build_screen_panels(
+        tickers=list(tickers),
+        dates=dates,
+        price_series_fn=_prices,
+        horizon_days=horizon_days,
+        benchmark_ticker="SPY",
+    )
+
+    # ------------------------------------------------------------------
+    # Run ScreenBacktestUseCase
+    # ------------------------------------------------------------------
     uc = ScreenBacktestUseCase()
-    verdict = uc.run(raw_panels)
+    verdict = uc.run(panels, market_returns=benchmark_returns)
 
+    # ------------------------------------------------------------------
+    # Write report JSON
+    # ------------------------------------------------------------------
     as_of = date.today().isoformat()
     report_path = Path(report_dir)
     report_path.mkdir(parents=True, exist_ok=True)
     out_file = report_path / f"screen_ic_{as_of}.json"
-    out_file.write_text(
-        json.dumps(
-            {
-                "as_of": as_of,
-                "decision": verdict.decision,
-                "mean_ic": verdict.mean_ic,
-                "n_dates": verdict.n_dates,
-            },
-            indent=2,
+    report_data = {
+        "as_of": as_of,
+        "universe_size": universe_size,
+        "n_tickers_with_data": n_with_data,
+        "decision": verdict.decision,
+        "mean_ic": verdict.mean_ic,
+        "n_dates": verdict.n_dates,
+        "ic_ci_low": verdict.ic_ci_low,
+        "ic_ci_high": verdict.ic_ci_high,
+        "sharpe_diff_point": verdict.sharpe_diff_point,
+        "sharpe_diff_ci_low": verdict.sharpe_diff_ci_low,
+        "sharpe_diff_ci_high": verdict.sharpe_diff_ci_high,
+        "primary_pass": verdict.primary_pass,
+        "secondary_pass": verdict.secondary_pass,
+        "horizon_days": horizon_days,
+        "start": start,
+        "end": end,
+        "caveat": _CAVEAT,
+    }
+    out_file.write_text(json.dumps(report_data, indent=2))
+
+    # ------------------------------------------------------------------
+    # Stdout (honest/full per ADR-042 — CI and caveat every run)
+    # ------------------------------------------------------------------
+    _VERDICT_LABELS = {
+        "PASS": "PASS — IC >= 0.02 and/or top-decile Sharpe-diff CI excludes 0.",
+        "INCONCLUSIVE": "INCONCLUSIVE — IC in (0, 0.02); insufficient evidence of edge.",
+        "HALT": "HALT — IC CI entirely negative; signal has no cross-sectional lift.",
+    }
+    click.echo(f"\nScreen IC Backtest  ({as_of})")
+    click.echo(
+        f"  universe        : {universe_size} tickers  ({n_with_data} with price data)"
+    )
+    click.echo(f"  n_dates         : {verdict.n_dates}")
+    click.echo(f"  mean_IC         : {verdict.mean_ic:.6f}")
+    ic_ci = (
+        f"[{verdict.ic_ci_low}, {verdict.ic_ci_high}]"
+        if verdict.ic_ci_low is not None
+        else "n/a (n<2)"
+    )
+    click.echo(f"  IC bootstrap CI : {ic_ci}")
+    sd_pt = (
+        f"{verdict.sharpe_diff_point:.4f}"
+        if verdict.sharpe_diff_point is not None
+        else "n/a"
+    )
+    sd_ci = (
+        f"[{verdict.sharpe_diff_ci_low:.4f}, {verdict.sharpe_diff_ci_high:.4f}]"
+        if verdict.sharpe_diff_ci_low is not None
+        else "n/a"
+    )
+    click.echo(f"  sharpe_diff     : {sd_pt}  CI={sd_ci}")
+    click.echo(f"  primary_pass    : {verdict.primary_pass}")
+    click.echo(f"  secondary_pass  : {verdict.secondary_pass}")
+    click.echo(f"  verdict         : {verdict.decision}")
+    click.echo(f"  {_VERDICT_LABELS.get(verdict.decision, verdict.decision)}")
+    click.echo(f"\n  CAVEAT: {_CAVEAT}")
+    click.echo(f"\nReport written to: {out_file}")
+
+
+# ---------------------------------------------------------------------------
+# Weekly Brief CLI command (Phase B)
+# ---------------------------------------------------------------------------
+
+
+def _build_weekly_brief(
+    market: str, holdings: "list[Any]", report_dir: str
+) -> "tuple[Any, list[str]]":
+    """Wire real adapters into a WeeklyBriefUseCase. Returns (use_case, universe)."""
+    from datetime import timezone
+
+    from adapters.ml.correlation_analyzer import CorrelationAnalyzer
+    from application.discipline_log import read_assessments, resolve_flags
+    from application.forward_tracking_use_case import ForwardTrackingUseCase
+    from application.narrator import FakeNarrator
+    from application.weekly_brief_use_case import RegimeReadUseCase, WeeklyBriefUseCase
+    from domain.trend_rules import sma as _sma
+    from domain.trend_rules import trend_health as _trend_health
+
+    deps = _build_dependencies(market)
+    store = deps["store"]
+    market_data = deps["market_data"]
+    universe = _get_backtest_universe(market)
+
+    # Screen ports: same adapters as screen-candidates (DRY via shared helper).
+    screen = _build_evidence_screen(deps)
+
+    def _price_provider(ticker: str) -> "list[tuple[Any, float]]":
+        end = datetime.now(timezone.utc)
+        start = end - timedelta(days=420)
+        return load_price_series(ticker, start, end)
+
+    # HoldingsRiskAssessmentUseCase requires a non-None narrator; use template fallback
+    # (same as holdings-risk command with --narrate off, ADR-047).
+    holdings_risk = HoldingsRiskAssessmentUseCase(_price_provider, FakeNarrator(""))
+
+    def _vix() -> float:
+        end = datetime.now(timezone.utc)
+        series = load_price_series("^VIX", end - timedelta(days=10), end)
+        return series[-1][1] if series else 20.0
+
+    def _spy_trend() -> float:
+        end = datetime.now(timezone.utc)
+        series = load_price_series("SPY", end - timedelta(days=420), end)
+        closes = [c for _, c in series]
+        if len(closes) < 200:
+            return 0.0
+        sma_val = _sma(closes, 200)
+        diffs = [abs(closes[i] - closes[i - 1]) for i in range(-20, 0)]
+        atr_val: float | None = sum(diffs) / len(diffs) if diffs else None
+        th = _trend_health(closes[-1], sma_val, atr_val)
+        return th if th is not None else 0.0
+
+    regime_reader = RegimeReadUseCase(vix_provider=_vix, spy_trend_provider=_spy_trend)
+
+    # Concentration: build a CorrelationAnalyzer graph over holdings + universe head.
+    analyzer = CorrelationAnalyzer()
+    held = [h.ticker for h in holdings]
+    graph_tickers = list(dict.fromkeys(held + universe[:100]))
+    signals_by_ticker = {}
+    for t in graph_tickers:
+        try:
+            signals_by_ticker[t] = market_data.get_signals(
+                t, datetime.now(timezone.utc)
+            )
+        except Exception:
+            signals_by_ticker[t] = []
+    try:
+        analyzer.build_graph(signals_by_ticker)
+    except Exception:
+        pass  # concentration overlaps degrade to empty if the graph can't build
+
+    def _cluster_peers(ticker: str) -> list[str]:
+        try:
+            return analyzer.get_cluster_peers(ticker)
+        except Exception:
+            return []
+
+    forward = ForwardTrackingUseCase(store, market_data)
+
+    def _screen_scorecard() -> "tuple[float | None, float | None, int, bool]":
+        records = forward.get_track_record()
+        return (None, None, len(records), False)
+
+    def _discipline_scorecard() -> "tuple[float | None, int, str]":
+        log_path = "data/personal/discipline_log.jsonl"
+        try:
+            logged = read_assessments(log_path)
+        except Exception:
+            return (None, 0, "NO-LOG")
+        res = resolve_flags(logged, _price_provider, horizon_days=21)
+        n = int(res.get("resolved", 0))
+        # resolve_flags returns 0.0 (not None) when no REDUCE flags resolved; restore
+        # the "None = no data" semantics so the brief renders down-rate "n/a", not "0%".
+        dr = res.get("down_rate_on_reduce") if n > 0 else None
+        brier = res.get("brier", 1.0)
+        gate = (
+            "PROCEED"
+            if (dr is not None and dr >= 0.55 and brier <= 0.45 and n >= 30)
+            else "PENDING"
         )
+        return (dr, n, gate)
+
+    from application.evidence_screen_use_case import label_from_verdict_file
+
+    uc = WeeklyBriefUseCase(
+        screen=screen,
+        holdings_risk=holdings_risk,
+        regime_reader=regime_reader,
+        screen_label_fn=label_from_verdict_file,
+        cluster_peers_fn=_cluster_peers,
+        screen_scorecard_fn=_screen_scorecard,
+        discipline_scorecard_fn=_discipline_scorecard,
+    )
+    return uc, universe
+
+
+@cli.command("weekly-brief")
+@click.option("--market", default="us", show_default=True, help="Market config")
+@click.option(
+    "--holdings",
+    default="data/personal/holdings-report-2026-06-07.csv",
+    show_default=True,
+    help="Holdings CSV (gitignored).",
+)
+@click.option(
+    "--out",
+    default="data/personal/weekly_brief.md",
+    show_default=True,
+    help="Full markdown brief (gitignored — contains holdings detail).",
+)
+@click.option("--report-dir", default="data/reports/", show_default=True)
+@click.option("--top-n", default=10, type=int, show_default=True)
+def weekly_brief(
+    market: str, holdings: str, out: str, report_dir: str, top_n: int
+) -> None:
+    """Generate the unified weekly brief (masked stdout + gitignored full markdown).
+
+    Composes the Phase-A evidence screen, the discipline engine, a regime tilt,
+    a concentration warning, and the forward scorecard. Phase B adds no predictive
+    claim; a RESEARCH_ONLY screen renders no 'buy' language.
+    """
+    from application.holdings_reader import read_holdings
+    from domain.brief import to_markdown, to_stdout_masked
+
+    held = read_holdings(holdings)
+    uc, universe = _build_weekly_brief(market, held, report_dir)
+    brief = uc.execute(
+        universe=universe,
+        holdings=held,
+        as_of=datetime.now(),
+        report_dir=report_dir,
+        top_n=top_n,
     )
 
-    _VERDICT_LABELS = {
-        "PASS": "PASS — IC >= 0.02, signal shows measurable cross-sectional lift.",
-        "INCONCLUSIVE": "INCONCLUSIVE — IC in (0, 0.02); insufficient evidence of edge.",
-        "HALT": "HALT — IC <= 0; signal shows no cross-sectional lift.",
-    }
-    click.echo(f"\nScreen IC Backtest ({as_of})")
-    click.echo(f"  n_dates : {verdict.n_dates}")
-    click.echo(f"  mean_IC : {verdict.mean_ic:.6f}")
-    click.echo(f"  verdict : {verdict.decision}")
-    click.echo(f"  {_VERDICT_LABELS.get(verdict.decision, verdict.decision)}")
-    click.echo(f"Report written to: {out_file}")
+    out_path = Path(out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(to_markdown(brief))
+
+    click.echo(to_stdout_masked(brief))
+    click.echo(f"\nFull brief (gitignored) written to: {out_path}")
 
 
 @cli.command("backtest-trend-sleeve")

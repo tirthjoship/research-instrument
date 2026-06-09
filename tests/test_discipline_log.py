@@ -69,3 +69,28 @@ def test_resolve_flags_excludes_trim_from_directional_gate():
     # TRIM tracked separately; it went up, so its down-rate is 0
     assert out["trim_resolved"] == 1
     assert out["down_rate_on_trim"] == 0.0
+
+
+def test_resolve_flags_returns_resolved_reduce_as_ofs():
+    from datetime import datetime, timezone
+
+    from application.discipline_log import resolve_flags
+
+    logged = [
+        {
+            "ticker": "AAA",
+            "verdict": "REDUCE",
+            "price": 100.0,
+            "as_of": datetime(2026, 1, 1, tzinfo=timezone.utc).isoformat(),
+        },
+    ]
+    series = {
+        "AAA": [
+            (datetime(2026, 1, 1, tzinfo=timezone.utc), 100.0),
+            (datetime(2026, 2, 5, tzinfo=timezone.utc), 90.0),
+        ]
+    }
+    out = resolve_flags(logged, lambda t: series.get(t, []), horizon_days=21)
+    assert out["reduce_resolved_as_ofs"] == [
+        datetime(2026, 1, 1, tzinfo=timezone.utc).isoformat()
+    ]
