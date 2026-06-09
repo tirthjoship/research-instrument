@@ -212,3 +212,16 @@ def test_systematic_idiosyncratic_sum_to_one(s: float) -> None:
     )
     assert abs(book.systematic_share + book.idiosyncratic_share - 1.0) < 1e-9
     assert 0.0 <= book.systematic_share <= 1.0
+
+
+def test_estimator_port_is_protocol():
+    from domain.ports import MacroBetaEstimatorPort
+
+    class _Fake:
+        def estimate(self, y_returns, factor_returns, alpha):
+            return ({k: 0.0 for k in factor_returns}, 0.0)
+
+    f: MacroBetaEstimatorPort = _Fake()
+    betas, r2 = f.estimate([0.1], {"SPY": [0.1]}, 0.2)
+    assert r2 == 0.0
+    assert betas == {"SPY": 0.0}
