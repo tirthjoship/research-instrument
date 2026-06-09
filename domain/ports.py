@@ -79,6 +79,21 @@ class StockPredictorPort(Protocol):
     def load_model(self, path: str) -> None: ...
 
 
+class MacroBetaEstimatorPort(Protocol):
+    """Port: estimate factor betas of a return series via shrinkage regression.
+
+    Returns (beta_by_factor, r_squared). Implementations fit on RAW de-meaned
+    daily returns (no scaling) so coefficients are raw, dollar-interpretable betas.
+    """
+
+    def estimate(
+        self,
+        y_returns: list[float],
+        factor_returns: dict[str, list[float]],
+        alpha: float,
+    ) -> tuple[dict[str, float], float]: ...
+
+
 class FeatureEngineerPort(Protocol):
     """Port: compute feature vector from raw market data."""
 

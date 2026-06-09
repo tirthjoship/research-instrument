@@ -42,3 +42,27 @@ Rationale: deterministic value before the speculative swing (A is useful regardl
 - The disposition-auditor idea both external models proposed is **already built** — it is `resolve-discipline-flags` + the ADR-048 forward gate; do not rebuild it.
 - Each Unit follows the established flow: brainstorm → spec → plan → Sonnet implementers → Opus verification-before-completion; LOW effort for mechanical build, MAX for verdict/verification.
 - Honesty rails locked: recommender abstains; no FinBERT / LangChain / Neo4j / paid data; deterministic ideas claim no alpha; predictive ideas are pre-registered and killable.
+
+## Unit A — Macro-Beta Scrubber (DONE 2026-06-09)
+
+Shipped the macro-beta scrubber: per-holding Ridge betas on SPY/TLT/UUP/XLE (raw
+de-meaned daily returns, NO StandardScaler, so coefficients are raw,
+dollar-interpretable betas), dollar-weighted book net-beta, book
+systematic-vs-idiosyncratic variance split, three heuristic flags
+(SYSTEMATIC_DOMINANT / FACTOR_DOMINANCE / DRIFT), folded into `weekly-brief`
+(markdown full detail + ADR-047-masked stdout aggregates).
+
+Methodology note (honest): the Ridge `alpha` is scaled internally by mean
+factor-return variance, making it a scale-invariant relative shrinkage fraction
+rather than a literal sklearn penalty (raw daily-return variance ~1e-4 would make
+a literal alpha=0.05 over-shrink true betas ~57%). Betas remain raw/interpretable;
+only the penalty is rescaled. `ridge_alpha=0.2` in config = light shrinkage.
+
+Universe fix: pruned 5 genuinely-delisted US screen tickers (SIVB/PXD/SPLK/WBA/WRK,
+all 0 rows from yfinance). The TSX names GIB.A/RCI.B/TECK.B were NOT pruned — they
+are live (CGI/Rogers/Teck); their dogfood failure is a dot-vs-dash symbol-format
+mapping issue (yfinance wants GIB-A.TO), a separate data-layer bug logged as a
+follow-up, not a delisting.
+
+Thresholds are heuristic surfacing dials, not validated edges. Cluster caps
+deferred (factor view subsumes them). Next: Unit B (sub-$1B insider-cluster IC).

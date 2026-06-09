@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 from domain.discipline import Verdict
-from domain.models import PortfolioRisk, PositionRisk
+from domain.models import BookMacroExposure, PortfolioRisk, PositionRisk
 from domain.regime import Regime
 from domain.screen_models import ScreenCandidate, ScreenLabel, ScreenResult
 
@@ -83,6 +83,7 @@ class WeeklyBrief:
     concentration: tuple[ConcentrationFlag, ...]
     scorecard: ScorecardSnapshot
     screen_label: ScreenLabel
+    macro: BookMacroExposure | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -133,6 +134,7 @@ def assemble_brief(
     cluster_overlaps: dict[str, list[str]],
     scorecard: ScorecardSnapshot,
     concentration_threshold: float = 0.20,
+    macro: BookMacroExposure | None = None,
 ) -> WeeklyBrief:
     """Compose a WeeklyBrief from already-fetched pieces (pure, IO-free).
 
@@ -201,6 +203,7 @@ def assemble_brief(
         concentration=tuple(flags),
         scorecard=scorecard,
         screen_label=screen_label,
+        macro=macro,
     )
 
 
@@ -258,6 +261,34 @@ def to_markdown(brief: WeeklyBrief) -> str:
         lines.append("_(no concentration flags)_")
     for f in brief.concentration:
         lines.append(f"- {f.descriptor}")
+    lines.append("")
+    lines.append("## MACRO EXPOSURE")
+    m = brief.macro
+    if m is None:
+        lines.append("_(macro-beta not computed)_")
+    else:
+        lines.append(
+            f"- systematic share: **{m.systematic_share:.0%}** of book variance is "
+            f"macro-explained (idiosyncratic {m.idiosyncratic_share:.0%})"
+        )
+        if m.dominant_factor is not None:
+            lines.append(f"- dominant factor: **{m.dominant_factor}**")
+        nb = " · ".join(f"{f} {m.net_beta_by_factor[f]:+.2f}" for f in m.factors)
+        lines.append(f"- net book beta: {nb}")
+        lines.append(
+            f"- coverage: {m.coverage_holdings}/{m.total_holdings} holdings "
+            f"= {m.coverage_value_frac:.0%} of book value"
+        )
+        for fl in m.flags:
+            lines.append(f"- ⚠ {fl.message}")
+        for mh in m.holdings:
+            hb = " · ".join(f"{b.factor} {b.beta_headline:+.2f}" for b in mh.betas)
+            lines.append(
+                f"  - {mh.ticker} (w {mh.weight:.0%}): {hb}  R²={mh.r_squared:.2f}"
+            )
+        lines.append(
+            "_(thresholds are heuristic surfacing dials, not validated edges)_"
+        )
     lines.append("")
     lines.append("## SCORECARD")
     sc = brief.scorecard
@@ -320,6 +351,14 @@ def to_stdout_masked(brief: WeeklyBrief) -> str:
     if brief.concentration:
         lines.append(
             f"CONCENTRATION: {len(brief.concentration)} flag(s) — see full brief"
+        )
+    m = brief.macro
+    if m is not None:
+        flag_n = len(m.flags)
+        dom = m.dominant_factor or "n/a"
+        lines.append(
+            f"MACRO: systematic {m.systematic_share:.0%}, dominant {dom}, "
+            f"{flag_n} flag(s), coverage {m.coverage_value_frac:.0%}"
         )
     sc = brief.scorecard
     dr = (

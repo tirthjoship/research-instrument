@@ -19,6 +19,8 @@ ClusterPeersFn = Callable[[str], list[str]]
 ScreenScorecardFn = Callable[[], "tuple[float | None, float | None, int, bool]"]
 # discipline scorecard -> (reduce_down_rate, n, gate_status)
 DisciplineScorecardFn = Callable[[], "tuple[float | None, int, str]"]
+# macro-beta fn -> BookMacroExposure | None (None = skip / unavailable)
+MacroFn = Callable[["list[Any]", datetime], "Any"]
 
 _HISTORY_DAYS = 400  # lookback for holdings-risk price windows
 
@@ -54,6 +56,7 @@ class WeeklyBriefUseCase:
         cluster_peers_fn: ClusterPeersFn,
         screen_scorecard_fn: ScreenScorecardFn,
         discipline_scorecard_fn: DisciplineScorecardFn,
+        macro_fn: "MacroFn | None" = None,
     ) -> None:
         self._screen = screen
         self._holdings = holdings_risk
@@ -62,6 +65,7 @@ class WeeklyBriefUseCase:
         self._cluster = cluster_peers_fn
         self._screen_card = screen_scorecard_fn
         self._disc_card = discipline_scorecard_fn
+        self._macro_fn = macro_fn
 
     def execute(
         self,
@@ -108,6 +112,8 @@ class WeeklyBriefUseCase:
             discipline_gate_status=gate_status,
         )
 
+        macro = self._macro_fn(holdings, as_of) if self._macro_fn else None
+
         return assemble_brief(
             as_of=as_of_iso,
             regime=regime,
@@ -121,4 +127,5 @@ class WeeklyBriefUseCase:
             cluster_overlaps=cluster_overlaps,
             scorecard=scorecard,
             concentration_threshold=concentration_threshold,
+            macro=macro,
         )
