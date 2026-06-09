@@ -2835,6 +2835,35 @@ def _build_weekly_brief(
 
     forward = ForwardTrackingUseCase(store, market_data)
 
+    from adapters.ml.macro_beta_analyzer import RidgeMacroBetaEstimator
+    from application.macro_beta_use_case import MacroBetaUseCase
+
+    macro_cfg = deps.get("config", {}).get("macro_beta", {})
+    macro_uc = MacroBetaUseCase(
+        price_provider=lambda t, s, e: load_price_series(t, s, e),
+        estimator=RidgeMacroBetaEstimator(alpha=macro_cfg.get("ridge_alpha", 0.2)),
+        factors=macro_cfg.get("factors", ["SPY", "TLT", "UUP", "XLE"]),
+        alpha=macro_cfg.get("ridge_alpha", 0.2),
+        headline_window=macro_cfg.get("headline_window_days", 252),
+        drift_window=macro_cfg.get("drift_window_days", 63),
+        thresholds={
+            "systematic_share_threshold": macro_cfg.get(
+                "systematic_share_threshold", 0.60
+            ),
+            "factor_dominance_threshold": macro_cfg.get(
+                "factor_dominance_threshold", 0.25
+            ),
+            "drift_threshold": macro_cfg.get("drift_threshold", 0.50),
+        },
+    )
+
+    def _macro_fn(hlds: "list[Any]", as_of: datetime) -> "Any":
+        try:
+            return macro_uc.execute(hlds, as_of)
+        except Exception:
+            logger.warning("macro-beta scrubber failed — brief renders without it")
+            return None
+
     def _screen_scorecard() -> "tuple[float | None, float | None, int, bool]":
         records = forward.get_track_record()
         return (None, None, len(records), False)
@@ -2868,6 +2897,7 @@ def _build_weekly_brief(
         cluster_peers_fn=_cluster_peers,
         screen_scorecard_fn=_screen_scorecard,
         discipline_scorecard_fn=_discipline_scorecard,
+        macro_fn=_macro_fn,
     )
     return uc, universe
 

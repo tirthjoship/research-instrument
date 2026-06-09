@@ -83,3 +83,12 @@ def test_use_case_all_factors_fail_returns_none():
     uc = _make_uc({})
     book = uc.execute([_H("A", 10)], datetime(2026, 1, 1))
     assert book is None
+
+
+def test_weekly_brief_use_case_accepts_macro_fn():
+    import inspect
+
+    from application.weekly_brief_use_case import WeeklyBriefUseCase
+
+    sig = inspect.signature(WeeklyBriefUseCase.__init__)
+    assert "macro_fn" in sig.parameters
