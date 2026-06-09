@@ -56,6 +56,7 @@ def resolve_flags(
     informational trim_resolved/down_rate_on_trim."""
     reduce_probs: list[float] = []
     reduce_outcomes: list[int] = []
+    reduce_resolved_as_ofs: list[str] = []
     down_on_reduce = 0
     trim_n = 0
     down_on_trim = 0
@@ -76,6 +77,7 @@ def resolve_flags(
             reduce_probs.append(1.0)
             reduce_outcomes.append(went_down)
             down_on_reduce += went_down
+            reduce_resolved_as_ofs.append(str(row["as_of"]))
         else:  # TRIM — informational only, never a down-call
             trim_n += 1
             down_on_trim += went_down
@@ -89,4 +91,5 @@ def resolve_flags(
         ),
         "trim_resolved": trim_n,
         "down_rate_on_trim": (down_on_trim / trim_n) if trim_n else 0.0,
+        "reduce_resolved_as_ofs": reduce_resolved_as_ofs,
     }
