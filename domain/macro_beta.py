@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from domain.models import BookMacroExposure, HoldingMacroExposure, MacroBetaFlag
+
 
 def daily_returns(
     series: list[tuple[datetime, float]],
@@ -66,3 +68,124 @@ def book_return_series(
         r = sum((w / wsum) * maps[t][d] for t, w in present)
         out.append((d, r))
     return out
+
+
+def net_beta(
+    per_holding: list[HoldingMacroExposure], factors: tuple[str, ...]
+) -> dict[str, float]:
+    """Dollar-weighted net beta per factor: Sum_i weight_i * beta_headline_i,k."""
+    out: dict[str, float] = {f: 0.0 for f in factors}
+    for h in per_holding:
+        bmap = {b.factor: b.beta_headline for b in h.betas}
+        for f in factors:
+            out[f] += h.weight * bmap.get(f, 0.0)
+    return out
+
+
+def build_flags(
+    *,
+    net_beta_by_factor: dict[str, float],
+    systematic_share: float,
+    per_holding: list[HoldingMacroExposure],
+    factor_move_std: dict[str, float],
+    book_drift_by_factor: dict[str, float],
+    beta_headline_by_factor: dict[str, float],
+    systematic_share_threshold: float,
+    factor_dominance_threshold: float,
+    drift_threshold: float,
+) -> tuple[MacroBetaFlag, ...]:
+    """Apply the heuristic surfacing policy. Thresholds are dials, not edges."""
+    flags: list[MacroBetaFlag] = []
+
+    if systematic_share > systematic_share_threshold:
+        flags.append(
+            MacroBetaFlag(
+                kind="SYSTEMATIC_DOMINANT",
+                factor=None,
+                message=(
+                    f"{systematic_share:.0%} of book variance is macro-explained — "
+                    f"these are a few factor bets, not independent ideas"
+                ),
+                value=systematic_share,
+                threshold=systematic_share_threshold,
+            )
+        )
+
+    for f, beta in net_beta_by_factor.items():
+        implied = abs(beta) * factor_move_std.get(f, 0.0)
+        if implied > factor_dominance_threshold:
+            flags.append(
+                MacroBetaFlag(
+                    kind="FACTOR_DOMINANCE",
+                    factor=f,
+                    message=(
+                        f"net {f} exposure dominates: a 1-sigma {f} move shifts the "
+                        f"book ~{implied:.0%}"
+                    ),
+                    value=implied,
+                    threshold=factor_dominance_threshold,
+                )
+            )
+
+    for f, drift in book_drift_by_factor.items():
+        headline = beta_headline_by_factor.get(f, 0.0)
+        denom = max(abs(headline), 1e-6)
+        ratio = abs(drift) / denom
+        if ratio > drift_threshold:
+            flags.append(
+                MacroBetaFlag(
+                    kind="DRIFT",
+                    factor=f,
+                    message=(
+                        f"{f} exposure shifting fast — 63-day beta diverges "
+                        f"{ratio:.0%} from the 1-year beta"
+                    ),
+                    value=ratio,
+                    threshold=drift_threshold,
+                )
+            )
+
+    return tuple(flags)
+
+
+def aggregate_macro_exposure(
+    *,
+    as_of: str,
+    factors: tuple[str, ...],
+    per_holding: list[HoldingMacroExposure],
+    systematic_share: float,
+    factor_move_std: dict[str, float],
+    book_drift_by_factor: dict[str, float],
+    beta_headline_by_factor: dict[str, float],
+    total_holdings: int,
+    coverage_value_frac: float,
+    thresholds: dict[str, float],
+) -> BookMacroExposure:
+    """Assemble the book-level exposure summary from pure pieces."""
+    nb = net_beta(per_holding, factors)
+    share = min(max(systematic_share, 0.0), 1.0)
+    dominant = max(nb, key=lambda f: abs(nb[f])) if per_holding and nb else None
+    flags = build_flags(
+        net_beta_by_factor=nb,
+        systematic_share=share,
+        per_holding=per_holding,
+        factor_move_std=factor_move_std,
+        book_drift_by_factor=book_drift_by_factor,
+        beta_headline_by_factor=beta_headline_by_factor,
+        systematic_share_threshold=thresholds["systematic_share_threshold"],
+        factor_dominance_threshold=thresholds["factor_dominance_threshold"],
+        drift_threshold=thresholds["drift_threshold"],
+    )
+    return BookMacroExposure(
+        as_of=as_of,
+        factors=factors,
+        net_beta_by_factor=nb,
+        systematic_share=share,
+        idiosyncratic_share=1.0 - share,
+        dominant_factor=dominant,
+        flags=flags,
+        holdings=tuple(per_holding),
+        coverage_holdings=len(per_holding),
+        total_holdings=total_holdings,
+        coverage_value_frac=coverage_value_frac,
+    )
