@@ -1,0 +1,19 @@
+{
+  "as_of": "2026-06-08",
+  "universe_size": 570,
+  "n_tickers_with_data": 545,
+  "decision": "INCONCLUSIVE",
+  "mean_ic": 0.010689,
+  "n_dates": 104,
+  "ic_ci_low": -0.02927,
+  "ic_ci_high": 0.042821,
+  "sharpe_diff_point": -0.001856,
+  "sharpe_diff_ci_low": -0.390778,
+  "sharpe_diff_ci_high": 0.193838,
+  "primary_pass": false,
+  "secondary_pass": false,
+  "horizon_days": 21,
+  "start": "2018-01-01",
+  "end": "2026-01-01",
+  "caveat": "Composite tested on MOMENTUM leg only; revision/quality/value lack point-in-time history for 2018-2026 and were flagged-neutral to avoid look-ahead bias (project rule #2)."
+}
