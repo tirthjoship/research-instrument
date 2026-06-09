@@ -73,6 +73,7 @@ class MacroBetaUseCase:
                 logger.warning(
                     f"macro-beta: holding {h.ticker} dropped (no price data)"
                 )
+                total_value += h.shares * getattr(h, "cost_basis", 0.0)
                 continue
             latest_close = series[-1][1]
             value = h.shares * latest_close

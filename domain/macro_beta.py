@@ -11,6 +11,10 @@ from datetime import datetime
 
 from domain.models import BookMacroExposure, HoldingMacroExposure, MacroBetaFlag
 
+_MIN_DRIFT_BETA = (
+    0.15  # below this exposure, drift ratio is noise — suppress DRIFT flag
+)
+
 
 def daily_returns(
     series: list[tuple[datetime, float]],
@@ -129,6 +133,9 @@ def build_flags(
 
     for f, drift in book_drift_by_factor.items():
         headline = beta_headline_by_factor.get(f, 0.0)
+        beta_recent = headline + drift  # noqa: F841  (used for gate documentation)
+        if abs(headline) < _MIN_DRIFT_BETA:
+            continue
         denom = max(abs(headline), 1e-6)
         ratio = abs(drift) / denom
         if ratio > drift_threshold:
