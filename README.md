@@ -2,10 +2,12 @@
 
 Production-grade, hexagonal ML research system for equities, built around **rigorous, pre-registered falsification** and **honest reporting of negative results**. A 5-layer feature architecture (45 technical + 24 sentiment/buzz/divergence + 16 fundamental + 8 cross-asset + 8 event-causal), XGBoost/LightGBM/Ridge ensembles, walk-forward validation, permutation testing, transaction-cost modeling, cross-asset Granger causality, and an adaptive-intelligence dashboard — all with strict point-in-time enforcement.
 
-> **⚠️ Honest status (2026-06-09, ADR-051).** The original thesis — predicting returns from public sentiment/attention/conviction — was **falsified** by **six** independent pre-registered tests (ADR-039 no OOS conviction edge; ADR-043 conviction dimensions dead; ADR-044 intensity-divergence has no cross-sectional IC on a clean 430-ticker universe; ADR-046 momentum/exit KILL — Sharpe-diff CI spans 0; ADR-049 evidence-screen IC INCONCLUSIVE; ADR-050 trend-following sleeve INCONCLUSIVE). A convergent negative result, not a bug: retail-accessible public signals contain no detectable tradeable alpha (semi-strong efficiency). What survived is **not alpha** — drawdown reduction is real (momentum/exit cut maxDD 40%; the TSMOM sleeve is a real diversifier but under the pre-registered bar), and the project's real value is the **falsification harness** + the honest negative finding. The pivot (ADR-045 → ADR-047) **shipped**: an honest **discipline / risk decision-support tool** (graded REDUCE/TRIM/REVIEW/HOLD/ADD_OK + abstain-when-mixed), measured against *your own behavior*, not the market. The **terminal bet** is its forward-calibration gate (ADR-048, LOCKED) — and the ADR-051 **calibration-readiness harness** ensures that gate resolves on date-diverse data (a symmetric guard returns `INCONCLUSIVE_THIN_DATES` rather than a confounded PROCEED/KILL). A weekly Saturday review accrues the sample. Nothing ships without passing a pre-registered gate. See `docs/adr/` (039–051).
+> **⚠️ Honest status (2026-06-09, ADR-052).** The original thesis — predicting returns from public sentiment/attention/conviction — was **falsified** by **six** independent pre-registered tests (ADR-039 no OOS conviction edge; ADR-043 conviction dimensions dead; ADR-044 intensity-divergence has no cross-sectional IC on a clean 430-ticker universe; ADR-046 momentum/exit KILL — Sharpe-diff CI spans 0; ADR-049 evidence-screen IC INCONCLUSIVE; ADR-050 trend-following sleeve INCONCLUSIVE). A convergent negative result, not a bug: retail-accessible public signals contain no detectable tradeable alpha (semi-strong efficiency). What survived is **not alpha** — drawdown reduction is real (momentum/exit cut maxDD 40%; the TSMOM sleeve is a real diversifier but under the pre-registered bar), and the project's real value is the **falsification harness** + the honest negative finding.
+>
+> **Direction (ADR-052): the engine is now a deterministic risk/behavior CRO, not a market-beater.** The recommender **abstains** (RESEARCH_ONLY evidence screen, never a predictor); the product is risk mitigation + behavior-gap closure. Shipped: an honest **discipline / risk decision-support tool** (graded REDUCE/TRIM/REVIEW/HOLD/ADD_OK + abstain-when-mixed, ADR-045→047), measured against *your own behavior*, not the market; and **Unit A — the macro-beta scrubber** (ADR-052): Ridge-regress each holding on SPY/TLT/UUP/XLE to expose the book's hidden macro factor bets, folded into the weekly brief. Live on the real book: **63% of book variance is one-factor macro** (dominant SPY, net β +1.39) — "66 names, mostly one leveraged market bet." The **terminal bet** is the discipline forward-calibration gate (ADR-048, LOCKED); the ADR-051 **calibration-readiness harness** ensures it resolves on date-diverse data (`INCONCLUSIVE_THIN_DATES` rather than a confounded PROCEED/KILL), accrued by a weekly Saturday review. Nothing ships without passing a pre-registered gate. See `docs/adr/` (039–052) and `docs/STATUS.md` for current state.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-1052%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-1442%20passing-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25+-brightgreen)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
@@ -22,7 +24,7 @@ Production-grade, hexagonal ML research system for equities, built around **rigo
 
 **Phases 7-9 reframe:** Direction prediction alone shows no edge (~49% accuracy on mega-caps). The system now surfaces opportunities via multi-signal conviction scoring with adaptive learning — catching trends before mainstream awareness through SEC filing analysis, sentiment convergence, and pattern memory.
 
-**Current engine status (2026-06-05):** A discrimination audit over 63 warmed thematic mid-cap candidates found that 6 of 8 conviction dimensions are completely non-discriminating on this universe (smart-money, signal-agreement, sentiment-momentum, ml-direction, event-signal, analyst-signal all returned var=0.000). Only `temporal_freshness` and `fundamental_basis` vary, meaning conviction currently ranks by data recency, not opportunity quality. The engine honestly abstains on the spine. Sub-project C will pivot to **divergence-led surfacing** — attention-acceleration vs price as the primary trigger, with conviction demoted to a light tiebreaker — so the daily forward-tracking loop can finally accumulate resolved out-of-sample outcomes. See [ADR-043](docs/adr/043-conviction-dims-dead-divergence-led-surfacing.md).
+**Current direction (2026-06-09, ADR-052):** The alpha hunt is **formally closed** after six convergent falsifications. The conviction/divergence/momentum/trend lines were all tested and none cleared a pre-registered bar. The engine is now a **deterministic risk/behavior CRO**: an abstaining RESEARCH_ONLY evidence screen (never a predictor), the shipped discipline tool, and the **macro-beta scrubber** (Unit A) that exposes hidden macro factor bets in a held book. Roadmap: Unit A (macro-beta) ✅ → Unit B (sub-$1B insider-cluster IC — last sanctioned, killable predictive swing) → Unit C (behavior gates). The product surface is the **weekly brief** (`weekly-brief` CLI). See [ADR-052](docs/adr/052-cro-direction-alpha-hunt-closed.md) and `docs/STATUS.md`.
 
 ---
 
@@ -294,7 +296,7 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: ~1052 passed
+# Expected: ~1442 passed
 ```
 
 ### CLI Usage
@@ -426,7 +428,9 @@ make check
 | Pattern memory | 16 | PatternEntry, WeightAdjustment, LearnedRule |
 | Pattern service | 19 | Pattern building, weight adjustment, rules |
 | Learning use case | 11 | Pattern analysis → weight adjustment → rules |
-| **Total** | **~1052** | |
+| _(rows above predate later phases)_ | | |
+| Discipline / calibration / screen / brief / macro-beta / … | _not itemized_ | run `make check` for the live count |
+| **Total (full suite)** | **~1442** | 94%+ coverage |
 
 ---
 
@@ -631,7 +635,7 @@ Three GitHub Actions workflows automate quality gates:
 
 | Workflow | Trigger | What it does |
 |----------|---------|-------------|
-| `test.yml` | Push/PR to develop | Runs ~1052 tests, enforces 90% coverage |
+| `test.yml` | Push/PR to develop | Runs ~1442 tests, enforces 90% coverage |
 | `lint.yml` | Push/PR to develop | black, isort, ruff, mypy strict |
 | `security.yml` | Push/PR to develop | gitleaks secret scanning |
 
@@ -663,7 +667,7 @@ Future: `daily-scan.yml` cron workflow for automated RSS buzz collection.
 >
 > **Full-universe backtest** (350+ tickers, 29 months, 2024-2026) confirms: technical + fundamental + cross-asset + event-causal features alone achieve ~49% accuracy — indistinguishable from random on mega-caps. This honest null result is the foundation. The thesis posits that live sentiment divergence is the edge — Phase 3B in-sample showed 69.7% with sentiment, but out-of-sample validation is pending.
 >
-> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. ~1052 tests, mypy strict, full CI/CD.
+> The system uses three-way ablation to isolate what drives any observed lift. Every result is validated with permutation tests (p<0.05), transaction costs, and regime-aware evaluation. Built with hexagonal architecture — any data source, ML model, or NLP scorer can be swapped without touching business logic. ~1442 tests, mypy strict, full CI/CD.
 >
 > **Financial Intelligence Engine v1** (2026-06-04) closes the validation gap. I discovered the backtest had been fabricating a return metric — literally `accuracy - 0.5` relabeled as 'excess returns.' That's gone. A leakage-safe conviction backtest (stratified walk-forward, 76 tickers, 2023-06 to 2026-05, top-decile precision) replaced it. First honest result: 56.1% top-decile hit rate overall (p=0.13) — a faint positive lean, not statistically significant. Large-caps show 57.4% (p=0.15); small/mid-caps underperformed SPY (48.6%, −0.52 excess Sharpe). The product is now framed honestly: an evidence-aggregator that surfaces organized, point-in-time information per name and abstains when nothing clears the conviction bar. Not a market-beating predictor — not yet. The next step is densifying signal and forward-tracking the event+sentiment-spike layer that can't be cleanly backtested."
 
