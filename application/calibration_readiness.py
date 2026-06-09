@@ -7,12 +7,14 @@ only; unit-testable on synthetic logged-row dicts (no network). See ADR-051.
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 __all__ = [
     "spread_of_as_ofs",
     "as_of_spread",
+    "resolvable_split",
+    "freshness",
 ]
 
 REDUCE = "REDUCE"
@@ -38,3 +40,26 @@ def spread_of_as_ofs(as_ofs: list[str]) -> dict[str, Any]:
 def as_of_spread(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """spread_of_as_ofs over the as_of field of every row that has one."""
     return spread_of_as_ofs([str(r["as_of"]) for r in rows if "as_of" in r])
+
+
+def resolvable_split(
+    rows: list[dict[str, Any]], today: date, horizon_days: int
+) -> dict[str, int]:
+    """REDUCE flags whose horizon has elapsed by `today` (resolvable) vs not (pending)."""
+    resolvable = pending = 0
+    for r in rows:
+        if r.get("verdict") != REDUCE:
+            continue
+        if _date_of(str(r["as_of"])) + timedelta(days=horizon_days) <= today:
+            resolvable += 1
+        else:
+            pending += 1
+    return {"resolvable": resolvable, "pending": pending}
+
+
+def freshness(rows: list[dict[str, Any]], today: date) -> int | None:
+    """Calendar days since the most recent as_of date. None if no rows."""
+    dates = [_date_of(str(r["as_of"])) for r in rows if "as_of" in r]
+    if not dates:
+        return None
+    return (today - max(dates)).days
