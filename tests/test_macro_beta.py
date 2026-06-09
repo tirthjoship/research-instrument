@@ -225,3 +225,83 @@ def test_estimator_port_is_protocol():
     betas, r2 = f.estimate([0.1], {"SPY": [0.1]}, 0.2)
     assert r2 == 0.0
     assert betas == {"SPY": 0.0}
+
+
+def test_brief_renders_macro_section():
+    from domain.brief import (
+        ScorecardSnapshot,
+        WeeklyBrief,
+        to_markdown,
+        to_stdout_masked,
+    )
+    from domain.models import (
+        BookMacroExposure,
+        HoldingMacroExposure,
+        MacroBetaFlag,
+        MacroFactorBeta,
+    )
+    from domain.regime import Regime
+    from domain.screen_models import ScreenLabel
+
+    macro = BookMacroExposure(
+        as_of="2026-06-09",
+        factors=("SPY", "TLT", "UUP", "XLE"),
+        net_beta_by_factor={"SPY": 0.9, "TLT": -0.6, "UUP": 0.1, "XLE": 0.2},
+        systematic_share=0.72,
+        idiosyncratic_share=0.28,
+        dominant_factor="SPY",
+        flags=(MacroBetaFlag("SYSTEMATIC_DOMINANT", None, "72% macro", 0.72, 0.60),),
+        holdings=(
+            HoldingMacroExposure(
+                "NVDA", 0.2, (MacroFactorBeta("SPY", 1.4, 1.5, 0.1),), 0.6
+            ),
+        ),
+        coverage_holdings=1,
+        total_holdings=1,
+        coverage_value_frac=0.95,
+    )
+    brief = WeeklyBrief(
+        as_of="2026-06-09",
+        regime=Regime.RISK_ON,
+        tilt={"momentum": 0.25, "revision": 0.25, "quality": 0.25, "value": 0.25},
+        candidates=(),
+        holdings=(),
+        research_links=(),
+        concentration=(),
+        scorecard=ScorecardSnapshot(
+            "forward since 2026-06-09", None, None, 0, False, "21d", None, 0, "PENDING"
+        ),
+        screen_label=ScreenLabel.RESEARCH_ONLY,
+        macro=macro,
+    )
+    md = to_markdown(brief)
+    assert "MACRO EXPOSURE" in md
+    assert "72%" in md
+    assert "NVDA" in md
+
+    masked = to_stdout_masked(brief)
+    assert "MACRO" in masked
+    assert "NVDA" not in masked
+
+
+def test_brief_macro_none_renders_safely():
+    from domain.brief import ScorecardSnapshot, WeeklyBrief, to_markdown
+    from domain.regime import Regime
+    from domain.screen_models import ScreenLabel
+
+    brief = WeeklyBrief(
+        as_of="2026-06-09",
+        regime=Regime.RISK_ON,
+        tilt={"momentum": 0.25, "revision": 0.25, "quality": 0.25, "value": 0.25},
+        candidates=(),
+        holdings=(),
+        research_links=(),
+        concentration=(),
+        scorecard=ScorecardSnapshot(
+            "forward since 2026-06-09", None, None, 0, False, "21d", None, 0, "PENDING"
+        ),
+        screen_label=ScreenLabel.RESEARCH_ONLY,
+    )
+    md = to_markdown(brief)
+    assert "MACRO EXPOSURE" in md
+    assert "not computed" in md
