@@ -2162,6 +2162,18 @@ def resolve_discipline_flags(log: str, horizon: int) -> None:
         f"down_rate_on_trim={res['down_rate_on_trim']:.0%}  "
         "— TRIM is position-sizing, excluded from the gate"
     )
+    from application.calibration_readiness import diversity_label
+
+    label = diversity_label(
+        res["reduce_resolved_as_ofs"],
+        down_rate=res["down_rate_on_reduce"],
+        brier=res["brier"],
+    )
+    click.echo(
+        f"GATE LABEL: {label}  "
+        "(INCONCLUSIVE_THIN_DATES = sample not date-diverse yet; "
+        "thresholds locked per ADR-048/051)"
+    )
 
 
 @cli.command("holdings-risk-calibrate")
