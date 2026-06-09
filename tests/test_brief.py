@@ -248,6 +248,40 @@ def test_markdown_has_all_sections() -> None:
     assert "RIVN" in md  # full markdown DOES include holding tickers (gitignored file)
 
 
+def test_markdown_scorecard_tracked_but_unresolved() -> None:
+    # n>0 with None returns must read "tracked — returns not yet resolved",
+    # NOT "no calls tracked yet" (which is only correct at n==0).
+    card = ScorecardSnapshot(
+        screen_window="forward since 2026-06-08",
+        screen_top_ret=None,
+        screen_spy_ret=None,
+        screen_n=47,
+        screen_significant=False,
+        discipline_window="21d",
+        discipline_reduce_down_rate=None,
+        discipline_n=0,
+        discipline_gate_status="PENDING",
+    )
+    brief = assemble_brief(
+        as_of="2026-06-08",
+        regime=Regime.NEUTRAL,
+        tilt={"momentum": 0.25, "revision": 0.25, "quality": 0.25, "value": 0.25},
+        screen_result=_screen_result(ScreenLabel.RESEARCH_ONLY),
+        screen_label=ScreenLabel.RESEARCH_ONLY,
+        top_n=10,
+        positions=_positions(),
+        portfolio=_portfolio(),
+        held_tickers=set(),
+        cluster_overlaps={},
+        scorecard=card,
+        concentration_threshold=0.20,
+    )
+    md = to_markdown(brief)
+    assert "47 calls tracked" in md
+    assert "returns not yet resolved" in md
+    assert "no calls tracked yet" not in md
+
+
 def test_markdown_research_only_has_no_buy_language() -> None:
     md = to_markdown(_full_brief(ScreenLabel.RESEARCH_ONLY)).lower()
     assert "buy candidates" not in md
