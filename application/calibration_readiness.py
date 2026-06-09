@@ -7,6 +7,7 @@ only; unit-testable on synthetic logged-row dicts (no network). See ADR-051.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -15,6 +16,8 @@ __all__ = [
     "as_of_spread",
     "resolvable_split",
     "freshness",
+    "ReadinessReport",
+    "readiness",
 ]
 
 REDUCE = "REDUCE"
@@ -63,3 +66,53 @@ def freshness(rows: list[dict[str, Any]], today: date) -> int | None:
     if not dates:
         return None
     return (today - max(dates)).days
+
+
+@dataclass(frozen=True)
+class ReadinessReport:
+    verdict: str  # READY | THIN
+    distinct_reduce_dates: int
+    reduce_span_days: int
+    resolvable_now: int
+    projected_n_at_gate: int
+    shortfalls: tuple[str, ...]
+
+
+def readiness(
+    rows: list[dict[str, Any]],
+    today: date,
+    horizon_days: int,
+    gate_date: date,
+    *,
+    k_dates: int = 3,
+    d_days: int = 10,
+    n_min: int = 30,
+) -> ReadinessReport:
+    """Project whether the REDUCE sample will be diverse + large enough by gate_date.
+
+    THIN unless: projected_n_at_gate >= n_min AND distinct dates >= k_dates AND
+    span >= d_days. Pre-registered design check — changes no locked threshold.
+    """
+    reduce_rows = [r for r in rows if r.get("verdict") == REDUCE]
+    sp = as_of_spread(reduce_rows)
+    projected = sum(
+        1
+        for r in reduce_rows
+        if _date_of(str(r["as_of"])) + timedelta(days=horizon_days) <= gate_date
+    )
+    resolvable_now = resolvable_split(rows, today, horizon_days)["resolvable"]
+    shortfalls: list[str] = []
+    if projected < n_min:
+        shortfalls.append(f"projected_n {projected} < {n_min}")
+    if sp["distinct_dates"] < k_dates:
+        shortfalls.append(f"distinct_dates {sp['distinct_dates']} < {k_dates}")
+    if sp["span_days"] < d_days:
+        shortfalls.append(f"span_days {sp['span_days']} < {d_days}")
+    return ReadinessReport(
+        verdict="READY" if not shortfalls else "THIN",
+        distinct_reduce_dates=int(sp["distinct_dates"]),
+        reduce_span_days=int(sp["span_days"]),
+        resolvable_now=resolvable_now,
+        projected_n_at_gate=projected,
+        shortfalls=tuple(shortfalls),
+    )
