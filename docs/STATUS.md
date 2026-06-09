@@ -4,19 +4,22 @@
 > Keep it short (~40 lines). Overwrite, don't append — history goes to PHASE_LOG.md.
 > Older memory can be stale: verify code symbols against the repo before acting.
 
-**Updated:** 2026-06-09
+**Updated:** 2026-06-09 (post-merge, end of session)
 
 **Direction (ADR-052):** Alpha hunt CLOSED (6 falsifications). Product = honest
 deterministic CRO — risk mitigation + behavior-gap closure + abstaining
 RESEARCH_ONLY screen. Recommender ABSTAINS, never predicts.
 
-**Current phase:** Unit A (macro-beta scrubber) DONE — PR #34 → develop, OPEN (CI
-running). Branch `feat/macro-beta-scrubber`. 1442 tests, 94.13% cov.
+**Current phase:** Unit A (macro-beta scrubber) MERGED — PR #34 + PR #35 (context
+architecture) merged to develop; **develop ≡ main, both @ `bbbdd81`**, CI green.
+1442 tests, 94.13% cov. No open PRs.
 
-**NEXT ACTION:** Merge PR #34 once CI green → start **Unit B** = sub-$1B
-non-routine insider-cluster IC falsification (SEC Form-4, market-cap-tercile
-split, pre-registered). Killable, low odds. **MAX effort throughout** (danger is
-a false positive, not build difficulty). Then Unit C = behavior gates (LOW build).
+**NEXT ACTION:** Start **Unit B** = sub-$1B non-routine insider-cluster IC
+falsification (SEC Form-4, market-cap-tercile split, pre-registered). Killable,
+low odds, last sanctioned predictive swing (KILL ⇒ prediction permanently off).
+**MAX effort throughout** (danger is a false positive, not build difficulty).
+First commit of the Unit B branch should refresh this STATUS.md. Then Unit C =
+behavior gates (LOW build).
 
 **Workflow that works here:** brainstorm → spec (validate vs code) → plan
 (validate vs code) → subagent-driven (Sonnet per phase, Opus phase-gate verify)
