@@ -261,12 +261,16 @@ def to_markdown(brief: WeeklyBrief) -> str:
     lines.append("")
     lines.append("## SCORECARD")
     sc = brief.scorecard
-    # Abstain whenever returns are unavailable, even if n>0 (records can exist
-    # before any forward window has resolved — top_ret/spy_ret are float|None).
-    if sc.screen_n == 0 or sc.screen_top_ret is None or sc.screen_spy_ret is None:
+    # Distinguish "no calls yet" from "calls tracked but returns not yet resolved"
+    # (records can exist before any forward window closes — top_ret/spy_ret float|None).
+    if sc.screen_n == 0:
         lines.append(
-            f"- screen ({sc.screen_window}): n={sc.screen_n} — "
-            f"abstaining, no resolved track record yet"
+            f"- screen ({sc.screen_window}): n=0 — abstaining, no calls tracked yet"
+        )
+    elif sc.screen_top_ret is None or sc.screen_spy_ret is None:
+        lines.append(
+            f"- screen ({sc.screen_window}): n={sc.screen_n} calls tracked — "
+            f"returns not yet resolved"
         )
     else:
         sig = "significant" if sc.screen_significant else "not significant"
