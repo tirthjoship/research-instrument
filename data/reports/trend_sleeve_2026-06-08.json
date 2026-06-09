@@ -1,0 +1,23 @@
+{
+  "as_of": "2026-06-08",
+  "start": "2008-01-01",
+  "end": "2026-01-01",
+  "n_months": 216,
+  "decision": "INCONCLUSIVE",
+  "sharpe_spy": 0.7483,
+  "sharpe_sleeve": 0.723,
+  "sharpe_blended": 0.7802,
+  "maxdd_spy": -0.4605,
+  "maxdd_sleeve": -0.0801,
+  "maxdd_blended": -0.3819,
+  "cagr_spy": 0.1145,
+  "cagr_sleeve": 0.0381,
+  "cagr_blended": 0.1009,
+  "sharpe_diff_point": 0.031933,
+  "sharpe_diff_ci_low": -0.001091,
+  "sharpe_diff_ci_high": 0.058263,
+  "dd_reduction": 0.1707,
+  "sharpe_blended_6040": 0.8205,
+  "maxdd_blended_6040": -0.2953,
+  "claim": "diversifier sleeve (risk control), NOT alpha \u2014 see spec 2026-06-08"
+}

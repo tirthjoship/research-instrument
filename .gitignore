@@ -10,6 +10,8 @@ data/personal/
 .claude/settings.local.json
 # Note: docs/superpowers/plans/ and specs/ are tracked in git
 # They contain design decisions and implementation plans that are project artifacts
+# Superseded plans/specs are moved to archive/ (local-only) to prevent agent drift
+archive/
 
 # Coverage artifacts
 .coverage
