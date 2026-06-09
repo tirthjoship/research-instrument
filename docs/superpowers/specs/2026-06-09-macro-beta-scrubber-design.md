@@ -43,8 +43,15 @@ gap remains).
   - **XLE chosen over USO** deliberately: USO tracks crude *futures* and is crippled by
     roll-yield/contango; it is not the energy-*equity* factor the equity book is exposed
     to. XLE is equity-energy — the correct factor.
-- **Estimator: light-shrinkage Ridge** (alpha ≈ 0.1–0.3) on standardized returns, reusing
-  the `RidgePredictor` pattern (`sklearn.linear_model.Ridge` + `StandardScaler`).
+- **Estimator: light-shrinkage Ridge** (alpha ≈ 0.1–0.3), `sklearn.linear_model.Ridge`
+  fit on **raw de-meaned daily returns — NO `StandardScaler`.**
+  - **Why no scaler (validation finding):** the existing `RidgePredictor` wraps a
+    `StandardScaler` and never exposes `.coef_`, so it is unusable for beta extraction — a
+    NEW adapter is required. We also fit on *raw* returns deliberately: standardizing X
+    would make `.coef_` standardized-unit betas, contradicting the requirement to report
+    raw dollar-interpretable betas. Daily factor returns are already on comparable scale,
+    so a single `Ridge.fit(X=factor_returns, y=holding_returns)` yields `.coef_` that **is**
+    the raw beta per factor (`.intercept_` ≈ 0 after de-meaning).
   - **Known trade-off (documented honestly):** Ridge shrinks coefficients toward zero, so
     reported betas are *conservative* (slightly understate true exposure). Acceptable for
     LOW build IF reported as "shrinkage-adjusted." **Escalation path:** if dogfood betas
@@ -61,13 +68,13 @@ gap remains).
 | Layer | Element | Responsibility |
 |---|---|---|
 | `domain/ports.py` | `MacroBetaEstimatorPort` | `estimate(holding_returns: list[float], factor_returns: dict[str, list[float]], alpha: float) -> EstimationResult` (betas per factor + r_squared). Pure interface. |
-| `adapters/ml/macro_beta_analyzer.py` | `RidgeMacroBetaEstimator` | implements port; light-shrinkage Ridge + StandardScaler. Only place sklearn is imported for this feature. |
+| `adapters/ml/macro_beta_analyzer.py` | `RidgeMacroBetaEstimator` | implements port; `sklearn.linear_model.Ridge` on raw de-meaned returns (NO StandardScaler), reads `.coef_`. Only place sklearn is imported for this feature. NOT a reuse of `RidgePredictor` (which hides `.coef_`). |
 | `domain/macro_beta.py` | pure functions | dollar-weight per-holding betas → book net-beta per factor; book systematic share; flag policy. **stdlib only**, no sklearn. |
 | `domain/models.py` | frozen dataclasses | `MacroFactorBeta`, `HoldingMacroExposure`, `BookMacroExposure`, `MacroBetaFlag` |
 | `application/macro_beta_use_case.py` | `MacroBetaUseCase` | orchestrate: load prices → align → returns → estimate per holding (252d + 63d) → aggregate → `BookMacroExposure` |
-| `domain/brief.py` | extend | add `macro: BookMacroExposure` to `WeeklyBrief`; render in markdown + masked-stdout formatters |
-| `application/cli.py` | `_build_weekly_brief()` | wire `MacroBetaUseCase` into pillar composition (line ~2763) |
-| `config/us.yaml` | config | factor tickers, thresholds, windows, alpha |
+| `domain/brief.py` | extend | add `macro: BookMacroExposure` to `WeeklyBrief` (class at L76); render in `to_markdown()` (L218) + `to_stdout_masked()` (L298). `assemble_brief()` at L122 |
+| `application/cli.py` | `_build_weekly_brief()` (L2763, called L2904) | wire `MacroBetaUseCase` into pillar composition |
+| `config/markets/us.yaml` | config | new `macro_beta:` block — factor tickers, thresholds, windows, alpha (independent of existing `macro_symbols`, which uses yield *indices* unsuitable for return-regression) |
 | `config/tickers/{sp500,nasdaq100,tsx60}.txt` | prune | remove delisted tickers |
 
 **Rationale:** regression (sklearn) lives in the adapter; the CRO *judgment* (weighting,
@@ -116,7 +123,9 @@ class BookMacroExposure:
 
 ## Data flow
 
-1. `read_holdings()` → `list[Holding]` (ticker, shares, cost_basis).
+1. `read_holdings(path)` → `list[holdings_reader.Holding]` (fields: `ticker`, `shares`,
+   `cost_basis`, `account_type`). NOTE: use `application/holdings_reader.Holding`, **not**
+   `domain/models.Holding` (a different, unrelated class with symbol/quantity fields).
 2. For each holding **and** each factor ETF: `load_price_series(ticker, start≈300d ago,
    end=now)`. Inner-join on common dates across holding + all factors → daily simple
    returns.
@@ -140,7 +149,8 @@ class BookMacroExposure:
 - **DRIFT** — for any factor, `|drift| / max(|beta_headline|, ε) > 0.50` →
   "{factor} exposure climbing fast (recent β diverges from 1yr β)."
 
-Default values live in `config/us.yaml`:
+Default values live in a new block in `config/markets/us.yaml` (independent of the
+existing `macro_symbols` block, which holds yield/index proxies for other features):
 ```yaml
 macro_beta:
   factors: [SPY, TLT, UUP, XLE]
