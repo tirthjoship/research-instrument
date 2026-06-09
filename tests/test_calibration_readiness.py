@@ -2,6 +2,7 @@ from datetime import date
 
 from application.calibration_readiness import (
     as_of_spread,
+    diversity_label,
     freshness,
     readiness,
     resolvable_split,
@@ -108,3 +109,39 @@ def test_readiness_projection_excludes_flags_resolving_after_gate() -> None:
     )
     assert rep.projected_n_at_gate == 0
     assert rep.verdict == "THIN"
+
+
+def _as_ofs(dates: list[str]) -> list[str]:
+    return [f"{d}T09:00:00+00:00" for d in dates]
+
+
+def test_guard_confounded_high_downrate_is_thin_not_proceed() -> None:
+    # one date, n>=30, down_rate passes, brier passes -> STILL thin (symmetric)
+    as_ofs = _as_ofs(["2026-06-08"] * 40)
+    assert (
+        diversity_label(as_ofs, down_rate=0.70, brier=0.30) == "INCONCLUSIVE_THIN_DATES"
+    )
+
+
+def test_guard_confounded_low_downrate_is_thin_not_kill() -> None:
+    as_ofs = _as_ofs(["2026-06-08"] * 40)
+    assert (
+        diversity_label(as_ofs, down_rate=0.20, brier=0.60) == "INCONCLUSIVE_THIN_DATES"
+    )
+
+
+def test_guard_diverse_passing_thresholds_is_proceed() -> None:
+    as_ofs = _as_ofs(["2026-06-09"] * 14 + ["2026-06-16"] * 14 + ["2026-06-23"] * 14)
+    assert diversity_label(as_ofs, down_rate=0.60, brier=0.40) == "PROCEED"
+
+
+def test_guard_diverse_failing_thresholds_is_kill() -> None:
+    as_ofs = _as_ofs(["2026-06-09"] * 14 + ["2026-06-16"] * 14 + ["2026-06-23"] * 14)
+    assert diversity_label(as_ofs, down_rate=0.40, brier=0.60) == "KILL"
+
+
+def test_guard_thin_n_is_thin() -> None:
+    as_ofs = _as_ofs(["2026-06-09", "2026-06-16", "2026-06-23"])  # diverse but n=3
+    assert (
+        diversity_label(as_ofs, down_rate=0.99, brier=0.01) == "INCONCLUSIVE_THIN_DATES"
+    )

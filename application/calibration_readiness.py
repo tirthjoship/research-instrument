@@ -18,6 +18,7 @@ __all__ = [
     "freshness",
     "ReadinessReport",
     "readiness",
+    "diversity_label",
 ]
 
 REDUCE = "REDUCE"
@@ -116,3 +117,30 @@ def readiness(
         projected_n_at_gate=projected,
         shortfalls=tuple(shortfalls),
     )
+
+
+def diversity_label(
+    resolved_reduce_as_ofs: list[str],
+    down_rate: float,
+    brier: float,
+    *,
+    k_dates: int = 3,
+    d_days: int = 10,
+    n_min: int = 30,
+    down_rate_min: float = 0.55,
+    brier_max: float = 0.45,
+) -> str:
+    """Pre-resolution validity guard THEN the LOCKED ADR-048 thresholds.
+
+    Returns INCONCLUSIVE_THIN_DATES when the resolved REDUCE sample is too small or
+    not date-diverse — SYMMETRICALLY, regardless of down_rate (blocks a confounded
+    PROCEED and a confounded KILL alike). Only on a diverse sample are the locked
+    thresholds (down_rate >= 0.55 AND brier <= 0.45) evaluated. Changes no threshold.
+    """
+    n = len(resolved_reduce_as_ofs)
+    sp = spread_of_as_ofs(resolved_reduce_as_ofs)
+    if n < n_min or sp["distinct_dates"] < k_dates or sp["span_days"] < d_days:
+        return "INCONCLUSIVE_THIN_DATES"
+    if down_rate >= down_rate_min and brier <= brier_max:
+        return "PROCEED"
+    return "KILL"
