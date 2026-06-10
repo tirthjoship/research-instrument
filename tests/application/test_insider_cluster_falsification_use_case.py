@@ -70,3 +70,24 @@ def test_c1_no_price_event_enters_coverage_denominator():
     assert report["n_bottom_population"] == 2  # ABC record + ZZZ no-price
     assert report["n_bottom_benchmarked"] == 1  # only ABC
     assert abs(report["coverage"] - 0.5) < 1e-9  # NOT a spurious 1.0
+
+
+def test_m2_same_ticker_events_binned_per_event_not_per_ticker():
+    # Regression for the per-ticker ADV dict collision: one ticker, two cluster
+    # events 3 months apart. Old code binned the ticker ONCE (last ADV wins,
+    # tercile_counts summed to 1). Per-event binning must count BOTH events.
+    txns = [_buy("ABC", c, date(2020, 1, 5)) for c in ("1", "2", "3")]
+    txns += [_buy("ABC", c, date(2020, 4, 6)) for c in ("4", "5", "6")]
+    uc = InsiderClusterFalsificationUseCase(
+        port=_FakePort(txns),
+        prices=lambda tk: [
+            (date(2020, 1, 1) + timedelta(days=i), 10.0, 1000.0) for i in range(200)
+        ],
+        quarters=[(2020, 1)],
+    )
+    report = uc.run()
+    assert report["n_cluster_events"] == 2
+    counts = report["tercile_counts"]
+    assert sum(counts.values()) == 2  # per-EVENT, not per-ticker
+    assert report["n_events_binned_below_min_population"] == 2
+    assert report["min_tercile_population"] == 30

@@ -17,10 +17,15 @@ from application.insider_forward_returns import (
 )
 from domain.insider_cluster import detect_clusters
 from domain.insider_gate import evaluate_gate
-from domain.insider_terciles import assign_terciles, slippage_bps_for_tercile
+from domain.insider_terciles import slippage_bps_for_tercile, tercile_for_event
 from domain.ports import InsiderTransactionsPort
 
 BENCHMARK_ETF = {"bottom": "IWC", "mid": "IWM", "top": "IWM"}
+
+# Disclosure-only (spec §3 stability rule): events binned while the expanding
+# cross-section is below this population are COUNTED, never deferred or dropped
+# (deferring would shrink the denominator — the survivorship bug C1 fixed).
+MIN_TERCILE_POPULATION = 30
 
 
 class InsiderClusterFalsificationUseCase:
@@ -45,19 +50,24 @@ class InsiderClusterFalsificationUseCase:
 
         n_events = len(events)
 
-        adv: dict[str, float] = {
-            cast(str, r["ticker"]): cast(float, r["adv"]) for r in records
-        }
-        terciles = assign_terciles(adv)
-        bottom = [
-            r for r in records if terciles.get(cast(str, r["ticker"])) == "bottom"
-        ]
+        # M2 (spec §3): per-EVENT point-in-time terciles. Sort by fire date
+        # (ticker tie-break for determinism), bin each event against the
+        # expanding ADV distribution of events up to and including itself.
+        records.sort(key=lambda r: (cast(date, r["fire_date"]), cast(str, r["ticker"])))
+        prior_advs: list[float] = []
+        n_binned_below_min = 0
+        for r in records:
+            if len(prior_advs) + 1 < MIN_TERCILE_POPULATION:
+                n_binned_below_min += 1
+            r["tercile"] = tercile_for_event(prior_advs, cast(float, r["adv"]))
+            prior_advs.append(cast(float, r["adv"]))
+        bottom = [r for r in records if r["tercile"] == "bottom"]
 
         slip = slippage_bps_for_tercile("bottom") / 10000.0
         etf = BENCHMARK_ETF["bottom"]
         gross_abn: list[float] = []
         net_abn: list[float] = []
-        for r in sorted(bottom, key=lambda x: cast(date, x["fire_date"])):
+        for r in bottom:  # already in fire-date order (sorted above)
             # An ADV-only (delisted mid-window) record has no forward return; it
             # stays in the denominator (below) but contributes no abnormal return.
             if r["fwd_return"] is None:
@@ -109,7 +119,9 @@ class InsiderClusterFalsificationUseCase:
             "coverage": coverage,
             "benchmark_etf": etf,
             "tercile_counts": {
-                t: sum(1 for v in terciles.values() if v == t)
+                t: sum(1 for r in records if r["tercile"] == t)
                 for t in ("bottom", "mid", "top")
             },
+            "n_events_binned_below_min_population": n_binned_below_min,
+            "min_tercile_population": MIN_TERCILE_POPULATION,
         }
