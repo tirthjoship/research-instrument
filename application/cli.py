@@ -3059,8 +3059,11 @@ def backtest_insider_clusters(start_year: int, end_year: int, report_dir: str) -
     Masked stdout: verdict + counts only. Full distribution -> tracked JSON report.
     """
     import json
+    import time
     from datetime import date, datetime, timezone
     from pathlib import Path
+
+    from loguru import logger
 
     from adapters.data.sec_form345_dataset_adapter import SECForm345DatasetAdapter
     from adapters.data.yfinance_adapter import YFinanceAdapter
@@ -3070,10 +3073,33 @@ def backtest_insider_clusters(start_year: int, end_year: int, report_dir: str) -
 
     quarters = [(y, q) for y in range(start_year, end_year + 1) for q in (1, 2, 3, 4)]
     port = SECForm345DatasetAdapter(cache_dir=Path("data/cache/sec_form345"))
-    yf = YFinanceAdapter(cache_dir=Path("data/cache/yfinance"))
+    # use_cache=True so a re-run resumes from already-fetched tickers (resumable).
+    yf = YFinanceAdapter(cache_dir=Path("data/cache/yfinance"), use_cache=True)
+
+    # Fetch the FULL window covering the cluster era (start_year-1 .. now) so each
+    # event's 21-day forward + trailing ADV land on real prices around its fire
+    # date. prediction_time=now keeps all historical bars past the PIT filter.
+    now = datetime.now(timezone.utc)
+    window_start = datetime(start_year - 1, 1, 1, tzinfo=timezone.utc)
 
     def prices(ticker: str) -> list[tuple[date, float, float]]:
-        signals = yf.get_signals(ticker, datetime.now(timezone.utc))
+        was_cached = yf.has_cache(ticker)
+        signals = []
+        delay = 2.0
+        for attempt in range(5):
+            try:
+                signals = yf.get_signals(
+                    ticker, now, start_date=window_start, end_date=now
+                )
+                break
+            except Exception as exc:  # incl. yfinance rate-limit; degrade gracefully
+                if attempt == 4:
+                    logger.warning("yfinance gave up on {}: {}", ticker, exc)
+                    return []
+                time.sleep(delay)
+                delay *= 2
+        if not was_cached:
+            time.sleep(0.4)  # polite throttle on fresh fetches to avoid rate limits
         return [(s.timestamp.date(), s.price, float(s.volume)) for s in signals]
 
     uc = InsiderClusterFalsificationUseCase(port=port, prices=prices, quarters=quarters)
