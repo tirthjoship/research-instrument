@@ -21,6 +21,7 @@ yfinance get_signals.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from datetime import date
 
@@ -50,6 +51,12 @@ def resolve_events(
         # Trailing ADV — computable from the lookback alone (no forward needed).
         lookback = series[max(0, idx - ADV_LOOKBACK_TDAYS) : idx] or series[: idx + 1]
         adv = sum(close * vol for _, close, vol in lookback) / len(lookback)
+        if not math.isfinite(adv):
+            # A NaN/inf bar would silently misbin the event's tercile (NaN breaks
+            # sorted-rank binning). Treat as unpriceable: conservative bottom-
+            # denominator path, same as a missing series.
+            no_price.append(ev)
+            continue
 
         # Forward 21d return — only if the forward window exists and entry > 0.
         c0 = series[idx][1]
