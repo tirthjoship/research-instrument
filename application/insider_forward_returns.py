@@ -1,8 +1,22 @@
 """Resolve cluster events to 21-trading-day forward returns + trailing ADV.
 
-Survivorship-safe: a name with no obtainable forward price is returned in the
-`unresolved` list, never silently dropped (spec sec.5). The price source is a
-callable so the unit tests with fakes; production wraps yfinance get_signals.
+Survivorship-safe (spec sec.5). The key honesty rule, post code-review C1: ADV is
+computed from the TRAILING window, independently of whether the forward window
+exists. So a name that delists mid-holding-period still gets a trailing ADV (hence
+a tercile) and therefore lands in the coverage DENOMINATOR — it just contributes
+no forward abnormal return (it lowers coverage instead of vanishing from it).
+
+`resolve_events` returns two lists:
+- `records`: every event with an obtainable trailing ADV. Each carries `adv` plus
+  `fwd_return`/`entry_date`/`exit_date` that are None when the forward window is
+  missing (delisted before +21d). These are tercile-assignable.
+- `no_price`: events with no price bar at/after the fire date at all (delisted
+  before the fire, or an unmapped symbol). Not tercile-assignable; the caller
+  bins these into the bottom (least-liquid) tercile denominator as the
+  conservative survivorship assumption, so they can only lower coverage.
+
+The price source is a callable so the unit tests with fakes; production wraps
+yfinance get_signals.
 """
 
 from __future__ import annotations
@@ -21,32 +35,44 @@ PriceFn = Callable[[str], list[tuple[date, float, float]]]  # (date, close, volu
 def resolve_events(
     events: list[ClusterEvent], prices: PriceFn
 ) -> tuple[list[dict[str, object]], list[ClusterEvent]]:
-    resolved: list[dict[str, object]] = []
-    unresolved: list[ClusterEvent] = []
+    """Resolve events to (records-with-ADV, no-price events). See module docstring."""
+    records: list[dict[str, object]] = []
+    no_price: list[ClusterEvent] = []
     for ev in events:
         series = sorted(prices(ev.ticker), key=lambda r: r[0])
         idx = next((i for i, r in enumerate(series) if r[0] >= ev.fire_date), None)
-        if idx is None or idx + FORWARD_HORIZON_TDAYS >= len(series):
-            unresolved.append(ev)
+        if idx is None:
+            # No bar at/after the fire date: delisted before fire, or unmapped
+            # symbol. Cannot assign a tercile; caller bins to bottom (worst case).
+            no_price.append(ev)
             continue
-        c0 = series[idx][1]
-        c1 = series[idx + FORWARD_HORIZON_TDAYS][1]
-        if c0 <= 0:
-            unresolved.append(ev)
-            continue
+
+        # Trailing ADV — computable from the lookback alone (no forward needed).
         lookback = series[max(0, idx - ADV_LOOKBACK_TDAYS) : idx] or series[: idx + 1]
         adv = sum(close * vol for _, close, vol in lookback) / len(lookback)
-        resolved.append(
+
+        # Forward 21d return — only if the forward window exists and entry > 0.
+        c0 = series[idx][1]
+        fwd_return: float | None = None
+        entry_date: date | None = None
+        exit_date: date | None = None
+        if c0 > 0 and idx + FORWARD_HORIZON_TDAYS < len(series):
+            c1 = series[idx + FORWARD_HORIZON_TDAYS][1]
+            fwd_return = (c1 - c0) / c0
+            entry_date = series[idx][0]
+            exit_date = series[idx + FORWARD_HORIZON_TDAYS][0]
+
+        records.append(
             {
                 "ticker": ev.ticker,
                 "fire_date": ev.fire_date,
-                "fwd_return": (c1 - c0) / c0,
                 "adv": adv,
-                "entry_date": series[idx][0],
-                "exit_date": series[idx + FORWARD_HORIZON_TDAYS][0],
+                "fwd_return": fwd_return,
+                "entry_date": entry_date,
+                "exit_date": exit_date,
             }
         )
-    return resolved, unresolved
+    return records, no_price
 
 
 def benchmark_return(

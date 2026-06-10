@@ -11,11 +11,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from domain.exceptions import LookAheadBiasError
+
 CLUSTER_MIN_INSIDERS = 3
 CLUSTER_WINDOW_DAYS = 30
 INCLUDED_TRANS_CODE = "P"
 INCLUDED_ACQ_DISP = "A"
+# Documentation only: the ENFORCED contract is the is_qualifying_buy() allowlist
+# (TRANS_CODE == 'P' AND TRANS_ACQUIRED_DISP_CD == 'A'). This blocklist mirrors the
+# spec's exclusion list for reference; nothing reads it for filtering. NB the 'A'
+# here is the transaction CODE for a grant/award — a DIFFERENT column from
+# INCLUDED_ACQ_DISP='A' (the acquired/disposed FLAG). Never conflate them (spec sec.2).
 EXCLUDED_TRANS_CODES = {"S", "M", "A", "G", "F", "C", "W"}
+# Lock the code-vs-flag distinction: the included purchase code must never be in
+# the exclusion list (a future edit pointing the blocklist at the wrong column
+# would silently zero the signal).
+assert INCLUDED_TRANS_CODE not in EXCLUDED_TRANS_CODES
 
 
 @dataclass(frozen=True)
@@ -86,6 +97,16 @@ def detect_clusters(
                 seen.setdefault(t.insider_cik, t)
                 if len(seen) >= CLUSTER_MIN_INSIDERS:
                     fire_date = t.filing_date
+                    # Point-in-time guard (spec sec.2 / CLAUDE.md look-ahead rule):
+                    # no contributing filing may post-date the fire date. This is
+                    # structurally guaranteed (txns sorted ascending; fire = the
+                    # completing filing), asserted as defense-in-depth so a future
+                    # refactor cannot silently leak a later filing into the signal.
+                    if any(s.filing_date > fire_date for s in seen.values()):
+                        raise LookAheadBiasError(
+                            f"insider cluster {ticker}: a contributing Form-4 filing "
+                            f"post-dates the fire date {fire_date}"
+                        )
                     if fired_until is None or fire_date > fired_until:
                         events.append(
                             ClusterEvent(
