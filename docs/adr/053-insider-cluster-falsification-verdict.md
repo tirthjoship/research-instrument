@@ -23,9 +23,36 @@ Design + pre-registration: `docs/superpowers/specs/2026-06-09-insider-cluster-fa
 - **Guards (override):** bottom-tercile events < 100 → `INCONCLUSIVE_THIN_N`; bottom-tercile benchmarked-coverage < 80% → `INCONCLUSIVE_THIN_COVERAGE`.
 - **Primary test = bottom (least-liquid) tercile.** Mid/top descriptive only.
 
+## Amendment 2026-06-10 — validity repairs applied BEFORE the full-window run
+
+Two detection-validity bugs found in code review were fixed after the smoke run
+(2021–24) but before the full 2006–2024 verdict run. Recorded per the
+pre-registration honesty rules (this is validity repair, not threshold tuning;
+all gate thresholds remain locked):
+
+- **M1 — joint-filing dedup.** One Form 4 filed jointly by N reporting owners was
+  counted as N distinct insiders, so a single buy decision could fabricate a
+  "cluster." Detection now requires ≥3 greedily-matched distinct
+  (insider, accession) pairs. Expected effect: fewer fabricated events, so THIN_N
+  risk rises — but the count drop is NOT guaranteed (verified by review fuzzing):
+  deduplication can shift a cluster's fire date, which moves the 30-day re-fire
+  suppression window and can unmask a second, fully legitimate cluster the old
+  rule had masked. Either direction is honest.
+- **M2 — point-in-time terciles.** Tercile assignment pooled ADV across the full
+  sample and collided per ticker (all of a ticker's events took one ADV — the
+  last record's). Binning is now per-event against the expanding distribution of
+  events up to each fire date (`MIN_TERCILE_POPULATION = 30`, disclosure-only:
+  early events are binned and counted, never deferred or dropped).
+- **Hardening:** a non-finite ADV (bad price bar) now routes the event to the
+  conservative no-price path (bottom denominator) instead of silently
+  corrupting rank binning.
+
+The smoke-run numbers below predate these fixes and are NOT comparable to the
+full-window result.
+
 ## Results
 
-### Smoke window — 2021Q1–2024Q4 (pipeline validation, 2026-06-10)
+### Smoke window — 2021Q1–2024Q4 (pipeline validation, 2026-06-10, PRE-amendment)
 
 | Metric | Value |
 |--------|-------|
