@@ -18,6 +18,7 @@ def _buy(ticker, cik, d):
     return InsiderTransaction(
         ticker=ticker,
         insider_cik=cik,
+        accession=f"acc-{ticker}-{cik}",
         trans_code="P",
         acquired_disp="A",
         shares=100.0,

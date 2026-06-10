@@ -103,6 +103,7 @@ class SECForm345DatasetAdapter:
                     InsiderTransaction(
                         ticker=ticker,
                         insider_cik=cik,
+                        accession=acc,
                         trans_code=(tr.get("TRANS_CODE") or "").strip(),
                         acquired_disp=(tr.get("TRANS_ACQUIRED_DISP_CD") or "").strip(),
                         shares=shares,
