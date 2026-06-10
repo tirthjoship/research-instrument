@@ -4,6 +4,8 @@
 **Status:** Pre-registration (thresholds LOCKED before any data run)
 **ADR:** ADR-052 (Unit B), builds on ADR-039/048/049/050/051 (falsification + IC + gate ethos)
 **Branch:** `feat/insider-cluster-falsification`
+**Feasibility:** VERIFIED 2026-06-09 (see §3.1) — DERA dataset, columns, coverage floor,
+and IC/bootstrap reuse surface all confirmed against live sources before planning.
 
 > **This is a pre-registration document.** Every threshold, window, and decision rule
 > below is fixed BEFORE the falsification is run. No threshold may be changed after
@@ -77,6 +79,30 @@ The live EFTS `sec_edgar_adapter.py` is **untouched** — it is a full-text-sear
 (no transaction-code/shares/identity parsing; `transaction_value` hardcoded 0.0) and is
 unsuitable for this backtest. New historical adapter: `sec_form345_dataset_adapter.py`.
 
+### 3.1 Verified data facts (checked 2026-06-09, live)
+
+- **File URL pattern (HTTP 200):**
+  `https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/{YYYY}q{Q}_form345.zip`
+- **SEC fair-access:** requests MUST send a declared `User-Agent` (contact string) or
+  the server returns 403. The adapter sets one.
+- **Coverage floor: 2006q1** (2005 and earlier → 404). Sample window = 2006q1 → latest.
+- **Tables present:** SUBMISSION, REPORTINGOWNER, NONDERIV_TRANS, DERIV_TRANS,
+  NONDERIV_HOLDING, DERIV_HOLDING, FOOTNOTES, OWNER_SIGNATURE (TSV) + `FORM_345_readme.htm`.
+- **Verified columns used by this design:**
+  - SUBMISSION: `ACCESSION_NUMBER`, `FILING_DATE`, `ISSUERTRADINGSYMBOL` (ticker — no
+    CIK→ticker lookup needed), `ISSUERCIK`, `PERIOD_OF_REPORT`, **`AFF10B5ONE`** (10b5-1
+    affirmation flag)
+  - REPORTINGOWNER: `ACCESSION_NUMBER`, `RPTOWNERCIK` (distinct-insider key),
+    `RPTOWNER_RELATIONSHIP`, `RPTOWNER_TITLE`
+  - NONDERIV_TRANS: `ACCESSION_NUMBER`, `TRANS_CODE`, `TRANS_ACQUIRED_DISP_CD`,
+    `TRANS_SHARES`, `TRANS_PRICEPERSHARE`, `EQUITY_SWAP_INVOLVED`, `TRANS_DATE`,
+    `DIRECT_INDIRECT_OWNERSHIP`
+- **Join keys:** SUBMISSION ⋈ REPORTINGOWNER ⋈ NONDERIV_TRANS on `ACCESSION_NUMBER`.
+- **Reuse surface confirmed:** `application/ic_analysis.py` exposes `spearman_ic()` +
+  `aggregate_ic()`; `application/precision_metrics.py` exposes `moving_block_bootstrap()`
+  + `sharpe_difference_bootstrap()`. (Plan step: confirm the bootstrap fn returns a usable
+  95% CI lower bound; wrap if not.)
+
 ## 4. Pre-registered two-leg gate (LOCKED)
 
 Run the full evaluation **within each liquidity tercile**. The **primary test is the
@@ -141,10 +167,14 @@ for delisted names, so "delisting-aware" is not fully guaranteed by the data. Mi
 the §5 coverage guard, which downgrades to INCONCLUSIVE rather than trust a thin-coverage
 result. The residual gap is a reported number, not a hidden assumption.
 
-**Caveat 3 — 10b5-1 historical flagging is incomplete.** The DERA datasets do not cleanly
-flag 10b5-1 plans across all years. Where flagged, excluded; where not, included. This
-slightly *weakens* the "non-routine" purity in a direction that, if anything, *adds noise*
-(harder to PASS), so it does not bias toward a false positive. Documented.
+**Caveat 3 — 10b5-1 flag exists but is historically under-populated.** Verified: SUBMISSION
+carries an explicit `AFF10B5ONE` affirmation flag — cleaner than first assumed. We exclude
+filings flagged `AFF10B5ONE`. BUT the field was sparsely populated before the SEC's 2023
+mandatory-checkbox rule, so older clusters may include unflagged 10b5-1 plans. This adds
+*noise* to the "non-routine" purity in a conservative direction (makes a PASS harder, not
+easier), so it cannot manufacture a false positive. The flag is primarily a buy signal
+concern anyway — 10b5-1 plans are overwhelmingly *sales*, and this signal is buys-only, so
+contamination is structurally small. Documented; the unflagged-share by year is reported.
 
 ## 8. Architecture (hexagonal — extend, don't rebuild)
 
