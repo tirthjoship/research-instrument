@@ -16,6 +16,11 @@ archive/
 # Coverage artifacts
 .coverage
 
+# Auto-generated timestamped backtest dumps (curated reports are tracked individually)
+data/reports/backtest_report_*.json
+# Personal holdings review log — contains book-level output, never commit
+data/reports/discipline_weekly_review.log
+
 # Raw data — never commit large files to Git
 data/raw/
 data/interim/
