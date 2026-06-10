@@ -9,7 +9,7 @@ the FILING date (point-in-time), never the transaction date. See spec
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 CLUSTER_MIN_INSIDERS = 3
 CLUSTER_WINDOW_DAYS = 30
@@ -54,3 +54,49 @@ class ClusterEvent:
     fire_date: date  # filing date of the 3rd qualifying insider (point-in-time)
     distinct_insiders: int
     total_buy_value: float
+
+
+def detect_clusters(
+    transactions: list[InsiderTransaction],
+) -> list[ClusterEvent]:
+    """Detect strict clusters per ticker.
+
+    A cluster fires when >=3 DISTINCT insiders each have a qualifying buy whose
+    FILING dates fall within a rolling 30-day window. Fire date = the filing date
+    that completes the 3rd distinct insider (point-in-time: the cluster is only
+    knowable once that 3rd Form-4 is public). At most one event per ticker per
+    completing-window is emitted; subsequent qualifying buys that extend the same
+    standing cluster do not re-fire until the window of distinct insiders resets.
+    """
+    by_ticker: dict[str, list[InsiderTransaction]] = {}
+    for t in transactions:
+        if t.is_qualifying_buy():
+            by_ticker.setdefault(t.ticker, []).append(t)
+
+    events: list[ClusterEvent] = []
+    window = timedelta(days=CLUSTER_WINDOW_DAYS)
+    for ticker, txns in by_ticker.items():
+        txns.sort(key=lambda x: x.filing_date)
+        fired_until: date | None = None
+        for i, anchor in enumerate(txns):
+            seen: dict[str, InsiderTransaction] = {}
+            for t in txns[i:]:
+                if t.filing_date - anchor.filing_date > window:
+                    break
+                seen.setdefault(t.insider_cik, t)
+                if len(seen) >= CLUSTER_MIN_INSIDERS:
+                    fire_date = t.filing_date
+                    if fired_until is None or fire_date > fired_until:
+                        events.append(
+                            ClusterEvent(
+                                ticker=ticker,
+                                fire_date=fire_date,
+                                distinct_insiders=len(seen),
+                                total_buy_value=sum(
+                                    s.shares * s.price_per_share for s in seen.values()
+                                ),
+                            )
+                        )
+                        fired_until = fire_date + window
+                    break
+    return events
