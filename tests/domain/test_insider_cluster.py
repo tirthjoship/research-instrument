@@ -100,3 +100,37 @@ def test_fire_date_is_always_a_real_filing_date(ciks):
     filing_dates = [t.filing_date for t in txns]
     for ev in detect_clusters(txns):
         assert ev.fire_date in filing_dates
+
+
+def test_m1_joint_filing_does_not_cluster():
+    # One Form 4 (one accession) filed jointly by 3 reporting owners
+    # = ONE buy decision, must NOT fire a cluster.
+    txns = [
+        _txn(insider_cik=c, accession="JOINT-1", filing_date=date(2020, 1, 5))
+        for c in ("1", "2", "3")
+    ]
+    assert detect_clusters(txns) == []
+
+
+def test_m1_three_ciks_two_accessions_does_not_cluster():
+    txns = [
+        _txn(insider_cik="1", accession="A1", filing_date=date(2020, 1, 5)),
+        _txn(insider_cik="2", accession="A1", filing_date=date(2020, 1, 5)),
+        _txn(insider_cik="3", accession="A2", filing_date=date(2020, 1, 8)),
+    ]
+    assert detect_clusters(txns) == []
+
+
+def test_m1_joint_pair_plus_two_separate_filings_fires_on_completing_date():
+    # ciks 1+2 file jointly (one accession); ciks 3 and 4 file separately.
+    # Matched pairs: (1,J), (3,A3), (4,A4) -> fires when cik 4's filing lands.
+    txns = [
+        _txn(insider_cik="1", accession="J", filing_date=date(2020, 1, 5)),
+        _txn(insider_cik="2", accession="J", filing_date=date(2020, 1, 5)),
+        _txn(insider_cik="3", accession="A3", filing_date=date(2020, 1, 10)),
+        _txn(insider_cik="4", accession="A4", filing_date=date(2020, 1, 20)),
+    ]
+    events = detect_clusters(txns)
+    assert len(events) == 1
+    assert events[0].fire_date == date(2020, 1, 20)
+    assert events[0].distinct_insiders == 3

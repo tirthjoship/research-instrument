@@ -73,10 +73,12 @@ def detect_clusters(
 ) -> list[ClusterEvent]:
     """Detect strict clusters per ticker.
 
-    A cluster fires when >=3 DISTINCT insiders each have a qualifying buy whose
-    FILING dates fall within a rolling 30-day window. Fire date = the filing date
-    that completes the 3rd distinct insider (point-in-time: the cluster is only
-    knowable once that 3rd Form-4 is public). At most one event per ticker per
+    A cluster fires when >=3 distinct (insider, accession) pairs are greedily
+    matched within a rolling 30-day window — distinct insiders AND distinct
+    filings, so a single joint Form 4 cannot fabricate a cluster (M1, spec §3 of
+    the 2026-06-10 strategic wrap plan). Fire date = the filing date that
+    completes the 3rd matched pair (point-in-time: the cluster is only knowable
+    once that 3rd Form-4 is public). At most one event per ticker per
     completing-window is emitted; subsequent qualifying buys that extend the same
     standing cluster do not re-fire until the window of distinct insiders resets.
     """
@@ -91,19 +93,28 @@ def detect_clusters(
         txns.sort(key=lambda x: x.filing_date)
         fired_until: date | None = None
         for i, anchor in enumerate(txns):
-            seen: dict[str, InsiderTransaction] = {}
+            # M1 (spec §3): greedy distinct-(insider, accession) matching.
+            # Each matched insider consumes their accession, so one joint Form 4
+            # (one accession, N reporting owners) contributes at most ONE insider.
+            # Greedy in filing-date order: deterministic; can under-fire in rare
+            # overlap pathologies, never over-fire (conservative).
+            matched: dict[str, InsiderTransaction] = {}
+            used_accessions: set[str] = set()
             for t in txns[i:]:
                 if t.filing_date - anchor.filing_date > window:
                     break
-                seen.setdefault(t.insider_cik, t)
-                if len(seen) >= CLUSTER_MIN_INSIDERS:
+                if t.insider_cik in matched or t.accession in used_accessions:
+                    continue
+                matched[t.insider_cik] = t
+                used_accessions.add(t.accession)
+                if len(matched) >= CLUSTER_MIN_INSIDERS:
                     fire_date = t.filing_date
                     # Point-in-time guard (spec sec.2 / CLAUDE.md look-ahead rule):
                     # no contributing filing may post-date the fire date. This is
                     # structurally guaranteed (txns sorted ascending; fire = the
                     # completing filing), asserted as defense-in-depth so a future
                     # refactor cannot silently leak a later filing into the signal.
-                    if any(s.filing_date > fire_date for s in seen.values()):
+                    if any(s.filing_date > fire_date for s in matched.values()):
                         raise LookAheadBiasError(
                             f"insider cluster {ticker}: a contributing Form-4 filing "
                             f"post-dates the fire date {fire_date}"
@@ -113,9 +124,10 @@ def detect_clusters(
                             ClusterEvent(
                                 ticker=ticker,
                                 fire_date=fire_date,
-                                distinct_insiders=len(seen),
+                                distinct_insiders=len(matched),
                                 total_buy_value=sum(
-                                    s.shares * s.price_per_share for s in seen.values()
+                                    s.shares * s.price_per_share
+                                    for s in matched.values()
                                 ),
                             )
                         )
