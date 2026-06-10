@@ -61,10 +61,10 @@ days ending on `d`:
 (domain/services.py) and the `LookAheadBiasError` guard apply: no transaction with
 `FILING_DATE > d` may contribute to the signal at `d`.
 
-**Signal value:** binary cluster-fired indicator per (ticker, date). The rank-IC then
-correlates the cluster event against forward return; the economic leg forms an
-equal-weight basket of cluster names. (A continuous intensity score is explicitly out of
-scope — keeps the pre-registered surface minimal; see ADR-052 strict-cluster choice.)
+**Signal value:** binary cluster-fired indicator per (ticker, fire_date). Each fired event
+becomes one observation whose **abnormal return** (vs a liquidity-matched benchmark, §4)
+feeds the gate. (A continuous intensity score is explicitly out of scope — keeps the
+pre-registered surface minimal; see ADR-052 strict-cluster choice.)
 
 ## 3. Data sources
 
@@ -72,6 +72,7 @@ scope — keeps the pre-registered surface minimal; see ADR-052 strict-cluster c
 |------|--------|-------|
 | Insider transactions (historical) | **SEC DERA "Insider Transactions" (Form 345) quarterly flat files**, 2006Q1→latest | New ingest adapter. SUBMISSION (accession, filing date), REPORTINGOWNER (insider CIK, role), NONDERIV_TRANS (TRANS_CODE, TRANS_SHARES, TRANS_PRICEPERSHARE, TRANS_ACQUIRED_DISP_CD, EQUITY_SWAP_INVOLVED) |
 | Forward 21d returns | yfinance | delisting-aware; unresolved names recorded, not dropped (§5) |
+| Benchmark 21d returns | yfinance ETFs `IWC` (bottom), `IWM` (mid/top) | market-adjusted abnormal return, beta=1 (§4) |
 | Liquidity tercile split | yfinance price × volume (ADV) | point-in-time; **ADV proxy replaces market cap** (§7 Caveat 1) |
 | IC / bootstrap / gate | **existing** `application/ic_analysis.py`, `screen_backtest_use_case.py`, `precision_metrics.py` | reuse |
 
@@ -98,40 +99,51 @@ unsuitable for this backtest. New historical adapter: `sec_form345_dataset_adapt
     `TRANS_SHARES`, `TRANS_PRICEPERSHARE`, `EQUITY_SWAP_INVOLVED`, `TRANS_DATE`,
     `DIRECT_INDIRECT_OWNERSHIP`
 - **Join keys:** SUBMISSION ⋈ REPORTINGOWNER ⋈ NONDERIV_TRANS on `ACCESSION_NUMBER`.
-- **Reuse surface confirmed:** `application/ic_analysis.py` exposes `spearman_ic()` +
-  `aggregate_ic()`; `application/precision_metrics.py` exposes `moving_block_bootstrap()`
-  + `sharpe_difference_bootstrap()`. (Plan step: confirm the bootstrap fn returns a usable
-  95% CI lower bound; wrap if not.)
+- **Reuse surface confirmed:** `application/precision_metrics.py` exposes
+  `moving_block_bootstrap(values, n_resamples, block_size, seed)` returning `ci_low`,
+  `ci_high`, `p_value_ge_0` — the per-series CI both legs need. (`application/ic_analysis.py`
+  `spearman_ic`/`aggregate_ic` are NOT used by the gate — see §4 event-study amendment;
+  they may be reported descriptively only.)
 
-## 4. Pre-registered two-leg gate (LOCKED)
+## 4. Pre-registered gate — event-study abnormal return (LOCKED, amended 2026-06-09)
 
-Run the full evaluation **within each liquidity tercile**. The **primary test is the
-bottom (least-liquid) tercile**; mid/top terciles are descriptive only (they demonstrate
-cap/liquidity-dependence, they cannot move the verdict).
+**Amendment rationale:** the signal is a *binary* cluster event (§2). A Spearman rank-IC
+needs a continuous cross-section and does not transfer to a binary flag. The natural
+information measure for a binary event is the **abnormal return** (standard event study).
+This amends the original IC framing while still **blind to results** (pre-registration
+intact). Approved 2026-06-09.
 
-Horizon: **21 trading days**, single gate (no multi-horizon p-hacking surface).
+Run within each liquidity tercile. **Primary test = bottom (least-liquid) tercile**;
+mid/top are descriptive only (show liquidity-dependence, cannot move the verdict).
+Horizon: **21 trading days**, single gate.
 
-**Leg 1 — information content:**
-- Spearman rank-IC between cluster-fired indicator and forward-21d return
-- **PASS Leg 1 iff:** `point_IC ≥ 0.02` AND `bootstrap_CI_lower_95 > 0`
+**Abnormal return per cluster event** (market-adjusted, beta = 1):
+`abn = name_21d_return − benchmark_21d_return`, over the same calendar window starting the
+first trading day on/after the cluster fire (filing) date. **Benchmark = liquidity-tercile-
+matched ETF** (pre-registered): bottom → `IWC` (iShares Micro-Cap), mid & top → `IWM`
+(iShares Russell 2000). Events ordered by fire date; the series is moving-block
+bootstrapped (block bootstrap absorbs overlapping-window / clustered-in-time correlation).
 
-**Leg 2 — tradeability (net of slippage):**
-- Equal-weight basket of cluster names each period, held 21 trading days
-- Spread = basket return − tercile-matched universe-mean return
-- **Charged per-name round-trip slippage by tercile (pre-registered, bps):**
-  - bottom (micro / least-liquid): **150**
-  - mid: **75**
-  - top (most-liquid): **40**
-- **PASS Leg 2 iff:** slippage-net spread `bootstrap_CI_lower_95 > 0`
+- **Leg 1 — information (gross):** series of gross `abn` per bottom-tercile event.
+  **PASS iff** `moving_block_bootstrap(gross_abn).ci_low > 0`.
+- **Leg 2 — tradeable (net):** `net_abn = gross_abn − slippage_bps/10000`, slippage by
+  tercile (bottom **150** / mid **75** / top **40** bps round-trip per name).
+  **PASS iff** `moving_block_bootstrap(net_abn).ci_low > 0`.
 
-**Verdict combination (bottom tercile):**
+Bootstrap: `n_resamples = 1000`, `seed = 42` (project rule), 95% CI.
 
-| Leg 1 | Leg 2 | Verdict |
-|-------|-------|---------|
-| PASS | PASS | **PASS** → RESEARCH_ONLY edge, requires independent re-validation before any use |
-| PASS | FAIL | **INCONCLUSIVE** (real information, not tradeable after micro-cap costs) |
-| FAIL | PASS | **INCONCLUSIVE** (tradeable artifact without info content — treat with suspicion) |
-| FAIL | FAIL | **KILL** → prediction permanently off the table (ADR-052) |
+**Verdict (bottom tercile).** Because `net = gross − slippage` (slippage > 0), `net` can
+never exceed `gross`; the four-cell table collapses to a clean 3-state:
+
+| Condition | Verdict |
+|-----------|---------|
+| `net.ci_low > 0` (⇒ gross also > 0) | **PASS** → RESEARCH_ONLY edge; requires independent re-validation before any use |
+| `gross.ci_low > 0` AND `net.ci_low ≤ 0` | **INCONCLUSIVE** — real information, killed by micro-cap costs (the ADR-052-expected outcome) |
+| `gross.ci_low ≤ 0` | **KILL** → prediction permanently off the table (ADR-052) |
+
+No magnitude floor (the old IC ≥ 0.02) is carried over — a 95% bootstrap CI lower bound
+> 0 is the significance bar for each leg. Mean abnormal return + full distribution are
+reported regardless of verdict.
 
 Bootstrap: reuse existing harness, **1000 resamples, 95% CI**.
 
