@@ -38,8 +38,10 @@ def test_parse_join_yields_transactions(tmp_path, monkeypatch):
     assert abc.shares == 100.0 and abc.price_per_share == 5.0
     assert abc.filing_date == date(2020, 1, 10)
     assert abc.aff10b51 is False
+    assert abc.accession == "0001"
     other = next(t for t in txns if t.insider_cik == "222")
     assert other.aff10b51 is True
+    assert other.accession == "0002"
 
 
 def test_missing_prices_smoke(tmp_path, monkeypatch):

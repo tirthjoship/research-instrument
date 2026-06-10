@@ -33,6 +33,7 @@ assert INCLUDED_TRANS_CODE not in EXCLUDED_TRANS_CODES
 class InsiderTransaction:
     ticker: str
     insider_cik: str
+    accession: str  # SEC accession number: one filing event (joint filings share one)
     trans_code: str
     acquired_disp: str
     shares: float

@@ -25,6 +25,7 @@ def _txn(**kw):
         aff10b51=False,
     )
     base.update(kw)
+    base.setdefault("accession", f"acc-{base['insider_cik']}")
     return InsiderTransaction(**base)
 
 
