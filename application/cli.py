@@ -3047,5 +3047,49 @@ def backtest_trend_sleeve(start: str, end: str, report_dir: str) -> None:
     click.echo(f"Report -> {out_file}")
 
 
+@cli.command("backtest-insider-clusters")
+@click.option("--start-year", type=int, default=2006, show_default=True)
+@click.option("--end-year", type=int, required=True)
+@click.option(
+    "--report-dir", type=click.Path(), default="data/reports", show_default=True
+)
+def backtest_insider_clusters(start_year: int, end_year: int, report_dir: str) -> None:
+    """Pre-registered sub-$1B insider-cluster falsification (ADR-052, Unit B).
+
+    Masked stdout: verdict + counts only. Full distribution -> tracked JSON report.
+    """
+    import json
+    from datetime import date, datetime, timezone
+    from pathlib import Path
+
+    from adapters.data.sec_form345_dataset_adapter import SECForm345DatasetAdapter
+    from adapters.data.yfinance_adapter import YFinanceAdapter
+    from application.insider_cluster_falsification_use_case import (
+        InsiderClusterFalsificationUseCase,
+    )
+
+    quarters = [(y, q) for y in range(start_year, end_year + 1) for q in (1, 2, 3, 4)]
+    port = SECForm345DatasetAdapter(cache_dir=Path("data/cache/sec_form345"))
+    yf = YFinanceAdapter(cache_dir=Path("data/cache/yfinance"))
+
+    def prices(ticker: str) -> list[tuple[date, float, float]]:
+        signals = yf.get_signals(ticker, datetime.now(timezone.utc))
+        return [(s.timestamp.date(), s.price, float(s.volume)) for s in signals]
+
+    uc = InsiderClusterFalsificationUseCase(port=port, prices=prices, quarters=quarters)
+    report = uc.run()
+
+    out = Path(report_dir) / f"insider_cluster_falsification_{end_year}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, indent=2, default=str))
+
+    click.echo(f"VERDICT: {report['verdict']}")
+    click.echo(
+        f"events={report['n_cluster_events']} resolved={report['n_resolved']} "
+        f"coverage={report['coverage']:.2%} bottom_tercile={report['n_bottom_tercile']}"
+    )
+    click.echo(f"report -> {out}")
+
+
 if __name__ == "__main__":
     cli()

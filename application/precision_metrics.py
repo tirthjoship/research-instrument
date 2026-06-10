@@ -65,6 +65,8 @@ def expected_profit_per_signal(
 # backward compatibility with existing callers.
 from domain.bootstrap import moving_block_bootstrap  # noqa: E402,F401
 
+__all__ = ["moving_block_bootstrap"]
+
 
 def sharpe_difference_bootstrap(
     strategy_returns: list[float],
