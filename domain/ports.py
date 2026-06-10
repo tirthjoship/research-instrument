@@ -9,6 +9,7 @@ from typing import Protocol, runtime_checkable
 
 from .analyst import AnalystRating
 from .conviction import SmartMoneySignal
+from .insider_cluster import InsiderTransaction
 from .models import (
     AccuracyRecord,
     AttentionPoint,
@@ -315,6 +316,13 @@ class AttentionSeriesPort(Protocol):
     ) -> list[AttentionPoint]:
         """Return intensity observations for ticker in [start, end]."""
         ...
+
+
+@runtime_checkable
+class InsiderTransactionsPort(Protocol):
+    """Source of historical Form-4 insider transactions for a calendar quarter."""
+
+    def get_quarter(self, year: int, quarter: int) -> list[InsiderTransaction]: ...
 
 
 @runtime_checkable

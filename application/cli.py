@@ -1969,7 +1969,9 @@ def _get_backtest_universe(market: str) -> list[str]:
         for line in tsx_path.read_text().splitlines():
             s = line.strip()
             if s and not s.startswith("#"):
-                tsx.append(f"{s}.TO")
+                # Class shares use dotted notation in the file (GIB.A); yfinance
+                # wants dash + .TO (GIB-A.TO). Mirrors holdings_reader._to_yf.
+                tsx.append(f"{s.replace('.', '-')}.TO")
 
     seen: set[str] = set()
     out: list[str] = []
@@ -3045,6 +3047,83 @@ def backtest_trend_sleeve(start: str, end: str, report_dir: str) -> None:
     click.echo(f"  VERDICT: {v.decision}")
     click.echo("  (diversifier sleeve = risk control, NOT alpha)")
     click.echo(f"Report -> {out_file}")
+
+
+@cli.command("backtest-insider-clusters")
+@click.option("--start-year", type=int, default=2006, show_default=True)
+@click.option("--end-year", type=int, required=True)
+@click.option(
+    "--report-dir", type=click.Path(), default="data/reports", show_default=True
+)
+def backtest_insider_clusters(start_year: int, end_year: int, report_dir: str) -> None:
+    """Pre-registered sub-$1B insider-cluster falsification (ADR-052, Unit B).
+
+    Masked stdout: verdict + counts only. Full distribution -> tracked JSON report.
+    """
+    import json
+    import time
+    from datetime import date, datetime, timezone
+    from pathlib import Path
+
+    from loguru import logger
+
+    from adapters.data.sec_form345_dataset_adapter import SECForm345DatasetAdapter
+    from adapters.data.yfinance_adapter import YFinanceAdapter
+    from application.insider_cluster_falsification_use_case import (
+        InsiderClusterFalsificationUseCase,
+    )
+
+    quarters = [(y, q) for y in range(start_year, end_year + 1) for q in (1, 2, 3, 4)]
+    port = SECForm345DatasetAdapter(cache_dir=Path("data/cache/sec_form345"))
+    # use_cache=True so a re-run resumes from already-fetched tickers (resumable).
+    yf = YFinanceAdapter(cache_dir=Path("data/cache/yfinance"), use_cache=True)
+
+    # Fetch from a FIXED early date (before the 2006 data floor), NOT start_year-1.
+    # The yfinance cache is keyed by symbol only and ignores the requested window
+    # (review I3), so a per-run window would let an earlier short-window cache
+    # entry shadow a later long-window need. A fixed full-history window makes every
+    # cached series a valid superset for any run (smoke or full). prediction_time=now
+    # keeps all historical bars past the point-in-time filter.
+    now = datetime.now(timezone.utc)
+    window_start = datetime(2005, 1, 1, tzinfo=timezone.utc)
+
+    def prices(ticker: str) -> list[tuple[date, float, float]]:
+        was_cached = yf.has_cache(ticker)
+        signals = []
+        delay = 2.0
+        for attempt in range(5):
+            try:
+                signals = yf.get_signals(
+                    ticker, now, start_date=window_start, end_date=now
+                )
+                break
+            except Exception as exc:  # incl. yfinance rate-limit; degrade gracefully
+                if attempt == 4:
+                    logger.warning("yfinance gave up on {}: {}", ticker, exc)
+                    return []
+                time.sleep(delay)
+                delay *= 2
+        if not was_cached:
+            time.sleep(0.4)  # polite throttle on fresh fetches to avoid rate limits
+        return [(s.timestamp.date(), s.price, float(s.volume)) for s in signals]
+
+    uc = InsiderClusterFalsificationUseCase(port=port, prices=prices, quarters=quarters)
+    report = uc.run()
+
+    out = Path(report_dir) / f"insider_cluster_falsification_{end_year}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, indent=2, default=str))
+
+    click.echo(f"VERDICT: {report['verdict']}")
+    click.echo(
+        f"events={report['n_cluster_events']} "
+        f"with_adv={report['n_records_with_adv']} "
+        f"no_price={report['n_no_price']} "
+        f"bottom_population={report['n_bottom_population']} "
+        f"bottom_benchmarked={report['n_bottom_benchmarked']} "
+        f"coverage={report['coverage']:.2%}"
+    )
+    click.echo(f"report -> {out}")
 
 
 if __name__ == "__main__":
