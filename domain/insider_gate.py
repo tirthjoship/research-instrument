@@ -11,7 +11,7 @@ Guards (override): coverage < 0.80 -> THIN_COVERAGE; n_events < 100 -> THIN_N.
 
 from __future__ import annotations
 
-from application.precision_metrics import moving_block_bootstrap
+from domain.bootstrap import moving_block_bootstrap
 
 MIN_COVERAGE = 0.80
 MIN_CLUSTER_EVENTS = 100
