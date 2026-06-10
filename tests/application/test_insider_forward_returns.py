@@ -55,3 +55,23 @@ def test_benchmark_return_over_window():
         lambda tk: series.get(tk, []), "IWC", date(2020, 1, 1), date(2020, 1, 23)
     )
     assert r is not None and abs(r - 0.10) < 1e-9
+
+
+def test_nan_adv_routes_to_no_price():
+    # A NaN bar in the lookback would silently corrupt sorted-rank tercile
+    # binning; resolve_events must route the event to the conservative
+    # no_price (bottom-denominator) path instead.
+    from domain.insider_cluster import ClusterEvent
+
+    ev = ClusterEvent(
+        ticker="NAN",
+        fire_date=date(2020, 2, 1),
+        distinct_insiders=3,
+        total_buy_value=1.0,
+    )
+    series = [
+        (date(2020, 1, 1) + timedelta(days=i), float("nan"), 100.0) for i in range(60)
+    ]
+    records, no_price = resolve_events([ev], lambda tk: series)
+    assert records == []
+    assert no_price == [ev]
