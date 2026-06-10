@@ -1969,7 +1969,9 @@ def _get_backtest_universe(market: str) -> list[str]:
         for line in tsx_path.read_text().splitlines():
             s = line.strip()
             if s and not s.startswith("#"):
-                tsx.append(f"{s}.TO")
+                # Class shares use dotted notation in the file (GIB.A); yfinance
+                # wants dash + .TO (GIB-A.TO). Mirrors holdings_reader._to_yf.
+                tsx.append(f"{s.replace('.', '-')}.TO")
 
     seen: set[str] = set()
     out: list[str] = []
