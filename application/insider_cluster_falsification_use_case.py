@@ -82,11 +82,19 @@ class InsiderClusterFalsificationUseCase:
             coverage=coverage,
         )
 
+        # Report-only survivorship diagnostic: fraction of ALL cluster events that
+        # got a usable price window. Unresolved events skew toward delisted names,
+        # so a low rate flags survivorship bias (inflates gross abnormal return).
+        # This does NOT move the verdict (the locked coverage guard uses bottom-
+        # tercile coverage); it surfaces the gap honestly for the ADR.
+        overall_resolution_rate = (len(resolved) / n_events) if n_events else 0.0
+
         return {
             **verdict,
             "n_cluster_events": n_events,
             "n_resolved": len(resolved),
             "n_unresolved": len(unresolved),
+            "overall_resolution_rate": overall_resolution_rate,
             "n_bottom_tercile": len(bottom),
             "n_benchmarked": n_benchmarked,
             "coverage": coverage,
