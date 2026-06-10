@@ -2,7 +2,8 @@
 # Source: S&P/TSX 60 Index (current composition)
 # Symbols WITHOUT the .TO suffix (added at runtime via _get_backtest_universe)
 # Refresh annually or when index rebalances
-# Class-share tickers use dotted notation (e.g. GIB.A → GIB.A.TO in yfinance)
+# Class-share tickers use dotted notation here; converted to dash for yfinance
+# (e.g. GIB.A → GIB-A.TO) at runtime by _get_backtest_universe
 
 # Banks
 RY
