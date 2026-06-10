@@ -3,7 +3,7 @@
 Liquidity (ADV = avg dollar-volume) replaces market cap as the split axis: it is
 fully point-in-time (no shares-outstanding history needed) and is arguably truer
 to the structural thesis (liquidity, not cap, is what blocks institutions). See
-spec Caveat 1.
+spec Caveat 1. Binning is per-event and point-in-time expanding (M2): see `tercile_for_event`.
 """
 
 from __future__ import annotations
@@ -11,25 +11,22 @@ from __future__ import annotations
 SLIPPAGE_BPS = {"bottom": 150, "mid": 75, "top": 40}
 
 
-def assign_terciles(adv: dict[str, float]) -> dict[str, str]:
-    """Split tickers into bottom/mid/top terciles by ascending ADV.
+def tercile_for_event(prior_advs: list[float], adv: float) -> str:
+    """Bin one event's ADV against its point-in-time distribution (M2, spec §3).
 
-    Bottom = least liquid (smallest ADV) = the primary-hypothesis tercile.
-    Ties broken by ticker for determinism. Boundaries via index thirds.
+    Distribution = ADVs of all events with fire_date <= this event's, INCLUDING
+    itself (the caller appends in fire-date order). Rank fraction = first-occurrence
+    index in the sorted distribution / n, so ties bin LOW — conservative toward
+    bottom, the primary-hypothesis tercile. A 2006 event is therefore never binned
+    using the 2006-2024 pooled distribution.
     """
-    if not adv:
-        return {}
-    ordered = sorted(adv, key=lambda k: (adv[k], k))
-    n = len(ordered)
-    out: dict[str, str] = {}
-    for i, tk in enumerate(ordered):
-        if i < n / 3:
-            out[tk] = "bottom"
-        elif i < 2 * n / 3:
-            out[tk] = "mid"
-        else:
-            out[tk] = "top"
-    return out
+    dist = sorted(prior_advs + [adv])
+    frac = dist.index(adv) / len(dist)
+    if frac < 1 / 3:
+        return "bottom"
+    if frac < 2 / 3:
+        return "mid"
+    return "top"
 
 
 def slippage_bps_for_tercile(tercile: str) -> int:
