@@ -3076,11 +3076,14 @@ def backtest_insider_clusters(start_year: int, end_year: int, report_dir: str) -
     # use_cache=True so a re-run resumes from already-fetched tickers (resumable).
     yf = YFinanceAdapter(cache_dir=Path("data/cache/yfinance"), use_cache=True)
 
-    # Fetch the FULL window covering the cluster era (start_year-1 .. now) so each
-    # event's 21-day forward + trailing ADV land on real prices around its fire
-    # date. prediction_time=now keeps all historical bars past the PIT filter.
+    # Fetch from a FIXED early date (before the 2006 data floor), NOT start_year-1.
+    # The yfinance cache is keyed by symbol only and ignores the requested window
+    # (review I3), so a per-run window would let an earlier short-window cache
+    # entry shadow a later long-window need. A fixed full-history window makes every
+    # cached series a valid superset for any run (smoke or full). prediction_time=now
+    # keeps all historical bars past the point-in-time filter.
     now = datetime.now(timezone.utc)
-    window_start = datetime(start_year - 1, 1, 1, tzinfo=timezone.utc)
+    window_start = datetime(2005, 1, 1, tzinfo=timezone.utc)
 
     def prices(ticker: str) -> list[tuple[date, float, float]]:
         was_cached = yf.has_cache(ticker)

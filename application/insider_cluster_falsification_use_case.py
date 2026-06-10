@@ -39,24 +39,29 @@ class InsiderClusterFalsificationUseCase:
         for y, q in self._quarters:
             txns.extend(self._port.get_quarter(y, q))
         events = detect_clusters(txns)
-        resolved, unresolved = resolve_events(events, self._prices)
+        # records: events with a trailing ADV (tercile-assignable); no_price:
+        # events with no bar at/after the fire date (delisted-before-fire / unmapped).
+        records, no_price = resolve_events(events, self._prices)
 
         n_events = len(events)
 
         adv: dict[str, float] = {
-            cast(str, r["ticker"]): cast(float, r["adv"]) for r in resolved
+            cast(str, r["ticker"]): cast(float, r["adv"]) for r in records
         }
         terciles = assign_terciles(adv)
         bottom = [
-            r for r in resolved if terciles.get(cast(str, r["ticker"])) == "bottom"
+            r for r in records if terciles.get(cast(str, r["ticker"])) == "bottom"
         ]
 
         slip = slippage_bps_for_tercile("bottom") / 10000.0
         etf = BENCHMARK_ETF["bottom"]
         gross_abn: list[float] = []
         net_abn: list[float] = []
-        n_benchmarked = 0
         for r in sorted(bottom, key=lambda x: cast(date, x["fire_date"])):
+            # An ADV-only (delisted mid-window) record has no forward return; it
+            # stays in the denominator (below) but contributes no abnormal return.
+            if r["fwd_return"] is None:
+                continue
             bench = benchmark_return(
                 self._prices,
                 etf,
@@ -65,38 +70,42 @@ class InsiderClusterFalsificationUseCase:
             )
             if bench is None:
                 continue
-            n_benchmarked += 1
             g = cast(float, r["fwd_return"]) - bench
             gross_abn.append(g)
             net_abn.append(g - slip)
 
-        # Coverage = bottom-tercile events with a usable abnormal return / all
-        # bottom-tercile cluster events. (Price-unresolved events have no ADV so
-        # cannot be tercile-assigned; they are tracked separately as n_unresolved.)
-        coverage = (n_benchmarked / len(bottom)) if bottom else 0.0
+        n_benchmarked = len(gross_abn)
+
+        # C1 fix (spec sec.5): the coverage denominator is ALL qualifying
+        # bottom-tercile events, INCLUDING delisted/unpriceable ones — not just the
+        # already-resolved set. ADV-only records are in `bottom`; no-price events
+        # have no ADV/tercile, so they are conservatively binned into the bottom
+        # (least-liquid) denominator. Residual survivorship therefore DRIVES
+        # COVERAGE DOWN toward INCONCLUSIVE_THIN_COVERAGE instead of vanishing.
+        bottom_population = len(bottom) + len(no_price)
+        coverage = (n_benchmarked / bottom_population) if bottom_population else 0.0
 
         verdict = evaluate_gate(
             gross_abn=gross_abn,
             net_abn=net_abn,
-            n_events=len(bottom),
+            n_events=bottom_population,
             coverage=coverage,
         )
 
-        # Report-only survivorship diagnostic: fraction of ALL cluster events that
-        # got a usable price window. Unresolved events skew toward delisted names,
-        # so a low rate flags survivorship bias (inflates gross abnormal return).
-        # This does NOT move the verdict (the locked coverage guard uses bottom-
-        # tercile coverage); it surfaces the gap honestly for the ADR.
-        overall_resolution_rate = (len(resolved) / n_events) if n_events else 0.0
+        # Report-only diagnostic: fraction of ALL cluster events with a usable
+        # forward abnormal return (across all terciles). Complements the locked
+        # bottom-tercile coverage guard above.
+        n_with_fwd = sum(1 for r in records if r["fwd_return"] is not None)
+        overall_resolution_rate = (n_with_fwd / n_events) if n_events else 0.0
 
         return {
             **verdict,
             "n_cluster_events": n_events,
-            "n_resolved": len(resolved),
-            "n_unresolved": len(unresolved),
+            "n_records_with_adv": len(records),
+            "n_no_price": len(no_price),
             "overall_resolution_rate": overall_resolution_rate,
-            "n_bottom_tercile": len(bottom),
-            "n_benchmarked": n_benchmarked,
+            "n_bottom_population": bottom_population,
+            "n_bottom_benchmarked": n_benchmarked,
             "coverage": coverage,
             "benchmark_etf": etf,
             "tercile_counts": {

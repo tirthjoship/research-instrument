@@ -16,19 +16,37 @@ def test_forward_return_and_adv_computed():
     closes[21] = 11.0
     vols = [1000.0] * len(closes)
     series = {"ABC": _prices(date(2020, 1, 1), closes, vols)}
-    resolved, unresolved = resolve_events([ev], lambda tk: series.get(tk, []))
-    assert unresolved == []
-    assert resolved[0]["ticker"] == "ABC"
-    assert abs(resolved[0]["fwd_return"] - 0.10) < 1e-9
-    assert resolved[0]["adv"] > 0
-    assert "entry_date" in resolved[0] and "exit_date" in resolved[0]
+    records, no_price = resolve_events([ev], lambda tk: series.get(tk, []))
+    assert no_price == []
+    assert records[0]["ticker"] == "ABC"
+    assert abs(records[0]["fwd_return"] - 0.10) < 1e-9
+    assert records[0]["adv"] > 0
+    assert records[0]["entry_date"] is not None
+    assert records[0]["exit_date"] is not None
 
 
-def test_missing_prices_recorded_unresolved_not_dropped():
+def test_no_price_event_goes_to_no_price_not_dropped():
     ev = ClusterEvent("ZZZ", date(2020, 1, 1), 3, 1000.0)
-    resolved, unresolved = resolve_events([ev], lambda tk: [])
-    assert resolved == []
-    assert unresolved == [ev]
+    records, no_price = resolve_events([ev], lambda tk: [])
+    assert records == []
+    assert no_price == [ev]
+
+
+def test_delisted_midwindow_has_adv_but_no_forward():
+    # Prices exist at/after the fire date but fewer than 21 forward bars (delisted
+    # mid-holding-period). C1: must still get a trailing ADV (tercile-assignable),
+    # with fwd_return None so it lands in the coverage denominator, not the numerator.
+    ev = ClusterEvent("DEAD", date(2020, 2, 1), 3, 1000.0)
+    # 40 bars BEFORE the fire date (ample trailing), then only 5 bars after.
+    closes = [10.0] * 45
+    vols = [1000.0] * 45
+    series = {"DEAD": _prices(date(2020, 1, 1), closes, vols)}
+    records, no_price = resolve_events([ev], lambda tk: series.get(tk, []))
+    assert no_price == []
+    assert len(records) == 1
+    assert records[0]["adv"] > 0  # trailing ADV computed
+    assert records[0]["fwd_return"] is None  # no usable forward window
+    assert records[0]["entry_date"] is None
 
 
 def test_benchmark_return_over_window():
