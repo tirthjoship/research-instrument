@@ -87,26 +87,7 @@ question permanently.
 Skill/agent routing per phase: `docs/SKILL_ROUTING.md` (which skill to invoke, which gate must pass).
 ```
 
-- [ ] **Step 3: Create `.claude/settings.json`** (verbatim copy of the product-experimentation-analytics guard hook):
-
-```json
-{
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 -c \"import sys,json; d=json.loads(sys.stdin.read()); c=d.get('tool_input',{}).get('command','') or ''; reasons={'--no-verify':'Blocked: --no-verify bypasses pre-commit hooks. Fix the underlying issue instead.','push --force':'Blocked: force push can destroy remote history. Use --force-with-lease if necessary.','push -f':'Blocked: force push can destroy remote history. Use --force-with-lease if necessary.'}; match=next((r for k,r in reasons.items() if k in c),None); print(json.dumps({'hookSpecificOutput':{'hookEventName':'PreToolUse','permissionDecision':'deny','permissionDecisionReason':match}})) if match else None\""
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+- [ ] **Step 3: Guard hook — DO NOT OVERWRITE.** `.claude/settings.json` ALREADY EXISTS in this repo and wires `.claude/hooks/guardrails.sh`, which blocks `--no-verify`, force-push to main/dev, AND `rm` on `data/`/`reports/` — a SUPERSET of the product-experimentation hook. Overwriting it would strip the data-deletion guards (validated 2026-06-10). Action: read the existing file; if (and only if) the guardrails wiring is somehow absent, add the missing PreToolUse entry alongside what's there. Expected outcome for this step: NO change.
 
 - [ ] **Step 4: Verify + commit**
 
@@ -114,8 +95,8 @@ Run: `python3 -c "import json; json.load(open('.claude/settings.json')); print('
 Expected: `valid json`
 
 ```bash
-git add docs/SKILL_ROUTING.md CLAUDE.md .claude/settings.json
-git commit -m "docs: wire skill routing + pre-commit guard hook (dashboard spec §7)"
+git add docs/SKILL_ROUTING.md CLAUDE.md
+git commit -m "docs: wire skill routing (dashboard spec §7)"
 ```
 
 ---
@@ -138,14 +119,15 @@ from domain.brief import (
     ScorecardSnapshot,
     WeeklyBrief,
 )
+from domain.discipline import Verdict  # validated: domain/discipline.py:38
+from domain.regime import Regime  # validated: domain/regime.py:21, UPPERCASE members
 from domain.screen_models import ScreenLabel
-from domain.verdicts import Verdict  # adjust import if Verdict lives elsewhere (grep "class Verdict")
 
 
 def _brief(macro=None):
     return WeeklyBrief(
         as_of="2026-06-13",
-        regime="neutral",  # if Regime is an Enum, use the enum member instead
+        regime=Regime.NEUTRAL,
         tilt={"equity": 1.0},
         candidates=(
             BuyCandidateLine(
@@ -194,7 +176,7 @@ def test_summary_dict_abstention_flag():
     assert d["abstained"] is True
 ```
 
-NOTE to implementer: before running, `grep -n "class Verdict" domain/` and `grep -n "class Regime" domain/` and fix the two imports/values in the fixture to the real symbols. The dataclass-rebuild trick in the second test (`WeeklyBrief(**{**b.__dict__, ...})`) works because WeeklyBrief is a plain frozen dataclass; if it has `__slots__`, use `dataclasses.replace(b, candidates=())` instead.
+NOTE to implementer: imports validated against the real code 2026-06-10 (Verdict = `domain/discipline.py:38` str-Enum; Regime = `domain/regime.py:21`, UPPERCASE members). The dataclass-rebuild trick in the second test (`WeeklyBrief(**{**b.__dict__, ...})`) is validated: WeeklyBrief is frozen with no `__slots__`.
 
 - [ ] **Step 2: Run to verify failure**
 
@@ -267,14 +249,17 @@ def brief_to_summary_dict(brief: WeeklyBrief) -> dict[str, Any]:
             "systematic_share": macro.systematic_share,
             "idiosyncratic_share": macro.idiosyncratic_share,
             "dominant_factor": macro.dominant_factor,
-            "flags": [str(getattr(f, "name", f)) for f in macro.flags],
+            # MacroBetaFlag is a frozen DATACLASS (domain/models.py:470) with
+            # fields kind/factor/message/value/threshold — NOT an Enum. The
+            # Risk tab matches on the kind string (e.g. "SYSTEMATIC_DOMINANT").
+            "flags": [f.kind for f in macro.flags],
             "coverage_holdings": macro.coverage_holdings,
             "total_holdings": macro.total_holdings,
         },
     }
 ```
 
-(Implementer: check `MacroBetaFlag` — if it's an Enum use `f.name`/`f.value`; if a dataclass with a `.flag` or `.name` field, serialize that. The `getattr` fallback above must be replaced with the real accessor once you read `domain/models.py:482` region.)
+(Validated 2026-06-10: `MacroBetaFlag` accessor is `f.kind` — already correct in the code above.)
 
 - [ ] **Step 4: Wire into the CLI.** In `application/cli.py` `weekly_brief`, after `out_path.write_text(to_markdown(brief))` add:
 
@@ -399,7 +384,7 @@ def staleness_days(iso_date: str) -> int | None:
     return (date.today() - then).days
 ```
 
-(Implementer: confirm the file already imports `json`, `Path`, `Any`, `date` — add any missing import at the top in the existing import block.)
+(Validated 2026-06-10: the file imports `json`, `Path`, `Any` but NOT `date` — add `from datetime import date` to the top import block.)
 
 - [ ] **Step 4: Run green, commit**
 
@@ -417,6 +402,8 @@ git commit -m "feat: dashboard loaders — brief summary, latest screen, stalene
 **Files:**
 - Modify: `adapters/visualization/tabs/weekly_brief.py` (full rewrite)
 - Test: `tests/test_weekly_brief_tab.py` (extend)
+
+- [ ] **Step 0: Prove ONE headless render test first (validated risk).** NO existing test in this repo calls a tab's `render()` — every current tab test is import-only (`assert callable(render)`). Whether `st.table`/`st.columns`/`st.expander`/`st.metric` work outside a Streamlit runtime in this streamlit version is UNVERIFIED. Before writing the full Task 4 test, write just `test_render_with_summary_fixture` below and run it. If Streamlit raises (`NoSessionContext` / `StreamlitAPIException`), FALL BACK for Tasks 4/5/6/9/10: extract each tab's data-shaping into pure helper functions (e.g. `_rows_for_grade(summary, grade) -> list[dict]`), unit-test THOSE, and keep render() tests import-only per repo convention. Apply whichever pattern Step 0 proves to all later tab tests.
 
 - [ ] **Step 1: Rewrite `adapters/visualization/tabs/weekly_brief.py`:**
 
@@ -591,8 +578,10 @@ def render(reports_dir: str = "data/reports") -> None:
     )
     for i, c in enumerate(candidates, start=1):
         factors = c.get("factor_scores", [])
+        # percentile is a 0-1 FRACTION in the screen JSON (domain/screen_models.py,
+        # mirrored by domain/brief.py:112 which renders int(round(p*100))).
         chips = " · ".join(
-            f"{f.get('name', '?')} p{f.get('percentile', 0):.0f}" for f in factors
+            f"{f.get('name', '?')} p{f.get('percentile', 0) * 100:.0f}" for f in factors
         )
         st.markdown(
             f"**{i}. {c.get('ticker', '?')}** — composite {c.get('composite', 0):.2f}  \n"
@@ -602,7 +591,7 @@ def render(reports_dir: str = "data/reports") -> None:
         st.divider()
 ```
 
-(Implementer: the screen JSON is written by `screen_candidates` in `application/cli.py` — read the `json.dump` call there to confirm the candidate key names (`factor_scores`, `percentile`, etc.) and adjust the accessors to the REAL serialized keys before finishing this task. The shapes come from `domain/screen_models.py` `ScreenCandidate`/`FactorScore`.)
+(Validated 2026-06-10 against `application/cli.py:2521-2546`: serialized keys are `as_of`, `universe_size`, `abstained`, `candidates[].{ticker, composite, trend_health, label, why, factor_scores[].{name, value, percentile, contribution}}` — the accessors above match; percentile is the 0-1 fraction handled above.)
 
 - [ ] **Step 2: Test** — create `tests/test_research_candidates_tab.py`:
 
@@ -770,7 +759,7 @@ git commit -m "feat: Risk tab — macro-beta hero metrics, factor bars, variance
 - Modify: `adapters/visualization/tabs/stock_analysis.py` (`_render_verdict` ~line 130–236, `_render_sentiment` ~line 512)
 - Test: existing stock-analysis tests must stay green; add one assertion test
 
-- [ ] **Step 1: Reframe `_render_verdict`.** Keep the company header block (name/price/market cap, lines ~132–151) UNCHANGED. Replace everything from the "Radar + verdict side by side" comment to the end of the function with:
+- [ ] **Step 1: Reframe `_render_verdict`.** Keep the company header block (name/price/market cap, lines ~132–151) UNCHANGED. Also KEEP the factual **Analyst Consensus card** (~lines 198–218) and the **+Watchlist / +Portfolio buttons** (~lines 220–229) — they are factual/functional, not falsified machinery (spec §2.5: keep factual content). Replace ONLY the radar + System-Verdict columns block (from the "Radar + verdict side by side" comment up to where the Analyst Consensus section begins) with:
 
 ```python
     # RESEARCH_ONLY reframe (dashboard spec §2.5): no grade, no conviction,
@@ -862,7 +851,7 @@ _SCOREBOARD = [
     {
         "hypothesis": "Does community conviction predict returns out of sample?",
         "test": "Pre-registered OOS conviction backtest",
-        "verdict": "KILL", "adr": "docs/adr/039 (see PHASE_LOG)",
+        "verdict": "KILL", "adr": "docs/adr/039-conviction-validation-findings.md",
     },
     {
         "hypothesis": "Do conviction sub-dimensions carry independent signal?",
@@ -954,7 +943,7 @@ def render(
     _gate_strip(log_path)
 ```
 
-(Implementer note: the first scoreboard row's ADR-039 file does not exist as a standalone file — verify with `ls docs/adr/ | grep 039`; if absent, point the `adr` value at the PHASE_LOG entry or ADR-047 which summarizes it. Verify each `adr` path with `ls` and fix any that differ. If Unit B's verdict is PASS, ALSO add a small expander reading `data/reports/insider_paper_log.jsonl` listing paper-trade entries — same defensive JSONL parsing as `_gate_strip`.)
+(All seven `adr` paths validated to exist 2026-06-10, including `039-conviction-validation-findings.md`. If Unit B's verdict is PASS, ALSO add a small expander reading `data/reports/insider_paper_log.jsonl` listing paper-trade entries — same defensive JSONL parsing as `_gate_strip`. EXHIBITS are REQUIRED by spec §2.6, not optional: transplant `_render_ablation` and `_render_shap` from `tabs/model_confidence.py` (lines ~370 and ~408, both use data_loader and transplant cleanly — validated) into this file, each preceded by `st.caption("FALSIFIED-era artifact — kept as exhibit")`, rendered between the scoreboard and the gate strip.)
 
 - [ ] **Step 2: Test** — create `tests/test_falsification_lab_tab.py`:
 
@@ -1074,7 +1063,7 @@ git commit -m "feat: Methodology tab — plain-language honesty explainer + glos
 - Delete: `adapters/visualization/tabs/command_center.py`, `tabs/market_pulse.py`, `tabs/model_confidence.py`
 - Modify/Delete tests: `tests/test_phase5_tabs.py`, any test importing deleted modules
 
-- [ ] **Step 1: Salvage check before deleting.** `grep -rn "command_center\|market_pulse\|model_confidence" adapters/ application/ tests/ --include="*.py" | grep -v tabs/` — if `model_confidence`'s chart helpers (`_render_ablation`, `_render_shap`) are wanted as Lab exhibits, move those two functions into `falsification_lab.py` (with a "FALSIFIED-era artifact — kept as exhibit" `st.caption` above each call site) BEFORE deleting the file; they read report JSONs via `data_loader`, so they transplant cleanly. If the grep shows other live imports, resolve them first — do not leave dangling imports.
+- [ ] **Step 1: Salvage check before deleting.** The exhibit transplant (`_render_ablation`, `_render_shap` → `falsification_lab.py`) is REQUIRED and already done in Task 9. Here, verify nothing else still imports the doomed modules: `grep -rn "command_center\|market_pulse\|model_confidence" adapters/ application/ tests/ --include="*.py" | grep -v tabs/` — resolve any live imports first; do not leave dangling imports.
 
 - [ ] **Step 2: Rewrite `dashboard.py` tab block:**
 
@@ -1142,9 +1131,23 @@ git commit -m "feat: 7-tab honest cockpit router; delete falsified-era tabs (~1,
 
 ---
 
-## Self-review (done)
+## Validation status
 
-- Spec coverage: §1 router (T11), §2 tabs 1–7 (T4,5,6,8,7,9,10), §3 deletions (T8,T11), §4 fail-loud (every loader/tab handles missing+stale), §5 tests (every task), §6 sequencing (PRECONDITIONS block), §7 skill wiring (T1, ungated).
-- Two intentional verify-then-adjust notes (screen JSON key names in T5; MacroBetaFlag serialization in T2; ADR-039 path in T9) — these instruct the implementer to read the REAL symbol before finishing, which is safer than the plan guessing wrong. They are verification steps, not placeholders.
-- Type consistency: `load_brief_summary`/`load_latest_screen`/`staleness_days` signatures match between T3 (definition) and T4/5/6 (usage); `brief_to_summary_dict` key names match between T2 (writer) and T4/6 (readers).
+Independently validated (Opus reviewer, 2026-06-10) against the real codebase; all
+8 findings fixed in this revision:
+1. `.claude/settings.json` already exists with a SUPERSET guard hook (guardrails.sh
+   blocks rm on data//reports/) — T1 no longer overwrites it.
+2. `MacroBetaFlag` is a dataclass — serializer uses `f.kind` (T2).
+3. `FactorScore.percentile` is a 0–1 fraction — chips render `*100` (T5).
+4. `Verdict` import = `domain.discipline`; `Regime` = `domain.regime`, UPPERCASE (T2).
+5. `data_loader.py` lacks `date` import — instruction added (T3).
+6. T7 preserves the factual Analyst Consensus card + action buttons.
+7. No repo test calls `render()` — T4 Step 0 proves headless viability first, with a
+   pure-helper fallback pattern for all tab tests.
+8. ADR-039 path corrected; exhibits made REQUIRED per spec §2.6 (T9/T11).
+
+Confirmed-correct by the same review: CLI insert anchor (cli.py:2947), screen JSON
+key names (cli.py:2521–2546), brief_summary writer↔reader key contracts, loader
+signatures T3↔T4/5/6, all scoreboard ADR paths, frozen-dataclass rebuild in T2's
+test, `discipline_log.jsonl` line shape (`as_of` key).
 ```
