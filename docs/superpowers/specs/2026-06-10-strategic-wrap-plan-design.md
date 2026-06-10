@@ -31,7 +31,10 @@ project's real-money ROI.
 ## §2 Unit B pre-committed decision tree (LOCKED 2026-06-10, before full-window verdict)
 
 - **PASS** (net CI_low > 0): NO real money. 6-month forward paper validation — live
-  cluster signals logged weekly by the automated job, paper fills at next-day open.
+  cluster signals logged weekly by an automated job, paper fills at next-day open.
+  (CONDITIONAL BUILD ITEM: this logger does not exist yet; a PASS verdict adds it to
+  the build week — a small job reusing the SEC adapter + detect_clusters on the
+  latest quarter, appending to a paper-trade log. No PASS → not built.)
   Single review ~Dec 2026/Jan 2027. Paper result consistent with backtest → live sleeve
   **≤ 5% of book, hard cap**, with pre-set kill switch: rolling-6-month sleeve net
   abnormal ≤ 0, OR sleeve drawdown > 30% → permanent kill. Paper inconsistent → KILL.
@@ -61,8 +64,13 @@ rationale (validity repair, not threshold tuning):
   numbers (or equivalent dedup of identical transaction rows fanned out per CIK).
 - **M2 — point-in-time terciles:** per-EVENT ADV (no per-ticker dict collision where
   the last event's ADV bins all of a ticker's events), and tercile boundaries computed
-  from an expanding point-in-time cross-section (a 2006 event must never be binned
-  using the 2006–2024 pooled distribution).
+  from an expanding point-in-time cross-section: an event is binned against the ADV
+  distribution of all events with fire_date ≤ its own. Stability rule: until the
+  expanding cross-section reaches a minimum population (implementation plan fixes the
+  exact N, default 30), events are still binned against whatever cross-section exists —
+  noisy early bins are accepted and disclosed rather than silently deferred (deferring
+  would drop early events from the denominator, recreating the survivorship problem
+  C1 fixed).
 
 Honest expectation, accepted in advance: M1 removes fabricated clusters → event count
 drops → THIN_N risk rises. That outcome is valid.
@@ -109,7 +117,24 @@ part that can run unattended safely (ADR-052's design).
 - Any auto-retraining / online-learning loop.
 - Tax-loss/wash-sale features (65/66 accounts registered — moot).
 
+## §5.5 Plain-language documentation (hard deliverable, user requirement 2026-06-10)
+
+All reader-facing documents — README, ADR-053 (and a pass over key earlier ADRs),
+the verdict table, STATUS — must be understandable by a non-financial reader:
+
+- Every finance/stats term defined on first use in plain English (e.g., "CI_low > 0 —
+  the worst plausible average outcome is still a profit"; "slippage — the hidden cost
+  of actually buying a thinly-traded stock"; "tercile — bottom/middle/top third").
+- A short glossary section in the README.
+- The verdict table phrased as plain questions: "Does X predict Y? — No (tested
+  2006–2024, here's how)."
+- Test of done: a reader with no finance background can answer "what did this project
+  try, what did it find, why is the finding trustworthy" from the README alone.
+
 ## §7 Timeline
+
+Dates are targets, not hard gates (user 2026-06-10: faster is better; quality and
+self-sufficiency are the hard requirements).
 
 - **Jun 10–16 (build week, everything lands):**
   1. M1/M2 fixes (TDD) → restart full 2006–2024 run → Unit B verdict → execute §2
@@ -119,8 +144,8 @@ part that can run unattended safely (ADR-052's design).
   3. Adherence-logging column in the weekly discipline log.
   4. Hardening sprint: health checks, auto-prune, retry/backoff (§5).
 - **Jun 17–29 (refine/sharpen, no new build):** verdict-table README rewrite,
-  falsification write-up, code polish, bug fixes, final STATUS/handoff doc. Project
-  closed 2026-06-29.
+  falsification write-up, plain-language documentation pass (§5.5), code polish,
+  bug fixes, final STATUS/handoff doc. Project closed 2026-06-29 or earlier.
 - **Post-wrap calendar:** mid-July forward-gate verdict (→ L1 decision, ~30 min);
   Dec 2026 self-experiment review (~30 min).
 
