@@ -49,8 +49,14 @@ Expand the 26-line stub into the cockpit:
 - Abstention shown honestly ("evidence screen: n=0 buys this week").
 - Adherence tracker placeholder section (fills when Unit C lands).
 - Staleness warning if the brief artifact is >8 days old (fail-loud, wrap spec §5).
-- Data: weekly-brief artifacts the CLI already writes under `data/reports/`,
-  via `data_loader.py`.
+- Data: **new structured artifact** `data/personal/brief_summary.json` (gitignored,
+  same dir as the existing `weekly_brief.md`): discipline flags by grade with
+  reasons, run date, macro-beta block (net beta, factor betas, variance split,
+  flags), screen counts/abstention. BUILD ITEM in this spec's plan: the
+  `weekly-brief` CLI writes this JSON alongside the markdown (validated: today it
+  writes markdown ONLY — `application/cli.py` `weekly_brief`, out default
+  `data/personal/weekly_brief.md`). The tab renders the JSON; the full markdown
+  stays available in an expander via the existing `load_weekly_brief`.
 
 ### 2. Research Candidates (new)
 
@@ -65,9 +71,12 @@ The honest replacement for "recommend me stocks":
 - Permanent header disclaimer: "Ranked by current factual evidence, NOT
   predicted returns — prediction was tested 2006–2024 and falsified (see
   Falsification Lab)."
-- Data: `screen-candidates --top 15` report JSON, written by the weekly
-  Saturday job (job gains this step in the hardening plan). Stale-report
-  warning same as Weekly Brief.
+- Data: `data/reports/screen_<date>.json` — the FULL ranked distribution the
+  `screen-candidates` CLI already writes (validated; honesty rule: full
+  distribution, never just top-N). The tab loads the most recent file and
+  slices the top 15 client-side. The weekly Saturday job gains the
+  `screen-candidates` step in the hardening plan. Stale-report warning same
+  as Weekly Brief.
 
 ### 3. Risk (new)
 
@@ -78,7 +87,10 @@ Unit A macro-beta scrubber promoted from CLI markdown:
   plain-English "what this means / what you might do" block.
 - Permanent caption: "Heuristic surfacing dials, not validated edges"
   (ADR-052 honesty rail).
-- Data: Unit A weekly-brief macro-beta artifact.
+- Data: the macro-beta block of `data/personal/brief_summary.json` (validated:
+  macro-beta has NO standalone artifact today — it is computed inside the
+  weekly-brief use case and embedded in the markdown; the new JSON carries the
+  structured numbers).
 
 ### 4. My Portfolio
 
@@ -109,8 +121,9 @@ ability — it already exists).
   absent.
 - Middle: 2–3 exhibits — selected conviction/model-confidence chart builders
   reused with "FALSIFIED — kept as exhibit" banners. No new chart code.
-- Bottom: forward-gate progress strip (weeks accrued vs needed, from the
-  discipline log) — the one live experiment.
+- Bottom: forward-gate progress strip (weeks accrued vs needed, from
+  `data/personal/discipline_log.jsonl` — validated, exists) — the one live
+  experiment.
 - If Unit B verdict = PASS: add a paper-trade log panel (reads
   `insider_paper_log.jsonl`). Only built in that branch.
 
