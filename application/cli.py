@@ -3116,8 +3116,12 @@ def backtest_insider_clusters(start_year: int, end_year: int, report_dir: str) -
 
     click.echo(f"VERDICT: {report['verdict']}")
     click.echo(
-        f"events={report['n_cluster_events']} resolved={report['n_resolved']} "
-        f"coverage={report['coverage']:.2%} bottom_tercile={report['n_bottom_tercile']}"
+        f"events={report['n_cluster_events']} "
+        f"with_adv={report['n_records_with_adv']} "
+        f"no_price={report['n_no_price']} "
+        f"bottom_population={report['n_bottom_population']} "
+        f"bottom_benchmarked={report['n_bottom_benchmarked']} "
+        f"coverage={report['coverage']:.2%}"
     )
     click.echo(f"report -> {out}")
 
