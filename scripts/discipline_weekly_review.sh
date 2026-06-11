@@ -8,6 +8,8 @@
 #   2. resolve-discipline-flags -> forward-scores any flags whose 21d horizon elapsed
 #      (REDUCE-only gate input + INCONCLUSIVE_THIN_DATES guard label, ADR-051).
 #   3. discipline-calibration-status -> readiness toward the gate + dead-cron freshness.
+#   4. adherence-report -> holdings-diff trades, discretionary throttle, cash
+#      buffer, 21d counterfactual adherence gap (Unit C, spec 2026-06-10).
 #
 # Read the appended block each Saturday: how did the week's flagged names react, what
 # resolved, and does the approach need revision. The log/holdings are gitignored.
@@ -29,5 +31,7 @@ OUT="data/reports/discipline_weekly_review.log"
   "$PYTHON" -m application.cli resolve-discipline-flags --log "$LOG"
   echo "--- 3. readiness toward the gate ---"
   "$PYTHON" -m application.cli discipline-calibration-status --log "$LOG"
+  echo "--- 4. adherence report (Unit C: trades, throttle, buffer, gap) ---"
+  "$PYTHON" -m application.cli adherence-report --log "$LOG"
   echo ""
 } >> "$OUT" 2>&1
