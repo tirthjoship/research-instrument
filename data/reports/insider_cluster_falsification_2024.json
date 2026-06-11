@@ -1,0 +1,18 @@
+{
+  "verdict": "INCONCLUSIVE_THIN_COVERAGE",
+  "coverage": 0.24321905933672613,
+  "n_cluster_events": 28866,
+  "n_records_with_adv": 15403,
+  "n_no_price": 13463,
+  "overall_resolution_rate": 0.5296889073650661,
+  "n_bottom_population": 17881,
+  "n_bottom_benchmarked": 4349,
+  "benchmark_etf": "IWC",
+  "tercile_counts": {
+    "bottom": 4418,
+    "mid": 5521,
+    "top": 5464
+  },
+  "n_events_binned_below_min_population": 29,
+  "min_tercile_population": 30
+}
