@@ -1,12 +1,13 @@
 # STATUS — multi-modal-stock-recommender
 
 **As of:** 2026-06-11
-**Branch:** feat/dashboard-realignment (PR open → develop)
-**Phase:** 5 — Dashboard complete; awaiting PR merge
+**Branch:** feat/dashboard-realignment (PR #39 open → develop, pushed + validated)
+**Phase:** 5 — Dashboard complete; PR #39 open, awaiting CI + merge
 
 ## Current State
 
-Dashboard realignment (13-task plan) fully committed on `feat/dashboard-realignment`.
+Dashboard realignment (13-task plan) committed + pushed on `feat/dashboard-realignment`.
+PR #39 → develop. Independent Opus review: all 13 tasks PASS. Docstring nit fixed.
 
 7-tab honest cockpit:
 - Weekly Brief · Research Candidates · Risk · My Portfolio · Stock Analysis · Falsification Lab · Methodology
@@ -18,9 +19,10 @@ All pre-commit hooks pass (black, isort, mypy strict, ruff, secrets).
 
 ## Next Action
 
-1. Merge PR feat/dashboard-realignment → develop (review open)
-2. After merge: start Phase 6 (live calibration gate — ADR-051 readiness tracking)
-   - Gate opens ~mid-July 2026 when ≥30 REDUCE flags resolve across ≥3 dates
+1. Merge PR #39 → develop once CI green
+2. Phase 6 brainstorm (Fable) — live calibration gate, ADR-051 readiness tracking
+   - Gate opens ~mid-July 2026 when ≥30 REDUCE flags resolve across ≥3 dates ≥10 days apart
+   - Mostly passive: Saturday job accrues evidence, zero code changes
 
 ## Caveats
 
