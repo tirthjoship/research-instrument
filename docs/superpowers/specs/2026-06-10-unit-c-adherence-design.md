@@ -76,8 +76,11 @@ label threshold and the P&L fraction are one number by design):
 gap = flag_value × max(0, f − actual_cut_fraction) × (−r_21d)
 ```
 
-- `flag_value = price × quantity` from the log row at flag time (CAD-consistent
-  via market_value_cad; see Application).
+- `flag_value = market_value_cad` from the log row at flag time. NOT
+  `price × quantity` — logged `price` is the provider close in the ticker's
+  NATIVE currency (USD for US names), which would mix currencies before bps
+  normalization. `r_21d` is a price ratio, currency-invariant, so the provider
+  series is fine for returns.
 - IGNORED (`actual_cut = 0`): `gap = flag_value × f × (−r_21d)`.
 - PARTIAL: scales with the shortfall vs `f`.
 - FOLLOWED (`actual_cut ≥ f`): gap = 0 — now true by construction, not by fiat.
@@ -200,3 +203,9 @@ Methodology review: 3 BLOCKERs (counterfactual fraction mismatch, repeated-flag
 double-count, undefined bps normalization) + 6 should-fix/notes — all fixed
 above. Architecture verdict: sound; measurement defects were definitional and
 resolved at spec level.
+
+2026-06-10 (Fable main-loop self-critique pass): caught residual currency bug —
+flag_value was defined as price × quantity (native currency, mixes USD/CAD);
+redefined as market_value_cad from the log row. Pinned for plan stage:
+actual_cut_fraction is CUMULATIVE quantity reduction across the ≤3 weekly diffs
+inside the 21d window, not a single-week diff.
