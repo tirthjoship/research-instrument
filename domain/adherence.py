@@ -83,3 +83,63 @@ def diff_holdings(
         elif change >= buy_min_change_pct:
             trades.append(DetectedTrade(ticker, TradeAction.BUY, p, c, week_of))
     return trades
+
+
+class ThrottleVerdict(str, Enum):
+    OK = "OK"
+    OVERTRADE = "OVERTRADE"
+
+
+class BufferVerdict(str, Enum):
+    OK = "OK"
+    BUFFER_BREACH = "BUFFER_BREACH"
+    STALE_CASH = "STALE_CASH"
+
+
+@dataclass(frozen=True)
+class ThrottleResult:
+    verdict: ThrottleVerdict
+    trades_per_week: float
+
+
+@dataclass(frozen=True)
+class BufferResult:
+    verdict: BufferVerdict
+    cash_pct: float | None
+
+
+def throttle_check(
+    n_discretionary_trades: int,
+    weeks_elapsed: float,
+    max_trades_per_week: float = 3.0,
+) -> ThrottleResult:
+    """Advisory overtrade flag on DISCRETIONARY trades only (tool-directed
+    trades are exempt upstream — obeying 4 REDUCE flags must never trip this).
+    Holdings-diff counts are a LOWER bound (intra-week round trips invisible);
+    report wording must say 'net weekly position changes'."""
+    weeks = max(1.0, weeks_elapsed)
+    rate = n_discretionary_trades / weeks
+    verdict = (
+        ThrottleVerdict.OVERTRADE if rate > max_trades_per_week else ThrottleVerdict.OK
+    )
+    return ThrottleResult(verdict, rate)
+
+
+def cash_buffer_check(
+    cash_cad: float,
+    portfolio_value_cad: float | None,
+    cash_as_of: date,
+    now: date,
+    floor_pct: float = 0.05,
+    max_stale_days: int = 28,
+) -> BufferResult:
+    """Cash >= floor_pct of total (cash + holdings, CAD). Stale or missing
+    inputs are STALE_CASH — loud skip, never a silent OK (wrap plan §5)."""
+    if portfolio_value_cad is None or (now - cash_as_of).days > max_stale_days:
+        return BufferResult(BufferVerdict.STALE_CASH, None)
+    total = cash_cad + portfolio_value_cad
+    if total <= 0:
+        return BufferResult(BufferVerdict.STALE_CASH, None)
+    pct = cash_cad / total
+    verdict = BufferVerdict.OK if pct >= floor_pct else BufferVerdict.BUFFER_BREACH
+    return BufferResult(verdict, pct)
