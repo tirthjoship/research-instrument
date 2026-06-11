@@ -3,40 +3,42 @@
 > Tier-0 single source of truth. Read this FIRST and in FULL at session start.
 > Keep it short (~45 lines). Overwrite, don't append — history goes to PHASE_LOG.md.
 
-**Updated:** 2026-06-10 (session end — Unit B verdict FINAL, plans validated)
+**Updated:** 2026-06-11 (session end — Unit C + Hardening sprint SHIPPED on branches)
 
 **Direction (ADR-052):** Alpha hunt CLOSED. Product = honest deterministic CRO.
+Unit B prediction permanently closed (ADR-053, INCONCLUSIVE_THIN_COVERAGE → KILL).
 Wrap plan LOCKED: `docs/superpowers/specs/2026-06-10-strategic-wrap-plan-design.md`
-(pre-committed Unit B verdict tree, ≤5% sleeve cap behind PASS+paper gates,
-INCONCLUSIVE→final KILL, self-sustainability = deterministic + fail-loud, close ~Jun 29).
+(close ~Jun 29).
 
-**✅ UNIT B FINAL: INCONCLUSIVE_THIN_COVERAGE → practical KILL (ADR-053 Accepted).**
-Full 2006–2024 amended run: 28,866 events, 46.6% unpriceable in free data, coverage
-24.32% < 80% guard. Pre-committed tree executed: cannot validate ⇒ cannot ever trade.
-Prediction permanently closed. Unit D parked. Report JSON committed.
+**✅ UNIT C — PR #37 open → develop (NOT yet merged).** Anti-overtrade throttle +
+cash-buffer + adherence self-experiment. 44 tests, mypy clean, Opus-reviewed.
 
-**This session shipped (all merged to develop + main, 9028ccd lineage):**
-- C1 fix: insider CLI echo KeyError + end-to-end regression test (85f2eff).
-- M1: joint Form-4 dedup — greedy distinct (insider, accession) matching. Opus-verified.
-- M2: per-event expanding PIT terciles + MIN_TERCILE_POPULATION=30 disclosure. Opus-verified.
-- NaN-ADV guard → no_price path. ADR-053 amendment recorded (count drop NOT guaranteed).
-- README: Unit B findings + pre-committed tree, plain language.
-
-**Committed on `feat/insider-cluster-falsification` (pushed, NOT yet re-merged):**
-- Dashboard realignment spec + plan (BOTH Opus-validated, 8 fixes applied):
-  `docs/superpowers/{specs,plans}/2026-06-10-dashboard-realignment*`. 7 honest tabs,
-  ~1,400 lines deleted, skill-routing wiring (plan Task 1 = UNGATED, runnable now).
+**✅ HARDENING SPRINT — branch `feat/hardening-sprint` (stacked on Unit C, NOT
+merged).** Wrap plan §5 self-sustainability. 8 tasks:
+- Venv reconciled: `pip install -e ".[dashboard,dev]"` → suite 1521→1541 pass,
+  0 collection errors, `make check` green. (The 55 import failures are GONE.)
+- Resilient fetch: stdlib retry/backoff + `PriceFetchError` tri-state. `load_
+  price_series` gains `strict` (default False keeps 18 callers safe; weekly job
+  opts in). Delisted prune-list (3-wk threshold, gitignored, reversible).
+- Collect-then-fail health check: holdings-risk assesses ALL names, prints
+  `fetched OK/no-data/FAILED/pruned`, exits non-zero only if real fetch errors.
+  One flaky name never aborts the 66-name run. Shared-contract tasks Opus-reviewed.
 
 **NEXT ACTION (fresh session):**
-1) Unit C plan (brainstorm→plan→build: anti-overtrade throttle, cash-buffer policy,
-   adherence column). 2) Hardening sprint (fixes shared venv — streamlit/plotly/mypy
-   MISSING). 3) THEN dashboard plan (preconditions now half-met: verdict DONE, venv not).
-4) Dashboard plan Task 1 (skill wiring) runnable anytime — no gates.
+1) Merge PR #37 (Unit C) → develop, then merge/rebase hardening → develop
+   (finishing-a-development-branch). Order matters: Unit C first.
+2) Dashboard realignment — spec+plan already written/validated (on
+   `feat/insider-cluster-falsification`). Preconditions NOW met: verdict DONE,
+   venv FIXED. Task 1 (skill wiring) ungated. Bring its branch current first.
+3) Refinement pass (Jun 17–29): README verdict-table rewrite, falsification
+   write-up, commit/gitignore the 2 stray data/reports/*.json, final close.
 
-**Hard caveats:** `.claude/settings.json` has guardrails.sh (blocks rm on data/ —
-NEVER overwrite it). 65/66 accounts registered. No FinBERT/LangChain/paid data.
-yfinance throttled — runs are slow, caches are sacred.
+**Hard caveats:** `.claude/settings.json` guardrails.sh blocks rm on data/ —
+NEVER overwrite. EDIT `data/personal/cash.json` (placeholder cash_cad=0.0; buffer
+check meaningless until real balance). KNOWN BUG (post-gate, out of scope):
+`unrealized_pct` currency-polluted for USD names, feeds REDUCE verdicts. 65/66
+accounts. No paid data. yfinance throttled — caches sacred.
 
-**Pointers:** wrap plan + decision tree → strategic wrap spec · Unit B build →
-`plans/2026-06-10-unit-b-m1-m2-rerun.md` · dashboard → its spec/plan pair ·
-history → `docs/PHASE_LOG.md`.
+**Pointers:** Unit C + hardening spec/plan → `docs/superpowers/{specs,plans}/
+2026-06-10-{unit-c-adherence,hardening-sprint}*` · wrap plan → strategic wrap
+spec · dashboard → its spec/plan pair · history → `docs/PHASE_LOG.md`.
