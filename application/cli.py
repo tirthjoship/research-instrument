@@ -2306,7 +2306,10 @@ def adherence_report(
             f"{t['qty_before']:.1f} -> {t['qty_after']:.1f}"
         )
     th = s["throttle"]
-    click.echo(f"  THROTTLE: {th['verdict']}  discretionary={th['n_discretionary']}")
+    click.echo(
+        f"  THROTTLE: {th['verdict']}  discretionary={th['n_discretionary']}"
+        + (f"  ({th['note']})" if th.get("note") else "")
+    )
     b = s["buffer"]
     pct = f"{b['cash_pct']:.1%}" if b["cash_pct"] is not None else "n/a"
     click.echo(f"  CASH BUFFER: {b['verdict']}  cash_pct={pct}")
