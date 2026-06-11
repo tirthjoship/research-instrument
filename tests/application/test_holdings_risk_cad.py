@@ -71,7 +71,7 @@ def test_logged_rows_carry_quantity_and_cad_value(tmp_path, monkeypatch) -> None
 
     monkeypatch.setattr(
         "application.price_returns.load_price_series",
-        lambda t, s, e: _provider(t),
+        lambda t, s, e, *, strict=False: _provider(t),
     )
 
     csv_path = tmp_path / "holdings.csv"

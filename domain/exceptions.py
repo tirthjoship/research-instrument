@@ -57,6 +57,22 @@ class SourceThrottledError(Exception):
     """
 
 
+class PriceFetchError(DomainError):
+    """Raised when a price fetch fails after retries (a real error, NOT
+    genuinely-empty data). Empty data returns []; this is the tri-state's
+    'error' arm. Pairs with SourceThrottledError (rate-limit, also not []).
+
+    Attributes:
+        ticker: the symbol whose fetch failed.
+        cause: the underlying exception that caused the failure.
+    """
+
+    def __init__(self, ticker: str, *, cause: Exception | None = None) -> None:
+        super().__init__(f"price fetch failed for {ticker}: {cause}")
+        self.ticker = ticker
+        self.cause = cause
+
+
 class InsufficientDataError(DomainError):
     """Raised when too few qualified tickers or data points for pipeline."""
 

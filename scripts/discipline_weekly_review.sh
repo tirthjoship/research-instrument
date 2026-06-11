@@ -13,6 +13,12 @@
 #
 # Read the appended block each Saturday: how did the week's flagged names react, what
 # resolved, and does the approach need revision. The log/holdings are gitignored.
+#
+# Fail-loud (hardening sprint, spec 2026-06-10): holdings-risk fetches with
+# strict=True and exits non-zero if any ticker hard-fails (after retry/backoff).
+# Under `set -euo pipefail` that aborts the Saturday job loudly. Delisted names
+# (>=3 wks no data) are pruned + skipped, not failed. A health summary line
+# (fetched OK / no-data / FAILED / pruned) precedes the verdict output.
 set -euo pipefail
 REPO="/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender"
 cd "$REPO"
