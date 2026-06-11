@@ -50,10 +50,11 @@ def test_two_for_one_split_flagged_not_buy() -> None:
     assert trades[0].action is TradeAction.SUSPECTED_SPLIT
 
 
-def test_reverse_split_flagged_not_sell() -> None:
+def test_reverse_split_decrease_is_sell_not_guarded() -> None:
+    # Reverse splits collide with ordinary 50% trims; share decreases are
+    # always SELL (only forward splits are guarded).
     trades = diff_holdings({"AC.TO": 100.0}, {"AC.TO": 50.5}, WEEK)
-    # 0.505 ratio is within ±2% of 0.5 -> split, not SELL
-    assert trades[0].action is TradeAction.SUSPECTED_SPLIT
+    assert trades[0].action is TradeAction.SELL
 
 
 @given(

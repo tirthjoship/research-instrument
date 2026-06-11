@@ -19,7 +19,7 @@ CANONICAL_CUT_FRACTION = 0.5
 
 _SELL_MIN_CHANGE_PCT = 0.005  # below this a decrease is rounding noise
 _BUY_MIN_CHANGE_PCT = 0.02  # below this an increase is DRIP, not a trade
-_SPLIT_FACTORS = (2.0, 3.0, 1.5, 0.5, 1.0 / 3.0)
+_SPLIT_FACTORS = (2.0, 3.0, 1.5)
 _SPLIT_TOLERANCE = 0.02  # ±2% of a known split ratio
 
 
@@ -41,18 +41,12 @@ class DetectedTrade:
 
 
 def _is_split_ratio(ratio: float) -> bool:
-    for f in _SPLIT_FACTORS:
-        deviation = abs(ratio - f) / f
-        if deviation > _SPLIT_TOLERANCE:
-            continue
-        # For fractional split factors (reverse splits, f < 1), an exact match
-        # on a round number (e.g. ratio == 0.5 exactly) is more likely a
-        # deliberate 50% sell than a split artefact; only flag when ratio
-        # slightly deviates from the factor (i.e. ratio != f).
-        if f < 1.0 and ratio == f:
-            continue
-        return True
-    return False
+    # Only forward splits (ratio > 1) are guarded: a forward split inflates
+    # the logged share count against a split-adjusted price and fabricates a
+    # phantom BUY (the corrupting case). Reverse splits (ratio < 1) collide
+    # with ordinary 50% trims and merely fabricate a less-harmful SELL, so
+    # share decreases are always SELL/EXIT — not guarded.
+    return any(abs(ratio - f) / f <= _SPLIT_TOLERANCE for f in _SPLIT_FACTORS)
 
 
 def diff_holdings(

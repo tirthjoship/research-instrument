@@ -10,7 +10,7 @@
 
 **Branch:** `feat/unit-c-adherence` (already created, spec committed).
 
-**Constants (from spec, do not re-derive):** canonical fraction `f = 0.5`; horizon 21d; throttle default 3/week; cash floor 5%; stale cash 28d; SELL noise filter 0.5%; BUY/DRIP filter 2%; split factors {2.0, 3.0, 1.5, 0.5, 1/3} ±2%.
+**Constants (from spec, do not re-derive):** canonical fraction `f = 0.5`; horizon 21d; throttle default 3/week; cash floor 5%; stale cash 28d; SELL noise filter 0.5%; BUY/DRIP filter 2%; split factors {2.0, 3.0, 1.5} ±2% (forward splits only).
 
 ---
 
