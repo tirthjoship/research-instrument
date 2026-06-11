@@ -24,7 +24,7 @@ No new external dependencies. No LLM in the verdict path. No FX feed.
 | Cash-buffer rule | **Min % floor** — cash ≥ `floor_pct` (default 5%) of CAD portfolio value. |
 | Cash source | **Config file** — gitignored `data/personal/cash.json` `{"cash_cad": ..., "as_of": "YYYY-MM-DD"}`; >28d stale ⇒ `STALE_CASH` flag, never silent pass. |
 | Gap P&L | **21d counterfactual at canonical fraction f=0.5** — same horizon and PriceProvider machinery as the existing `resolve_flags()` Brier resolver. |
-| Currency | **CAD throughout** — `market_value_cad = book_value_cad × (1 + unrealized_pct)`; reuses already-CAD book values, no FX dependency. Native-currency market values from the CSV are NOT used. |
+| Currency | **CAD throughout** — `market_value_cad = price × shares × fx`, where `fx = 1.0` for `.TO`/`.V` tickers and the latest `USDCAD=X` close from the EXISTING yfinance price provider otherwise. No new dependency. FX series unavailable ⇒ fail loud, skip buffer check that week. (Earlier formula `book_value_cad × (1 + unrealized_pct)` was rejected: it algebraically collapses to native-currency `price × shares` because `unrealized_pct` mixes currencies.) |
 | Architecture | **Approach A: extend existing discipline pipeline** — quantity + market_value_cad added to existing log rows; new pure `domain/adherence.py`; step 4 in Saturday script. (Rejected B: separate snapshot subsystem — more surface for a project closing ~Jun 29.) |
 
 ## Domain layer — `domain/adherence.py` (pure stdlib)
@@ -105,9 +105,14 @@ gap = flag_value × max(0, f − actual_cut_fraction) × (−r_21d)
 ## Application layer
 
 **Snapshot extension:** logged rows gain `quantity` and `market_value_cad`.
-- `market_value_cad = book_value_cad × (1 + unrealized_pct)` — both inputs are
-  already CAD (`Book Value (CAD)` column + computed unrealized_pct). The CSV's
-  native `Market Value` column (mixed CAD/USD) is never summed.
+- `market_value_cad = price × shares × fx_to_cad(ticker)`. `fx_to_cad` = 1.0
+  for `.TO`/`.V` suffixes (CAD-native), else latest `USDCAD=X` close fetched
+  through the existing `load_price_series` provider (same yfinance adapter,
+  cache-friendly, no new dependency). Currency inference mirrors the
+  `holdings_reader._to_yf` suffix mapping. FX fetch failure ⇒ loud error;
+  rows logged without `market_value_cad` that week and buffer check reports
+  `STALE_CASH`-style skip. The CSV's native `Market Value` column (mixed
+  CAD/USD) is never summed.
 - Plumbing note: `PositionRisk` currently has no shares/market_value
   (domain/models.py:407-424) and `execute()` discards `Holding.shares`
   (holdings_risk.py:99-103). Either extend `PositionRisk` (preferred — keeps
@@ -209,3 +214,16 @@ flag_value was defined as price × quantity (native currency, mixes USD/CAD);
 redefined as market_value_cad from the log row. Pinned for plan stage:
 actual_cut_fraction is CUMULATIVE quantity reduction across the ≤3 weekly diffs
 inside the 21d window, not a single-week diff.
+
+2026-06-10 (Fable pre-plan code read): REJECTED the Opus-suggested CAD formula
+`book_value_cad × (1 + unrealized_pct)` — algebraically collapses to
+native-currency `price × shares` (unrealized_pct mixes currencies at
+holdings_risk.py:99-103). Replaced with FX-via-provider (`USDCAD=X` through
+load_price_series, suffix-inferred currency).
+
+**Known pre-existing issue (OUT OF UNIT C SCOPE, surfaced to user):**
+`unrealized_pct` in holdings_risk.py is currency-polluted for USD names
+(e.g. ARKK: true CAD unreal ≈ −9%, computed −33.6%), and it feeds
+`is_disposition_risk` → REDUCE verdicts. NOT fixed here because changing
+verdict inputs mid-window would break ADR-048 forward-gate continuity.
+Decision needed post-gate (mid-July): fix + ADR, or accept as documented bias.
