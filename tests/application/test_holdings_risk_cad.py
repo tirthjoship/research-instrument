@@ -60,3 +60,41 @@ def test_fx_unavailable_yields_none_not_silent_native() -> None:
         datetime(2024, 9, 16, tzinfo=timezone.utc),
     )
     assert report["positions"][0].market_value_cad is None  # fail loud downstream
+
+
+def test_logged_rows_carry_quantity_and_cad_value(tmp_path, monkeypatch) -> None:
+    import json
+
+    from click.testing import CliRunner
+
+    from application import cli as cli_mod
+
+    monkeypatch.setattr(
+        "application.price_returns.load_price_series",
+        lambda t, s, e: _provider(t),
+    )
+
+    csv_path = tmp_path / "holdings.csv"
+    csv_path.write_text(
+        "Symbol,Exchange,Quantity,Book Value (CAD),Account Type\n"
+        "AC,TSX,30,556.2,FHSA\n"
+    )
+    log_path = tmp_path / "log.jsonl"
+    out_path = tmp_path / "detail.txt"
+
+    result = CliRunner().invoke(
+        cli_mod.cli,
+        [
+            "holdings-risk",
+            "--holdings",
+            str(csv_path),
+            "--out",
+            str(out_path),
+            "--log",
+            str(log_path),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    row = json.loads(log_path.read_text().splitlines()[0])
+    assert row["quantity"] == 30.0
+    assert row["market_value_cad"] == 600.0  # 30 * 20.0, .TO so fx 1.0
