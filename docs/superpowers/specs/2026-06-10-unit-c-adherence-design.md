@@ -29,7 +29,7 @@ No new external dependencies. No LLM in the verdict path. No FX feed.
 
 ## Domain layer — `domain/adherence.py` (pure stdlib)
 
-**DetectedTrade** (frozen dataclass): `ticker, action (BUY|SELL|NEW|EXIT),
+**DetectedTrade** (frozen dataclass): `ticker, action (BUY|SELL|NEW|EXIT|SUSPECTED_SPLIT),
 qty_before, qty_after, week_of`.
 
 - `diff_holdings(prev: dict[str, float], curr: dict[str, float], sell_min_change_pct=0.005, buy_min_change_pct=0.02) -> list[DetectedTrade]`
@@ -37,11 +37,14 @@ qty_before, qty_after, week_of`.
   SELL threshold 0.5%; BUY threshold 2% — the DRIP band (dividend reinvestment
   adds small BUY-side quantity that is not a discretionary trade and must not
   pollute the throttle).
-  **Split guard:** any single-week quantity ratio within ±2% of a common split
-  factor (2.0, 3.0, 1.5, 0.5, 1/3) is emitted as `SUSPECTED_SPLIT`, excluded
+  **Split guard:** any single-week quantity ratio within ±2% of a common forward
+  split factor (2.0, 3.0, 1.5) is emitted as `SUSPECTED_SPLIT`, excluded
   from trades AND from gap math for that ticker, and logged loudly (fail-loud).
   Rationale: provider prices are split-adjusted; logged quantities are not —
   an unguarded split fabricates a 100% BUY and corrupts `flag_value` continuity.
+  Only forward splits are guarded (they fabricate the dangerous phantom BUY);
+  reverse splits collide with ordinary 50% trims, so share decreases are always
+  SELL/EXIT.
 - `throttle_check(discretionary_trades, weeks_elapsed, max_trades_per_week=3) -> ThrottleResult`
   Verdict `OK | OVERTRADE`. **Input is discretionary trades only:**
   `discretionary = detected_trades − trades matched to open REDUCE/TRIM flags`.
