@@ -42,6 +42,17 @@ def test_consecutive_weekly_reflag_suppressed() -> None:
     assert len(build_obligations(flags)) == 1  # property: N identical flags -> 1
 
 
+def test_reflag_exactly_at_horizon_opens_new_obligation() -> None:
+    # Boundary: obligation resolves AT 21d, so a flag exactly 21d later is a
+    # NEW obligation, not a suppressed re-flag. Pins `< horizon` (not `<=`) —
+    # the seam that decides whether the headline gap double-counts.
+    flags = [
+        _flag("AC.TO", date(2026, 6, 13)),
+        _flag("AC.TO", date(2026, 7, 4)),  # exactly 21d later
+    ]
+    assert len(build_obligations(flags)) == 2
+
+
 def test_reflag_after_horizon_opens_new_obligation() -> None:
     flags = [
         _flag("AC.TO", date(2026, 6, 13)),
