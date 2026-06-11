@@ -8,9 +8,17 @@
 #   2. resolve-discipline-flags -> forward-scores any flags whose 21d horizon elapsed
 #      (REDUCE-only gate input + INCONCLUSIVE_THIN_DATES guard label, ADR-051).
 #   3. discipline-calibration-status -> readiness toward the gate + dead-cron freshness.
+#   4. adherence-report -> holdings-diff trades, discretionary throttle, cash
+#      buffer, 21d counterfactual adherence gap (Unit C, spec 2026-06-10).
 #
 # Read the appended block each Saturday: how did the week's flagged names react, what
 # resolved, and does the approach need revision. The log/holdings are gitignored.
+#
+# Fail-loud (hardening sprint, spec 2026-06-10): holdings-risk fetches with
+# strict=True and exits non-zero if any ticker hard-fails (after retry/backoff).
+# Under `set -euo pipefail` that aborts the Saturday job loudly. Delisted names
+# (>=3 wks no data) are pruned + skipped, not failed. A health summary line
+# (fetched OK / no-data / FAILED / pruned) precedes the verdict output.
 set -euo pipefail
 REPO="/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender"
 cd "$REPO"
@@ -29,5 +37,7 @@ OUT="data/reports/discipline_weekly_review.log"
   "$PYTHON" -m application.cli resolve-discipline-flags --log "$LOG"
   echo "--- 3. readiness toward the gate ---"
   "$PYTHON" -m application.cli discipline-calibration-status --log "$LOG"
+  echo "--- 4. adherence report (Unit C: trades, throttle, buffer, gap) ---"
+  "$PYTHON" -m application.cli adherence-report --log "$LOG"
   echo ""
 } >> "$OUT" 2>&1

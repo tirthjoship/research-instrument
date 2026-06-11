@@ -72,6 +72,9 @@ class HoldingsRiskAssessmentUseCase:
                 atr(bench_closes, bench_closes, bench_closes, _ATR_WINDOW),
             )
 
+        fx_series = self._prices("USDCAD=X")
+        usdcad: float | None = fx_series[-1][1] if fx_series else None
+
         positions: list[PositionRisk] = []
         for h in holdings:
             closes = self._closes_in(h.ticker, start, end)
@@ -139,6 +142,10 @@ class HoldingsRiskAssessmentUseCase:
                     account_type=h.account_type,
                     abstained=abstained,
                     why=why,
+                    quantity=h.shares,
+                    market_value_cad=self._market_value_cad(
+                        h.ticker, price, h.shares, usdcad
+                    ),
                 )
             )
         return {"positions": positions, "portfolio": self._portfolio(positions)}
@@ -159,7 +166,21 @@ class HoldingsRiskAssessmentUseCase:
             account_type=h.account_type,
             abstained=True,
             why=f"{h.ticker}: not enough price history to assess.",
+            quantity=h.shares,
+            market_value_cad=None,
         )
+
+    def _market_value_cad(
+        self, ticker: str, price: float, shares: float, usdcad: float | None
+    ) -> float | None:
+        """CAD market value via suffix-inferred currency (mirrors
+        holdings_reader._to_yf): .TO/.V are CAD-native, everything else USD.
+        Missing FX -> None (never silently native currency — spec v4)."""
+        if ticker.endswith((".TO", ".V")):
+            return price * shares
+        if usdcad is None:
+            return None
+        return price * shares * usdcad
 
     def _portfolio(self, positions: list[PositionRisk]) -> PortfolioRisk:
         n = len(positions)

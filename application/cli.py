@@ -2059,17 +2059,33 @@ def portfolio_verdict(holdings: str, market: str) -> None:
 @click.option(
     "--narrate", is_flag=True, help="Use local Ollama narrator (else template)"
 )
-def holdings_risk(holdings: str, out: str, log: str, narrate: bool) -> None:
+@click.option(
+    "--prune-list",
+    default="data/personal/delisted.json",
+    show_default=True,
+    help="Gitignored consecutive-no-data counter; >=3 weeks => skip as delisted",
+)
+def holdings_risk(
+    holdings: str, out: str, log: str, narrate: bool, prune_list: str
+) -> None:
     """Graded risk/discipline assessment of your holdings (decision-support, not prediction).
     Masked stdout (verdict distribution only); full detail to the gitignored --out file.
     """
     import os
     from datetime import datetime, timezone
 
+    from application import price_returns as _pr
+    from application.delisted import (
+        is_delisted,
+        load_prune_list,
+        record_fetch_outcome,
+        save_prune_list,
+    )
     from application.discipline_log import append_assessments
+    from application.fetch_health import FetchHealth
     from application.holdings_reader import read_holdings
     from application.narrator import FakeNarrator
-    from application.price_returns import load_price_series
+    from domain.exceptions import PriceFetchError
     from domain.ports import NarratorPort
 
     rows = read_holdings(holdings)
@@ -2081,12 +2097,31 @@ def holdings_risk(holdings: str, out: str, log: str, narrate: bool) -> None:
     start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
     end_dt = datetime.now(timezone.utc)
 
+    health = FetchHealth()
+    prune_state = load_prune_list(prune_list)
     _cache: dict[str, list[tuple[datetime, float]]] = {}
 
     def provider(ticker: str) -> list[tuple[datetime, float]]:
-        if ticker not in _cache:
-            _cache[ticker] = load_price_series(ticker, start_dt, end_dt)
-        return _cache[ticker]
+        nonlocal prune_state
+        if ticker in _cache:
+            return _cache[ticker]
+        if is_delisted(prune_state, ticker):
+            health.record_pruned(ticker)
+            _cache[ticker] = []
+            return []
+        try:
+            series = _pr.load_price_series(ticker, start_dt, end_dt, strict=True)
+        except PriceFetchError:
+            health.record_failed(ticker)
+            _cache[ticker] = []
+            return []
+        if series:
+            health.record_ok(ticker)
+        else:
+            health.record_no_data(ticker)
+        prune_state = record_fetch_outcome(prune_state, ticker, had_data=bool(series))
+        _cache[ticker] = series
+        return series
 
     narrator: NarratorPort
     if narrate:
@@ -2120,6 +2155,8 @@ def holdings_risk(holdings: str, out: str, log: str, narrate: bool) -> None:
                 "price": p.price,
                 "trend_health": p.trend_health,
                 "as_of": now_iso,
+                "quantity": p.quantity,
+                "market_value_cad": p.market_value_cad,
             }
             for p in positions
         ],
@@ -2132,6 +2169,11 @@ def holdings_risk(holdings: str, out: str, log: str, narrate: bool) -> None:
         f"Broken-trend share: {pf.broken_trend_share:.0%}  Top concentration: {pf.top_concentration:.0%}"
     )
     click.echo(f"Full per-ticker detail written to {out} (gitignored).")
+    save_prune_list(prune_list, prune_state)
+    click.echo(health.summary_line())
+    if health.any_failed():
+        click.echo(f"  FETCH FAILURES: {', '.join(health.failed_tickers)}")
+        raise SystemExit(1)  # loud: cron under `set -euo pipefail` fails the job
 
 
 @cli.command("resolve-discipline-flags")
@@ -2248,6 +2290,91 @@ def discipline_calibration_status(
     click.echo(
         "  (gate thresholds stay locked per ADR-048/051; log more dates if THIN)"
     )
+
+
+@cli.command("adherence-report")
+@click.option("--log", default="data/personal/discipline_log.jsonl", show_default=True)
+@click.option(
+    "--cash-config",
+    default="data/personal/cash.json",
+    show_default=True,
+    help='Gitignored JSON: {"cash_cad": 1234.56, "as_of": "YYYY-MM-DD"}. '
+    "Update on material change; >28d stale flags STALE_CASH.",
+)
+@click.option(
+    "--adherence-log",
+    default="data/personal/adherence_log.jsonl",
+    show_default=True,
+    help="Append-only adherence records, idempotent by (ticker, flag_date).",
+)
+@click.option("--today", default=None, help="Override today (ISO date) for tests.")
+def adherence_report(
+    log: str, cash_config: str, adherence_log: str, today: str | None
+) -> None:
+    """Weekly Unit C report: detected trades (holdings-diff, lower bound),
+    discretionary-trade throttle, CAD cash-buffer floor, and per-flag adherence
+    with 21d counterfactual gap (f=0.5). Advisory only (L0). Descriptive,
+    underpowered by design — no significance claims (spec Interpretation limits).
+    """
+    from datetime import date, datetime, timezone
+
+    from application.adherence import run_adherence_report
+    from application.price_returns import load_price_series
+
+    start_dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
+    end_dt = datetime.now(timezone.utc)
+
+    def provider(ticker: str) -> list[tuple[datetime, float]]:
+        return load_price_series(ticker, start_dt, end_dt)
+
+    today_d = date.fromisoformat(today) if today else end_dt.date()
+    s = run_adherence_report(
+        log_path=log,
+        adherence_log_path=adherence_log,
+        cash_config_path=cash_config,
+        price_provider=provider,
+        today=today_d,
+    )
+    click.echo(f"Adherence report (today {today_d.isoformat()})  status={s['status']}")
+    click.echo(
+        f"  snapshots: {s['n_snapshots']}  trades detected: {len(s['trades'])}"
+        "  (net weekly position changes — lower bound)"
+    )
+    for t in s["trades"]:
+        click.echo(
+            f"    {t['week_of']}  {t['ticker']:10} {t['action']:16} "
+            f"{t['qty_before']:.1f} -> {t['qty_after']:.1f}"
+        )
+    th = s["throttle"]
+    click.echo(
+        f"  THROTTLE: {th['verdict']}  discretionary={th['n_discretionary']}"
+        + (f"  ({th['note']})" if th.get("note") else "")
+    )
+    b = s["buffer"]
+    pct = f"{b['cash_pct']:.1%}" if b["cash_pct"] is not None else "n/a"
+    click.echo(f"  CASH BUFFER: {b['verdict']}  cash_pct={pct}")
+    for r in s["adherence"]:
+        click.echo(
+            f"  {r['flag_date']}  {r['ticker']:10} {r['verdict']:7} "
+            f"{r['label']:9} cut={r['actual_cut_fraction']:.0%} "
+            f"gap={r['gap_cad']:+.0f} CAD ({r['gap_bps']:+.1f} bps)"
+        )
+    skipped = s["skipped_unresolved"]
+    click.echo(
+        f"  skipped_unresolved: {len(skipped)} {skipped} — flags excluded for "
+        "missing 21d prices (incl. delistings); gap is conservative."
+    )
+    if "cumulative_gap_bps" in s:
+        click.echo(
+            f"  GAP (REDUCE-only headline): {s['cumulative_gap_bps']:+.1f} bps "
+            f"over {s['days_observed']:.0f}d; annualized "
+            f"{s['annualized_gap_bps']:+.1f} bps/yr "
+            "(context: literature disposition effect ~848 bps/yr; point estimate "
+            "only, no significance claim)"
+        )
+        click.echo(
+            f"  TRIM gap (informational, sizing advice): {s['trim_gap_bps']:+.1f} bps"
+        )
 
 
 @cli.command("holdings-risk-calibrate")

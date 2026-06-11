@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
+import time as _time
 from datetime import datetime, timedelta
+
+from adapters.data.retry import retry_with_backoff
+from domain.exceptions import PriceFetchError
+
+_SLEEP = _time.sleep  # module-level seam so tests can stub backoff waits
 
 
 def compute_forward_return(
@@ -30,24 +36,48 @@ def compute_forward_return(
     return (exit_price - entry_price) / entry_price
 
 
-def load_price_series(
+def _fetch_history(
     ticker: str, start: datetime, end: datetime
 ) -> list[tuple[datetime, float]]:
-    """Load (date, close) ascending from yfinance. Returns [] on any error."""
-    try:
-        import yfinance as yf
+    """Raw yfinance fetch. Returns ascending (date, close); [] if the symbol
+    has no rows in range. Raises on a genuine fetch error (network, etc.)."""
+    import yfinance as yf
 
-        df = yf.Ticker(ticker).history(
-            start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d")
+    df = yf.Ticker(ticker).history(
+        start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d")
+    )
+    if df is None or df.empty:
+        return []
+    out: list[tuple[datetime, float]] = []
+    for idx, row in df.iterrows():
+        out.append((idx.to_pydatetime().replace(tzinfo=None), float(row["Close"])))
+    return out
+
+
+def load_price_series(
+    ticker: str,
+    start: datetime,
+    end: datetime,
+    *,
+    strict: bool = False,
+) -> list[tuple[datetime, float]]:
+    """Load (date, close) ascending from yfinance, with retry/backoff.
+
+    Tri-state:
+      - rows in range            -> the series
+      - no rows (new/delisted)   -> []  (NOT an error, both modes)
+      - fetch error after retries-> strict=False: log + []  (legacy contract,
+                                     ~18 callers); strict=True: raise
+                                     PriceFetchError(ticker).
+    """
+    try:
+        return retry_with_backoff(
+            lambda: _fetch_history(ticker, start, end), sleep=_SLEEP
         )
-        if df is None or df.empty:
-            return []
-        out: list[tuple[datetime, float]] = []
-        for idx, row in df.iterrows():
-            out.append((idx.to_pydatetime().replace(tzinfo=None), float(row["Close"])))
-        return out
-    except Exception:
+    except Exception as exc:
+        if strict:
+            raise PriceFetchError(ticker, cause=exc) from exc
         from loguru import logger
 
-        logger.warning(f"price load failed for {ticker}")
+        logger.warning(f"price load failed for {ticker}: {exc}")
         return []
