@@ -9,7 +9,7 @@ Production-grade, hexagonal ML research system for equities, built around **rigo
 > **Direction (ADR-052): the engine is now a deterministic risk/behavior CRO, not a market-beater.** The recommender **abstains** (RESEARCH_ONLY evidence screen, never a predictor); the product is risk mitigation + behavior-gap closure. Shipped: an honest **discipline / risk decision-support tool** (graded REDUCE/TRIM/REVIEW/HOLD/ADD_OK + abstain-when-mixed, ADR-045→047), measured against *your own behavior*, not the market; and **Unit A — the macro-beta scrubber** (ADR-052): Ridge-regress each holding on SPY/TLT/UUP/XLE to expose the book's hidden macro factor bets, folded into the weekly brief. Live on the real book: **63% of book variance is one-factor macro** (dominant SPY, net β +1.39) — "66 names, mostly one leveraged market bet." The **terminal bet** is the discipline forward-calibration gate (ADR-048, LOCKED); the ADR-051 **calibration-readiness harness** ensures it resolves on date-diverse data (`INCONCLUSIVE_THIN_DATES` rather than a confounded PROCEED/KILL), accrued by a weekly Saturday review. Nothing ships without passing a pre-registered gate. See `docs/adr/` (039–052) and `docs/STATUS.md` for current state.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-1442%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-1542%20passing-success)](./tests/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25+-brightgreen)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
@@ -26,7 +26,7 @@ Production-grade, hexagonal ML research system for equities, built around **rigo
 
 **Phases 7-9 reframe:** Direction prediction alone shows no edge (~49% accuracy on mega-caps). The system now surfaces opportunities via multi-signal conviction scoring with adaptive learning — catching trends before mainstream awareness through SEC filing analysis, sentiment convergence, and pattern memory.
 
-**Current direction (2026-06-09, ADR-052):** The alpha hunt is **formally closed** after six convergent falsifications. The conviction/divergence/momentum/trend lines were all tested and none cleared a pre-registered bar. The engine is now a **deterministic risk/behavior CRO**: an abstaining RESEARCH_ONLY evidence screen (never a predictor), the shipped discipline tool, and the **macro-beta scrubber** (Unit A) that exposes hidden macro factor bets in a held book. Roadmap: Unit A (macro-beta) ✅ → Unit B (sub-$1B insider-cluster event study — **CLOSED: practical KILL via survivorship-honest coverage guard**, ADR-053) → Unit C (behavior gates) → hardening → dashboard realignment → wrap ~Jun 29. The product surface is the **weekly brief** (`weekly-brief` CLI). See [ADR-052](docs/adr/052-cro-direction-alpha-hunt-closed.md) and `docs/STATUS.md`.
+**Current direction (2026-06-09, ADR-052):** The alpha hunt is **formally closed** after six convergent falsifications. The conviction/divergence/momentum/trend lines were all tested and none cleared a pre-registered bar. The engine is now a **deterministic risk/behavior CRO**: an abstaining RESEARCH_ONLY evidence screen (never a predictor), the shipped discipline tool, and the **macro-beta scrubber** (Unit A) that exposes hidden macro factor bets in a held book. Roadmap: Unit A (macro-beta) ✅ → Unit B (sub-$1B insider-cluster event study — **CLOSED: practical KILL via survivorship-honest coverage guard**, ADR-053) → Unit C (behavior gates: anti-overtrade throttle, cash-buffer, adherence self-experiment) ✅ merged → hardening sprint (resilient tri-state fetch, delisted prune, collect-then-fail health check) ✅ merged → dashboard realignment → wrap ~Jun 29. The product surface is the **weekly brief** (`weekly-brief` CLI). See [ADR-052](docs/adr/052-cro-direction-alpha-hunt-closed.md) and `docs/STATUS.md`.
 
 ---
 
@@ -298,7 +298,7 @@ pre-commit install
 
 ```bash
 pytest tests/ -v
-# Expected: ~1442 passed
+# Expected: ~1542 passed
 ```
 
 ### CLI Usage
@@ -432,7 +432,7 @@ make check
 | Learning use case | 11 | Pattern analysis → weight adjustment → rules |
 | _(rows above predate later phases)_ | | |
 | Discipline / calibration / screen / brief / macro-beta / … | _not itemized_ | run `make check` for the live count |
-| **Total (full suite)** | **~1442** | 94%+ coverage |
+| **Total (full suite)** | **~1542** | 94%+ coverage |
 
 ---
 
@@ -591,7 +591,7 @@ Next directions (to be decided): densify signal and add statistical power; forwa
 
 ## Architecture Decision Records
 
-39 ADRs in `docs/adr/` documenting all major design choices:
+ADRs 001–053 in `docs/adr/` document all major design choices. The table below covers the build-out era (001–039); ADRs 040–053 record the falsification campaign and CRO pivot (see the honest-status banner above and `docs/adr/` directly):
 
 | ADR | Decision |
 |-----|----------|
@@ -637,7 +637,7 @@ Three GitHub Actions workflows automate quality gates:
 
 | Workflow | Trigger | What it does |
 |----------|---------|-------------|
-| `test.yml` | Push/PR to develop | Runs ~1442 tests, enforces 90% coverage |
+| `test.yml` | Push/PR to develop | Runs ~1542 tests, enforces 90% coverage |
 | `lint.yml` | Push/PR to develop | black, isort, ruff, mypy strict |
 | `security.yml` | Push/PR to develop | gitleaks secret scanning |
 
