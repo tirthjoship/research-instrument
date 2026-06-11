@@ -143,3 +143,102 @@ def cash_buffer_check(
     pct = cash_cad / total
     verdict = BufferVerdict.OK if pct >= floor_pct else BufferVerdict.BUFFER_BREACH
     return BufferResult(verdict, pct)
+
+
+HORIZON_DAYS = 21
+
+
+class AdherenceLabel(str, Enum):
+    FOLLOWED = "FOLLOWED"
+    PARTIAL = "PARTIAL"
+    IGNORED = "IGNORED"
+
+
+@dataclass(frozen=True)
+class Obligation:
+    """One open tool-directed expectation: a REDUCE/TRIM flag on a position.
+    One open obligation per (ticker, verdict) at a time — grade_position
+    re-flags a broken name every Saturday, and without suppression the same
+    drop is gap-counted once per week (spec blocker #4)."""
+
+    ticker: str
+    verdict: str
+    flag_date: date
+    quantity: float
+    market_value_cad: float
+
+
+def build_obligations(
+    flag_rows: list[dict[str, object]], horizon_days: int = HORIZON_DAYS
+) -> list[Obligation]:
+    """flag_rows: REDUCE/TRIM log rows that carry quantity + market_value_cad
+    + as_of_date (a datetime.date), in any order. While a (ticker, verdict)
+    obligation is < horizon_days old, newer flags for it are suppressed."""
+    obligations: list[Obligation] = []
+    last_open: dict[tuple[str, str], date] = {}
+    for row in sorted(flag_rows, key=lambda r: r["as_of_date"]):  # type: ignore[arg-type, return-value]
+        ticker = str(row["ticker"])
+        verdict = str(row["verdict"])
+        flag_date = row["as_of_date"]
+        assert isinstance(flag_date, date)
+        key = (ticker, verdict)
+        opened = last_open.get(key)
+        if opened is not None and (flag_date - opened).days < horizon_days:
+            continue
+        last_open[key] = flag_date
+        obligations.append(
+            Obligation(
+                ticker=ticker,
+                verdict=verdict,
+                flag_date=flag_date,
+                quantity=float(row["quantity"]),  # type: ignore[arg-type]
+                market_value_cad=float(row["market_value_cad"]),  # type: ignore[arg-type]
+            )
+        )
+    return obligations
+
+
+def actual_cut_fraction(qty_at_flag: float, later_quantities: list[float]) -> float:
+    """CUMULATIVE reduction across the weekly snapshots inside the 21d window:
+    the deepest cut reached counts, a later re-buy does not undo adherence."""
+    if qty_at_flag <= 0 or not later_quantities:
+        return 0.0
+    deepest = min(later_quantities)
+    return max(0.0, (qty_at_flag - deepest) / qty_at_flag)
+
+
+def adherence_label(cut: float, f: float = CANONICAL_CUT_FRACTION) -> AdherenceLabel:
+    if cut >= f:
+        return AdherenceLabel.FOLLOWED
+    if cut > 0.0:
+        return AdherenceLabel.PARTIAL
+    return AdherenceLabel.IGNORED
+
+
+def gap_cad(
+    flag_value_cad: float,
+    cut: float,
+    r_21d: float,
+    f: float = CANONICAL_CUT_FRACTION,
+) -> float:
+    """gap = flag_value × max(0, f − actual_cut) × (−r_21d).
+    Positive gap = following the tool would have saved money. Counterfactual
+    sale proceeds sit in cash at 0% for the window (spec: explicit assumption;
+    isolates the name-specific avoid-the-drop effect)."""
+    return flag_value_cad * max(0.0, f - cut) * (-r_21d)
+
+
+def gap_bps(gap_dollar_cad: float, portfolio_value_cad_at_flag: float) -> float:
+    """Per-flag bps against the portfolio value at THAT flag's date — each flag
+    self-normalizing, so differently-sized epochs are additive (spec blocker #7)."""
+    if portfolio_value_cad_at_flag <= 0:
+        return 0.0
+    return gap_dollar_cad / portfolio_value_cad_at_flag * 1e4
+
+
+def annualize_bps(cumulative_bps: float, days_observed: float) -> float:
+    """Only the annualized figure sits next to the ~848 bps/yr literature
+    anchor, and only as context — never a significance claim."""
+    if days_observed <= 0:
+        return 0.0
+    return cumulative_bps * 365.0 / days_observed
