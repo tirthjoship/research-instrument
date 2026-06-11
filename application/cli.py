@@ -2120,6 +2120,8 @@ def holdings_risk(holdings: str, out: str, log: str, narrate: bool) -> None:
                 "price": p.price,
                 "trend_health": p.trend_health,
                 "as_of": now_iso,
+                "quantity": p.quantity,
+                "market_value_cad": p.market_value_cad,
             }
             for p in positions
         ],
