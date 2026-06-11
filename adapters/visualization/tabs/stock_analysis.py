@@ -127,7 +127,7 @@ def _show_loading_steps(ticker: str) -> None:
 
 
 def _render_verdict(result: AnalysisResult) -> None:
-    """Render top verdict section: price, radar, grade, consensus comparison."""
+    """Render top verdict section: price, RESEARCH_ONLY notice, consensus comparison."""
     # Company header
     change_color = "#16A34A" if result.change_pct >= 0 else "#DC2626"
     change_sign = "+" if result.change_pct >= 0 else ""
