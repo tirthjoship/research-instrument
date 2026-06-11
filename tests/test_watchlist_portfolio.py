@@ -5,23 +5,23 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-# ── Task 32/33: Watchlist tab importable ─────────────────────────────────────
+# ── Task 32/33: Watchlist folded into positions tab ──────────────────────────
 
 
-def test_watchlist_render_importable() -> None:
-    from adapters.visualization.tabs.watchlist import render
+def test_watchlist_section_importable() -> None:
+    from adapters.visualization.tabs.positions import _render_watchlist_section
 
-    assert callable(render)
+    assert callable(_render_watchlist_section)
 
 
 def test_watchlist_add_form_importable() -> None:
-    from adapters.visualization.tabs.watchlist import _render_add_form
+    from adapters.visualization.tabs.positions import _render_watchlist_add_form
 
-    assert callable(_render_add_form)
+    assert callable(_render_watchlist_add_form)
 
 
 def test_watchlist_card_importable() -> None:
-    from adapters.visualization.tabs.watchlist import _render_watchlist_card
+    from adapters.visualization.tabs.positions import _render_watchlist_card
 
     assert callable(_render_watchlist_card)
 

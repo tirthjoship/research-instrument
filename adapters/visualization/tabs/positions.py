@@ -10,8 +10,13 @@ import streamlit as st
 from adapters.visualization.action_runner import run_record_buy, run_record_sell
 from adapters.visualization.components.cards import metric_kpi
 from adapters.visualization.components.verdicts import outcome_tracker_verdict
-from adapters.visualization.data_loader import load_holdings, load_outcomes, load_trades
-from adapters.visualization.price_cache import batch_fetch_prices
+from adapters.visualization.data_loader import (
+    load_holdings,
+    load_outcomes,
+    load_trades,
+    load_watchlist,
+)
+from adapters.visualization.price_cache import batch_fetch_prices, fetch_ticker_info
 
 DB_PATH = "data/recommendations.db"
 
@@ -65,6 +70,11 @@ def render(db_path: str = DB_PATH) -> None:
     if trades:
         st.divider()
         _render_trade_history(trades, outcomes)
+
+    # Watchlist — folded in from deleted tabs/watchlist.py (dashboard realignment)
+    st.divider()
+    with st.expander("Watchlist"):
+        _render_watchlist_section(db_path)
 
 
 def _render_empty_state() -> None:
@@ -312,3 +322,143 @@ def _render_trade_history(trades: list[Any], outcomes: list[Any]) -> None:
         ]
     )
     st.dataframe(trades_df, use_container_width=True, hide_index=True)
+
+
+# ---------------------------------------------------------------------------
+# Watchlist section (folded in from deleted tabs/watchlist.py)
+# ---------------------------------------------------------------------------
+
+
+def _render_watchlist_section(db_path: str = "data/recommendations.db") -> None:
+    """Render the watchlist — pinned tickers with live prices + add/remove."""
+    watchlist = load_watchlist(db_path)
+
+    st.markdown(
+        f'<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        f"{len(watchlist)} ticker{'s' if len(watchlist) != 1 else ''} watching.</div>",
+        unsafe_allow_html=True,
+    )
+
+    if not watchlist:
+        st.markdown(
+            '<div class="ws-card" style="text-align:center;padding:2rem;">'
+            '<div style="font-size:15px;font-weight:500;color:#1A202C;">Watchlist empty</div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        _render_watchlist_add_form(db_path)
+        return
+
+    tickers = tuple(w["symbol"] for w in watchlist)
+    try:
+        prices = batch_fetch_prices(tickers)
+    except Exception:
+        prices = {}
+
+    infos: dict[str, dict[str, object]] = {}
+    for t in tickers:
+        try:
+            infos[t] = fetch_ticker_info(t)
+        except Exception:
+            infos[t] = {}
+
+    for w in watchlist:
+        symbol = w["symbol"]
+        _render_watchlist_card(
+            symbol, w, prices.get(symbol, {}), infos.get(symbol, {}), db_path
+        )
+
+    st.divider()
+    _render_watchlist_add_form(db_path)
+
+
+def _render_watchlist_card(
+    symbol: str,
+    w: dict[str, str],
+    price_data: dict[str, float],
+    info: dict[str, object],
+    db_path: str,
+) -> None:
+    price = price_data.get("price", 0)
+    change = price_data.get("change_pct", 0)
+    pe_raw = info.get("trailingPE") or info.get("forwardPE")
+    peg_raw = info.get("pegRatio")
+    mcap_raw = info.get("marketCap", 0) or 0
+
+    pe: float | None = float(pe_raw) if pe_raw is not None else None  # type: ignore[arg-type]
+    peg: float | None = float(peg_raw) if peg_raw is not None else None  # type: ignore[arg-type]
+    mcap: float = float(mcap_raw)  # type: ignore[arg-type]
+
+    price_str = f"${price:,.2f}" if price else "—"
+    change_color = "#16A34A" if change >= 0 else "#DC2626"
+    change_str = f"{change:+.2f}%" if price else ""
+    pe_str = f"{pe:.1f}x" if pe is not None else "—"
+    peg_str = f"{peg:.2f}" if peg is not None else "—"
+    if mcap > 1e9:
+        mcap_str = f"${mcap / 1e9:.0f}B"
+    elif mcap > 1e6:
+        mcap_str = f"${mcap / 1e6:.0f}M"
+    else:
+        mcap_str = "—"
+
+    st.markdown(
+        f'<div class="ws-card" style="padding:16px;margin-bottom:12px;">'
+        f'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        f'<div style="display:flex;align-items:center;gap:12px;">'
+        f'<span style="font-weight:700;font-size:18px;">{symbol}</span>'
+        f'<span style="font-size:16px;">{price_str}</span>'
+        f'<span style="color:{change_color};font-weight:600;font-size:14px;">{change_str}</span>'
+        f"</div></div>"
+        f'<div style="margin-top:8px;font-size:13px;color:#475569;">'
+        f"P/E: {pe_str} &middot; PEG: {peg_str} &middot; Mkt Cap: {mcap_str}"
+        f"</div>"
+        f'<div style="margin-top:6px;font-size:13px;color:#64748B;">'
+        f"Since: {w.get('added_date', '—')} &middot; {w.get('notes', '')}"
+        f"</div></div>",
+        unsafe_allow_html=True,
+    )
+
+    btn_cols = st.columns([2, 2, 2, 6])
+    with btn_cols[0]:
+        if st.button("Remove", key=f"wl_rm_{symbol}"):
+            try:
+                from adapters.data.sqlite_store import SQLiteStore
+
+                SQLiteStore(db_path).remove_watchlist(symbol)
+            except Exception:
+                pass
+            st.rerun()
+    with btn_cols[1]:
+        if st.button("Analyze", key=f"wl_az_{symbol}"):
+            st.session_state["analyze_ticker"] = symbol
+            st.info(f"Switch to Stock Analysis tab and enter {symbol}")
+
+
+def _render_watchlist_add_form(db_path: str) -> None:
+    st.markdown("#### Add to Watchlist")
+    with st.form("add_watchlist_form", clear_on_submit=True):
+        cols = st.columns([2, 3, 3, 1])
+        ticker = cols[0].text_input("Symbol", placeholder="TSLA")
+        reason = cols[1].selectbox(
+            "Reason",
+            [
+                "Earnings play",
+                "Sector rotation",
+                "Upstream signal",
+                "Technical setup",
+                "Insider activity",
+                "Momentum",
+                "Custom",
+            ],
+        )
+        notes = cols[2].text_input("Notes (optional)", placeholder="Details...")
+        submitted = cols[3].form_submit_button("Add")
+        if submitted and ticker:
+            full_notes = f"{reason}" + (f" — {notes}" if notes else "")
+            try:
+                from adapters.visualization.action_runner import run_add_watchlist
+
+                run_add_watchlist(ticker.upper(), full_notes, db_path=db_path)
+            except Exception:
+                pass
+            st.rerun()
