@@ -40,12 +40,16 @@ def _snapshots(
 ) -> dict[date, list[dict[str, Any]]]:
     """Group rows by as_of DATE (calibration_readiness convention). Same-day
     re-runs: keep only rows from the max as_of timestamp on that date."""
-    by_date: dict[date, dict[str, list[dict[str, Any]]]] = {}
+    # Key the same-day run dict by the PARSED datetime, not the raw string, so
+    # max() compares chronologically even if formats/offsets ever differ
+    # (Z vs +00:00, variable microsecond width) — robust on the headline path.
+    by_date: dict[date, dict[datetime, list[dict[str, Any]]]] = {}
     for r in rows:
         if r.get("quantity") is None:  # legacy rows: pre-Unit-C, no baseline
             continue
-        d = _date_of(str(r["as_of"]))
-        by_date.setdefault(d, {}).setdefault(str(r["as_of"]), []).append(r)
+        ts = datetime.fromisoformat(str(r["as_of"]))
+        d = ts.date()
+        by_date.setdefault(d, {}).setdefault(ts, []).append(r)
     return {d: runs[max(runs)] for d, runs in by_date.items()}
 
 
@@ -191,6 +195,10 @@ def run_adherence_report(
         if (today - ob.flag_date).days < horizon_days:
             continue  # still open, resolve later
         window_end = ob.flag_date + timedelta(days=horizon_days)
+        # Absence from a later snapshot is modeled as a FULL exit (qty 0 = full
+        # cut): snapshots are full-portfolio exports, so "not present" means
+        # "not held". This is the most load-bearing silent assumption in the
+        # gap math — if snapshots ever become per-ticker, revisit this default.
         later_qs = [
             float(
                 next(
