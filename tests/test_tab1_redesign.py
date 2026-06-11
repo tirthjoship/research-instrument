@@ -139,8 +139,8 @@ class TestEnhancedCompactCard:
 # ---------------------------------------------------------------------------
 
 
-def test_command_center_importable() -> None:
-    from adapters.visualization.tabs.command_center import render
+def test_research_candidates_importable() -> None:
+    from adapters.visualization.tabs.research_candidates import render
 
     assert callable(render)
 
@@ -180,26 +180,8 @@ def test_fetch_index_prices_importable() -> None:
     assert callable(fetch_index_prices)
 
 
-def test_rec_card_html_renders_symbol() -> None:
-    """_rec_card_html renders the symbol in HTML output."""
-    from adapters.visualization.tabs.command_center import _rec_card_html
+def test_research_candidates_render_no_raise(tmp_path: object) -> None:
+    """research_candidates.render() handles missing reports dir without raising."""
+    from adapters.visualization.tabs import research_candidates
 
-    class FakeRec:
-        symbol = "AAPL"
-        composite_score = 0.75
-        predicted_return_5d = 0.05
-        confidence_5d = 0.72
-        sentiment_score = 0.65
-        reasoning = "Strong momentum."
-        horizon_signals: dict[str, str] = {
-            "2d": "bullish",
-            "5d": "bullish",
-            "10d": "bearish",
-        }
-
-        class grade:
-            value = "buy"
-
-    html = _rec_card_html(FakeRec())
-    assert "AAPL" in html
-    assert "buy" in html.lower() or "Buy" in html
+    research_candidates.render(reports_dir=str(tmp_path))
