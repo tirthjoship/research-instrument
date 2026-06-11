@@ -1,7 +1,7 @@
 # ADR-053: Sub-$1B Insider-Cluster Falsification — Verdict (Unit B)
 
 **Date:** 2026-06-10
-**Status:** DRAFT — smoke window resolved; **awaiting full 2006–2024 run for the definitive verdict** (see §Results).
+**Status:** Accepted (2026-06-10) — full 2006–2024 verdict: **INCONCLUSIVE_THIN_COVERAGE → practical KILL** (pre-committed tree applied; prediction permanently closed).
 **Deciders:** Tirth Joshi
 **Builds on:** ADR-052 (CRO direction; Unit B = the one sanctioned predictive swing), ADR-039/043/044/046/049/050 (six prior falsifications), ADR-048/051 (forward gate + anti-p-hacking discipline)
 
@@ -67,27 +67,44 @@ full-window result.
 
 **Reading:** sub-$1B insider clusters carry **real gross 21-day information** (~+1.6% abnormal vs IWC, CI clears zero) that **does not survive micro-cap slippage**. This is precisely the ADR-052 prediction. Survivorship works *in favor* of the edge (dropping delisted losers inflates the gross figure), yet Leg-2 still fails — so the "untradeable" conclusion is **robust under favorable bias.**
 
-### Full window — 2006Q1–2024Q4 (definitive, pre-registered)
+### Full window — 2006Q1–2024Q4 (definitive, pre-registered, M1/M2-amended run, 2026-06-10)
 
-> **PENDING** — run executing 2026-06-10. Fill verbatim from
-> `data/reports/insider_cluster_falsification_2024.json`:
->
-> | Metric | Value |
-> |--------|-------|
-> | Cluster events / resolved / overall resolution | `[PENDING]` |
-> | Bottom-tercile events (primary n) | `[PENDING]` |
-> | Leg 1 gross (mean / CI_low) | `[PENDING]` |
-> | Leg 2 net (mean / CI_low) | `[PENDING]` |
-> | **Verdict** | `[PENDING]` |
+| Metric | Value |
+|--------|-------|
+| Cluster events (all terciles) | 28,866 |
+| Records with trailing ADV / no-price | 15,403 / 13,463 → **overall resolution 53.0%** |
+| Bottom-tercile population (primary denominator, incl. no-price) | **17,881** |
+| Bottom-tercile benchmarked | 4,349 |
+| **Bottom-tercile coverage** | **24.32%** (guard requires ≥ 80%) |
+| Leg 1 / Leg 2 | **not evaluated** — coverage guard fired before the legs |
+| Events binned below min tercile population | 29 (disclosure-only) |
+| **Verdict** | **INCONCLUSIVE_THIN_COVERAGE → practical KILL** |
 
 ## Decision / Verdict
 
-> **PENDING full run.** Smoke strongly indicates **INCONCLUSIVE** (information present, untradeable after slippage) rather than a clean KILL or PASS. Final verdict recorded from the 2006–2024 run.
+**INCONCLUSIVE_THIN_COVERAGE → practical KILL (final).** Executed per the
+pre-committed decision tree (strategic wrap spec 2026-06-10 §2, locked BEFORE this
+result existed): the M1/M2 amendment consumed the one allowed remediation re-run;
+a still-thin result is final — **cannot validate ⇒ cannot ever trade.** Prediction
+is permanently off the table (ADR-052 stands). Unit D stays parked (wrap spec §6).
 
-Interpretation rule (pre-committed):
-- **PASS** (full) → first surviving predictive edge in the project; ships **RESEARCH_ONLY** only, pending independent re-validation — never auto-traded.
-- **INCONCLUSIVE** → information is real but not tradeable at retail micro-cap costs; prediction stays off the *product* path; the rig is kept for any future pre-registered re-test (e.g. lower-cost execution venue).
-- **KILL** → prediction permanently off the table (ADR-052). The CRO/discipline engine remains the terminal product.
+**Why coverage collapsed (honest reading):** 46.6% of all cluster events
+(13,463/28,866) have NO price bar at/after the fire date in free yfinance data —
+delisted micro-caps and unmapped symbols across 19 years. The survivorship-honest
+denominator (code-review C1) bins every one of them into the bottom tercile, exactly
+as designed: residual survivorship drives coverage DOWN instead of fabricating a
+clean-looking sample. The thin verdict is the C1 fix WORKING. The smoke run's 100%
+coverage (and its tantalizing gross signal) was an artifact of a 4-year recent
+window where most names still trade. A definitive test of this hypothesis requires
+survivorship-bias-free paid data (CRSP/Sharadar) — out of scope for this project's
+no-paid-data rail, hence final here.
+
+Interpretation rule (pre-committed) as applied:
+- ~~PASS~~ / ~~INCONCLUSIVE (cost-killed)~~ / ~~KILL (gross ≤ 0)~~ — not reached;
+  the guard fired first.
+- **THIN after the one remediation → practical KILL.** The rig (DERA adapter +
+  cluster detection + event-study gate) remains reusable ONLY under a new
+  pre-registration ADR with a survivorship-complete data source.
 
 ## Consequences
 
