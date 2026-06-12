@@ -88,10 +88,24 @@ Five hard stops — see `AGENTS.md` for full details:
 4. **No direct commits to main or dev** — feature branches only, PR to dev
 5. **Tests use small fixtures** — never hit real APIs (yfinance, Reddit) in CI tests. Use fakes.
 
+## External Documentation — context7
+
+This repo leans on fast-moving libraries: **yfinance, streamlit, plotly, click, xgboost,
+lightgbm, scikit-learn, pandas, pytest, hypothesis**. Their APIs drift between versions.
+
+Invoke the `context7` MCP server (`resolve-library-id` → `query-docs`) **before** writing or
+debugging code against any of these — do not answer from memory. Typical triggers here:
+adding/altering a Streamlit tab or Plotly chart (dashboard realignment), a yfinance fetch
+signature, a click command option, or an xgboost/lightgbm training call. Skip it for pure
+domain logic (`domain/` is stdlib-only) and refactors with no third-party API involved.
+
+Full per-phase routing incl. context7: `docs/SKILL_ROUTING.md` (when it lands, dashboard plan Task 1).
+
 ## Phase Status
 
 **Current state + next action: `docs/STATUS.md`** (read this first — it is the
 single source of truth, kept short and current).
+Skill/agent routing per phase: `docs/SKILL_ROUTING.md` (which skill to invoke, which gate must pass).
 
 Full phase-by-phase history: `docs/PHASE_LOG.md` (read on demand only).
 Architecture decisions: `docs/adr/` (read the specific ADR a task references).

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Weekly (Saturday) discipline review for the ADR-048/051 forward-calibration gate.
 #
-# Three steps, all appended to data/reports/discipline_weekly_review.log with a
+# Six steps, all appended to data/reports/discipline_weekly_review.log with a
 # dated header:
 #   1. holdings-risk  -> banks this week's as_of snapshot into discipline_log.jsonl
 #      (date diversity for the gate; fixed 66-name panel for clean forward-tracking).
@@ -10,6 +10,8 @@
 #   3. discipline-calibration-status -> readiness toward the gate + dead-cron freshness.
 #   4. adherence-report -> holdings-diff trades, discretionary throttle, cash
 #      buffer, 21d counterfactual adherence gap (Unit C, spec 2026-06-10).
+#   5. weekly-brief -> generates data/personal/brief_summary.json (dashboard artifact).
+#   6. screen-candidates -> generates data/reports/screen_<date>.json (dashboard artifact).
 #
 # Read the appended block each Saturday: how did the week's flagged names react, what
 # resolved, and does the approach need revision. The log/holdings are gitignored.
@@ -39,5 +41,9 @@ OUT="data/reports/discipline_weekly_review.log"
   "$PYTHON" -m application.cli discipline-calibration-status --log "$LOG"
   echo "--- 4. adherence report (Unit C: trades, throttle, buffer, gap) ---"
   "$PYTHON" -m application.cli adherence-report --log "$LOG"
+  echo "--- 5. weekly brief (generates brief_summary.json for dashboard) ---"
+  "$PYTHON" -m application.cli weekly-brief --holdings "$HOLDINGS"
+  echo "--- 6. screen candidates (generates screen_<date>.json for dashboard) ---"
+  "$PYTHON" -m application.cli screen-candidates
   echo ""
 } >> "$OUT" 2>&1
