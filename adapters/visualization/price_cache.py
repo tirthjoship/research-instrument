@@ -70,17 +70,26 @@ def _batch_fetch_prices_impl(tickers: tuple[str, ...]) -> dict[str, dict[str, fl
     result: dict[str, dict[str, float]] = {}
 
     if len(tickers) == 1:
-        # Flat columns: data["Close"]
+        # Older yfinance: flat columns (data["Close"] is a Series). Newer
+        # yfinance returns MultiIndex columns even for one ticker, making
+        # data["Close"] a one-column DataFrame — squeeze it back to a Series.
         ticker = tickers[0]
         try:
-            close_series = data["Close"].dropna()
+            close_obj = data["Close"]
+            if isinstance(close_obj, DataFrame):
+                close_obj = (
+                    close_obj[ticker]
+                    if ticker in close_obj.columns
+                    else close_obj.squeeze("columns")
+                )
+            close_series = close_obj.dropna()
             if len(close_series) < 2:
                 return {}
             last = float(close_series.iloc[-1])
             prev = float(close_series.iloc[-2])
             change_pct = (last - prev) / prev * 100 if prev != 0 else 0.0
             result[ticker] = {"price": last, "change_pct": change_pct}
-        except (KeyError, IndexError) as exc:
+        except (KeyError, IndexError, TypeError) as exc:
             logger.warning("Could not extract price for {}: {}", ticker, exc)
     else:
         # MultiIndex columns: data["Close"][ticker]
