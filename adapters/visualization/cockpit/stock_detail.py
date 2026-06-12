@@ -38,7 +38,7 @@ def _ensure_fit_cached(
     On compute failure, return None and do NOT cache (so a later rerun retries).
     """
     if key in session_state:
-        return session_state[key]  # type: ignore[no-any-return]
+        return session_state[key]
     try:
         verdict = compute_fn()
     except Exception:
@@ -112,7 +112,7 @@ def _snowflake_axes(fit: "FitVerdict | None") -> dict[str, float]:
 # === END verbatim ports ===
 
 
-@st.dialog("Stock detail", width="large")  # type: ignore[misc]
+@st.dialog("Stock detail", width="large")
 def open_stock_detail(ticker: str) -> None:
     from application.batch_fit_use_case import default_fit_fn
 
