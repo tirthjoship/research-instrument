@@ -27,13 +27,6 @@ _GRADE_COLOR = {
     "HOLD": "#64748B",
     "ADD_OK": "#16A34A",
 }
-_GRADE_TONE = {
-    "REDUCE": "negative",
-    "TRIM": "negative",
-    "REVIEW": "neutral",
-    "HOLD": "neutral",
-    "ADD_OK": "positive",
-}
 
 
 def _verdict_pill(grade: str) -> str:
@@ -127,7 +120,6 @@ def render(
         attn_cols = st.columns(len(top5))
         for col, h in zip(attn_cols, top5):
             verdict = h.get("verdict", "?")
-            # Both REDUCE and TRIM share the negative tone (see _GRADE_TONE).
             css_class = "verdict-negative"
             unrealized = h.get("unrealized_pct")
             unrealized_str = f"{unrealized:.1f}%" if unrealized is not None else "?"

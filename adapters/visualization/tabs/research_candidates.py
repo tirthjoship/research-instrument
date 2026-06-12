@@ -16,7 +16,7 @@ _TOP_N = 15
 _DISCLAIMER = (
     "Ranked by <strong>current factual evidence</strong> (valuation · quality · health) — "
     "<strong>NOT forecast returns</strong>. The return-forecast hypothesis was tested 2006–2024 and falsified "
-    "(see the Falsification Lab tab)."
+    "(see the Trust tab)."
 )
 
 
