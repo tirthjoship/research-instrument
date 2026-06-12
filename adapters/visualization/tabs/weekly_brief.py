@@ -75,7 +75,7 @@ def render(path: str = _SUMMARY_PATH, adherence_path: str = _ADHERENCE_PATH) -> 
 
     st.divider()
 
-    # Buy side — abstention is the tool working, not failing.
+    # Buy side abstention info
     if summary.get("abstained", True):
         st.markdown(
             '<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
@@ -111,86 +111,135 @@ def render(path: str = _SUMMARY_PATH, adherence_path: str = _ADHERENCE_PATH) -> 
             )
         st.divider()
 
-    # Discipline flags grouped most-urgent first.
+    # --- NEW: Hero count-chip strip ---
     holdings = summary.get("holdings", [])
-    if holdings:
+    grades_present = [
+        g for g in _GRADE_ORDER if any(h.get("verdict") == g for h in holdings)
+    ]
+
+    if grades_present:
         st.markdown("**Discipline flags** — grouped by urgency")
-        for grade in _GRADE_ORDER:
-            rows = [h for h in holdings if h.get("verdict") == grade]
-            if not rows:
-                continue
-            tone = _GRADE_TONE.get(grade, "neutral")
+        chip_cols = st.columns(len(grades_present))
+        for col, grade in zip(chip_cols, grades_present):
+            count = sum(1 for h in holdings if h.get("verdict") == grade)
             color = _GRADE_COLOR[grade]
-            st.markdown(
-                f'<div class="ws-card" style="border-left:4px solid {color};'
-                f'padding:10px 14px;margin-bottom:4px;">'
-                f'<span style="color:{color};font-weight:700;">{grade}</span>'
-                f" · {len(rows)} position(s)"
+            col.markdown(
+                f'<div class="ws-card" style="text-align:center;padding:10px 6px;">'
+                f'<span style="color:{color};font-weight:700;font-size:14px;">{grade}</span>'
+                f'<br><span style="font-size:20px;font-weight:700;">{count}</span>'
                 "</div>",
                 unsafe_allow_html=True,
             )
-            for h in rows:
-                render_verdict_card(
-                    st,
-                    verdict=f"{h['ticker']} — {h.get('trend_state', '?')}",
-                    tone=tone,
-                    details=h.get("why", ""),
+
+        # --- Urgent section: REDUCE + TRIM as compact dataframe ---
+        urgent_rows = [h for h in holdings if h.get("verdict") in ("REDUCE", "TRIM")]
+        if urgent_rows:
+            st.markdown("#### Needs attention this week")
+            import pandas as pd
+
+            df_urgent = pd.DataFrame(
+                [
+                    {
+                        "Ticker": h.get("ticker", "?"),
+                        "Grade": h.get("verdict", "?"),
+                        "Unrealized %": (
+                            f"{h.get('unrealized_pct', 0):.1f}%"
+                            if h.get("unrealized_pct") is not None
+                            else "?"
+                        ),
+                        "Trend": h.get("trend_state", "?"),
+                        "Why": h.get("why", ""),
+                    }
+                    for h in urgent_rows
+                ]
+            )
+            st.dataframe(df_urgent, use_container_width=True, hide_index=True)
+
+        # --- Everything else: REVIEW / HOLD / ADD_OK collapsed ---
+        other_rows = [
+            h for h in holdings if h.get("verdict") in ("REVIEW", "HOLD", "ADD_OK")
+        ]
+        with st.expander("Everything else (REVIEW · HOLD · ADD_OK)"):
+            if other_rows:
+                import pandas as pd
+
+                df_other = pd.DataFrame(
+                    [
+                        {
+                            "Ticker": h.get("ticker", "?"),
+                            "Grade": h.get("verdict", "?"),
+                            "Unrealized %": (
+                                f"{h.get('unrealized_pct', 0):.1f}%"
+                                if h.get("unrealized_pct") is not None
+                                else "?"
+                            ),
+                            "Trend": h.get("trend_state", "?"),
+                            "Why": h.get("why", ""),
+                        }
+                        for h in other_rows
+                    ]
                 )
+                st.dataframe(df_other, use_container_width=True, hide_index=True)
+            else:
+                st.caption("No REVIEW / HOLD / ADD_OK positions this week.")
+
         st.divider()
     else:
         st.info("No discipline flags this week.")
         st.divider()
 
-    # Adherence tracker (Unit C, shipped 2026-06-10): tool-said vs you-did,
-    # resolved at the 21-day horizon. Advisory only (L0), descriptive — no
-    # significance claims (Unit C Interpretation limits).
-    st.markdown("**Adherence tracker** — tool-said vs you-did (resolved, 21d horizon)")
-    adherence = load_adherence_log(adherence_path)
-    if not adherence:
+    # --- Adherence tracker: collapsed in expander ---
+    with st.expander("Adherence tracker — tool said vs you did"):
         st.caption(
-            "No resolved adherence records yet. Run "
-            "`python -m application.cli adherence-report` after flags age 21 days "
-            "(records stay on your machine)."
+            "Tool-said vs you-did (resolved, 21d horizon). "
+            "Advisory only (L0), descriptive — no significance claims."
         )
-    else:
-        cols_header = st.columns([1, 2, 2, 2, 1, 2, 2])
-        for col, label in zip(
-            cols_header,
-            [
-                "Flagged",
-                "Ticker",
-                "Verdict",
-                "You did",
-                "Cut",
-                "Gap (CAD)",
-                "Gap (bps)",
-            ],
-        ):
-            col.markdown(f"**{label}**")
-        for r in adherence[-12:]:
-            c1, c2, c3, c4, c5, c6, c7 = st.columns([1, 2, 2, 2, 1, 2, 2])
-            c1.caption(r.get("flag_date", "?"))
-            c2.markdown(r.get("ticker", "?"))
-            c3.markdown(_verdict_pill(r.get("verdict", "?")), unsafe_allow_html=True)
-            label_val = r.get("label", "?")
-            done_pill = status_pill_html(
-                "success" if label_val == "FOLLOWED" else "danger", label_val
+        adherence = load_adherence_log(adherence_path)
+        if not adherence:
+            st.caption(
+                "No resolved adherence records yet. Run "
+                "`python -m application.cli adherence-report` after flags age 21 days "
+                "(records stay on your machine)."
             )
-            c4.markdown(done_pill, unsafe_allow_html=True)
-            c5.caption(f"{r.get('actual_cut_fraction', 0) * 100:.0f}%")
-            gap_cad = r.get("gap_cad", 0)
-            c6.markdown(
-                f'<span style="color:{"#16A34A" if gap_cad >= 0 else "#DC2626"};">'
-                f"{gap_cad:+.0f}</span>",
-                unsafe_allow_html=True,
+        else:
+            cols_header = st.columns([1, 2, 2, 2, 1, 2, 2])
+            for col, label in zip(
+                cols_header,
+                [
+                    "Flagged",
+                    "Ticker",
+                    "Verdict",
+                    "You did",
+                    "Cut",
+                    "Gap (CAD)",
+                    "Gap (bps)",
+                ],
+            ):
+                col.markdown(f"**{label}**")
+            for r in adherence[-12:]:
+                c1, c2, c3, c4, c5, c6, c7 = st.columns([1, 2, 2, 2, 1, 2, 2])
+                c1.caption(r.get("flag_date", "?"))
+                c2.markdown(r.get("ticker", "?"))
+                c3.markdown(
+                    _verdict_pill(r.get("verdict", "?")), unsafe_allow_html=True
+                )
+                label_val = r.get("label", "?")
+                done_pill = status_pill_html(
+                    "success" if label_val == "FOLLOWED" else "danger", label_val
+                )
+                c4.markdown(done_pill, unsafe_allow_html=True)
+                c5.caption(f"{r.get('actual_cut_fraction', 0) * 100:.0f}%")
+                gap_cad = r.get("gap_cad", 0)
+                c6.markdown(
+                    f'<span style="color:{"#16A34A" if gap_cad >= 0 else "#DC2626"};">'
+                    f"{gap_cad:+.0f}</span>",
+                    unsafe_allow_html=True,
+                )
+                c7.caption(f"{r.get('gap_bps', 0):+.1f}")
+            st.caption(
+                "Gap = counterfactual CAD difference if you had cut per the verdict "
+                "(f=0.5). Descriptive, underpowered by design."
             )
-            c7.caption(f"{r.get('gap_bps', 0):+.1f}")
-        st.caption(
-            "Gap = counterfactual CAD difference if you had cut per the verdict "
-            "(f=0.5). Descriptive, underpowered by design."
-        )
-
-    st.divider()
 
     with st.expander("Full markdown brief"):
         md = load_weekly_brief(_BRIEF_MD_PATH)
