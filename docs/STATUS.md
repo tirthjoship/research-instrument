@@ -2,12 +2,14 @@
 
 **As of:** 2026-06-12
 **Branch:** feat/cockpit-redesign
-**Phase:** Cockpit redesign — IMPLEMENTED + green, pending verification sweep then PR to dev
+**Phase:** Cockpit redesign — IMPLEMENTED, Opus-verified, green. Ready to push + PR to dev.
 
 ## Current State
 
 Two-surface dashboard shipped on `feat/cockpit-redesign`. `make check` green:
-**1613 tests passing, 94% coverage, mypy strict clean.**
+**1616 tests passing, 94% coverage, mypy strict clean.** Opus verification sweep done —
+2 blocking findings fixed (diversification correlation now date-aligned via joint dropna;
+empty-`as_of` write guarded) + dead imports dropped; 3 regression tests added (commit 9e04d20).
 
 **What was built:**
 - `adapters/visualization/cockpit/` package — assembler + 5 section renderers in
@@ -16,9 +18,11 @@ Two-surface dashboard shipped on `feat/cockpit-redesign`. `make check` green:
 - `rank_by_diversification` — diversification-first candidate framing in look-into-next.
 - Universe guard (Task 0): stale tickers pruned before build.
 
-**What was deleted:** 4 v2 tab renderers (home/screener/risk/my_portfolio) + their tests.
+**What was deleted:** 4 v2 tab renderers (weekly_brief, research_candidates, positions,
+stock_analysis) + their tests. Compute stays in the core.
 
-**What was relocated:** stock_analysis → cockpit lookup/drawer; trust → Showcase surface.
+**What was relocated:** stock_analysis render → cockpit lookup/drawer; `tabs/risk.py` → danger
+drill-down (KEPT); `tabs/trust.py` → Showcase surface (KEPT).
 
 **Two surfaces:**
 - **Cockpit** — single-scroll operational view (danger → calls → retro → look-into-next
@@ -27,9 +31,17 @@ Two-surface dashboard shipped on `feat/cockpit-redesign`. `make check` green:
 
 ## Next Action
 
-1. **Opus verification sweep** (conformance, honesty-drift, integration) — run before PR.
-2. `git push -u origin feat/cockpit-redesign` + open PR to `dev`.
-3. CI green → merge feature → dev → main per project flow.
+1. `git push -u origin feat/cockpit-redesign` + open PR to `dev`.
+2. CI green → merge feature → dev → main per project flow.
+
+## Deferred (minor, from Opus sweep — fix in a follow-up, not blocking)
+
+- `discipline_log.append_assessments` is non-atomic: a crash mid-loop half-logs a week and
+  the `as_of` idempotency guard then treats it as done. Make the append all-or-nothing.
+- `_calls.confirm_and_log` overwrites (does not sum) shares for duplicate-ticker holdings.
+- Tighten the `cockpit.stock_detail` mypy override (`warn_return_any=false`) to an inline
+  ignore on the one `_ensure_fit_cached` return.
+- Dead `cp-row` CSS class hook in `_discover.py` (renders fine via `ws-card`; define or drop).
 
 ## Queued (separate specs, NOT now)
 
