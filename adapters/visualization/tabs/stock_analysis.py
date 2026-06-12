@@ -26,8 +26,24 @@ from adapters.visualization.components.charts import (
     insider_bars,
     ownership_pie,
 )
+from adapters.visualization.components.snowflake import build_snowflake
+from adapters.visualization.data_loader import load_latest_screen
 from adapters.visualization.stock_analyzer import AnalysisResult
 from domain.fit import FitVerdict
+
+# Section chip labels rendered in the navigation row of the analysis view.
+# Promoted to module scope so tests can import and guard for forbidden vocabulary.
+_SECTION_LABELS: list[str] = [
+    "Verdict",
+    "Fit",
+    "Valuation",
+    "Growth",
+    "Performance",
+    "Health",
+    "Ownership",
+    "Sentiment",
+    "Supply chain",
+]
 
 
 def _ensure_fit_cached(
@@ -93,6 +109,15 @@ def render() -> None:
     lookup_key = ticker_input.upper().strip() if ticker_input else ""
     if lookup_key and f"analysis_{lookup_key}" in st.session_state:
         result = st.session_state[f"analysis_{lookup_key}"]
+        st.markdown(
+            " ".join(
+                f'<span class="section-chip">{i}</span>'
+                f'<span style="margin-right:14px;font-size:13px;color:#5C6370;">'
+                f"{name}</span>"
+                for i, name in enumerate(_SECTION_LABELS, start=1)
+            ),
+            unsafe_allow_html=True,
+        )
         _render_verdict(result)
         fit_key = f"fit_{lookup_key}"
 
@@ -121,6 +146,15 @@ def render() -> None:
             _render_fit_card(fit)
         else:
             st.caption("Fit verdict unavailable (see logs).")
+        axes = _snowflake_axes(fit)
+        fig = build_snowflake(axes)
+        if fig is not None:
+            st.markdown("##### Evidence snowflake")
+            st.plotly_chart(fig, use_container_width=True)
+            st.caption(
+                "Factual percentiles vs the screened universe + fit "
+                "arithmetic — a description of today, not a forecast."
+            )
         _render_valuation(result)
         _render_growth(result)
         _render_performance(result)
@@ -133,7 +167,7 @@ def render() -> None:
             '<div class="ws-card" style="text-align:center;padding:2rem;">'
             '<div style="font-size:15px;font-weight:500;color:#1A202C;">Enter a ticker above to start</div>'
             '<div style="font-size:13px;color:#64748B;margin-top:4px;">'
-            "Get valuation, growth, financial health, sentiment, and conviction analysis"
+            "Get valuation, growth, financial health, sentiment, and fit analysis"
             "</div></div>",
             unsafe_allow_html=True,
         )
@@ -174,7 +208,7 @@ def _render_verdict(result: AnalysisResult) -> None:
         '<span style="font-weight:700;color:#CA8A04;">RESEARCH ONLY</span> — '
         "descriptive data below; this tool makes no buy/sell call. "
         "Why: every predictive signal tested 2006–2024 was falsified "
-        "(see the Falsification Lab tab)."
+        "(see the Trust tab)."
         "</div>",
         unsafe_allow_html=True,
     )
@@ -244,7 +278,7 @@ def _render_fit_card(verdict: FitVerdict, screen_as_of: str | None = None) -> No
         )
     st.caption(
         "Evidence + fit only — this tool does not forecast returns "
-        "(see Falsification Lab). Position weights are by cost basis."
+        "(see Trust). Position weights are by cost basis."
     )
 
 
@@ -636,6 +670,39 @@ def _render_supply_chain(result: AnalysisResult) -> None:
 # ---------------------------------------------------------------------------
 # Utility helpers
 # ---------------------------------------------------------------------------
+
+
+def _snowflake_axes(fit: "FitVerdict | None") -> dict[str, float]:
+    """Descriptive axes from the latest screen row + fit verdict. Empty dict
+    when fit is None (snowflake hidden). Book fit is always computed when fit
+    is present; factor axes are added only when the ticker is in the screen."""
+    axes: dict[str, float] = {}
+    if fit is None:
+        return axes
+    screen = load_latest_screen("data/reports")
+    if screen:
+        cand = next(
+            (c for c in screen.get("candidates", []) if c.get("ticker") == fit.ticker),
+            None,
+        )
+        if cand:
+            for fs in cand.get("factor_scores", []):
+                name = str(fs.get("name", "")).title()
+                if name in ("Value", "Quality", "Momentum", "Revision"):
+                    axes["Valuation" if name == "Value" else name] = (
+                        float(fs.get("percentile", 0.0)) * 100
+                    )
+            th = cand.get("trend_health")
+            if isinstance(th, (int, float)):
+                # trend_health in [-1,1] -> [0,100], 50 = neutral midpoint.
+                axes["Trend"] = max(0.0, min(100.0, 50.0 + float(th) * 50.0))
+    # WARNING flags cost 2x CAUTION; descriptive book-fit deduction only.
+    penalty = sum(
+        30.0 if f.severity == "WARNING" else 15.0 if f.severity == "CAUTION" else 0.0
+        for f in fit.fit_flags
+    )
+    axes["Book fit"] = max(0.0, 100.0 - penalty)
+    return axes
 
 
 def _build_pe_items(

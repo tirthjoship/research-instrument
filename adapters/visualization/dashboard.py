@@ -1,4 +1,4 @@
-"""Dashboard entry point — 7-tab honest cockpit."""
+"""Dashboard entry point — 6-tab honest cockpit."""
 
 from __future__ import annotations
 
@@ -20,15 +20,14 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(
     [
-        "Weekly Brief",
-        "Research Candidates",
+        "Home",
+        "Screener",
         "Risk",
         "My Portfolio",
         "Stock Analysis",
-        "Falsification Lab",
-        "Methodology",
+        "Trust",
     ]
 )
 
@@ -55,15 +54,9 @@ with tab4:
 
     render_analysis()
 with tab5:
-    from adapters.visualization.tabs.falsification_lab import (
-        render as render_falsification,
-    )
+    from adapters.visualization.tabs.trust import render as render_trust
 
-    render_falsification()
-with tab6:
-    from adapters.visualization.tabs.methodology import render as render_methodology
-
-    render_methodology()
+    render_trust()
 
 st.markdown(
     '<div class="ws-footer">Multi-Modal Stock Recommender · Hexagonal Architecture · Built by Tirth Joshi</div>',

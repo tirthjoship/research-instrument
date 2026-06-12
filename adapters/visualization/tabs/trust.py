@@ -1,4 +1,4 @@
-"""Falsification Lab — the verdict scoreboard, exhibits, and the one live experiment."""
+"""Trust tab — trophy grid, four rules, glossary, exhibits, and the one live experiment."""
 
 from __future__ import annotations
 
@@ -75,6 +75,56 @@ _VERDICT_MEANING = {
     "INCONCLUSIVE → practical KILL": "Could not be proven — treated as dead until real evidence says otherwise.",
     "PENDING": "Still accruing live evidence.",
 }
+
+# The four rules — ported verbatim from methodology.py _BODY (absorbed Task 7).
+_FOUR_RULES = [
+    {
+        "title": "Pre-registration",
+        "body": (
+            "Before running any test we write down the exact pass/fail "
+            "thresholds and lock them. If the result misses the bar, the idea dies — no "
+            '"just tweak it and re-run."'
+        ),
+        "example": (
+            "the insider-cluster test’s pass/fail numbers were locked on June 9, 2026 "
+            "— the verdict was read against them on June 10, unchanged."
+        ),
+    },
+    {
+        "title": "Point-in-time discipline",
+        "body": (
+            "Every prediction may only use data that existed at "
+            "that moment. Using tomorrow’s data to predict today is the most common way "
+            "backtests lie; our code raises `LookAheadBiasError` if it ever happens."
+        ),
+        "example": (
+            "it halts rather than let tomorrow’s price leak into today’s signal."
+        ),
+    },
+    {
+        "title": "Costs included",
+        "body": (
+            "A signal that looks profitable before trading costs and "
+            "disappears after them is not an edge. We model the real cost of trading thin "
+            "stocks (slippage) and test net of it."
+        ),
+        "example": (
+            "the insider-cluster edge looked real gross of costs — and died when 150 bps "
+            "of real-world trading cost was applied."
+        ),
+    },
+    {
+        "title": "Abstention over bravado",
+        "body": (
+            "When the evidence doesn’t clear the bar, the tool "
+            'says "no candidates" instead of guessing. Zero is an honest answer.'
+        ),
+        "example": (
+            "on June 11, 2026 the screen looked at 512 names and ranked zero. "
+            "That empty list is the feature."
+        ),
+    },
+]
 
 
 def _unit_b_row(report_path: str) -> dict[str, str]:
@@ -155,6 +205,65 @@ def _render_shap_exhibit(shap_path: str = "data/reports/shap_importance.json") -
         st.caption("No SHAP data — run SHAP analysis to populate.")
 
 
+def _render_trophy_grid(report_path: str) -> None:
+    rows = _SCOREBOARD + [_unit_b_row(report_path)]
+    # Chunk rows into groups of 3 for the column grid
+    for chunk_start in range(0, len(rows), 3):
+        chunk = rows[chunk_start : chunk_start + 3]
+        cols = st.columns(3)
+        for col, r in zip(cols, chunk):
+            # Color by the leading verdict token so display labels like
+            # "INCONCLUSIVE → practical KILL" still resolve to the amber key.
+            color = _VERDICT_COLOR.get(r["verdict"].split()[0], "#64748B")
+            # Derive "what this means for you" from the leading verdict token
+            meaning = _VERDICT_MEANING.get(
+                r["verdict"],
+                _VERDICT_MEANING.get(r["verdict"].split()[0], ""),
+            )
+            card_html = (
+                f'<div class="ws-card" style="border-left:4px solid {color};'
+                f'padding:10px 16px;margin-bottom:8px;height:100%;">'
+                f'<span style="color:{color};font-weight:700;">{r["verdict"]}</span><br>'
+                f'<span style="font-weight:600;font-size:14px;">{r["hypothesis"]}</span><br>'
+                f'<span style="color:#64748B;font-size:13px;">{r["test"]}</span><br>'
+                f'<span style="color:#475569;font-size:13px;font-style:italic;">{meaning}</span>'
+                "</div>"
+            )
+            with col:
+                st.markdown(card_html, unsafe_allow_html=True)
+                with st.expander("evidence trail"):
+                    st.markdown(f"`{r['adr']}`")
+                    st.caption(f"Test: {r['test']}")
+
+
+def _render_four_rules() -> None:
+    st.markdown(
+        '<div style="font-weight:700;font-size:16px;margin-bottom:8px;">'
+        "How this project keeps itself honest"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    rule_pairs = [_FOUR_RULES[i : i + 2] for i in range(0, len(_FOUR_RULES), 2)]
+    for pair in rule_pairs:
+        rule_cols = st.columns(2)
+        for col, rule in zip(rule_cols, pair):
+            idx = _FOUR_RULES.index(rule) + 1
+            chip_html = (
+                f'<span class="section-chip">{idx}</span> '
+                f'<strong>{rule["title"]}</strong>'
+            )
+            card_html = (
+                f'<div class="ws-card" style="padding:14px 18px;margin-bottom:12px;">'
+                f"{chip_html}<br>"
+                f'<span style="font-size:14px;">{rule["body"]}</span><br>'
+                f'<span style="color:#64748B;font-size:13px;font-style:italic;">'
+                f'Example: {rule["example"]}'
+                f"</span></div>"
+            )
+            with col:
+                st.markdown(card_html, unsafe_allow_html=True)
+
+
 def _gate_strip(log_path: str) -> None:
     p = Path(log_path)
     if not p.exists():
@@ -183,10 +292,10 @@ def render(
     report_path: str = "data/reports/insider_cluster_falsification_2024.json",
     log_path: str = "data/personal/discipline_log.jsonl",
 ) -> None:
-    st.subheader("Falsification Lab")
+    st.subheader("Trust")
     st.markdown(
         '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
-        "Every prediction idea we tested and the verdicts — the receipts behind the app's honesty."
+        "Every prediction idea we tested and the verdicts — the receipts behind the app’s honesty."
         "</div>",
         unsafe_allow_html=True,
     )
@@ -203,29 +312,13 @@ def render(
         unsafe_allow_html=True,
     )
 
-    rows = _SCOREBOARD + [_unit_b_row(report_path)]
-    for r in rows:
-        # Color by the leading verdict token so display labels like
-        # "INCONCLUSIVE → practical KILL" still resolve to the amber key.
-        color = _VERDICT_COLOR.get(r["verdict"].split()[0], "#64748B")
-        # Derive "what this means for you" from the leading verdict token
-        meaning = _VERDICT_MEANING.get(
-            r["verdict"],
-            _VERDICT_MEANING.get(r["verdict"].split()[0], ""),
-        )
-        row_html = (
-            f'<div class="ws-card" style="border-left:4px solid {color};'
-            f'padding:10px 16px;margin-bottom:8px;">'
-            f'<span style="color:{color};font-weight:700;">{r["verdict"]}</span> — '
-            f'<strong>{r["hypothesis"]}</strong><br>'
-            f'<span style="color:#64748B;font-size:13px;">{r["test"]}</span><br>'
-            f'<span style="color:#475569;font-size:13px;font-style:italic;">{meaning}</span>'
-            "</div>"
-        )
-        st.markdown(row_html, unsafe_allow_html=True)
-        with st.expander("evidence trail"):
-            st.markdown(f"`{r['adr']}`")
-            st.caption(f"Test: {r['test']}")
+    # Trophy grid — 3-column layout, one card per verdict row
+    _render_trophy_grid(report_path)
+
+    st.divider()
+
+    # The four rules — ported from methodology.py, 2×2 grid of ws-cards
+    _render_four_rules()
 
     st.divider()
 
@@ -238,3 +331,15 @@ def render(
 
     st.divider()
     _gate_strip(log_path)
+
+    # Glossary reference
+    with st.expander("Glossary — every term in plain English"):
+        import pandas as pd
+
+        from adapters.visualization.components.glossary import GLOSSARY
+
+        st.dataframe(
+            pd.DataFrame(GLOSSARY.items(), columns=["Term", "Meaning"]),
+            hide_index=True,
+            use_container_width=True,
+        )

@@ -111,3 +111,106 @@ def test_grade_badge_html_fit_grades_have_css_class():
         assert (
             "grade-" in html
         ), f"grade_badge_html({grade!r}) contains no grade CSS class: {html!r}"
+
+
+def test_snowflake_axes_from_fit_only(tmp_path, monkeypatch):
+    from adapters.visualization.tabs import stock_analysis
+    from domain.fit import FitFlag, FitVerdict
+
+    monkeypatch.chdir(tmp_path)  # no screen file -> factor axes absent
+    fit = FitVerdict(
+        ticker="NVDA",
+        evidence_grade="UNKNOWN",
+        fit_flags=(FitFlag("BETA_AMPLIFY", "m", "WARNING"),),
+        summary="s.",
+    )
+    axes = stock_analysis._snowflake_axes(fit)
+    assert axes == {"Book fit": 70.0}
+
+
+def test_snowflake_axes_source_has_no_forbidden_words():
+    import inspect
+
+    from adapters.visualization.tabs import stock_analysis
+    from domain.fit import FORBIDDEN_WORDS
+
+    src = inspect.getsource(stock_analysis._snowflake_axes).lower()
+    for word in FORBIDDEN_WORDS:
+        assert word not in src, f"forbidden word {word!r} in _snowflake_axes source"
+
+
+def test_stock_analysis_new_copy_has_no_forbidden_words():
+    # The new v2 descriptive surfaces (section chips + snowflake heading/caption)
+    # must stay clean of forecasting/recommendation vocabulary. Scoped to the
+    # new copy literals rather than whole-module, because the RESEARCH_ONLY /
+    # falsification banner in this file deliberately references "no buy/sell
+    # call" and "predictive ... was falsified" (negation/historical — correct).
+    from adapters.visualization.tabs.stock_analysis import _SECTION_LABELS
+    from domain.fit import FORBIDDEN_WORDS
+
+    new_copy = " ".join(
+        _SECTION_LABELS
+        + [
+            "Evidence snowflake",
+            "Factual percentiles vs the screened universe + fit arithmetic — "
+            "a description of today, not a forecast.",
+            "Book fit",
+        ]
+    ).lower()
+    for word in FORBIDDEN_WORDS:
+        assert word not in new_copy, f"forbidden word {word!r} in new v2 copy"
+
+
+def test_snowflake_axes_caution_penalty(monkeypatch, tmp_path):
+    from adapters.visualization.tabs import stock_analysis
+    from domain.fit import FitFlag, FitVerdict
+
+    monkeypatch.chdir(tmp_path)  # no screen -> only Book fit axis
+    fit = FitVerdict(
+        ticker="KO",
+        evidence_grade="MODERATE",
+        fit_flags=(FitFlag("CONCENTRATION", "m", "CAUTION"),),
+        summary="s.",
+    )
+    axes = stock_analysis._snowflake_axes(fit)
+    assert axes == {"Book fit": 85.0}  # 100 - 15 (CAUTION)
+
+
+def test_snowflake_axes_full_from_screen(tmp_path, monkeypatch):
+    # Factor-axis branch: current real screens have 0 candidates (all
+    # abstained), so this branch is ONLY exercisable via fixture. Factor names
+    # serialize LOWERCASE; _snowflake_axes .title()s them.
+    import json
+
+    from adapters.visualization.tabs import stock_analysis
+    from domain.fit import FitVerdict
+
+    monkeypatch.chdir(tmp_path)
+    reports = tmp_path / "data" / "reports"
+    reports.mkdir(parents=True)
+    (reports / "screen_2026-06-12.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-12",
+                "candidates": [
+                    {
+                        "ticker": "NVDA",
+                        "composite": 1.0,
+                        "trend_health": 0.4,
+                        "factor_scores": [
+                            {"name": "value", "percentile": 0.8},
+                            {"name": "quality", "percentile": 0.6},
+                            {"name": "momentum", "percentile": 0.5},
+                        ],
+                    }
+                ],
+            }
+        )
+    )
+    fit = FitVerdict(ticker="NVDA", evidence_grade="STRONG", fit_flags=(), summary="s.")
+    axes = stock_analysis._snowflake_axes(fit)
+    assert axes["Valuation"] == 80.0
+    assert axes["Quality"] == 60.0
+    assert axes["Momentum"] == 50.0
+    assert axes["Trend"] == 70.0  # 50 + 0.4*50
+    assert axes["Book fit"] == 100.0

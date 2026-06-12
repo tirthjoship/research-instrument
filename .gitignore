@@ -18,6 +18,8 @@ archive/
 
 # Auto-generated timestamped backtest dumps (curated reports are tracked individually)
 data/reports/backtest_report_*.json
+# Auto-generated weekly screen output (curated screen_ic_* exhibits are tracked individually)
+data/reports/screen_20*.json
 # Personal holdings review log — contains book-level output, never commit
 data/reports/discipline_weekly_review.log
 
