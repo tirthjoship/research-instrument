@@ -170,6 +170,7 @@ def tip(term: str) -> str:
     --warning: #B45309;
     --danger: #B91C1C;
     --radius-md: 12px;
+    --radius-lg: 12px;   /* cards drop 16px -> 12px per spec §1 */
     --shadow-sm: 0 1px 2px rgba(16,24,40,.06), 0 4px 12px rgba(16,24,40,.04);
 ```
 
@@ -182,7 +183,7 @@ def tip(term: str) -> str:
 }
 ```
 
-(c) Upgrade `.ws-card` hover (find the existing `.ws-card` rule; ADD transition + hover):
+(c) Upgrade `.ws-card` hover. VALIDATED 2026-06-12: `.ws-card` at `styles.py:108-120` ALREADY has a `transition` line and a `.ws-card:hover` rule — MERGE the values below into those existing rules in place; do NOT append duplicate `.ws-card` blocks at the end:
 
 ```css
 .ws-card {
@@ -309,7 +310,21 @@ def test_scorecard_source_has_no_forbidden_words():
     src = inspect.getsource(scorecard).lower()
     for word in FORBIDDEN_WORDS:
         assert word not in src, f"forbidden word {word!r} in scorecard source"
+
+
+def test_snowflake_source_has_no_forbidden_words():
+    import inspect
+
+    from adapters.visualization.components import snowflake
+    from domain.fit import FORBIDDEN_WORDS
+
+    src = inspect.getsource(snowflake).lower()
+    for word in FORBIDDEN_WORDS:
+        assert word not in src, f"forbidden word {word!r} in snowflake source"
 ```
+
+(Snowflake vocab test goes in `tests/test_snowflake.py`; spec §8 requires both
+modules guarded. The snowflake docstring above is already worded clean.)
 
 - [ ] **Step 2: Verify failure** — both files fail on import.
 
@@ -318,8 +333,10 @@ def test_scorecard_source_has_no_forbidden_words():
 ```python
 """Evidence snowflake — descriptive Plotly radar. Factual percentiles only.
 
-NOT the falsified conviction radar (deleted in the realignment): every axis is
-a present-tense fact (factor percentile, trend state, book-fit arithmetic).
+NOT the falsified-era radar (deleted in the realignment): every axis is a
+present-tense fact (factor percentile, trend state, book-fit arithmetic).
+NOTE: this module's source must stay clean of domain.fit.FORBIDDEN_WORDS —
+do not reintroduce forecasting vocabulary even in comments.
 """
 
 from __future__ import annotations
@@ -448,7 +465,7 @@ class BatchFitRow:
 
 (Task 3 extends this module; do not duplicate the dataclass there.)
 
-- [ ] **Step 6: Run green** — `python -m pytest tests/test_snowflake.py tests/test_scorecard.py -q` → 7 passed; mypy on the three new files clean.
+- [ ] **Step 6: Run green** — `python -m pytest tests/test_snowflake.py tests/test_scorecard.py -q` → 8 passed; mypy on the three new files clean.
 
 - [ ] **Step 7: Commit**
 
@@ -698,7 +715,7 @@ and in `render()` after loading `summary`:
             st.caption("Systematic share — flag at 60%")
 ```
 
-Then the **attention row**: top 5 of `attention` as compact cards (reuse the severity left-border pattern: REDUCE → `verdict-negative`, TRIM → `verdict-caution`), each: ticker bold + verdict pill + unrealized % + why. Then a **week strip** of 3 small ws-cards in `st.columns(3)`: screen one-liner (from `load_latest_screen("data/reports")` already imported? — if not imported in this tab, import it; show "U screened · N passed" or "no screen yet"), adherence count (len of `load_adherence_log(...)` rows, "N resolved records"), gate line ("forward gate resolves ~mid-July 2026"). The existing full tables move BELOW these, REDUCE/TRIM dataframe retitled "All attention items"; everything else unchanged.
+Then the **attention row**: top 5 of `attention` as compact cards (reuse the severity left-border pattern: REDUCE → `verdict-negative`, TRIM → `verdict-caution`), each: ticker bold + verdict pill + unrealized % + why. Then a **week strip** of 3 small ws-cards in `st.columns(3)`: screen one-liner — **`load_latest_screen` is NOT currently imported in weekly_brief.py (validated 2026-06-12); ADD it to the data_loader import block** — show "U screened · N passed" or "no screen yet"; adherence count (len of `load_adherence_log(...)` rows — already imported); gate line ("forward gate resolves ~mid-July 2026"). The existing full tables move BELOW these, REDUCE/TRIM dataframe retitled "All attention items"; everything else unchanged.
 
 - [ ] **Step 2: Extend tests** — add to `tests/test_weekly_brief_tab.py`:
 
@@ -956,6 +973,39 @@ def test_snowflake_axes_from_fit_only(tmp_path, monkeypatch):
     )
     axes = stock_analysis._snowflake_axes(fit)
     assert axes == {"Book fit": 70.0}
+
+
+def test_snowflake_axes_full_from_screen(tmp_path, monkeypatch):
+    # Factor-axis branch: validated 2026-06-12 — current real screens have 0
+    # candidates (all abstained), so this branch is ONLY exercisable via
+    # fixture. factor names serialize LOWERCASE (factor_scores.py FACTOR_KEYS).
+    import json
+
+    from adapters.visualization.tabs import stock_analysis
+    from domain.fit import FitVerdict
+
+    monkeypatch.chdir(tmp_path)
+    reports = tmp_path / "data" / "reports"
+    reports.mkdir(parents=True)
+    (reports / "screen_2026-06-12.json").write_text(json.dumps({
+        "as_of": "2026-06-12",
+        "candidates": [{
+            "ticker": "NVDA", "composite": 1.0, "trend_health": 0.4,
+            "factor_scores": [
+                {"name": "value", "percentile": 0.8},
+                {"name": "quality", "percentile": 0.6},
+                {"name": "momentum", "percentile": 0.5},
+            ],
+        }],
+    }))
+    fit = FitVerdict(ticker="NVDA", evidence_grade="STRONG", fit_flags=(),
+                     summary="s.")
+    axes = stock_analysis._snowflake_axes(fit)
+    assert axes["Valuation"] == 80.0
+    assert axes["Quality"] == 60.0
+    assert axes["Momentum"] == 50.0
+    assert axes["Trend"] == 70.0  # 50 + 0.4*50
+    assert axes["Book fit"] == 100.0
 ```
 
 - [ ] **Step 5: Run** — `python -m pytest tests/test_fit_card.py tests/test_phase54_integration.py -q` green; mypy clean.
@@ -977,7 +1027,7 @@ git commit -m "feat: v2 Stock Analysis — section chips, evidence snowflake, pe
 - Modify: `adapters/visualization/dashboard.py`
 - Tests: rename `tests/test_falsification_lab_tab.py` → `tests/test_trust_tab.py` (git mv + retarget imports); fold `tests/test_methodology_tab.py` content in (then delete it)
 
-- [ ] **Step 1:** `git mv adapters/visualization/tabs/falsification_lab.py adapters/visualization/tabs/trust.py` and `git mv tests/test_falsification_lab_tab.py tests/test_trust_tab.py`. Update imports in the moved test (`tabs.falsification_lab` → `tabs.trust`). Grep the repo for remaining `falsification_lab` imports (`grep -rn "falsification_lab" adapters/ application/ tests/ --include="*.py"`) and update each (dashboard.py router import included).
+- [ ] **Step 1:** `git mv adapters/visualization/tabs/falsification_lab.py adapters/visualization/tabs/trust.py` and `git mv tests/test_falsification_lab_tab.py tests/test_trust_tab.py`. Update imports in the moved test (`tabs.falsification_lab` → `tabs.trust`). Validated 2026-06-12 — exactly these references exist and WILL break: `dashboard.py` (router), `tests/test_phase5_tabs.py:36-45` (`test_falsification_lab_importable` imports `tabs.falsification_lab` — REWRITE to import `tabs.trust`; `test_methodology_importable` imports `tabs.methodology` — DELETE this test), and the renamed test file itself. Run the grep anyway to catch drift: `grep -rn "falsification_lab\|tabs.methodology\|tabs import methodology" adapters/ application/ tests/ --include="*.py"`.
 
 - [ ] **Step 2: Trust page structure** in `trust.py` `render()` — reorder/extend:
 1. Keep subheader (retitle "Trust") + subtitle.
@@ -1019,7 +1069,7 @@ git commit -m "feat: v2 Trust tab — trophy grid + four rules + glossary; 6-tab
 ### Task 8: Verify live + ship
 
 - [ ] **Step 1:** `python -m pytest tests/ -q 2>&1 | tail -2` green; `pre-commit run --all-files` clean on a pristine tree (`git status --porcelain` empty first — restore any test-regenerated `data/reports/*.json` newline drift with `git checkout data/reports/`).
-- [ ] **Step 2:** Dashboard live check on :8501 (running instance hot-reloads; restart if import errors): all 6 tabs click through; Screener: paste "NVDA, AAPL, KO" → 3 ranked rows with pills + hover flags; Home renders hero + gauge against today's `brief_summary.json`.
+- [ ] **Step 2:** Dashboard live check on :8501 (running instance hot-reloads; restart if import errors): all 6 tabs click through; Screener: paste "NVDA, AAPL, KO" → 3 ranked rows with pills + hover flags; Home renders hero + gauge against today's `brief_summary.json`. NOTE (validated 2026-06-12): every real `screen_*.json` currently has 0 candidates (abstained), so the live snowflake will NOT render for any ticker — that is expected behavior (factor axes need a screen row; covered by the T6 fixture test). Verify only that the Stock Analysis page renders cleanly WITHOUT the snowflake; do not chase a live snowflake.
 - [ ] **Step 3:** Update `docs/STATUS.md` (overwrite, ~40 lines): v2 shipped, 6-tab IA, next = wrap close.
 - [ ] **Step 4:** Push, PR → develop (body: feedback-driven v2, screenshots welcome), CI green, merge, develop → main release PR, merge, confirm `git rev-list --count origin/main..origin/develop` = 0.
 
@@ -1030,4 +1080,29 @@ git commit -m "feat: v2 Trust tab — trophy grid + four rules + glossary; 6-tab
 - **Coverage:** §1→T1, §2→T7 (router), §3→T4, §4→T2+T3+T5, §5→T2+T6, §6→T7, §7 file map → tasks 1–7, §8→T8. Tooltips: `.tip` CSS (T1) + scorecard flag hovers (T2) + glossary feed (T1/T7); `st.metric(help=)` already present on Risk from the UX pass.
 - **Placeholders:** Step T6-3 peer lines has an explicit verify-or-skip rule (AnalysisResult field names unverified) — intentional, bounded. No TBDs.
 - **Type consistency:** `BatchFitRow(ticker, verdict, fetch_ok)` consistent across T2/T3/T5; `build_snowflake(dict)->Figure|None` consistent T2/T6; `parse_tickers/parse_csv_tickers/batch_fit/default_fit_fn` names match T3 def ↔ T5 import; glossary `GLOSSARY/tip` match T1 def ↔ T7 use.
-- **Honesty:** vocabulary-guard tests on scorecard (T2); snowflake labeled descriptive (T2/T6); scoreboard caption + RESEARCH_ONLY framing (T2).
+- **Honesty:** vocabulary-guard tests on scorecard + snowflake (T2); snowflake labeled descriptive (T2/T6); scoreboard caption + RESEARCH_ONLY framing (T2).
+
+## Validation status
+
+Independently validated against the codebase (Opus, 2026-06-12); all 5 findings
+amended in place:
+1. `test_phase5_tabs.py:36-45` importable-tests WILL break on T7 rename/delete —
+   explicit rewrite instructions added (HIGH).
+2. Snowflake docstring reworded clean of FORBIDDEN_WORDS; snowflake vocab-guard
+   test added to T2 (spec §8 consistency).
+3. All real screens currently abstain (0 candidates) → live snowflake won't render;
+   factor-axis branch covered by a new T6 fixture test; T8 live-check expectation
+   relaxed accordingly.
+4. `.ws-card` already has transition+hover (styles.py:108-120) — merge, don't
+   duplicate; `--radius-lg` dropped to 12px per spec §1.
+5. `load_latest_screen` not imported in weekly_brief.py — import-add made explicit.
+
+Confirmed-correct by the same review: all :root token names (only --bg-page is new),
+scorecard source passes vocab scan as written, T2/T3 module split is mypy/ruff clean,
+render signatures (weekly_brief path/adherence_path; research_candidates reports_dir;
+trust report_path/log_path), headless safety of text_area/file_uploader/button,
+`uploaded.getvalue()` API, `fit` variable available at the T6 wiring point, chdir
+test arithmetic, lowercase factor-name serialization handled by `.title()`,
+price_range_bar already wired (spec §5.3 = no-op), AnalysisResult has no sector-PE
+fields → T6 step 3 correctly no-ops (sector-PE text already exists in
+_render_valuation).
