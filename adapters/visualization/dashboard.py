@@ -1,4 +1,4 @@
-"""Dashboard entry point — 6-tab router."""
+"""Dashboard entry point — 7-tab honest cockpit."""
 
 from __future__ import annotations
 
@@ -23,12 +23,12 @@ st.markdown(
 tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "Weekly Brief",
-        "Today's Opportunities",
-        "Watchlist",
+        "Research Candidates",
+        "Risk",
         "My Portfolio",
         "Stock Analysis",
-        "How It Works",
-        "Market Context",
+        "Falsification Lab",
+        "Methodology",
     ]
 )
 
@@ -37,13 +37,15 @@ with tab0:
 
     render_brief()
 with tab1:
-    from adapters.visualization.tabs.command_center import render as render_opps
+    from adapters.visualization.tabs.research_candidates import (
+        render as render_candidates,
+    )
 
-    render_opps()
+    render_candidates()
 with tab2:
-    from adapters.visualization.tabs.watchlist import render as render_watch
+    from adapters.visualization.tabs.risk import render as render_risk
 
-    render_watch()
+    render_risk()
 with tab3:
     from adapters.visualization.tabs.positions import render as render_portfolio
 
@@ -53,13 +55,15 @@ with tab4:
 
     render_analysis()
 with tab5:
-    from adapters.visualization.tabs.model_confidence import render as render_hiw
+    from adapters.visualization.tabs.falsification_lab import (
+        render as render_falsification,
+    )
 
-    render_hiw()
+    render_falsification()
 with tab6:
-    from adapters.visualization.tabs.market_pulse import render as render_market
+    from adapters.visualization.tabs.methodology import render as render_methodology
 
-    render_market()
+    render_methodology()
 
 st.markdown(
     '<div class="ws-footer">Multi-Modal Stock Recommender · Hexagonal Architecture · Built by Tirth Joshi</div>',

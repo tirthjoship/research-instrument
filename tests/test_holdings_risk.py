@@ -73,3 +73,55 @@ def test_assess_empty_holdings():
     report = uc.execute([], start, start + timedelta(days=10))
     assert report["positions"] == []
     assert report["portfolio"].n_positions == 0
+
+
+def test_top_concentration_uses_market_value_not_price():
+    """top_concentration must use market_value_cad, not per-share price.
+
+    Two positions:
+      - HIGH_PRICE: 1 share @ $1000/share  → market_value_cad = 1000.0
+      - HIGH_MV:  100 shares @ $50/share   → market_value_cad = 5000.0
+
+    Correct (market-value) top_concentration = 5000 / 6000 ≈ 0.8333…
+    Buggy  (price-based)   top_concentration = 1000 / 1050 ≈ 0.9524…
+    """
+    from application.holdings_risk import HoldingsRiskAssessmentUseCase
+    from application.narrator import FakeNarrator
+    from domain.discipline import Verdict
+    from domain.models import PositionRisk
+
+    def _pos(ticker: str, price: float, market_value_cad: float) -> PositionRisk:
+        return PositionRisk(
+            ticker=ticker,
+            price=price,
+            verdict=Verdict.HOLD,
+            confidence=0.6,
+            trend_health=1.0,
+            vol_signal=0.0,
+            relative_strength=0.0,
+            downside_to_stop=0.1,
+            upside_to_recover=0.2,
+            behavior_flags=(),
+            unrealized_pct=0.0,
+            account_type="TFSA",
+            abstained=False,
+            why="test",
+            quantity=1.0,
+            market_value_cad=market_value_cad,
+        )
+
+    positions = [
+        _pos("HIGH_PRICE", price=1000.0, market_value_cad=1000.0),  # 1 share
+        _pos("HIGH_MV", price=50.0, market_value_cad=5000.0),  # 100 shares
+    ]
+
+    uc = HoldingsRiskAssessmentUseCase(
+        price_provider=lambda t: [], narrator=FakeNarrator()
+    )
+    result = uc._portfolio(positions)  # type: ignore[attr-defined]
+
+    expected = 5000.0 / 6000.0  # ≈ 0.8333…
+    assert abs(result.top_concentration - expected) < 1e-9, (
+        f"Expected top_concentration ≈ {expected:.6f} (market-value based), "
+        f"got {result.top_concentration:.6f} — still using per-share price?"
+    )
