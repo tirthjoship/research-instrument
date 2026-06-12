@@ -1,4 +1,4 @@
-"""Smoke tests for the 7-tab honest cockpit tabs introduced in dashboard realignment."""
+"""Smoke tests for the 6-tab honest cockpit tabs introduced in dashboard realignment."""
 
 from __future__ import annotations
 
@@ -33,14 +33,8 @@ def test_stock_analysis_importable() -> None:
     assert callable(render)
 
 
-def test_falsification_lab_importable() -> None:
-    from adapters.visualization.tabs.falsification_lab import render
-
-    assert callable(render)
-
-
-def test_methodology_importable() -> None:
-    from adapters.visualization.tabs.methodology import render
+def test_trust_importable() -> None:
+    from adapters.visualization.tabs.trust import render
 
     assert callable(render)
 
