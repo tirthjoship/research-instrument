@@ -98,9 +98,7 @@ _FOUR_RULES = [
             "backtests lie; our code raises `LookAheadBiasError` if it ever happens."
         ),
         "example": (
-            "the insider-cluster study’s feature matrix was built from filings "
-            "timestamped strictly before each evaluation date — no post-event prices "
-            "were allowed in."
+            "it halts rather than let tomorrow’s price leak into today’s signal."
         ),
     },
     {
