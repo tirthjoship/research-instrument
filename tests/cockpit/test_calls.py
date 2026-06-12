@@ -79,3 +79,24 @@ def test_confirm_writes_log_once_and_snapshots(monkeypatch, tmp_path):
         history_dir=str(hist),
     )
     assert len(read_assessments(str(lp))) == 2
+
+
+def test_confirm_refuses_empty_as_of(monkeypatch, tmp_path):
+    from adapters.visualization.cockpit import _calls
+    from application.discipline_log import read_assessments
+
+    _, hp, lp, hist = _setup(tmp_path)
+    monkeypatch.setattr(
+        _calls,
+        "fetch_prices",
+        lambda tickers: {t: {"price": 100.0, "change_pct": 0.0} for t in tickers},
+    )
+    summary = {**SUMMARY, "as_of": ""}  # missing/empty key collapses idempotency
+    _calls.confirm_and_log(
+        summary=summary,
+        holdings_path=str(hp),
+        discipline_log_path=str(lp),
+        history_dir=str(hist),
+    )
+    assert read_assessments(str(lp)) == []  # nothing written
+    assert not (hist / "brief_.json").exists()  # no degraded snapshot

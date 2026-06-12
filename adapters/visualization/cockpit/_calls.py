@@ -39,6 +39,10 @@ def confirm_and_log(
     discipline_log_path: str,
     history_dir: str,
 ) -> None:
+    if not summary.get("as_of"):
+        # No as_of -> idempotency key is empty; every confirm would collide and
+        # the snapshot filename would degrade to "brief_.json". Refuse the write.
+        return
     if already_logged(summary, discipline_log_path):
         return
     qty = {h.ticker: h.shares for h in _safe_holdings(holdings_path)}
@@ -98,7 +102,9 @@ def render(
             unsafe_allow_html=True,
         )
 
-    if already_logged(summary, discipline_log_path):
+    if not summary.get("as_of"):
+        st.caption("This brief has no as-of date — logging is disabled until it does.")
+    elif already_logged(summary, discipline_log_path):
         st.success("This week's calls are logged to the discipline gate.")
     elif st.button("Confirm all — log this week's calls", key="cp_confirm_all"):
         confirm_and_log(
