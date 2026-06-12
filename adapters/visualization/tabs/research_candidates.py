@@ -19,6 +19,12 @@ _DISCLAIMER = (
 def render(reports_dir: str = "data/reports") -> None:
     st.subheader("Research Candidates")
     st.markdown(
+        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        "The evidence screen's ranked research list — only names that cleared the locked bar."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
         '<div class="ws-card" style="padding:10px 16px;margin-bottom:12px;">'
         f"{_DISCLAIMER}"
         "</div>",

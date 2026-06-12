@@ -46,6 +46,12 @@ def _verdict_pill(grade: str) -> str:
 
 def render(path: str = _SUMMARY_PATH, adherence_path: str = _ADHERENCE_PATH) -> None:
     st.subheader("Weekly Brief")
+    st.markdown(
+        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        "Your week at a glance — what needs attention, what the tool said, what you did."
+        "</div>",
+        unsafe_allow_html=True,
+    )
     summary = load_brief_summary(path)
     if summary is None:
         st.warning(

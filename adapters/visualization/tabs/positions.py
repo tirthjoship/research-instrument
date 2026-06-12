@@ -24,6 +24,12 @@ DB_PATH = "data/recommendations.db"
 def render(db_path: str = DB_PATH) -> None:
     """Render the My Portfolio tab."""
     st.markdown("### My Portfolio")
+    st.markdown(
+        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        "Your tracked positions, trades, and watchlist — updated as you record them."
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
     trades = load_trades(db_path)
     outcomes = load_outcomes(db_path)
@@ -431,7 +437,7 @@ def _render_watchlist_card(
     with btn_cols[1]:
         if st.button("Analyze", key=f"wl_az_{symbol}"):
             st.session_state["analyze_ticker"] = symbol
-            st.info(f"Switch to Stock Analysis tab and enter {symbol}")
+            st.info(f"{symbol} queued — open the Stock Analysis tab to see it run.")
 
 
 def _render_watchlist_add_form(db_path: str) -> None:

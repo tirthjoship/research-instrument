@@ -432,6 +432,8 @@ def run_record_buy(
     db_path: str = "data/recommendations.db",
 ) -> None:
     """Record a BUY trade via OutcomeTrackingUseCase and upsert holdings."""
+    import logging
+
     from adapters.data.sqlite_store import SQLiteStore
     from application.outcome_use_case import OutcomeTrackingUseCase
 
@@ -445,7 +447,13 @@ def run_record_buy(
         conviction=conviction,
         signals=signals or [],
     )
-    _upsert_holding_on_buy(store, ticker.upper(), quantity, price, trade_date)
+    try:
+        _upsert_holding_on_buy(store, ticker.upper(), quantity, price, trade_date)
+    except Exception as exc:
+        logging.getLogger(__name__).error(
+            "trade recorded but holdings update failed: %s", exc
+        )
+        raise
 
 
 def run_record_sell(
@@ -456,6 +464,8 @@ def run_record_sell(
     db_path: str = "data/recommendations.db",
 ) -> None:
     """Record a SELL trade via OutcomeTrackingUseCase and update holdings."""
+    import logging
+
     from adapters.data.sqlite_store import SQLiteStore
     from application.outcome_use_case import OutcomeTrackingUseCase
 
@@ -467,7 +477,13 @@ def run_record_sell(
         quantity=quantity,
         trade_date=trade_date,
     )
-    _upsert_holding_on_sell(store, ticker.upper(), quantity)
+    try:
+        _upsert_holding_on_sell(store, ticker.upper(), quantity)
+    except Exception as exc:
+        logging.getLogger(__name__).error(
+            "trade recorded but holdings update failed: %s", exc
+        )
+        raise
 
 
 def run_backtest(

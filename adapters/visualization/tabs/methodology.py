@@ -51,4 +51,10 @@ _Example: on June 11, 2026 the screen looked at 512 names and ranked zero. That 
 
 def render() -> None:
     st.subheader("Methodology")
+    st.markdown(
+        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        "The four rules that keep this app honest, and the words it uses."
+        "</div>",
+        unsafe_allow_html=True,
+    )
     st.markdown(_BODY)
