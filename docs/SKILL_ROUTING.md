@@ -25,7 +25,7 @@ question permanently.
 | Dashboard realign | hardening done (venv fixed) + Unit B verdict | spec + plan dated 2026-06-10 → `subagent-driven-development`; `frontend-design` for tab layout polish | Sonnet build / Opus review |
 | Docs refinement | build complete | `humanizer` on the write-up; plain-language test (wrap spec §5.5) | Sonnet |
 | Ship/wrap | review clean | `requesting-code-review` → `finishing-a-development-branch` → `caveman-commit` | Opus review |
-| Maintenance (post-Jun 29) | — | read-only; `systematic-debugging` ONLY on breakage; ~1 hr/quarter budget | Sonnet |
+| Maintenance (post-close) | project closed | read-only; `systematic-debugging` ONLY on breakage; ~1 hr/quarter budget | Sonnet |
 
 ## Always-on triggers (any phase)
 
