@@ -33,6 +33,14 @@ def test_render_no_raise(tmp_path):  # type: ignore[no-untyped-def]
     )
 
 
+def test_four_rules_count_and_scoreboard():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import trust
+
+    assert len(trust._FOUR_RULES) == 4
+    assert all(set(r) >= {"title", "body", "example"} for r in trust._FOUR_RULES)
+    assert len(trust._SCOREBOARD) >= 1
+
+
 def test_render_no_raise_full(tmp_path):  # type: ignore[no-untyped-def]
     """Covers trophy grid (3-col), four-rules cards (2x2), and glossary expander."""
     import json as _json
