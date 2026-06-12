@@ -130,7 +130,7 @@ class TestSellAll:
         assert SQLiteStore(tmp_db).get_holding("TSLA") is None
 
     def test_sell_over_full_qty_also_removes_holding(self, tmp_db: str) -> None:
-        """Selling more than held should remove the holding, not go negative."""
+        """Selling more than held (oversell) should remove the holding, not go negative."""
         store = SQLiteStore(tmp_db)
         store.add_holding(
             Holding(
@@ -141,10 +141,11 @@ class TestSellAll:
             )
         )
 
+        # Sell 8 shares when only 5 are held — oversell scenario
         run_record_sell(
             ticker="MSFT",
             price=420.0,
-            quantity=5,
+            quantity=8,
             trade_date="2026-03-01",
             db_path=tmp_db,
         )

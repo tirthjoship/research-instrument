@@ -184,6 +184,12 @@ def render(
     log_path: str = "data/personal/discipline_log.jsonl",
 ) -> None:
     st.subheader("Falsification Lab")
+    st.markdown(
+        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        "Every prediction idea we tested and the verdicts — the receipts behind the app's honesty."
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
     # Intro ws-card
     st.markdown(

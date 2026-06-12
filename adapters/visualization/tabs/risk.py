@@ -36,6 +36,12 @@ _FLAG_MEANING = {
 
 def render(path: str = "data/personal/brief_summary.json") -> None:
     st.subheader("Portfolio Risk — Macro-Beta Scrubber")
+    st.markdown(
+        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        "Where your book's risk actually comes from, in plain English."
+        "</div>",
+        unsafe_allow_html=True,
+    )
     st.caption("Heuristic surfacing dials, not validated edges (ADR-052).")
 
     summary = load_brief_summary(path)
