@@ -6,7 +6,7 @@ It does NOT predict returns — we tested that across 18 years of data and every
 failed.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-1583%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-1628%20passing-success)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
 
@@ -32,28 +32,38 @@ pass/fail bar was locked in writing before any data was examined). Results:
 
 ## What the tool DOES do
 
-**Weekly brief** — a plain-English Saturday morning summary: which macro factors are
-driving the portfolio, what the evidence screen says about current holdings, and
-whether any discipline rules were broken this week.
+The dashboard (Streamlit, premium-light-terminal "v2" design) is organised into six tabs:
 
-**Risk scrubber (macro-beta)** — fits a simple statistical model to expose how much
+**Home** — a plain-English book-health summary: how many holdings need attention this
+week, a gauge for how much of the book's movement is one market-wide bet, the latest
+evidence-screen one-liner, and the discipline/gate status.
+
+**Screener** — the weekly evidence screen (which clears the bar, or abstains when none
+do), a history strip of past screens, and a *check-your-own-list* tool: paste tickers
+or upload a CSV (capped at 25 names) and each name gets an evidence grade and a fit
+check against your book.
+
+**Risk** — the macro-beta scrubber: fits a simple statistical model to expose how much
 of the portfolio's movement is really just one big bet on the overall market; as of
 the last real-book run, 63% of variance was one market factor (66 names, mostly one
 leveraged market bet).
 
-**Portfolio-fit verdict** — for any stock you look up, shows where it ranks on
-factual evidence (valuation, quality, financial health) relative to the ~430-stock
-universe, and flags whether adding it would deepen a risk concentration that already
-exists in the book.
+**My Portfolio** — position tracking for the household's holdings.
 
-**Discipline tracker** — records whether the household followed its own stated rules
-week by week; the forward calibration gate (ADR-048) will resolve in mid-July 2026
-and tell us honestly whether the tool improved adherence.
+**Stock Analysis** — for any stock you look up: the portfolio-fit verdict (where it
+ranks on factual evidence — valuation, quality, financial health — relative to the
+~430-stock universe, and whether adding it would deepen an existing risk
+concentration), plus an evidence snowflake summarising those present-day facts. A
+description of today, never a forecast.
 
-**Falsification lab** — the full history of hypotheses tested, the exact pre-registered
-thresholds, and the mechanically-executed kill decisions; archived in `docs/adr/`
-(ADRs 039–053). The portfolio-fit verdict's honest-boundary design is recorded in
-[ADR-054](docs/adr/054-portfolio-fit-verdict.md).
+**Trust** — the credibility wall: the full record of hypotheses tested with their
+pre-registered thresholds and mechanically-executed kill decisions, the four rules
+the project holds itself to, and a plain-English glossary. The underlying decisions
+are archived in `docs/adr/` (ADRs 039–053); the portfolio-fit verdict's
+honest-boundary design is recorded in [ADR-054](docs/adr/054-portfolio-fit-verdict.md).
+
+The discipline forward-calibration gate (ADR-048) resolves in mid-July 2026 and will
+tell us honestly whether the tool improved the household's adherence to its own rules.
 
 ---
 
@@ -91,6 +101,9 @@ Plain-English definitions for every term used in this project.
 | **Bootstrap** | Re-running a test on thousands of resampled versions of the data to see how much of the result is just luck. A confidence interval that "spans zero" means the edge could easily be nothing. |
 | **Pre-registration** | Locking the test rules before seeing results, so you can't move the goalposts. |
 | **Look-ahead bias** | Accidentally letting future data leak into a prediction — makes backtests look great and live trading fail. |
+| **Systematic share** | How much of your book's movement is explained by broad market forces rather than your individual stock picks. |
+| **Beta** | How much a stock (or your whole book) moves when the market moves. +1.00 = exactly with the market. |
+| **Evidence grade** | Where a stock ranks on present-day facts (valuation, quality, health) versus the screened universe. A description, not a forecast. |
 
 ---
 
@@ -180,7 +193,7 @@ honestly, whatever it is.
 
 For a recruiter: this project demonstrates pre-registered hypothesis testing, rigorous
 negative-result reporting, point-in-time enforcement as a code invariant, hexagonal
-architecture applied to a real data pipeline, and 1,583 tests covering domain logic,
+architecture applied to a real data pipeline, and 1,628 tests covering domain logic,
 adapters, use cases, and integration paths. The negative findings are the portfolio
 piece — a system that falsified its own thesis honestly is more credible than one that
 never tested it.
@@ -210,7 +223,7 @@ pre-commit install
 ### Verify
 
 ```bash
-# Full suite (1583 tests, ~28 s)
+# Full suite (1628 tests, ~28 s)
 pytest tests/ -q
 
 # With coverage gate (90% required)

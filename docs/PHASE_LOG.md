@@ -287,3 +287,32 @@
 - Dashboard realignment spec + plan written and Opus-validated (8 fixes applied);
   execution deferred to fresh session, gated on verdict + venv fix.
 - Branch merged to develop + main twice this session (code, then docs).
+
+## 2026-06-12 — Dashboard v2 shipped (6-tab IA)
+- Executed the Opus-validated 8-task v2 plan via subagent-driven-development (Sonnet
+  implementers; per-task two-stage review = spec-compliance + Opus code-quality, with
+  fix/re-review loops on every task). Premium-light-terminal redesign.
+- Delivered: T1 theme tokens + `components/glossary.py` (single-source defs + escaped
+  `tip()`); T2 `components/{snowflake,scorecard}.py` (vocab-guarded, XSS-escaped); T3
+  `application/batch_fit_use_case.py` (ticker/CSV parse — BOM-safe, 25-cap, junk-reject;
+  per-name engine with DATA_GAP failure rows; `default_fit_fn` on the ADR-054 path); T4
+  Home rebuild (book-health hero + systematic-share gauge, attention cards, week strip);
+  T5 Screener (screen-history strip + check-your-own-list upload scoreboard, reachable on
+  abstention weeks); T6 Stock Analysis (section chips + evidence snowflake reusing cached
+  fit, no double-fetch); T7 Trust (renamed `falsification_lab`→`trust`, absorbed
+  `methodology` — trophy grid + four rules + glossary; 6-tab router); T8 verify + ship.
+- Review caught + fixed during the run: XSS on user-supplied ticker (escaped); BOM
+  silently dropping valid tickers (stripped); Screener upload unreachable on abstention
+  weeks (extracted to a helper called on both paths); a fabricated insider-cluster claim
+  in Trust copy (reverted to the faithful ported text); 4 dangling "Falsification Lab"
+  tab refs (→ "Trust", incl. `domain/fit.py` summary); scoped vocab-guards added for the
+  new descriptive surfaces (whole-module scans are wrong for Trust/weekly_brief/glossary,
+  which legitimately use buy/sell/predict in falsification/educational context).
+- Final 3-way independent Opus verification (conformance / honesty-drift / integration):
+  no fabrication, no live RESEARCH_ONLY/vocab violation, no regressions; ship-ready.
+- **1628 tests passing**, code pre-commit hooks green, 6-tab app launches clean (HTTP 200
+  / health ok). Generated weekly screens (`data/reports/screen_20*.json`) gitignored.
+- Shipped: PR #46 → develop, release PR #47 develop → main (both CI-green, merged;
+  `origin/main..origin/develop` = 0). Plan: `docs/superpowers/plans/2026-06-12-dashboard-v2.md`.
+- **Project now closes to maintenance** — v2 was the sanctioned final UX scope. Open
+  item unchanged: ADR-048/051 discipline forward gate resolves ~mid-July 2026.
