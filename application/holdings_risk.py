@@ -192,7 +192,11 @@ class HoldingsRiskAssessmentUseCase:
         counts: dict[str, int] = {}
         for p in positions:
             counts[p.verdict.value] = counts.get(p.verdict.value, 0) + 1
-        values = [p.price for p in positions if p.price > 0]
+        values = [
+            p.market_value_cad
+            for p in positions
+            if p.market_value_cad is not None and p.market_value_cad > 0
+        ]
         top = (max(values) / sum(values)) if values else 0.0
         return PortfolioRisk(
             n_positions=n,
