@@ -69,25 +69,42 @@ class FitVerdict:
 
 def assess_fit(
     ticker: str,
-    factor_scores: Sequence[FactorScore] | None,   # from screen scoring
-    ticker_beta: float | None,                     # vs SPY, from macro-beta machinery
+    candidate: ScreenCandidate | None,             # the analyzed ticker's screen row
+    universe_composites: Sequence[float],          # ALL composites from the same
+                                                   # ScreenResult — rank is computed
+                                                   # HERE, it is not pre-stored
+    ticker_beta: float | None,                     # SPY beta_headline for this ticker
     book: BookMacroExposure | None,                # current Unit A output
-    holdings: Sequence[Holding],
-    sector: str | None,
+    position_values_cad: Mapping[str, float],      # ticker -> market_value_cad
+    systematic_share_threshold: float,             # INJECTED from market config
+                                                   # (config/markets/us.yaml:
+                                                   # macro_beta.systematic_share_threshold,
+                                                   # currently 0.60) — never hardcoded
     hypothetical_weight: float = 0.02,             # default 2% position sizing
 ) -> FitVerdict: ...
 ```
 
 Rules (locked at design time, not tuned later):
-- `evidence_grade`: percentile RANK of the ticker's composite within the latest
-  screened universe (not the raw composite value): rank ≥ 0.80 → STRONG;
-  ≥ 0.50 → MODERATE; else WEAK; `factor_scores is None` → UNKNOWN.
+- `evidence_grade`: percentile RANK of `candidate.composite` within
+  `universe_composites` — computed inside `assess_fit` (validated 2026-06-11: the
+  screen stores per-FACTOR percentiles on `FactorScore`, but composite rank is NOT
+  pre-computed anywhere; `ScreenCandidate.composite` is a raw z-blend). rank ≥ 0.80 →
+  STRONG; ≥ 0.50 → MODERATE; else WEAK; `candidate is None` → UNKNOWN.
 - `BETA_AMPLIFY`: fires when `ticker_beta` and book's net SPY beta have the same sign
   AND the hypothetical add (at `hypothetical_weight`) moves systematic share toward or
-  past the existing SYSTEMATIC_DOMINANT threshold (reuse the threshold constant from
-  `domain/macro_beta.py` — never re-declare it).
-- `CONCENTRATION`: hypothetical add recomputes sector/name weight; message phrased
-  "Tech 40% → 44%". Reuses `ConcentrationFlag` thresholds (`domain/brief.py`).
+  past `systematic_share_threshold`. The threshold is config, NOT a module constant
+  (validated 2026-06-11: `domain/macro_beta.py` has no such constant — it is threaded
+  from `config/markets/us.yaml` as a `build_flags` parameter; mirror that injection).
+- `CONCENTRATION`: **single-name weight, NOT sector** (validated 2026-06-11: holdings
+  carry no sector field anywhere in the pipeline — sector-based book weights have zero
+  data source, and adding per-holding sector fetch would violate §4's no-new-IO lock).
+  Computed from `position_values_cad` (market value, CAD): message phrased "at 2%
+  sizing this would be your 12th-largest position; largest single name stays NVDA at
+  8.4%" or fires CAUTION when the hypothetical add itself exceeds the largest existing
+  single-name weight. **Do NOT reuse `PortfolioRisk.top_concentration`** — it is
+  per-share-PRICE based (`application/holdings_risk.py:195`), semantically wrong for
+  weight (known bug; the plan may include a separate one-line fix + test for it, but
+  the fit path computes weights from `market_value_cad` directly either way).
 - `TREND_STATE`: descriptive only ("trend intact/broken as of <date>"); wording must
   never imply an exit/entry signal (ADR-046 KILL).
 - `DATA_GAP`: any missing input (no holdings, no beta, no factors) produces an explicit
@@ -102,20 +119,42 @@ Invariants (Hypothesis property tests):
 
 ## §4 Application — `application/fit_use_case.py` (new)
 
-Orchestrates existing machinery; no new ports, no new adapters:
-- factor scores: the screen's per-ticker scoring path (same code Research Candidates
-  ranking uses — plan must identify the exact callable and reuse, not duplicate).
-- ticker beta + book exposure: `MacroBetaUseCase` machinery / `domain/macro_beta.py`
-  (`net_beta`, `aggregate_macro_exposure`).
-- holdings: existing holdings reader (`application/holdings_reader.py`).
+Orchestrates existing machinery; no new ports, no new adapters (all callables
+validated 2026-06-11):
+- screen scores: `EvidenceScreenUseCase.run(universe, as_of, top_n)`
+  (`application/evidence_screen_use_case.py:69`) — universe-only scoring; NO
+  single-ticker path exists. Fit scores the universe and looks up the ticker
+  (§8 fallback confirmed as the only option); pass all candidate composites to
+  `assess_fit` for ranking.
+- ticker beta: per-holding SPY beta = `MacroFactorBeta.beta_headline` for
+  `factor="SPY"`, obtained via `MacroBetaUseCase.execute` machinery (1-element
+  holdings list) or the lower-level path `load_price_series` →
+  `domain/macro_beta.daily_returns`/`align_returns` → estimator fit. NOT `net_beta`
+  (that is the book-aggregate dollar-weighted sum — wrong quantity).
+- book exposure: existing `MacroBetaUseCase.execute(holdings, as_of)` output.
+- holdings: `read_holdings(path)` from `application/holdings_reader.py` — pin THIS
+  `Holding` type (ticker/shares/cost_basis/account_type); `domain/models.py:261`
+  defines a DIFFERENT legacy `Holding` (symbol/quantity/…) used by the
+  action_runner — do not mix them. Position market values from the holdings-risk
+  path's `market_value_cad`.
+- price history fetch: `load_price_series` (`application/price_returns.py:57`) —
+  retry/backoff confirmed built-in; returns empty on failure (non-strict).
 - Returns `FitVerdict`. All fetch failures → `DATA_GAP` flags, never exceptions to UI.
 
 ## §5 UI — Stock Analysis tab (modify only)
 
-Verdict card directly under the existing RESEARCH ONLY banner:
-- Evidence grade as `grade_badge_html`/pill + the three factor percentiles inline.
-- Fit flags as `render_verdict_card` rows, severity-colored left border (SWST pattern,
-  consistent with dashboard realignment).
+Verdict card directly under the existing RESEARCH ONLY banner (insertion point
+validated: `tabs/stock_analysis.py` after the banner block in `_render_verdict`;
+`AnalysisResult.sector` exists for display):
+- Evidence grade as `grade_badge_html` pill (`components/formatters.py:101`) + the
+  per-factor percentiles inline (note: those are per-FACTOR ranks, distinct from the
+  composite rank driving the grade — caption the difference).
+- Fit flags via `render_verdict_card` (`components/metrics.py:42`) — ONE card per
+  flag. Severity→tone mapping (explicit; validated tone set is
+  positive/negative/neutral only): `INFO → neutral`, `WARNING → negative`,
+  `CAUTION → new `verdict-caution` CSS class` (one amber left-border class added to
+  `components/styles.py`, mirroring the existing verdict tone classes — the only CSS
+  addition in this phase).
 - Summary sentence(s) + permanent caption: "Evidence + fit only — this tool does not
   predict returns (see Falsification Lab)."
 - No holdings file → card renders evidence grade + "fit unavailable — no holdings
@@ -170,3 +209,26 @@ from the README alone.
   out; medium cost, weekend deadline).
 - **Language drift risk:** vocabulary guard is a *domain invariant test*, not a UI
   convention — drift fails CI.
+
+## §9 Validation status
+
+Independently validated against the codebase (Opus reviewer, 2026-06-11). All findings
+amended in place:
+1. Systematic-share threshold is CONFIG (`config/markets/us.yaml`, 0.60) threaded as a
+   parameter — `assess_fit` takes it injected; no module constant exists to import.
+2. Sector concentration DROPPED — holdings carry no sector field anywhere; replaced
+   with single-name market-value weight from `market_value_cad`. Known bug noted:
+   `top_concentration` is per-share-price based; do not reuse.
+3. No single-ticker screen scoring exists — universe-scoring fallback confirmed and
+   wired into the design (`EvidenceScreenUseCase.run`).
+4. Per-ticker beta = `MacroFactorBeta.beta_headline` (SPY), not `net_beta`
+   (book-aggregate). `load_price_series` retry/backoff confirmed.
+5. Two distinct `Holding` types — pinned to `application/holdings_reader.Holding`.
+6. `render_verdict_card` tones are positive/negative/neutral — explicit severity→tone
+   map added; one new `verdict-caution` CSS class is the only CSS addition.
+7. Composite percentile-rank is computed in `assess_fit` from universe composites —
+   it is not pre-stored anywhere (signature fixed to receive them).
+
+Confirmed-correct by the same review: verdict-card insertion point in
+`_render_verdict`, `AnalysisResult.sector`, `grade_badge_html`, `FactorScore`
+per-factor percentiles, retry/backoff in price fetch.
