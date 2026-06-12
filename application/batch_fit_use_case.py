@@ -22,13 +22,15 @@ class BatchFitRow:
 
 MAX_TICKERS = 25
 
-_TICKER_RE = re.compile(r"^[A-Z0-9.\-]{1,10}$")
+_TICKER_RE = re.compile(r"^(?=.*[A-Z0-9])[A-Z0-9.\-]{1,10}$")
+
+_BOM = "﻿"
 
 
 def parse_tickers(text: str) -> list[str]:
     """Comma/whitespace/newline-separated tickers → upper, dedup, capped."""
     out: list[str] = []
-    for raw in re.split(r"[,\s]+", text.strip()):
+    for raw in re.split(r"[,\s]+", text.lstrip(_BOM).strip()):
         t = raw.strip().upper()
         if t and _TICKER_RE.match(t) and t not in out:
             out.append(t)
@@ -39,6 +41,7 @@ def parse_tickers(text: str) -> list[str]:
 
 def parse_csv_tickers(csv_text: str) -> list[str]:
     """Tickers from a CSV: a Symbol/Ticker column if present, else column 0."""
+    csv_text = csv_text.lstrip(_BOM)
     reader = csv.reader(io.StringIO(csv_text))
     rows = [r for r in reader if r]
     if not rows:
