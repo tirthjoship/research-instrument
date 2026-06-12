@@ -1,19 +1,99 @@
-"""Research Candidates tab — factual evidence ranking. RESEARCH_ONLY, no buy language."""
+"""Research Candidates tab — factual evidence ranking. RESEARCH_ONLY."""
 
 from __future__ import annotations
 
 import streamlit as st
 
 from adapters.visualization.components.formatters import status_pill_html
-from adapters.visualization.data_loader import load_latest_screen, staleness_days
+from adapters.visualization.data_loader import (
+    load_latest_screen,
+    load_screen_history,
+    staleness_days,
+)
 
 _TOP_N = 15
 
 _DISCLAIMER = (
     "Ranked by <strong>current factual evidence</strong> (valuation · quality · health) — "
-    "<strong>NOT predicted returns</strong>. Prediction was tested 2006–2024 and falsified "
-    "(see the Falsification Lab tab)."
+    "<strong>NOT forecast returns</strong>. The return-forecast hypothesis was tested 2006–2024 and falsified "
+    "(see the Trust tab)."
 )
+
+
+def _render_history_and_upload(reports_dir: str) -> None:
+    """Render Screen history strip and 'Check your own list' upload section.
+
+    Called on both the abstention/no-candidates path AND the normal candidates path
+    so that the upload scoreboard is always reachable.
+    """
+    hist = load_screen_history(reports_dir)
+    if hist:
+        st.divider()
+        st.markdown("#### Screen history")
+        hist_rows = [
+            {
+                "Date": h["as_of"],
+                "Universe": h["universe_size"],
+                "Passed": h["n_candidates"],
+                "Abstained": h["abstained"],
+            }
+            for h in hist
+        ]
+        st.dataframe(hist_rows, hide_index=True)
+
+    st.divider()
+    st.markdown("#### Check your own list")
+    st.markdown(
+        '<div style="color:#5C6370;font-size:14px;">Paste tickers or upload a '
+        "CSV — each name gets an evidence grade and a fit check against your "
+        "book. Capped at 25 names per run (live data fetch per name).</div>",
+        unsafe_allow_html=True,
+    )
+    text = st.text_area(
+        "Tickers", placeholder="NVDA, AAPL, KO", label_visibility="collapsed"
+    )
+    uploaded = st.file_uploader("or upload CSV", type=["csv"])
+    if st.button("Run the check", type="primary"):
+        from application.batch_fit_use_case import (
+            MAX_TICKERS,
+            batch_fit,
+            default_fit_fn,
+            parse_csv_tickers,
+            parse_tickers,
+        )
+
+        tickers = parse_tickers(text or "")
+        if uploaded is not None:
+            tickers = (
+                tickers
+                + [
+                    t
+                    for t in parse_csv_tickers(
+                        uploaded.getvalue().decode("utf-8", "replace")
+                    )
+                    if t not in tickers
+                ]
+            )[:MAX_TICKERS]
+        if not tickers:
+            st.warning("No valid tickers found — paste e.g. NVDA, AAPL.")
+        else:
+            key = "batchfit_" + ",".join(tickers)
+            if key not in st.session_state:
+                bar = st.progress(0.0, text="Starting…")
+
+                def _update_progress(frac: float, t: str) -> None:
+                    bar.progress(frac, text=f"Checking {t}…")
+
+                rows = batch_fit(
+                    tickers,
+                    fit_fn=default_fit_fn,
+                    progress=_update_progress,
+                )
+                bar.empty()
+                st.session_state[key] = rows
+            from adapters.visualization.components.scorecard import render_scorecard
+
+            render_scorecard(st.session_state[key])
 
 
 def render(reports_dir: str = "data/reports") -> None:
@@ -67,6 +147,9 @@ def render(reports_dir: str = "data/reports") -> None:
             "**Want to research a specific stock anyway?** "
             "Open the **Stock Analysis** tab — type any ticker for a full evidence + portfolio-fit read."
         )
+        # History strip + upload section still render on abstention weeks so the
+        # scorecard feature is reachable even when the weekly screen abstains.
+        _render_history_and_upload(reports_dir)
         return
 
     as_of = screen.get("as_of", "?")
@@ -96,3 +179,5 @@ def render(reports_dir: str = "data/reports") -> None:
             "</div>",
             unsafe_allow_html=True,
         )
+
+    _render_history_and_upload(reports_dir)

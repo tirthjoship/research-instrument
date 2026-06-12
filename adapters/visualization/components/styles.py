@@ -9,24 +9,25 @@ GLOBAL_CSS = """
 
 /* ===== CSS Variables ===== */
 :root {
+    --bg-page: #FAFAF8;
     --bg-primary: #FFFFFF;
     --bg-secondary: #F8FAFC;
     --border: #E2E8F0;
-    --text-primary: #1A202C;
-    --text-secondary: #64748B;
+    --text-primary: #1A1D27;
+    --text-secondary: #5C6370;
     --text-muted: #94A3B8;
-    --accent: #2563EB;
-    --accent-hover: #1D4ED8;
-    --success: #16A34A;
-    --warning: #D97706;
-    --danger: #DC2626;
+    --accent: #1D4ED8;
+    --accent-hover: #1E40AF;
+    --success: #15803D;
+    --warning: #B45309;
+    --danger: #B91C1C;
     --purple: #7C3AED;
     --orange: #EA580C;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.06), 0 4px 12px rgba(16,24,40,.04);
     --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
     --radius-sm: 8px;
     --radius-md: 12px;
-    --radius-lg: 16px;
+    --radius-lg: 12px;
     --radius-xl: 20px;
 }
 
@@ -65,6 +66,12 @@ h4 {
     color: var(--text-secondary) !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
+}
+
+/* ===== Page Background + Tabular Numerals ===== */
+.stApp { background: var(--bg-page); }
+[data-testid="stMetricValue"], .ws-card, .verdict-card, table {
+    font-variant-numeric: tabular-nums;
 }
 
 /* ===== Hide Streamlit Chrome ===== */
@@ -112,11 +119,13 @@ header[data-testid="stHeader"] { display: none !important; }
     padding: 1.5rem;
     margin-bottom: 1rem;
     box-shadow: var(--shadow-sm);
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    transition: box-shadow .15s ease, border-color .15s ease,
+                transform .15s ease;
 }
 .ws-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 2px 4px rgba(16,24,40,.08), 0 8px 24px rgba(16,24,40,.08);
+    border-color: rgba(29,78,216,.35);
+    transform: translateY(-1px);
 }
 
 /* ===== Hero Panel ===== */
@@ -647,6 +656,32 @@ header[data-testid="stHeader"] { display: none !important; }
     border-width: 5px;
     border-style: solid;
     border-color: #1E293B transparent transparent transparent;
+}
+
+/* ===== Section Chips ===== */
+.section-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 12px; font-weight: 700; margin-right: 8px;
+}
+
+/* ===== Inline .tip Tooltips ===== */
+.tip {
+    border-bottom: 1px dotted var(--text-secondary);
+    cursor: help; position: relative;
+}
+.tip:hover::after {
+    content: attr(data-tip);
+    position: absolute; left: 0; bottom: 125%;
+    background: #1A1D27; color: #fff; padding: 8px 12px;
+    border-radius: 8px; font-size: 12px; line-height: 1.4;
+    width: 260px; z-index: 99; white-space: normal;
+}
+
+/* ===== Hero Gradient ===== */
+.hero-gradient {
+    background: linear-gradient(135deg, #FFFFFF 0%, #EEF2FF 100%);
 }
 </style>
 """

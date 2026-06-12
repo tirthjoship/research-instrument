@@ -1,44 +1,45 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-11
-**Branch:** feat/portfolio-fit-verdict (PR #40 open → develop)
-**Phase:** 6 — WRAP. Final build (portfolio-fit verdict) shipped; project closing.
+**As of:** 2026-06-12
+**Branch:** feat/dashboard-v2 (v2 IMPLEMENTED + verified; PR open, NOT yet merged)
+**Phase:** Dashboard v2 — built, review-gated; awaiting merge → wrap to maintenance
 
 ## Current State
 
-Phase 6 complete on `feat/portfolio-fit-verdict` (PR #40 → develop):
-- **Portfolio-fit verdict** in Stock Analysis tab — evidence grade + fit flags (beta
-  amplify, concentration, trend state) vs the user's book. NO prediction; honesty is
-  machine-enforced (FORBIDDEN_WORDS Hypothesis invariant). ADR-054, spec + plan dated
-  2026-06-11 under `docs/superpowers/`.
-- `domain/fit.py` (pure), `application/fit_use_case.py` (artifact-driven, injected
-  beta), fit card memoized per ticker (invalidated on re-analysis).
-- Bugfix: `top_concentration` uses market value, not per-share price.
-- `docs/HYPOTHESIS_BACKLOG.md` — pre-registration entry bar (alpha hunt parked, not dead).
-- README rewritten family-readable: verdict table, glossary, the story.
+Dashboard v2 fully implemented on `feat/dashboard-v2` (T1–T8). Suite **1628 passing**,
+code pre-commit hooks green, 6-tab app launches clean (HTTP 200 / health ok).
+Final 3-way independent Opus review: no fabrication, no live vocab violation, no
+regressions; flagged items all fixed (dangling "Falsification Lab"→"Trust" refs,
+scoped home-hero vocab guard, dead `_GRADE_TONE` removed, generated screens gitignored).
 
-Test suite: **1584 passed, 0 failures** (baseline 1561). Pre-commit clean on pristine
-tree. Independent Opus full-branch verification: 1 BLOCKER + 4 findings, all fixed.
+Delivered:
+- **Theme/glossary** (T1): v2 tokens, card hover, `.section-chip`/`.tip`, `glossary.py`.
+- **Builders** (T2): `snowflake.py`, `scorecard.py` (vocab-guarded, XSS-escaped).
+- **Batch fit** (T3): `application/batch_fit_use_case.py` — ticker/CSV parse (BOM-safe,
+  25-cap), per-name engine, DATA_GAP failure rows, `default_fit_fn`.
+- **Home** (T4): book-health hero + gauge, attention cards, week strip.
+- **Screener** (T5): screen-history strip + check-your-own-list upload scoreboard
+  (renders on abstention weeks too).
+- **Stock Analysis** (T6): section chips, evidence snowflake (reuses cached fit).
+- **Trust** (T7): falsification_lab→trust, methodology absorbed (four rules + glossary),
+  6-tab router, trophy grid.
 
 ## Next Action
 
-1. Merge PR #40 → develop (CI running).
-2. Sync develop → main (release; project closes).
-3. Post-close: read-only maintenance, ~1 hr/quarter. Two calendar events only:
-   - **~mid-July 2026:** forward calibration gate verdict (ADR-048/051) — read it,
-     decide L0→L1. ~30 min. Gate needs ≥30 resolved REDUCE flags across ≥3 dates
-     ≥10 days apart; accrues passively via the Saturday job, zero code.
-   - **~Dec 2026:** self-experiment review (behavior-gap bps) — ~30 min.
+1. Merge: confirm CI green on the open PR → develop, merge, then develop → main
+   release PR, merge (keep both branches in sync — standing user instruction).
+2. After merge: `git rev-list --count origin/main..origin/develop` should be 0.
+3. Then close to maintenance (v2 was the sanctioned final UX scope).
 
 ## Caveats
 
-- `data/personal/` is gitignored (holdings, brief_summary.json, discipline_log.jsonl,
-  adherence_log.jsonl). Fit card reads holdings.csv + brief_summary.json from there.
-- The two `data/reports/*.json` lack a trailing newline as committed; a test run
-  regenerates them and pre-commit's end-of-files "fixes" them — harmless, tree stays
-  clean on a fresh checkout (CI lint runs pristine, passes).
-- Saturday job (`scripts/discipline_weekly_review.sh`) refreshes brief_summary.json +
-  screen_<date>.json — the fit verdict and dashboard depend on those artifacts.
-- RESEARCH_ONLY: no buy/sell language anywhere; enforced by domain invariant test.
-- All predictive hypotheses tested to date: 4 KILL, 2 INCONCLUSIVE, 1 practical KILL
-  (Unit B). The discipline forward gate is the last open question (mid-July).
+- All current screen artifacts abstain (0 candidates) → live snowflake won't render
+  for any real ticker; expected. Factor-axis branch is fixture-tested only.
+- `data/reports/screen_20*.json` now gitignored (generated weekly output); curated
+  `insider_cluster_falsification_2024.json` + `screen_ic_*` exhibits stay tracked.
+- Test runs strip trailing newlines from 2 tracked `data/reports/*.json` —
+  `git checkout data/reports/` before any pre-commit/CI verify.
+- RESEARCH_ONLY + FORBIDDEN_WORDS invariant holds on every new surface. Trust/
+  weekly_brief/glossary legitimately reference buy/sell/predict in falsification/
+  educational context — guarded by SCOPED tests, not whole-module scans (by design).
+- Wrap timeline: post-v2 → maintenance. Calendar: mid-July gate read; Dec review.
