@@ -1,49 +1,51 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-12
-**Branch:** develop ≡ main (Dashboard v2 SHIPPED + merged; docs follow-up on docs/v2-wrap)
-**Phase:** Maintenance — v2 was the sanctioned final UX scope; no new feature work
+**As of:** 2026-06-12 (evening)
+**Branch:** feat/cockpit-redesign (cockpit spec committed; NOT implemented)
+**Phase:** Cockpit redesign — brainstormed, spec written, awaiting validation
 
 ## Current State
 
-Dashboard v2 SHIPPED 2026-06-12: PR #46 → develop, release PR #47 develop → main, both
-CI-green and merged; `origin/main..origin/develop` = 0. Suite **1628 passing**, code
-pre-commit hooks green, 6-tab app launches clean (HTTP 200 / health ok). Final 3-way
-independent Opus verification (conformance / honesty-drift / integration): no fabrication,
-no live vocab violation, no regressions; all flagged items fixed pre-merge (dangling
-"Falsification Lab"→"Trust" refs incl. `domain/fit.py`, fabricated Trust claim reverted,
-scoped vocab guards added, dead `_GRADE_TONE` removed, generated screens gitignored).
-Docs (README/CONTEXT/PHASE_LOG + this file) updated on `docs/v2-wrap` (follow-up PR).
+Dashboard v2 SHIPPED earlier today (PRs #46–#49, develop ≡ main, suite 1628). Then a
+brainstorm (`/brainstorming` + `/grill-me`, 6 screenshots reviewed) re-opened the project
+from maintenance: the v2 dashboard is six incoherent mini-apps, and the tool is all
+defense — it never tells the user what to research next.
 
-Delivered:
-- **Theme/glossary** (T1): v2 tokens, card hover, `.section-chip`/`.tip`, `glossary.py`.
-- **Builders** (T2): `snowflake.py`, `scorecard.py` (vocab-guarded, XSS-escaped).
-- **Batch fit** (T3): `application/batch_fit_use_case.py` — ticker/CSV parse (BOM-safe,
-  25-cap), per-name engine, DATA_GAP failure rows, `default_fit_fn`.
-- **Home** (T4): book-health hero + gauge, attention cards, week strip.
-- **Screener** (T5): screen-history strip + check-your-own-list upload scoreboard
-  (renders on abstention weeks too).
-- **Stock Analysis** (T6): section chips, evidence snowflake (reuses cached fit).
-- **Trust** (T7): falsification_lab→trust, methodology absorbed (four rules + glossary),
-  6-tab router, trophy grid.
+**Decisions locked (see the spec):**
+- Two audiences → **two surfaces**: a fast family **cockpit** (build now) and a deferred
+  recruiter **showcase** (A2). They must not share pixels.
+- **Greenfield the cockpit** on top of an UNTOUCHED hexagonal core (domain/ + application/
+  stay). Single-scroll, strict priority order: danger → your-calls(+log) → look-into-next →
+  lookup. Stock detail = a drawer. One design system (kills the 4-visual-languages problem).
+- **Honest discovery** ("look into next"): split factual rank (always shown) from the
+  tradeable-edge verdict (stays abstaining, shown inline). **Diversification-first** framing.
+  Prereq: clean the stale screen universe.
+- Kill legacy cruft in the drawer (39.3 score, divergence tables, Sundial default).
 
-## Next Action
+**Spec:** `docs/superpowers/specs/2026-06-12-cockpit-redesign-design.md` (DRAFT — has 4
+open questions for validation).
 
-1. Merge the `docs/v2-wrap` follow-up PR (README/CONTEXT/PHASE_LOG/STATUS) → develop →
-   main, keeping both in sync (`git rev-list --count origin/main..origin/develop` = 0).
-2. No feature work queued. Project is in maintenance.
-3. Standing watch: ADR-048/051 discipline forward gate resolves ~mid-July 2026 via the
-   weekly Saturday job (`scripts/discipline_weekly_review.sh`); ~Dec 2026 behavior-gap review.
+## Next Action (next session)
+
+1. **Validate the cockpit spec** (read it; resolve the 4 open questions — esp. whether the
+   confirm-and-log write belongs in the cockpit or stays CLI-only).
+2. If it holds → `superpowers:writing-plans` → implement via subagent-driven-development
+   (Sonnet impl, Opus review), feature branch → develop → main (keep in sync).
+3. Design is provisional — "investigate if it holds when we validate the spec" (user).
+
+## Queued (separate specs, NOT now)
+
+- **A2 — Showcase surface** (recruiter falsification/methodology narrative). Trust content
+  stays reachable as-is until then.
+- **Project B — Alpha re-open.** User wants the falsification gates kept OPEN to keep testing
+  (news/sentiment → next-week, cross-stock lead-lag). MUST go through pre-registration — NOT
+  a re-run of the falsified ADR-044 divergence thesis (that's p-hacking). Needs a genuinely
+  new hypothesis or a named flaw in ADR-044, pre-registered. Run `ds-methodology-review` first.
 
 ## Caveats
 
-- All current screen artifacts abstain (0 candidates) → live snowflake won't render
-  for any real ticker; expected. Factor-axis branch is fixture-tested only.
-- `data/reports/screen_20*.json` now gitignored (generated weekly output); curated
-  `insider_cluster_falsification_2024.json` + `screen_ic_*` exhibits stay tracked.
-- Test runs strip trailing newlines from 2 tracked `data/reports/*.json` —
-  `git checkout data/reports/` before any pre-commit/CI verify.
-- RESEARCH_ONLY + FORBIDDEN_WORDS invariant holds on every new surface. Trust/
-  weekly_brief/glossary legitimately reference buy/sell/predict in falsification/
-  educational context — guarded by SCOPED tests, not whole-module scans (by design).
-- Wrap timeline: post-v2 → maintenance. Calendar: mid-July gate read; Dec review.
+- All real screens abstain (0 candidates) + stale universe → discovery is dead today; the
+  cockpit's factual-rank top-N is designed to surface anyway. Clean the universe first.
+- `data/reports/screen_20*.json` gitignored; `git checkout data/reports/` before pre-commit.
+- RESEARCH_ONLY + FORBIDDEN_WORDS invariant holds on every new cockpit surface.
+- Standing watch: ADR-048/051 discipline gate resolves ~mid-July 2026.
