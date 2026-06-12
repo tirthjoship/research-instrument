@@ -139,6 +139,12 @@ class TestEnhancedCompactCard:
 # ---------------------------------------------------------------------------
 
 
+def test_research_candidates_importable() -> None:
+    from adapters.visualization.tabs.research_candidates import render
+
+    assert callable(render)
+
+
 def test_compact_card_importable() -> None:
     from adapters.visualization.components.compact_card import render_compact_card_html
 
@@ -172,3 +178,10 @@ def test_fetch_index_prices_importable() -> None:
     from adapters.visualization.price_cache import fetch_index_prices
 
     assert callable(fetch_index_prices)
+
+
+def test_research_candidates_render_no_raise(tmp_path: object) -> None:
+    """research_candidates.render() handles missing reports dir without raising."""
+    from adapters.visualization.tabs import research_candidates
+
+    research_candidates.render(reports_dir=str(tmp_path))

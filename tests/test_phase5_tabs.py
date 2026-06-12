@@ -1,10 +1,34 @@
-"""Smoke tests for the surviving cockpit-era tabs (risk + trust)."""
+"""Smoke tests for the 6-tab honest cockpit tabs introduced in dashboard realignment."""
 
 from __future__ import annotations
 
 
+def test_weekly_brief_importable() -> None:
+    from adapters.visualization.tabs.weekly_brief import render
+
+    assert callable(render)
+
+
+def test_research_candidates_importable() -> None:
+    from adapters.visualization.tabs.research_candidates import render
+
+    assert callable(render)
+
+
 def test_risk_importable() -> None:
     from adapters.visualization.tabs.risk import render
+
+    assert callable(render)
+
+
+def test_positions_importable() -> None:
+    from adapters.visualization.tabs.positions import render
+
+    assert callable(render)
+
+
+def test_stock_analysis_importable() -> None:
+    from adapters.visualization.tabs.stock_analysis import render
 
     assert callable(render)
 
