@@ -117,3 +117,61 @@ def test_render_hero_counts_attention(tmp_path) -> None:  # type: ignore[no-unty
         adherence_path=str(tmp_path / "adherence_log.jsonl"),
         reports_dir=str(tmp_path),
     )  # must not raise
+
+
+def test_render_zero_attention_no_columns_crash(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Zero-attention branch must NOT call st.columns(0) — that would crash Streamlit."""
+    import json
+
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-12",
+                "regime": "NEUTRAL",
+                "abstained": True,
+                "macro": {"systematic_share": 0.30},
+                "holdings": [
+                    {
+                        "ticker": "B",
+                        "verdict": "HOLD",
+                        "unrealized_pct": 2.0,
+                        "trend_state": "intact",
+                        "why": "w",
+                    },
+                ],
+            }
+        )
+    )
+    from adapters.visualization.tabs import weekly_brief
+
+    # No REDUCE/TRIM holdings → attention list is empty → must NOT hit st.columns(0)
+    weekly_brief.render(
+        path=str(p),
+        adherence_path=str(tmp_path / "adherence_log.jsonl"),
+        reports_dir=str(tmp_path),
+    )  # must not raise
+
+
+def test_render_missing_macro_skips_gauge(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Missing 'macro' key → gauge block must be skipped without raising."""
+    import json
+
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-12",
+                "regime": "NEUTRAL",
+                "abstained": True,
+                "holdings": [],  # no macro key, no holdings
+            }
+        )
+    )
+    from adapters.visualization.tabs import weekly_brief
+
+    weekly_brief.render(
+        path=str(p),
+        adherence_path=str(tmp_path / "adherence_log.jsonl"),
+        reports_dir=str(tmp_path),
+    )  # must not raise

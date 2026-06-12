@@ -127,7 +127,7 @@ def render(
         attn_cols = st.columns(len(top5))
         for col, h in zip(attn_cols, top5):
             verdict = h.get("verdict", "?")
-            # REDUCE → verdict-negative, TRIM → verdict-negative (per _GRADE_TONE)
+            # Both REDUCE and TRIM share the negative tone (see _GRADE_TONE).
             css_class = "verdict-negative"
             unrealized = h.get("unrealized_pct")
             unrealized_str = f"{unrealized:.1f}%" if unrealized is not None else "?"
