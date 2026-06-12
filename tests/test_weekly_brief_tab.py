@@ -76,3 +76,44 @@ def test_render_with_adherence_log(tmp_path) -> None:  # type: ignore[no-untyped
     from adapters.visualization.tabs import weekly_brief
 
     weekly_brief.render(path=str(p), adherence_path=str(a))  # must not raise
+
+
+def test_render_hero_counts_attention(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    import json
+
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-12",
+                "regime": "NEUTRAL",
+                "abstained": True,
+                "macro": {"systematic_share": 0.64},
+                "holdings": [
+                    {
+                        "ticker": "A",
+                        "verdict": "REDUCE",
+                        "unrealized_pct": -5.0,
+                        "trend_state": "broken",
+                        "why": "w",
+                    },
+                    {
+                        "ticker": "B",
+                        "verdict": "HOLD",
+                        "unrealized_pct": 2.0,
+                        "trend_state": "intact",
+                        "why": "w",
+                    },
+                ],
+            }
+        )
+    )
+    from adapters.visualization.tabs import weekly_brief
+
+    # reports_dir points to tmp_path — no screen file → degrades to "no screen yet"
+    # adherence_path points to missing file → degrades to 0 rows
+    weekly_brief.render(
+        path=str(p),
+        adherence_path=str(tmp_path / "adherence_log.jsonl"),
+        reports_dir=str(tmp_path),
+    )  # must not raise
