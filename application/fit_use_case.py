@@ -70,7 +70,7 @@ def gather_and_assess(
                     ticker_composite = float(comp)
                     th = c.get("trend_health")
                     if isinstance(th, (int, float)):
-                        trend_state = "intact" if th >= 0.5 else "broken"
+                        trend_state = "intact" if th >= 0 else "broken"
 
     macro = _load_macro(summary_path)
     book_net_spy_beta: float | None = None
