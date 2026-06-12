@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from collections.abc import Callable, MutableMapping
+from typing import TYPE_CHECKING, Any
 
 import streamlit as st
+from loguru import logger
+
+if TYPE_CHECKING:
+    from domain.fit import FitVerdict
 
 from adapters.visualization.components.cards import (
     criteria_card,
@@ -24,6 +29,26 @@ from adapters.visualization.components.charts import (
 )
 from adapters.visualization.stock_analyzer import AnalysisResult
 from domain.fit import FitVerdict
+
+
+def _ensure_fit_cached(
+    session_state: MutableMapping[str | int, Any],
+    key: str,
+    compute_fn: Callable[[], "FitVerdict"],
+) -> "FitVerdict | None":
+    """Compute the fit verdict once per key; cache in session_state.
+
+    On compute failure, return None and do NOT cache (so a later rerun retries).
+    """
+    if key in session_state:
+        return session_state[key]  # type: ignore[no-any-return]
+    try:
+        verdict = compute_fn()
+    except Exception:
+        logger.warning("fit verdict computation failed")
+        return None
+    session_state[key] = verdict
+    return verdict
 
 
 def render() -> None:
@@ -64,6 +89,7 @@ def render() -> None:
 
             result = analyze_ticker(ticker, db_path="data/recommendations.db")
             st.session_state[f"analysis_{ticker}"] = result
+            st.session_state.pop(f"fit_{ticker}", None)
             progress.empty()
             status.empty()
         except Exception as exc:
@@ -79,30 +105,32 @@ def render() -> None:
         result = st.session_state[f"analysis_{lookup_key}"]
         _render_verdict(result)
         fit_key = f"fit_{lookup_key}"
-        if fit_key not in st.session_state:
-            try:
-                from datetime import datetime, timezone
 
-                from application.fit_use_case import (
-                    default_beta_fn,
-                    gather_and_assess,
-                    market_systematic_share_threshold,
-                )
+        from datetime import datetime, timezone
 
-                fit = gather_and_assess(
-                    ticker=lookup_key,
-                    reports_dir="data/reports",
-                    summary_path="data/personal/brief_summary.json",
-                    holdings_path="data/personal/holdings.csv",
-                    beta_fn=default_beta_fn,
-                    as_of=datetime.now(timezone.utc),
-                    systematic_share_threshold=market_systematic_share_threshold(),
-                )
-                st.session_state[fit_key] = fit
-            except Exception:
-                st.caption("Fit verdict unavailable (see logs).")
-        if fit_key in st.session_state:
-            _render_fit_card(st.session_state[fit_key])
+        from application.fit_use_case import (
+            default_beta_fn,
+            gather_and_assess,
+            market_systematic_share_threshold,
+        )
+
+        fit = _ensure_fit_cached(
+            st.session_state,
+            fit_key,
+            lambda: gather_and_assess(
+                ticker=lookup_key,
+                reports_dir="data/reports",
+                summary_path="data/personal/brief_summary.json",
+                holdings_path="data/personal/holdings.csv",
+                beta_fn=default_beta_fn,
+                as_of=datetime.now(timezone.utc),
+                systematic_share_threshold=market_systematic_share_threshold(),
+            ),
+        )
+        if fit is not None:
+            _render_fit_card(fit)
+        else:
+            st.caption("Fit verdict unavailable (see logs).")
         _render_valuation(result)
         _render_growth(result)
         _render_performance(result)

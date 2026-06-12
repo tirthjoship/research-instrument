@@ -23,6 +23,10 @@ FORBIDDEN_WORDS: tuple[str, ...] = (
 _GRADE_STRONG = 0.80
 _GRADE_MODERATE = 0.50
 
+# How close to the systematic-share threshold counts as "already concentrated"
+# enough that adding a same-direction name meaningfully deepens the bet.
+_BETA_NEAR_THRESHOLD_BAND = 0.05
+
 
 @dataclass(frozen=True)
 class FitFlag:
@@ -109,7 +113,8 @@ def assess_fit(
         book_net_spy_beta is not None
         and book_systematic_share is not None
         and ticker_beta * book_net_spy_beta > 0
-        and book_systematic_share >= systematic_share_threshold - 0.05
+        and book_systematic_share
+        >= systematic_share_threshold - _BETA_NEAR_THRESHOLD_BAND
     ):
         flags.append(
             FitFlag(

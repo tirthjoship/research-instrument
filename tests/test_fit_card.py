@@ -43,13 +43,8 @@ def test_severity_tone_mapping_complete():
 
 
 def test_fit_verdict_cached_after_first_compute():
-    """gather_and_assess must be called at most once across two render()-like calls.
-
-    We don't call render() directly (it reads st widgets which aren't trivially
-    exercisable in unit tests).  Instead we test the guard logic directly:
-    the session_state key ``fit_{ticker}`` is written on first compute and skips
-    the callable on subsequent calls — exactly what the fixed render() does.
-    """
+    """_ensure_fit_cached fires compute_fn exactly once across two calls for the same key."""
+    from adapters.visualization.tabs.stock_analysis import _ensure_fit_cached
     from domain.fit import FitFlag, FitVerdict
 
     ticker = "AAPL"
@@ -63,44 +58,56 @@ def test_fit_verdict_cached_after_first_compute():
 
     call_count = 0
 
-    def fake_gather(*args, **kwargs):
+    def compute():
         nonlocal call_count
         call_count += 1
         return fake_verdict
 
-    # Simulate session_state as a plain dict (mirrors the guard logic in render())
     session_state: dict = {}
 
-    def _guarded_compute() -> None:
-        if fit_key not in session_state:
-            session_state[fit_key] = fake_gather()
-
-    # First call — should invoke fake_gather
-    _guarded_compute()
-    assert call_count == 1, "gather should be called once on first compute"
+    # First call — should invoke compute
+    result1 = _ensure_fit_cached(session_state, fit_key, compute)
+    assert call_count == 1, "compute should be called once on first call"
+    assert result1 is fake_verdict
     assert fit_key in session_state
 
-    # Second call — guard must skip the callable
-    _guarded_compute()
-    assert call_count == 1, "gather must NOT be called again when key already cached"
-    assert session_state[fit_key] is fake_verdict
+    # Second call — must return cached value without calling compute again
+    result2 = _ensure_fit_cached(session_state, fit_key, compute)
+    assert call_count == 1, "compute must NOT be called again when key already cached"
+    assert result2 is fake_verdict
 
 
 def test_fit_verdict_not_cached_on_exception():
-    """On exception, session_state must NOT be written so a later rerun can retry."""
+    """On exception, _ensure_fit_cached returns None and leaves key absent (retry-able)."""
+    from adapters.visualization.tabs.stock_analysis import _ensure_fit_cached
+
     ticker = "BAD"
     fit_key = f"fit_{ticker}"
     session_state: dict = {}
 
-    def _guarded_compute_with_failure() -> None:
-        if fit_key not in session_state:
-            try:
-                raise RuntimeError("yfinance timeout")
-                session_state[fit_key] = object()  # unreachable
-            except Exception:
-                pass  # caption shown; key NOT written
+    def boom():
+        raise RuntimeError("yfinance timeout")
 
-    _guarded_compute_with_failure()
+    result = _ensure_fit_cached(session_state, fit_key, boom)
+    assert result is None, "must return None when compute_fn raises"
     assert (
         fit_key not in session_state
     ), "fit key must be absent after a failed compute so next rerun retries"
+
+
+def test_grade_badge_html_fit_grades_have_css_class():
+    """grade_badge_html for fit evidence grades must return HTML with a non-empty CSS class."""
+    from adapters.visualization.components.formatters import grade_badge_html
+
+    for grade in ("STRONG", "MODERATE", "WEAK", "UNKNOWN"):
+        html = grade_badge_html(grade)
+        # Must contain a non-empty class beyond just "grade-badge"
+        # grade_badge_html returns: <span class="grade-badge {css_class}">...</span>
+        # So if css_class is empty the class attr would be 'grade-badge ' (trailing space + empty)
+        assert (
+            'class="grade-badge "' not in html
+        ), f"grade_badge_html({grade!r}) has empty CSS class: {html!r}"
+        # Positively assert the expected class exists
+        assert (
+            "grade-" in html
+        ), f"grade_badge_html({grade!r}) contains no grade CSS class: {html!r}"
