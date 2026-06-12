@@ -1,44 +1,40 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-11
-**Branch:** feat/portfolio-fit-verdict (PR #40 open → develop)
-**Phase:** 6 — WRAP. Final build (portfolio-fit verdict) shipped; project closing.
+**As of:** 2026-06-12
+**Branch:** feat/dashboard-v2 (spec + plan committed, validated, NOT yet implemented)
+**Phase:** Dashboard v2 — execution-ready; fresh session implements
 
 ## Current State
 
-Phase 6 complete on `feat/portfolio-fit-verdict` (PR #40 → develop):
-- **Portfolio-fit verdict** in Stock Analysis tab — evidence grade + fit flags (beta
-  amplify, concentration, trend state) vs the user's book. NO prediction; honesty is
-  machine-enforced (FORBIDDEN_WORDS Hypothesis invariant). ADR-054, spec + plan dated
-  2026-06-11 under `docs/superpowers/`.
-- `domain/fit.py` (pure), `application/fit_use_case.py` (artifact-driven, injected
-  beta), fit card memoized per ticker (invalidated on re-analysis).
-- Bugfix: `top_concentration` uses market value, not per-share price.
-- `docs/HYPOTHESIS_BACKLOG.md` — pre-registration entry bar (alpha hunt parked, not dead).
-- README rewritten family-readable: verdict table, glossary, the story.
+Shipped this week (all on main, develop = main):
+- Phase 6 fit verdict (ADR-054, PR #40) · UX pass all 7 tabs (PR #42) ·
+  yfinance MultiIndex fix (PR #44). Suite **1593 passing**.
+- Data refreshed 2026-06-11: brief_summary.json (66 holdings, macro 64% SPY),
+  screen_2026-06-11.json (512 universe, 0 candidates — abstained).
 
-Test suite: **1584 passed, 0 failures** (baseline 1561). Pre-commit clean on pristine
-tree. Independent Opus full-branch verification: 1 BLOCKER + 4 findings, all fixed.
+**Next up: Dashboard v2** (user round-2 feedback + SimplyWallSt bar):
+- Spec: `docs/superpowers/specs/2026-06-12-dashboard-v2-design.md`
+- Plan: `docs/superpowers/plans/2026-06-12-dashboard-v2.md` (8 tasks,
+  Opus-validated 2026-06-12, 5 findings amended — see plan's Validation status)
 
-## Next Action
+## Next Action (fresh session)
 
-1. Merge PR #40 → develop (CI running).
-2. Sync develop → main (release; project closes).
-3. Post-close: read-only maintenance, ~1 hr/quarter. Two calendar events only:
-   - **~mid-July 2026:** forward calibration gate verdict (ADR-048/051) — read it,
-     decide L0→L1. ~30 min. Gate needs ≥30 resolved REDUCE flags across ≥3 dates
-     ≥10 days apart; accrues passively via the Saturday job, zero code.
-   - **~Dec 2026:** self-experiment review (behavior-gap bps) — ~30 min.
+1. Read this file, then the v2 plan (it is self-contained; code blocks = spec).
+2. Execute via `superpowers:subagent-driven-development` — Sonnet implementers
+   (low effort), sequential T1→T8; review checkpoints per established workflow.
+3. T8 ships: PR → develop → CI green → merge → develop → main release PR (keep
+   both branches in sync — standing user instruction).
+4. Model routing: Fable = brainstorm/design/course-of-action; Sonnet = implement;
+   Opus = independent review/verification (user-confirmed workflow).
 
 ## Caveats
 
-- `data/personal/` is gitignored (holdings, brief_summary.json, discipline_log.jsonl,
-  adherence_log.jsonl). Fit card reads holdings.csv + brief_summary.json from there.
-- The two `data/reports/*.json` lack a trailing newline as committed; a test run
-  regenerates them and pre-commit's end-of-files "fixes" them — harmless, tree stays
-  clean on a fresh checkout (CI lint runs pristine, passes).
-- Saturday job (`scripts/discipline_weekly_review.sh`) refreshes brief_summary.json +
-  screen_<date>.json — the fit verdict and dashboard depend on those artifacts.
-- RESEARCH_ONLY: no buy/sell language anywhere; enforced by domain invariant test.
-- All predictive hypotheses tested to date: 4 KILL, 2 INCONCLUSIVE, 1 practical KILL
-  (Unit B). The discipline forward gate is the last open question (mid-July).
+- Streamlit dashboard may still be running on :8501 (background) — restart to
+  pick up v2 code during T8 live check.
+- All current screen artifacts abstain (0 candidates) → live snowflake will not
+  render for any ticker; expected (plan T8 note). Factor branch is fixture-tested.
+- `data/personal/` gitignored; test runs strip trailing newlines from 2 tracked
+  `data/reports/*.json` — `git checkout data/reports/` before pre-commit verify.
+- RESEARCH_ONLY + FORBIDDEN_WORDS invariant applies to every new surface.
+- Wrap timeline: v2 is sanctioned UX scope (family usability = project purpose);
+  post-v2 → close to maintenance. Calendar: mid-July gate read; Dec review.
