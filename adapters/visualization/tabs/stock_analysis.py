@@ -31,6 +31,20 @@ from adapters.visualization.data_loader import load_latest_screen
 from adapters.visualization.stock_analyzer import AnalysisResult
 from domain.fit import FitVerdict
 
+# Section chip labels rendered in the navigation row of the analysis view.
+# Promoted to module scope so tests can import and guard for forbidden vocabulary.
+_SECTION_LABELS: list[str] = [
+    "Verdict",
+    "Fit",
+    "Valuation",
+    "Growth",
+    "Performance",
+    "Health",
+    "Ownership",
+    "Sentiment",
+    "Supply chain",
+]
+
 
 def _ensure_fit_cached(
     session_state: MutableMapping[str | int, Any],
@@ -95,23 +109,12 @@ def render() -> None:
     lookup_key = ticker_input.upper().strip() if ticker_input else ""
     if lookup_key and f"analysis_{lookup_key}" in st.session_state:
         result = st.session_state[f"analysis_{lookup_key}"]
-        _SECTIONS = [
-            "Verdict",
-            "Fit",
-            "Valuation",
-            "Growth",
-            "Performance",
-            "Health",
-            "Ownership",
-            "Sentiment",
-            "Supply chain",
-        ]
         st.markdown(
             " ".join(
                 f'<span class="section-chip">{i}</span>'
                 f'<span style="margin-right:14px;font-size:13px;color:#5C6370;">'
                 f"{name}</span>"
-                for i, name in enumerate(_SECTIONS, start=1)
+                for i, name in enumerate(_SECTION_LABELS, start=1)
             ),
             unsafe_allow_html=True,
         )
@@ -164,7 +167,7 @@ def render() -> None:
             '<div class="ws-card" style="text-align:center;padding:2rem;">'
             '<div style="font-size:15px;font-weight:500;color:#1A202C;">Enter a ticker above to start</div>'
             '<div style="font-size:13px;color:#64748B;margin-top:4px;">'
-            "Get valuation, growth, financial health, sentiment, and conviction analysis"
+            "Get valuation, growth, financial health, sentiment, and fit analysis"
             "</div></div>",
             unsafe_allow_html=True,
         )
@@ -691,7 +694,9 @@ def _snowflake_axes(fit: "FitVerdict | None") -> dict[str, float]:
                     )
             th = cand.get("trend_health")
             if isinstance(th, (int, float)):
+                # trend_health in [-1,1] -> [0,100], 50 = neutral midpoint.
                 axes["Trend"] = max(0.0, min(100.0, 50.0 + float(th) * 50.0))
+    # WARNING flags cost 2x CAUTION; descriptive book-fit deduction only.
     penalty = sum(
         30.0 if f.severity == "WARNING" else 15.0 if f.severity == "CAUTION" else 0.0
         for f in fit.fit_flags
