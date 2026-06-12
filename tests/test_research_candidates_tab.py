@@ -1,6 +1,17 @@
 import json
 
 
+def test_research_candidates_source_has_no_forbidden_words():
+    import inspect
+
+    from adapters.visualization.tabs import research_candidates
+    from domain.fit import FORBIDDEN_WORDS
+
+    src = inspect.getsource(research_candidates).lower()
+    for word in FORBIDDEN_WORDS:
+        assert word not in src, f"forbidden word {word!r} in research_candidates source"
+
+
 def test_render_with_screen_fixture(tmp_path):  # type: ignore[no-untyped-def]
     (tmp_path / "screen_2026-06-13.json").write_text(
         json.dumps(
