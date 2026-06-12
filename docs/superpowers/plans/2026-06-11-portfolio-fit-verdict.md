@@ -1019,10 +1019,10 @@ claims. Cross-check the test count badge against the final suite count.
 | Does the evidence screen's top decile outperform? | Unproven | Forward IC test, still accruing ([ADR-049](docs/adr/049-decision-support-engine-architecture.md)) |
 | Does a trend-following sleeve clear its bar? | Unproven | Pre-registered backtest vs locked gate ([ADR-050](docs/adr/050-trend-following-sleeve-verdict.md)) |
 | Do insider buying clusters predict returns? | Can't tell — too little clean data (treated as No) | Event study with survivorship-honest coverage guard ([ADR-053](docs/adr/053-insider-cluster-falsification-verdict.md)) |
-| Does the discipline tool beat your own behavior? | Verdict ~mid-July 2026 | Live forward gate, thresholds locked in advance ([ADR-048](docs/adr/048-discipline-forward-gate.md), [ADR-051](docs/adr/051-calibration-readiness-date-diversity.md)) |
+| Does the discipline tool beat your own behavior? | Verdict ~mid-July 2026 | Live forward gate, thresholds locked in advance ([ADR-048](docs/adr/048-discipline-forward-calibration-gate.md), [ADR-051](docs/adr/051-calibration-readiness-date-diversity.md)) |
 ```
 
-NOTE: verify the ADR-048 filename with `ls docs/adr/ | grep 048` before linking.
+(ADR-048 filename verified 2026-06-11: `048-discipline-forward-calibration-gate.md`.)
 
 3. **What the tool DOES do** — weekly brief, risk scrubber, fit verdict, discipline
    tracker, falsification lab. One sentence each, plain English.
