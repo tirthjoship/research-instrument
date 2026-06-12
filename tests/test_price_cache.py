@@ -62,6 +62,29 @@ class TestBatchFetchPrices:
             (210.0 - 200.0) / 200.0 * 100
         )
 
+    def test_single_ticker_multiindex_fetch(self):
+        """Newer yfinance returns MultiIndex columns even for ONE ticker.
+
+        Regression: float(close.iloc[-1]) crashed with 'not Series' because
+        data["Close"] is a one-column DataFrame, not a flat Series.
+        """
+        arrays = [["Close"], ["NVDA"]]
+        multi_idx = pd.MultiIndex.from_arrays(arrays, names=["Price", "Ticker"])
+        data = pd.DataFrame(
+            [[500.0], [510.0]],
+            columns=multi_idx,
+            index=pd.date_range("2026-01-01", periods=2),
+        )
+
+        with patch("adapters.visualization.price_cache.yf.download", return_value=data):
+            result = _batch_fetch_prices_impl(("NVDA",))
+
+        assert "NVDA" in result
+        assert result["NVDA"]["price"] == pytest.approx(510.0)
+        assert result["NVDA"]["change_pct"] == pytest.approx(
+            (510.0 - 500.0) / 500.0 * 100
+        )
+
     def test_empty_tickers_returns_empty_dict(self):
         with patch("adapters.visualization.price_cache.yf.download") as mock_dl:
             result = _batch_fetch_prices_impl(())
