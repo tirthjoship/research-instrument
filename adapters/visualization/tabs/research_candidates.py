@@ -1,4 +1,4 @@
-"""Research Candidates tab — factual evidence ranking. RESEARCH_ONLY, no buy language."""
+"""Research Candidates tab — factual evidence ranking. RESEARCH_ONLY."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ _TOP_N = 15
 
 _DISCLAIMER = (
     "Ranked by <strong>current factual evidence</strong> (valuation · quality · health) — "
-    "<strong>NOT predicted returns</strong>. Prediction was tested 2006–2024 and falsified "
+    "<strong>NOT forecast returns</strong>. The return-forecast hypothesis was tested 2006–2024 and falsified "
     "(see the Falsification Lab tab)."
 )
 
@@ -55,6 +55,7 @@ def _render_history_and_upload(reports_dir: str) -> None:
     uploaded = st.file_uploader("or upload CSV", type=["csv"])
     if st.button("Run the check", type="primary"):
         from application.batch_fit_use_case import (
+            MAX_TICKERS,
             batch_fit,
             default_fit_fn,
             parse_csv_tickers,
@@ -72,7 +73,7 @@ def _render_history_and_upload(reports_dir: str) -> None:
                     )
                     if t not in tickers
                 ]
-            )[:25]
+            )[:MAX_TICKERS]
         if not tickers:
             st.warning("No valid tickers found — paste e.g. NVDA, AAPL.")
         else:
