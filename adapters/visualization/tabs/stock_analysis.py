@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from collections.abc import Callable, MutableMapping
+from typing import TYPE_CHECKING, Any
 
 import streamlit as st
+from loguru import logger
+
+if TYPE_CHECKING:
+    from domain.fit import FitVerdict
 
 from adapters.visualization.components.cards import (
     criteria_card,
@@ -23,6 +28,27 @@ from adapters.visualization.components.charts import (
     ownership_pie,
 )
 from adapters.visualization.stock_analyzer import AnalysisResult
+from domain.fit import FitVerdict
+
+
+def _ensure_fit_cached(
+    session_state: MutableMapping[str | int, Any],
+    key: str,
+    compute_fn: Callable[[], "FitVerdict"],
+) -> "FitVerdict | None":
+    """Compute the fit verdict once per key; cache in session_state.
+
+    On compute failure, return None and do NOT cache (so a later rerun retries).
+    """
+    if key in session_state:
+        return session_state[key]  # type: ignore[no-any-return]
+    try:
+        verdict = compute_fn()
+    except Exception:
+        logger.warning("fit verdict computation failed")
+        return None
+    session_state[key] = verdict
+    return verdict
 
 
 def render() -> None:
@@ -63,6 +89,7 @@ def render() -> None:
 
             result = analyze_ticker(ticker, db_path="data/recommendations.db")
             st.session_state[f"analysis_{ticker}"] = result
+            st.session_state.pop(f"fit_{ticker}", None)
             progress.empty()
             status.empty()
         except Exception as exc:
@@ -77,6 +104,33 @@ def render() -> None:
     if lookup_key and f"analysis_{lookup_key}" in st.session_state:
         result = st.session_state[f"analysis_{lookup_key}"]
         _render_verdict(result)
+        fit_key = f"fit_{lookup_key}"
+
+        from datetime import datetime, timezone
+
+        from application.fit_use_case import (
+            default_beta_fn,
+            gather_and_assess,
+            market_systematic_share_threshold,
+        )
+
+        fit = _ensure_fit_cached(
+            st.session_state,
+            fit_key,
+            lambda: gather_and_assess(
+                ticker=lookup_key,
+                reports_dir="data/reports",
+                summary_path="data/personal/brief_summary.json",
+                holdings_path="data/personal/holdings.csv",
+                beta_fn=default_beta_fn,
+                as_of=datetime.now(timezone.utc),
+                systematic_share_threshold=market_systematic_share_threshold(),
+            ),
+        )
+        if fit is not None:
+            _render_fit_card(fit)
+        else:
+            st.caption("Fit verdict unavailable (see logs).")
         _render_valuation(result)
         _render_growth(result)
         _render_performance(result)
@@ -193,6 +247,41 @@ def _render_verdict(result: AnalysisResult) -> None:
     with c2:
         if st.button("+ Portfolio", key=f"portfolio_{result.ticker}"):
             st.info(f"Use CLI: add-holding {result.ticker} <price> <shares>")
+
+
+_SEVERITY_CLASS = {
+    "INFO": "verdict-neutral",
+    "CAUTION": "verdict-caution",
+    "WARNING": "verdict-negative",
+}
+
+
+def _render_fit_card(verdict: FitVerdict, screen_as_of: str | None = None) -> None:
+    """Evidence grade + fit flags. Descriptive arithmetic only — never a forecast."""
+    from adapters.visualization.components.formatters import grade_badge_html
+
+    stale = f" · screen as of {screen_as_of}" if screen_as_of else ""
+    st.markdown(
+        f'<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
+        f"{grade_badge_html(verdict.evidence_grade)} "
+        f'<span style="font-weight:700;">Evidence + fit vs your book</span>'
+        f'<span style="color:#64748B;font-size:12px;">{stale}</span>'
+        f'<div style="font-size:14px;margin-top:8px;">{verdict.summary}</div>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    for flag in verdict.fit_flags:
+        css = _SEVERITY_CLASS.get(flag.severity, "verdict-neutral")
+        st.markdown(
+            f'<div class="verdict-card {css}">'
+            f'<div style="font-size:14px;color:#111827;">{flag.message}</div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
+    st.caption(
+        "Evidence + fit only — this tool does not forecast returns "
+        "(see Falsification Lab). Position weights are by cost basis."
+    )
 
 
 # ---------------------------------------------------------------------------
