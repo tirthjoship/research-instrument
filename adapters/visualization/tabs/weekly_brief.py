@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import streamlit as st
 
 from adapters.visualization.components.formatters import status_pill_html
-from adapters.visualization.components.metrics import render_verdict_card
 from adapters.visualization.data_loader import (
     load_adherence_log,
     load_brief_summary,
+    load_latest_screen,
     load_weekly_brief,
     staleness_days,
 )
@@ -16,6 +18,7 @@ from adapters.visualization.data_loader import (
 _SUMMARY_PATH = "data/personal/brief_summary.json"
 _BRIEF_MD_PATH = "data/personal/weekly_brief.md"
 _ADHERENCE_PATH = "data/personal/adherence_log.jsonl"
+_REPORTS_DIR = "data/reports"
 _GRADE_ORDER = ["REDUCE", "TRIM", "REVIEW", "HOLD", "ADD_OK"]
 _GRADE_COLOR = {
     "REDUCE": "#DC2626",
@@ -44,14 +47,38 @@ def _verdict_pill(grade: str) -> str:
     return status_pill_html(tone_map.get(grade, "neutral"), grade)
 
 
-def render(path: str = _SUMMARY_PATH, adherence_path: str = _ADHERENCE_PATH) -> None:
-    st.subheader("Weekly Brief")
-    st.markdown(
-        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
-        "Your week at a glance — what needs attention, what the tool said, what you did."
-        "</div>",
-        unsafe_allow_html=True,
+def _gauge(share: float) -> Any:
+    import plotly.graph_objects as go
+
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number",
+            value=share * 100,
+            number={"suffix": "%", "font": {"size": 22}},
+            gauge={
+                "axis": {"range": [0, 100], "visible": False},
+                "bar": {"color": "#1D4ED8"},
+                "threshold": {
+                    "line": {"color": "#B91C1C", "width": 2},
+                    "thickness": 0.9,
+                    "value": 60,
+                },
+            },
+        )
     )
+    fig.update_layout(
+        height=120,
+        margin={"l": 8, "r": 8, "t": 8, "b": 8},
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def render(
+    path: str = _SUMMARY_PATH,
+    adherence_path: str = _ADHERENCE_PATH,
+    reports_dir: str = _REPORTS_DIR,
+) -> None:
     summary = load_brief_summary(path)
     if summary is None:
         st.warning(
@@ -68,16 +95,101 @@ def render(path: str = _SUMMARY_PATH, adherence_path: str = _ADHERENCE_PATH) -> 
             "`python -m application.cli weekly-brief` for a fresh one."
         )
 
-    # Regime banner
-    regime = summary.get("regime", "?")
-    as_of = summary.get("as_of", "?")
-    screen_label = summary.get("screen_label", "RESEARCH_ONLY")
-    render_verdict_card(
-        st,
-        verdict=f"Regime: {regime.upper()} · {screen_label}",
-        tone="neutral",
-        details=f"As of {as_of}",
-    )
+    # --- Hero: book-health banner + systematic-share gauge ---
+    holdings = summary.get("holdings", [])
+    attention = [h for h in holdings if h.get("verdict") in ("REDUCE", "TRIM")]
+    macro = summary.get("macro") or {}
+    share = float(macro.get("systematic_share", 0.0))
+
+    hero_cols = st.columns([3, 1])
+    with hero_cols[0]:
+        st.markdown(
+            f'<div class="ws-card hero-gradient" style="padding:20px 24px;">'
+            f'<div style="font-size:13px;color:#5C6370;">YOUR BOOK · '
+            f'{summary.get("as_of", "?")} · regime {summary.get("regime", "?")}</div>'
+            f'<div style="font-size:26px;font-weight:800;margin-top:4px;">'
+            f"{len(attention)} things need attention this week</div>"
+            f'<div style="font-size:14px;color:#5C6370;margin-top:4px;">'
+            f"{len(holdings)} holdings tracked · "
+            f"{share:.0%} of movement is one market-wide bet</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+    with hero_cols[1]:
+        if macro:
+            st.plotly_chart(_gauge(share), use_container_width=True)
+            st.caption("Systematic share — flag at 60%")
+
+    # --- Attention row: top 5 REDUCE / TRIM as compact cards ---
+    if attention:
+        st.markdown("**Needs attention this week**")
+        top5 = attention[:5]
+        attn_cols = st.columns(len(top5))
+        for col, h in zip(attn_cols, top5):
+            verdict = h.get("verdict", "?")
+            # REDUCE → verdict-negative, TRIM → verdict-negative (per _GRADE_TONE)
+            css_class = "verdict-negative"
+            unrealized = h.get("unrealized_pct")
+            unrealized_str = f"{unrealized:.1f}%" if unrealized is not None else "?"
+            pill_html = _verdict_pill(verdict)
+            col.markdown(
+                f'<div class="ws-card {css_class}" style="padding:10px 12px;">'
+                f'<div style="font-weight:700;font-size:15px;">{h.get("ticker", "?")}</div>'
+                f'<div style="margin:4px 0;">{pill_html}</div>'
+                f'<div style="font-size:13px;color:#64748B;">{unrealized_str}</div>'
+                f'<div style="font-size:12px;color:#94A3B8;margin-top:4px;">{h.get("why", "")}</div>'
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+    else:
+        st.markdown(
+            '<div class="ws-card" style="padding:12px 16px;color:#16A34A;">'
+            "Nothing needs attention this week — all positions within discipline."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    # --- Week strip: 3 small ws-cards ---
+    strip_cols = st.columns(3)
+
+    # Card 1: Screen one-liner
+    with strip_cols[0]:
+        screen = load_latest_screen(reports_dir)
+        if screen is None:
+            screen_text = "no screen yet"
+        else:
+            universe_size = screen.get("universe_size", "?")
+            candidates = screen.get("candidates", [])
+            screen_text = f"{universe_size} screened · {len(candidates)} passed"
+        st.markdown(
+            f'<div class="ws-card" style="padding:12px 14px;">'
+            f'<div style="font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px;">SCREEN</div>'
+            f'<div style="font-size:14px;">{screen_text}</div>'
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+    # Card 2: Adherence count
+    with strip_cols[1]:
+        adherence_rows = load_adherence_log(adherence_path)
+        adherence_count = len(adherence_rows)
+        st.markdown(
+            f'<div class="ws-card" style="padding:12px 14px;">'
+            f'<div style="font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px;">ADHERENCE</div>'
+            f'<div style="font-size:14px;">{adherence_count} resolved records</div>'
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+    # Card 3: Gate line
+    with strip_cols[2]:
+        st.markdown(
+            '<div class="ws-card" style="padding:12px 14px;">'
+            '<div style="font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px;">FORWARD GATE</div>'
+            '<div style="font-size:14px;">resolves ~mid-July 2026</div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
     st.divider()
 
@@ -117,8 +229,7 @@ def render(path: str = _SUMMARY_PATH, adherence_path: str = _ADHERENCE_PATH) -> 
             )
         st.divider()
 
-    # --- NEW: Hero count-chip strip ---
-    holdings = summary.get("holdings", [])
+    # --- Grade chip strip ---
     grades_present = [
         g for g in _GRADE_ORDER if any(h.get("verdict") == g for h in holdings)
     ]
@@ -137,10 +248,10 @@ def render(path: str = _SUMMARY_PATH, adherence_path: str = _ADHERENCE_PATH) -> 
                 unsafe_allow_html=True,
             )
 
-        # --- Urgent section: REDUCE + TRIM as compact dataframe ---
+        # --- All attention items: REDUCE + TRIM dataframe ---
         urgent_rows = [h for h in holdings if h.get("verdict") in ("REDUCE", "TRIM")]
         if urgent_rows:
-            st.markdown("#### Needs attention this week")
+            st.markdown("#### All attention items")
             import pandas as pd
 
             df_urgent = pd.DataFrame(
