@@ -49,6 +49,25 @@ def test_scorecard_source_has_no_forbidden_words():
         assert word not in src, f"forbidden word {word!r} in scorecard source"
 
 
+def test_scorecard_escapes_ticker_html():
+    from adapters.visualization.components.scorecard import render_scorecard
+
+    captured = []
+
+    class FakeSt:
+        def markdown(self, body, **kwargs):
+            captured.append(body)
+
+        def caption(self, *a, **k):
+            pass
+
+    row = _row("<img src=x onerror=alert(1)>", "STRONG")
+    render_scorecard([row], st_module=FakeSt())
+    joined = "".join(captured)
+    assert "<img src=x" not in joined
+    assert "&lt;img" in joined
+
+
 def test_snowflake_source_has_no_forbidden_words():
     import inspect
 

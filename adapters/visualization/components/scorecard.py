@@ -28,11 +28,11 @@ _FLAG_GLYPH = {
 }
 
 
-def rank_rows(rows: "Sequence[BatchFitRow]") -> "list[BatchFitRow]":
+def rank_rows(rows: Sequence[BatchFitRow]) -> list[BatchFitRow]:
     return sorted(rows, key=lambda r: _GRADE_ORDER.get(r.verdict.evidence_grade, 9))
 
 
-def _flag_icons(row: "BatchFitRow") -> str:
+def _flag_icons(row: BatchFitRow) -> str:
     parts = []
     for f in row.verdict.fit_flags:
         glyph = _FLAG_GLYPH.get(f.kind, "·")
@@ -43,7 +43,7 @@ def _flag_icons(row: "BatchFitRow") -> str:
     return "".join(parts)
 
 
-def render_scorecard(rows: "Sequence[BatchFitRow]", st_module: Any = st) -> None:
+def render_scorecard(rows: Sequence[BatchFitRow], st_module: Any = st) -> None:
     for i, row in enumerate(rank_rows(rows), start=1):
         grade = row.verdict.evidence_grade
         color = _GRADE_COLOR.get(grade, "#5C6370")
@@ -51,7 +51,7 @@ def render_scorecard(rows: "Sequence[BatchFitRow]", st_module: Any = st) -> None
             f'<div class="ws-card" style="padding:10px 16px;display:flex;'
             f'align-items:center;gap:14px;">'
             f'<span style="color:#5C6370;font-weight:700;">#{i}</span>'
-            f'<span style="font-weight:700;font-size:16px;">{row.ticker}</span>'
+            f'<span style="font-weight:700;font-size:16px;">{html.escape(row.ticker)}</span>'
             f'<span style="background:{color};color:#fff;border-radius:999px;'
             f'padding:2px 10px;font-size:12px;font-weight:700;">{grade}</span>'
             f'<span style="font-size:14px;">{_flag_icons(row)}</span>'
