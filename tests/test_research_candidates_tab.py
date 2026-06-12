@@ -46,3 +46,21 @@ def test_render_abstained_false_no_candidates_no_raise(tmp_path):  # type: ignor
     from adapters.visualization.tabs import research_candidates
 
     research_candidates.render(reports_dir=str(tmp_path))
+
+
+def test_render_with_history_no_raise(tmp_path):  # type: ignore[no-untyped-def]
+    import json
+
+    (tmp_path / "screen_2026-06-08.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-08",
+                "universe_size": 512,
+                "candidates": [],
+                "abstained": True,
+            }
+        )
+    )
+    from adapters.visualization.tabs import research_candidates
+
+    research_candidates.render(reports_dir=str(tmp_path))

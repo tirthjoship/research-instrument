@@ -308,6 +308,28 @@ def load_brief_summary(
         return None
 
 
+def load_screen_history(reports_dir: str = "data/reports") -> list[dict[str, Any]]:
+    """All weekly screens, newest first: as_of, universe_size, n_candidates,
+    abstained. Excludes screen_ic_*; skips unreadable files."""
+    out: list[dict[str, Any]] = []
+    for f in sorted(Path(reports_dir).glob("screen_*.json"), reverse=True):
+        if f.name.startswith("screen_ic_"):
+            continue
+        try:
+            d = json.loads(f.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        out.append(
+            {
+                "as_of": d.get("as_of", f.stem.replace("screen_", "")),
+                "universe_size": d.get("universe_size", 0),
+                "n_candidates": len(d.get("candidates", [])),
+                "abstained": bool(d.get("abstained", False)) or not d.get("candidates"),
+            }
+        )
+    return out
+
+
 def load_latest_screen(reports_dir: str = "data/reports") -> dict[str, Any] | None:
     """Newest screen_<date>.json (full ranked distribution). Excludes screen_ic_*."""
     candidates = sorted(
