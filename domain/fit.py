@@ -195,7 +195,7 @@ def assess_fit(
     summary = (
         f"{ticker} {grade_text}. This is evidence + fit arithmetic, not a "
         "forecast — the project ran 18 years of backtests and the forecasting "
-        "hypotheses failed (see Falsification Lab)."
+        "hypotheses failed (see Trust)."
     )
 
     return FitVerdict(

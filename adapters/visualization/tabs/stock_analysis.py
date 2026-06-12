@@ -208,7 +208,7 @@ def _render_verdict(result: AnalysisResult) -> None:
         '<span style="font-weight:700;color:#CA8A04;">RESEARCH ONLY</span> — '
         "descriptive data below; this tool makes no buy/sell call. "
         "Why: every predictive signal tested 2006–2024 was falsified "
-        "(see the Falsification Lab tab)."
+        "(see the Trust tab)."
         "</div>",
         unsafe_allow_html=True,
     )
@@ -278,7 +278,7 @@ def _render_fit_card(verdict: FitVerdict, screen_as_of: str | None = None) -> No
         )
     st.caption(
         "Evidence + fit only — this tool does not forecast returns "
-        "(see Falsification Lab). Position weights are by cost basis."
+        "(see Trust). Position weights are by cost basis."
     )
 
 
