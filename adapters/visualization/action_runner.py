@@ -331,6 +331,97 @@ def run_conviction_scan(
     return cards
 
 
+def _upsert_holding_on_buy(
+    store: object,
+    symbol: str,
+    quantity: int,
+    price: float,
+    trade_date: str,
+) -> None:
+    """After a BUY: upsert the holdings table with weighted-average cost basis."""
+    import logging
+
+    from adapters.data.sqlite_store import SQLiteStore
+    from domain.models import Holding
+
+    if not isinstance(store, SQLiteStore):
+        return
+
+    existing = store.get_holding(symbol)
+    if existing is None:
+        store.add_holding(
+            Holding(
+                symbol=symbol,
+                quantity=float(quantity),
+                purchase_price=price,
+                purchase_date=trade_date,
+            )
+        )
+        logging.getLogger(__name__).info(
+            "Holdings: created new position %s x%s @ %.2f", symbol, quantity, price
+        )
+    else:
+        new_qty = existing.quantity + quantity
+        new_price = (
+            existing.quantity * existing.purchase_price + quantity * price
+        ) / new_qty
+        store.add_holding(
+            Holding(
+                symbol=symbol,
+                quantity=new_qty,
+                purchase_price=new_price,
+                purchase_date=existing.purchase_date,
+                notes=existing.notes,
+            )
+        )
+        logging.getLogger(__name__).info(
+            "Holdings: updated %s qty=%.1f avg_cost=%.2f", symbol, new_qty, new_price
+        )
+
+
+def _upsert_holding_on_sell(
+    store: object,
+    symbol: str,
+    quantity: int,
+) -> None:
+    """After a SELL: reduce holdings qty; remove if qty reaches zero."""
+    import logging
+
+    from adapters.data.sqlite_store import SQLiteStore
+    from domain.models import Holding
+
+    if not isinstance(store, SQLiteStore):
+        return
+
+    existing = store.get_holding(symbol)
+    if existing is None:
+        logging.getLogger(__name__).warning(
+            "Holdings: SELL for %s but no holding found — ledger updated, holdings unchanged",
+            symbol,
+        )
+        return
+
+    new_qty = existing.quantity - quantity
+    if new_qty <= 0:
+        store.remove_holding(symbol)
+        logging.getLogger(__name__).info(
+            "Holdings: removed position %s (fully sold)", symbol
+        )
+    else:
+        store.add_holding(
+            Holding(
+                symbol=symbol,
+                quantity=new_qty,
+                purchase_price=existing.purchase_price,
+                purchase_date=existing.purchase_date,
+                notes=existing.notes,
+            )
+        )
+        logging.getLogger(__name__).info(
+            "Holdings: reduced %s qty=%.1f", symbol, new_qty
+        )
+
+
 def run_record_buy(
     ticker: str,
     price: float,
@@ -340,7 +431,7 @@ def run_record_buy(
     signals: list[str] | None = None,
     db_path: str = "data/recommendations.db",
 ) -> None:
-    """Record a BUY trade via OutcomeTrackingUseCase."""
+    """Record a BUY trade via OutcomeTrackingUseCase and upsert holdings."""
     from adapters.data.sqlite_store import SQLiteStore
     from application.outcome_use_case import OutcomeTrackingUseCase
 
@@ -354,6 +445,7 @@ def run_record_buy(
         conviction=conviction,
         signals=signals or [],
     )
+    _upsert_holding_on_buy(store, ticker.upper(), quantity, price, trade_date)
 
 
 def run_record_sell(
@@ -363,7 +455,7 @@ def run_record_sell(
     trade_date: str,
     db_path: str = "data/recommendations.db",
 ) -> None:
-    """Record a SELL trade via OutcomeTrackingUseCase."""
+    """Record a SELL trade via OutcomeTrackingUseCase and update holdings."""
     from adapters.data.sqlite_store import SQLiteStore
     from application.outcome_use_case import OutcomeTrackingUseCase
 
@@ -375,6 +467,7 @@ def run_record_sell(
         quantity=quantity,
         trade_date=trade_date,
     )
+    _upsert_holding_on_sell(store, ticker.upper(), quantity)
 
 
 def run_backtest(
