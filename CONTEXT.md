@@ -799,3 +799,35 @@ The terminal bet is the ADR-048 discipline REDUCE-flag forward gate; the ADR-051
 | 050 | Trend-following sleeve verdict — INCONCLUSIVE (real diversifier, under the bar) |
 | 051 | Calibration-readiness — date-diversity precondition for the ADR-048 gate (thresholds unchanged) |
 | 052 | Course of action — deterministic Risk/CRO engine; alpha hunt closed (3-model convergence); execution order A→B→C |
+| 053 | Insider-cluster falsification verdict — INCONCLUSIVE_THIN_COVERAGE (info real, untradeable; coverage-guard fired) |
+| 054 | Portfolio-fit verdict — evidence grade + fit flags, RESEARCH_ONLY honest-boundary design |
+
+---
+
+## Dashboard v2 — current information architecture (2026-06-12)
+
+The Streamlit dashboard (`adapters/visualization/dashboard.py`) is a **6-tab** premium-light-terminal
+layout. Supersedes earlier multi-tab phase records above (Command Center / Model Confidence / etc.),
+which are kept for history only. Tabs and their render modules:
+
+| Tab | Module | What it shows |
+|-----|--------|---------------|
+| Home | `tabs/weekly_brief.py` | Book-health hero + systematic-share gauge, attention cards (REDUCE/TRIM), week strip (screen one-liner / adherence / gate) |
+| Screener | `tabs/research_candidates.py` | Weekly evidence screen + history strip + check-your-own-list upload scoreboard |
+| Risk | `tabs/risk.py` | Macro-beta scrubber (systematic-share / hidden market bet) |
+| My Portfolio | `tabs/positions.py` | Household holdings tracking |
+| Stock Analysis | `tabs/stock_analysis.py` | Portfolio-fit verdict + evidence snowflake (section-chip nav) |
+| Trust | `tabs/trust.py` | Falsification trophy grid + four rules + glossary (absorbed the deleted `methodology.py`) |
+
+**New v2 building blocks:** `application/batch_fit_use_case.py` (the one new compute path — parses a
+user ticker list / CSV and runs the ADR-054 fit per name, capped at `MAX_TICKERS=25`, live fetch with
+DATA_GAP failure rows); pure UI builders `components/{glossary,snowflake,scorecard}.py`; `components/styles.py`
+v2 tokens. **Evidence snowflake** = descriptive Plotly radar of present-day factual percentiles + book-fit
+arithmetic; it is NOT the falsified-era predictive radar — every axis is a fact, never a forecast.
+
+**Honesty enforcement note:** `domain.fit.FORBIDDEN_WORDS` (buy/sell/winner/conviction/predict/alpha/outperform)
+is guarded by SCOPED source-scan tests on the purely-descriptive surfaces (scorecard, snowflake, the new
+stock_analysis/Screener/home-hero copy). Trust, weekly_brief, and glossary legitimately reference those words
+in falsification/educational/negation context and are deliberately NOT whole-module guarded — a blanket scan
+there would wrongly trip on honest copy. See `glossary.py` GLOSSARY (single-source term defs, mirrored in
+README's glossary table — keep in sync).
