@@ -5,6 +5,48 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+# ── Task 32/33: Watchlist folded into positions tab ──────────────────────────
+
+
+def test_watchlist_section_importable() -> None:
+    from adapters.visualization.tabs.positions import _render_watchlist_section
+
+    assert callable(_render_watchlist_section)
+
+
+def test_watchlist_add_form_importable() -> None:
+    from adapters.visualization.tabs.positions import _render_watchlist_add_form
+
+    assert callable(_render_watchlist_add_form)
+
+
+def test_watchlist_card_importable() -> None:
+    from adapters.visualization.tabs.positions import _render_watchlist_card
+
+    assert callable(_render_watchlist_card)
+
+
+# ── Task 35/36: Positions tab importable ─────────────────────────────────────
+
+
+def test_positions_render_importable() -> None:
+    from adapters.visualization.tabs.positions import render
+
+    assert callable(render)
+
+
+def test_positions_portfolio_summary_importable() -> None:
+    from adapters.visualization.tabs.positions import _render_portfolio_summary
+
+    assert callable(_render_portfolio_summary)
+
+
+def test_positions_pnl_chart_importable() -> None:
+    from adapters.visualization.tabs.positions import _render_pnl_chart
+
+    assert callable(_render_pnl_chart)
+
+
 # ── Task 37: Portfolio P&L computation logic ──────────────────────────────────
 
 

@@ -224,39 +224,6 @@ def batch_fetch_prices(tickers: tuple[str, ...]) -> dict[str, dict[str, float]]:
     return fetch_prices(tickers)
 
 
-def fetch_week_changes(tickers: tuple[str, ...]) -> dict[str, float]:
-    """5-trading-day percent change per ticker. {} entries omitted on fetch failure."""
-    import streamlit as st
-
-    ttl = _current_ttl()
-
-    @st.cache_data(ttl=ttl, show_spinner=False)
-    def _cached(t: tuple[str, ...]) -> dict[str, float]:
-        out: dict[str, float] = {}
-        if not t:
-            return out
-        try:
-            import yfinance as yf
-
-            data = yf.download(
-                list(t),
-                period="7d",
-                interval="1d",
-                progress=False,
-                auto_adjust=True,
-            )["Close"]
-            for ticker in t:
-                series = data[ticker] if len(t) > 1 else data
-                closes = [float(v) for v in series.dropna().tolist()]
-                if len(closes) >= 2:
-                    out[ticker] = (closes[-1] - closes[0]) / closes[0] * 100.0
-        except Exception:  # noqa: BLE001 — network adapter edge; cockpit degrades
-            return out
-        return out
-
-    return _cached(tickers)
-
-
 def fetch_index_prices() -> dict[str, dict[str, float]]:
     """Streamlit-cached wrapper around _fetch_index_prices_impl."""
     import streamlit as st

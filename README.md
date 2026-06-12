@@ -32,30 +32,35 @@ pass/fail bar was locked in writing before any data was examined). Results:
 
 ## What the tool DOES do
 
-The dashboard has two surfaces.
+The dashboard (Streamlit, premium-light-terminal "v2" design) is organised into six tabs:
 
-**Cockpit** — a single-scroll operational view, sections in priority order:
+**Home** — a plain-English book-health summary: how many holdings need attention this
+week, a gauge for how much of the book's movement is one market-wide bet, the latest
+evidence-screen one-liner, and the discipline/gate status.
 
-- **Danger strip** — any holding that crossed a stop or discipline threshold since the
-  last review; act here first.
-- **Your calls** — confirm or log this week's buy/sell/hold decisions; idempotent
-  (re-submitting the same call is safe).
-- **Week retrospective** — how last week's calls resolved vs SPY; macro-beta gauge
-  showing how much of the book's movement is one market-wide bet.
-- **Look into next** — factual-rank top candidates (valuation, quality, financial
-  health) from the ~430-stock universe, framed as diversification opportunities;
-  the tradeable-edge verdict stays abstaining and is shown inline. Diversification-first
-  framing: candidates that deepen an existing concentration are flagged.
-- **Lookup** — type any ticker for a stock-detail drawer: evidence snowflake,
-  portfolio-fit verdict, and whether adding it concentrates risk. A description of
-  today, never a forecast.
+**Screener** — the weekly evidence screen (which clears the bar, or abstains when none
+do), a history strip of past screens, and a *check-your-own-list* tool: paste tickers
+or upload a CSV (capped at 25 names) and each name gets an evidence grade and a fit
+check against your book.
 
-**Showcase** — the methodology and falsification credibility wall: the full record of
-hypotheses tested with their pre-registered thresholds and mechanically-executed kill
-decisions, the four rules the project holds itself to, and a plain-English glossary.
-The underlying decisions are archived in `docs/adr/` (ADRs 039–053); the
-portfolio-fit verdict's honest-boundary design is recorded in
-[ADR-054](docs/adr/054-portfolio-fit-verdict.md).
+**Risk** — the macro-beta scrubber: fits a simple statistical model to expose how much
+of the portfolio's movement is really just one big bet on the overall market; as of
+the last real-book run, 63% of variance was one market factor (66 names, mostly one
+leveraged market bet).
+
+**My Portfolio** — position tracking for the household's holdings.
+
+**Stock Analysis** — for any stock you look up: the portfolio-fit verdict (where it
+ranks on factual evidence — valuation, quality, financial health — relative to the
+~430-stock universe, and whether adding it would deepen an existing risk
+concentration), plus an evidence snowflake summarising those present-day facts. A
+description of today, never a forecast.
+
+**Trust** — the credibility wall: the full record of hypotheses tested with their
+pre-registered thresholds and mechanically-executed kill decisions, the four rules
+the project holds itself to, and a plain-English glossary. The underlying decisions
+are archived in `docs/adr/` (ADRs 039–053); the portfolio-fit verdict's
+honest-boundary design is recorded in [ADR-054](docs/adr/054-portfolio-fit-verdict.md).
 
 The discipline forward-calibration gate (ADR-048) resolves in mid-July 2026 and will
 tell us honestly whether the tool improved the household's adherence to its own rules.
