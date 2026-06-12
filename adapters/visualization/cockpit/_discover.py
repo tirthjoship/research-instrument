@@ -86,9 +86,18 @@ def render(*, summary_path: str, reports_dir: str, holdings_path: str) -> None:
             rows.append((c["ticker"], f"Screens well now: {c.get('why', '')}"))
 
     for ticker, why in rows:
-        st.markdown(
-            f'<div class="ws-card cp-row" style="padding:8px 14px;">'
-            f"<strong>{ticker}</strong> — {why}</div>",
-            unsafe_allow_html=True,
-        )
+        cols = st.columns([5, 1])
+        with cols[0]:
+            st.markdown(
+                f'<div class="ws-card cp-row" style="padding:8px 14px;">'
+                f"<strong>{ticker}</strong> — {why}</div>",
+                unsafe_allow_html=True,
+            )
+        with cols[1]:
+            if st.button("Detail", key=f"cp_detail_{ticker}"):
+                from adapters.visualization.cockpit.stock_detail import (
+                    open_stock_detail,
+                )
+
+                open_stock_detail(ticker)
     st.caption("Factual present-day ranks, for research. The gate verdict is above.")
