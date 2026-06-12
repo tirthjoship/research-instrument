@@ -17,7 +17,7 @@ GLOBAL_CSS = """
     --text-secondary: #5C6370;
     --text-muted: #94A3B8;
     --accent: #1D4ED8;
-    --accent-hover: #1D4ED8;
+    --accent-hover: #1E40AF;
     --success: #15803D;
     --warning: #B45309;
     --danger: #B91C1C;
