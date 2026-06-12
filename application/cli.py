@@ -3073,8 +3073,16 @@ def weekly_brief(
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(to_markdown(brief))
 
+    import json
+
+    from application.brief_summary import brief_to_summary_dict
+
+    summary_path = out_path.with_name("brief_summary.json")
+    summary_path.write_text(json.dumps(brief_to_summary_dict(brief), indent=2))
+
     click.echo(to_stdout_masked(brief))
     click.echo(f"\nFull brief (gitignored) written to: {out_path}")
+    click.echo(f"Structured summary written to: {summary_path}")
 
 
 @cli.command("backtest-trend-sleeve")

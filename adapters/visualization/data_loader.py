@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from domain.models import Holding, StockRecommendation
 
@@ -292,3 +293,63 @@ def load_weekly_brief(path: str = "data/personal/weekly_brief.md") -> str | None
     if not p.exists():
         return None
     return p.read_text()
+
+
+def load_brief_summary(
+    path: str = "data/personal/brief_summary.json",
+) -> dict[str, Any] | None:
+    """Structured weekly-brief summary written by the weekly-brief CLI."""
+    p = Path(path)
+    if not p.exists():
+        return None
+    try:
+        return cast(dict[str, Any], json.loads(p.read_text()))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def load_latest_screen(reports_dir: str = "data/reports") -> dict[str, Any] | None:
+    """Newest screen_<date>.json (full ranked distribution). Excludes screen_ic_*."""
+    candidates = sorted(
+        f
+        for f in Path(reports_dir).glob("screen_*.json")
+        if not f.name.startswith("screen_ic_")
+    )
+    if not candidates:
+        return None
+    try:
+        return cast(dict[str, Any], json.loads(candidates[-1].read_text()))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def staleness_days(iso_date: str) -> int | None:
+    """Days since iso_date (YYYY-MM-DD prefix tolerated). None if unparseable."""
+    try:
+        then = date.fromisoformat(iso_date[:10])
+    except (ValueError, TypeError):
+        return None
+    return (date.today() - then).days
+
+
+def load_adherence_log(
+    path: str = "data/personal/adherence_log.jsonl",
+) -> list[dict[str, Any]]:
+    """Resolved Unit C adherence records (append-only JSONL written by the
+    adherence-report CLI). Each line: ticker, verdict, flag_date,
+    actual_cut_fraction, label, gap_cad, gap_bps. Defensive per-line parse;
+    returns [] if the file is absent. Newest flag_date last."""
+    p = Path(path)
+    if not p.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    for line in p.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    rows.sort(key=lambda r: str(r.get("flag_date", "")))
+    return rows
