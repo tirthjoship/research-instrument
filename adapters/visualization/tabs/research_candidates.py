@@ -5,7 +5,11 @@ from __future__ import annotations
 import streamlit as st
 
 from adapters.visualization.components.formatters import status_pill_html
-from adapters.visualization.data_loader import load_latest_screen, staleness_days
+from adapters.visualization.data_loader import (
+    load_latest_screen,
+    load_screen_history,
+    staleness_days,
+)
 
 _TOP_N = 15
 
@@ -96,3 +100,71 @@ def render(reports_dir: str = "data/reports") -> None:
             "</div>",
             unsafe_allow_html=True,
         )
+
+    st.divider()
+    hist = load_screen_history(reports_dir)
+    if hist:
+        st.markdown("#### Screen history")
+        hist_rows = [
+            {
+                "Date": h["as_of"],
+                "Universe": h["universe_size"],
+                "Passed": h["n_candidates"],
+                "Abstained": h["abstained"],
+            }
+            for h in hist
+        ]
+        st.dataframe(hist_rows, hide_index=True)
+
+    st.divider()
+    st.markdown("#### Check your own list")
+    st.markdown(
+        '<div style="color:#5C6370;font-size:14px;">Paste tickers or upload a '
+        "CSV — each name gets an evidence grade and a fit check against your "
+        "book. Capped at 25 names per run (live data fetch per name).</div>",
+        unsafe_allow_html=True,
+    )
+    text = st.text_area(
+        "Tickers", placeholder="NVDA, AAPL, KO", label_visibility="collapsed"
+    )
+    uploaded = st.file_uploader("or upload CSV", type=["csv"])
+    if st.button("Run the check", type="primary"):
+        from application.batch_fit_use_case import (
+            batch_fit,
+            default_fit_fn,
+            parse_csv_tickers,
+            parse_tickers,
+        )
+
+        tickers = parse_tickers(text or "")
+        if uploaded is not None:
+            tickers = (
+                tickers
+                + [
+                    t
+                    for t in parse_csv_tickers(
+                        uploaded.getvalue().decode("utf-8", "replace")
+                    )
+                    if t not in tickers
+                ]
+            )[:25]
+        if not tickers:
+            st.warning("No valid tickers found — paste e.g. NVDA, AAPL.")
+        else:
+            key = "batchfit_" + ",".join(tickers)
+            if key not in st.session_state:
+                bar = st.progress(0.0, text="Starting…")
+
+                def _update_progress(frac: float, t: str) -> None:
+                    bar.progress(frac, text=f"Checking {t}…")
+
+                rows = batch_fit(
+                    tickers,
+                    fit_fn=default_fit_fn,
+                    progress=_update_progress,
+                )
+                bar.empty()
+                st.session_state[key] = rows
+            from adapters.visualization.components.scorecard import render_scorecard
+
+            render_scorecard(st.session_state[key])

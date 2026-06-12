@@ -61,3 +61,40 @@ def test_load_adherence_log_parses_and_sorts(tmp_path):
     )
     rows = load_adherence_log(str(p))
     assert [r["ticker"] for r in rows] == ["XYZ", "ARKK"]  # sorted by flag_date
+
+
+def test_load_screen_history_sorted_and_excludes_ic(tmp_path):
+    import json
+
+    from adapters.visualization.data_loader import load_screen_history
+
+    (tmp_path / "screen_ic_2026-06-08.json").write_text("{}")
+    (tmp_path / "screen_2026-06-01.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-01",
+                "universe_size": 500,
+                "candidates": [{"ticker": "A"}],
+                "abstained": False,
+            }
+        )
+    )
+    (tmp_path / "screen_2026-06-08.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-08",
+                "universe_size": 512,
+                "candidates": [],
+                "abstained": True,
+            }
+        )
+    )
+    hist = load_screen_history(str(tmp_path))
+    assert [h["as_of"] for h in hist] == ["2026-06-08", "2026-06-01"]  # newest first
+    assert hist[0]["n_candidates"] == 0 and hist[1]["n_candidates"] == 1
+
+
+def test_load_screen_history_empty(tmp_path):
+    from adapters.visualization.data_loader import load_screen_history
+
+    assert load_screen_history(str(tmp_path)) == []
