@@ -52,7 +52,8 @@ and tell us honestly whether the tool improved adherence.
 
 **Falsification lab** — the full history of hypotheses tested, the exact pre-registered
 thresholds, and the mechanically-executed kill decisions; archived in `docs/adr/`
-(ADRs 039–053).
+(ADRs 039–053). The portfolio-fit verdict's honest-boundary design is recorded in
+[ADR-054](docs/adr/054-portfolio-fit-verdict.md).
 
 ---
 
@@ -86,6 +87,8 @@ Plain-English definitions for every term used in this project.
 | **Tercile** | Split into thirds. "Bottom liquidity tercile" = the third of stocks that are hardest to trade. |
 | **Abnormal return** | A stock's return minus what a comparable index did over the same days — the part the stock did "on its own." |
 | **IC (information coefficient)** | Correlation between a signal's ranking and what actually happened next. Zero = the signal knows nothing. |
+| **Sharpe ratio** | Return earned per unit of risk taken. Higher is better — it rewards steady gains, not lucky volatile ones. |
+| **Bootstrap** | Re-running a test on thousands of resampled versions of the data to see how much of the result is just luck. A confidence interval that "spans zero" means the edge could easily be nothing. |
 | **Pre-registration** | Locking the test rules before seeing results, so you can't move the goalposts. |
 | **Look-ahead bias** | Accidentally letting future data leak into a prediction — makes backtests look great and live trading fail. |
 
