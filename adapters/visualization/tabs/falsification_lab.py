@@ -69,6 +69,13 @@ _VERDICT_DISPLAY = {
     "INCONCLUSIVE_THIN_COVERAGE": ("INCONCLUSIVE → practical KILL", "INCONCLUSIVE"),
 }
 
+_VERDICT_MEANING = {
+    "KILL": "This idea is dead — the app will never trade on it.",
+    "INCONCLUSIVE": "Could not be proven — treated as dead until real evidence says otherwise.",
+    "INCONCLUSIVE → practical KILL": "Could not be proven — treated as dead until real evidence says otherwise.",
+    "PENDING": "Still accruing live evidence.",
+}
+
 
 def _unit_b_row(report_path: str) -> dict[str, str]:
     row: dict[str, str] = {
@@ -178,9 +185,22 @@ def render(
 ) -> None:
     st.subheader("Falsification Lab")
     st.markdown(
-        "Most dashboards show what works. This one also shows what **doesn't** — "
-        "every hypothesis below was tested with thresholds locked **before** "
-        "seeing results (pre-registration), so a kill is a kill."
+        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        "Every prediction idea we tested and the verdicts — the receipts behind the app's honesty."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    # Intro ws-card
+    st.markdown(
+        '<div class="ws-card" style="padding:16px 20px;margin-bottom:16px;">'
+        "<strong>We tried seven ways to predict the market. None survived testing.</strong><br>"
+        '<span style="color:#64748B;font-size:14px;">'
+        "Every test below had its pass/fail line locked before we looked at results — "
+        "so a failure is a real failure, not a re-roll. This page is why you can trust "
+        "the rest of the app: it shows the tool earns its claims or loses them."
+        "</span></div>",
+        unsafe_allow_html=True,
     )
 
     rows = _SCOREBOARD + [_unit_b_row(report_path)]
@@ -188,24 +208,32 @@ def render(
         # Color by the leading verdict token so display labels like
         # "INCONCLUSIVE → practical KILL" still resolve to the amber key.
         color = _VERDICT_COLOR.get(r["verdict"].split()[0], "#64748B")
-        st.markdown(
+        # Derive "what this means for you" from the leading verdict token
+        meaning = _VERDICT_MEANING.get(
+            r["verdict"],
+            _VERDICT_MEANING.get(r["verdict"].split()[0], ""),
+        )
+        row_html = (
             f'<div class="ws-card" style="border-left:4px solid {color};'
             f'padding:10px 16px;margin-bottom:8px;">'
             f'<span style="color:{color};font-weight:700;">{r["verdict"]}</span> — '
             f'<strong>{r["hypothesis"]}</strong><br>'
-            f'<span style="color:#64748B;font-size:13px;">'
-            f'_{r["test"]}_ · <code>{r["adr"]}</code></span>'
-            "</div>",
-            unsafe_allow_html=True,
+            f'<span style="color:#64748B;font-size:13px;">{r["test"]}</span><br>'
+            f'<span style="color:#475569;font-size:13px;font-style:italic;">{meaning}</span>'
+            "</div>"
         )
+        st.markdown(row_html, unsafe_allow_html=True)
+        with st.expander("evidence trail"):
+            st.markdown(f"`{r['adr']}`")
+            st.caption(f"Test: {r['test']}")
 
     st.divider()
 
-    # Exhibits from model_confidence era — kept with honesty banners
-    with st.expander("Exhibit A: Ablation analysis (FALSIFIED era)"):
+    # Exhibits from model_confidence era — kept with honesty banners, collapsed
+    with st.expander("Falsified-era exhibits (kept for the record)"):
+        st.markdown("**Exhibit A: Ablation analysis (FALSIFIED era)**")
         _render_ablation_exhibit()
-
-    with st.expander("Exhibit B: SHAP feature importance (FALSIFIED era)"):
+        st.markdown("**Exhibit B: SHAP feature importance (FALSIFIED era)**")
         _render_shap_exhibit()
 
     st.divider()

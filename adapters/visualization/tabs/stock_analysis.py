@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from collections.abc import Callable, MutableMapping
 from typing import TYPE_CHECKING, Any
 
@@ -61,43 +60,34 @@ def render() -> None:
         unsafe_allow_html=True,
     )
 
+    pending = st.session_state.pop("analyze_ticker", None)
+
     cols = st.columns([4, 1])
     ticker_input = cols[0].text_input(
-        "Ticker", placeholder="NVDA", label_visibility="collapsed"
+        "Ticker", value=pending or "", placeholder="NVDA", label_visibility="collapsed"
     )
-    analyze = cols[1].button("Run Analysis", type="primary")
+    analyze = cols[1].button("Run Analysis", type="primary") or pending is not None
 
     if analyze and ticker_input:
         ticker = ticker_input.upper().strip()
         try:
             from adapters.visualization.stock_analyzer import analyze_ticker
 
-            progress = st.progress(0)
-            status = st.empty()
-            steps = [
-                "Fetching market data...",
-                "Loading fundamentals...",
-                "Computing indicators...",
-                "Checking sentiment...",
-                "Querying insiders...",
-                "Computing scores...",
-                "Building analysis...",
-            ]
-            for i, step in enumerate(steps):
-                progress.progress((i + 1) / len(steps))
-                status.text(step)
-
-            result = analyze_ticker(ticker, db_path="data/recommendations.db")
-            st.session_state[f"analysis_{ticker}"] = result
-            st.session_state.pop(f"fit_{ticker}", None)
-            progress.empty()
-            status.empty()
+            with st.spinner(
+                f"Analyzing {ticker} — fetching live market data, fundamentals, "
+                "and sentiment (typically 20-60s)..."
+            ):
+                result = analyze_ticker(ticker, db_path="data/recommendations.db")
+                st.session_state[f"analysis_{ticker}"] = result
+                st.session_state.pop(f"fit_{ticker}", None)
         except Exception as exc:
             st.error(f"Analysis failed for {ticker}: {exc}")
             import traceback
 
             st.code(traceback.format_exc())
             return
+    elif analyze and not ticker_input:
+        st.warning("Type a ticker first — e.g. NVDA or AAPL.")
 
     # Show cached result
     lookup_key = ticker_input.upper().strip() if ticker_input else ""
@@ -147,32 +137,6 @@ def render() -> None:
             "</div></div>",
             unsafe_allow_html=True,
         )
-
-
-# ---------------------------------------------------------------------------
-# Loading state
-# ---------------------------------------------------------------------------
-
-
-def _show_loading_steps(ticker: str) -> None:
-    """Show progressive step indicators while analysis runs."""
-    steps = [
-        f"Fetching {ticker} market data...",
-        "Loading fundamental data...",
-        "Computing technical indicators...",
-        "Checking sentiment signals...",
-        "Querying insider transactions...",
-        "Computing scores...",
-        "Building analysis...",
-    ]
-    progress = st.progress(0)
-    status = st.empty()
-    for i, step in enumerate(steps):
-        progress.progress((i + 1) / len(steps))
-        status.text(step)
-        time.sleep(0.08)
-    progress.empty()
-    status.empty()
 
 
 # ---------------------------------------------------------------------------
