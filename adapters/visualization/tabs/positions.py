@@ -425,8 +425,8 @@ def _render_watchlist_card(
                 from adapters.data.sqlite_store import SQLiteStore
 
                 SQLiteStore(db_path).remove_watchlist(symbol)
-            except Exception:
-                pass
+            except Exception as exc:
+                st.warning(f"Watchlist update failed: {exc}")
             st.rerun()
     with btn_cols[1]:
         if st.button("Analyze", key=f"wl_az_{symbol}"):
@@ -437,28 +437,14 @@ def _render_watchlist_card(
 def _render_watchlist_add_form(db_path: str) -> None:
     st.markdown("#### Add to Watchlist")
     with st.form("add_watchlist_form", clear_on_submit=True):
-        cols = st.columns([2, 3, 3, 1])
+        cols = st.columns([3, 1])
         ticker = cols[0].text_input("Symbol", placeholder="TSLA")
-        reason = cols[1].selectbox(
-            "Reason",
-            [
-                "Earnings play",
-                "Sector rotation",
-                "Upstream signal",
-                "Technical setup",
-                "Insider activity",
-                "Momentum",
-                "Custom",
-            ],
-        )
-        notes = cols[2].text_input("Notes (optional)", placeholder="Details...")
-        submitted = cols[3].form_submit_button("Add")
+        submitted = cols[1].form_submit_button("Add")
         if submitted and ticker:
-            full_notes = f"{reason}" + (f" — {notes}" if notes else "")
             try:
                 from adapters.visualization.action_runner import run_add_watchlist
 
-                run_add_watchlist(ticker.upper(), full_notes, db_path=db_path)
-            except Exception:
-                pass
+                run_add_watchlist(ticker.upper(), "", db_path=db_path)
+            except Exception as exc:
+                st.warning(f"Watchlist update failed: {exc}")
             st.rerun()
