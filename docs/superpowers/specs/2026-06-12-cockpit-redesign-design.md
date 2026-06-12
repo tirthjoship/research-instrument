@@ -1,7 +1,7 @@
 # Cockpit Redesign — Design Spec (Project A1)
 
 **Date:** 2026-06-12
-**Status:** DRAFT — brainstormed, awaiting user validation before writing-plans.
+**Status:** VALIDATED (2026-06-12) — open questions resolved with user; ready for writing-plans.
 **Supersedes (UX layer only):** the v2 6-tab dashboard shipped 2026-06-12 (PRs #46/#47).
 Domain/ and application/ layers are NOT touched by this work.
 
@@ -55,17 +55,31 @@ One compact strip, red only when real:
 - Discipline status (breaches this week, gate countdown to mid-July 2026).
 Tap → Risk drill-down (the existing beta-bars + systematic-share donut, relocated as a
 detail view, not a top-level tab).
-Data: `macro_beta_use_case`, `brief.py`, `discipline_use_case`.
+Data: `application/macro_beta_use_case.py`, `application/weekly_brief_use_case.py` +
+`brief_summary.py`, `application/discipline_log.py`.
 
 ### 2. Your calls (this week + log)
 This week's per-holding REDUCE/TRIM/HOLD with the one-line why, as a consistent card list.
 A single **[confirm all]** action logs the week's calls to the ADR-048 discipline forward
 gate. **This replaces the My Portfolio forms/sliders entirely** — one clean log step, no
 per-ticker form sprawl.
-Data: `brief.py` (verdicts), `discipline_use_case` (the log write).
+Data: `weekly_brief_use_case.py` + `brief_summary.py` (verdicts), `discipline_log.py`
+(`append_assessments` — the log write), `adherence.py` (adherence history).
 Note: the dashboard gains exactly ONE write action (the log). Everything else is read-only.
+**Resolved (validation 2026-06-12):** confirm-and-log lives IN the cockpit (Q1). The write
+must be idempotent per week (re-confirm does not duplicate log rows).
 
-### 3. Look into next (honest discovery feed)
+### 3. How the week went (retrospective strip)
+Explicit user requirement recovered in validation (2026-06-12): *"I need to know as well
+how the week went."* Descriptive only — no prediction surface:
+- Book move this week vs SPY (factual comparison, not a performance claim).
+- Verdict flips since last Saturday (e.g. HOLD→TRIM) and new/cleared risk flags.
+- Last week's adherence outcome (did the household follow its calls?).
+Data: positions (book move), screen/brief history + adherence log (flips, adherence).
+Computable from already-stored artifacts; if no prior-week snapshot exists, the strip
+degrades to "first week — nothing to compare yet".
+
+### 4. Look into next (honest discovery feed)
 The new capability. **Diversification-first framing.** Each row leads with the book-gap and
 uses factual rank as the tiebreak:
 
@@ -87,15 +101,22 @@ Two lenses, layered (diversification primary):
   forecast. PRIMARY sort.
 - **Screens well now** — top factual composite (value + quality + health). Secondary/tiebreak.
 
-**Prerequisite fix:** the screen universe is stale (delisted SIVB / PXD / SPLK / WBA, plus
-`.TO` artifacts leaking in). Clean it so rankings are real. (This is why discovery feels
+**Resolved (validation 2026-06-12):** correlate to the SINGLE dominant macro factor only
+(Q2) — full factor-set lens deferred. Feed shows **3–5 rows** (Q3).
+
+**Prerequisite fix (Task 0 of the plan):** the screen universe is stale (delisted
+SIVB / PXD / SPLK / WBA, plus `.TO` artifacts leaking in). Clean it so rankings are real —
+acceptance: zero delisted tickers, zero `.TO` artifacts in the active universe. Leverage
+existing `application/delisted.py` + `ticker_universe.py`. (This is why discovery feels
 dead today — the screen abstains AND the universe is rotten.)
 
 Data: `evidence_screen_use_case` (factual rank), `macro_beta_use_case` +
-`correlation_analyzer` (diversification lens). One small new application query: correlation
-of candidate names to the user's dominant factor (composes existing pieces — no new domain).
+`adapters/ml/correlation_analyzer.py` (diversification lens). One small new application
+query: correlation of candidate names to the user's dominant factor (composes existing
+pieces — no new domain). Candidate price history goes through the existing
+`price_cache.py` path — no per-render refetch.
 
-### 4. Lookup (bottom)
+### 5. Lookup (bottom)
 Search / paste a ticker (or a list, reusing the v2 upload path) → opens the stock drawer.
 Data: `fit_use_case`, `batch_fit_use_case`.
 
@@ -170,11 +191,19 @@ factual-rank read are both point-in-time over already-fetched data.
   never falsification-gated) OR a named, specific flaw in ADR-044's method — pre-registered
   before looking. Recommend a `ds-methodology-review` pass before any build. Its own spec.
 
-## Open questions for validation
-1. Does the single write action (confirm-and-log) belong in the cockpit, or should logging
-   stay CLI/cron-only and the cockpit stay 100% read-only?
-2. Diversification lens: correlate candidates to the single dominant factor, or to the full
-   macro-factor set (SPY/TLT/UUP/USO/XLE)? Affects the "would diversify you" math.
-3. How many discovery rows is "useful, not a buy list"? (Proposal: 3–5.)
-4. Showcase relocation: does Trust stay reachable from the cockpit during A1, or go dark
-   until A2 ships?
+## Open questions — RESOLVED (user validation, 2026-06-12)
+1. Confirm-and-log write: **in the cockpit** (single guarded, idempotent write; replaces
+   My Portfolio forms entirely).
+2. Diversification lens: **single dominant factor only**; full factor set
+   (SPY/TLT/UUP/USO/XLE) deferred as a later upgrade.
+3. Discovery feed: **3–5 rows**.
+4. Trust/methodology content: **stays reachable via a Showcase router entry** during A1,
+   pointing at the existing Trust content intact, until A2 ships.
+
+## Notes for writing-plans (validation findings, 2026-06-12)
+- Universe clean is an explicit Task 0 with acceptance criteria (above), not a side-note.
+- Retro strip requires a persisted prior-week brief/screen snapshot — the plan must pin
+  the storage location + format; degraded first-week state already specified.
+- Extend the Task-5 FORBIDDEN_WORDS *source-file scan* pattern to every cockpit renderer.
+- Cutover: greenfield `cockpit/` package lands behind the new router in one swap; old tab
+  renderers deleted in the same PR series (compute stays in core).
