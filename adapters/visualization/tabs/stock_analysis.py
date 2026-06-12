@@ -23,6 +23,7 @@ from adapters.visualization.components.charts import (
     ownership_pie,
 )
 from adapters.visualization.stock_analyzer import AnalysisResult
+from domain.fit import FitVerdict
 
 
 def render() -> None:
@@ -77,6 +78,27 @@ def render() -> None:
     if lookup_key and f"analysis_{lookup_key}" in st.session_state:
         result = st.session_state[f"analysis_{lookup_key}"]
         _render_verdict(result)
+        try:
+            from datetime import datetime, timezone
+
+            from application.fit_use_case import (
+                default_beta_fn,
+                gather_and_assess,
+                market_systematic_share_threshold,
+            )
+
+            fit = gather_and_assess(
+                ticker=lookup_key,
+                reports_dir="data/reports",
+                summary_path="data/personal/brief_summary.json",
+                holdings_path="data/personal/holdings.csv",
+                beta_fn=default_beta_fn,
+                as_of=datetime.now(timezone.utc),
+                systematic_share_threshold=market_systematic_share_threshold(),
+            )
+            _render_fit_card(fit)
+        except Exception:
+            st.caption("Fit verdict unavailable (see logs).")
         _render_valuation(result)
         _render_growth(result)
         _render_performance(result)
@@ -193,6 +215,41 @@ def _render_verdict(result: AnalysisResult) -> None:
     with c2:
         if st.button("+ Portfolio", key=f"portfolio_{result.ticker}"):
             st.info(f"Use CLI: add-holding {result.ticker} <price> <shares>")
+
+
+_SEVERITY_CLASS = {
+    "INFO": "verdict-neutral",
+    "CAUTION": "verdict-caution",
+    "WARNING": "verdict-negative",
+}
+
+
+def _render_fit_card(verdict: FitVerdict, screen_as_of: str | None = None) -> None:
+    """Evidence grade + fit flags. Descriptive arithmetic only — never a forecast."""
+    from adapters.visualization.components.formatters import grade_badge_html
+
+    stale = f" · screen as of {screen_as_of}" if screen_as_of else ""
+    st.markdown(
+        f'<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
+        f"{grade_badge_html(verdict.evidence_grade)} "
+        f'<span style="font-weight:700;">Evidence + fit vs your book</span>'
+        f'<span style="color:#64748B;font-size:12px;">{stale}</span>'
+        f'<div style="font-size:14px;margin-top:8px;">{verdict.summary}</div>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    for flag in verdict.fit_flags:
+        css = _SEVERITY_CLASS.get(flag.severity, "verdict-neutral")
+        st.markdown(
+            f'<div class="verdict-card {css}">'
+            f'<div style="font-size:14px;color:#111827;">{flag.message}</div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
+    st.caption(
+        "Evidence + fit only — this tool does not forecast returns "
+        "(see Falsification Lab). Position weights are by cost basis."
+    )
 
 
 # ---------------------------------------------------------------------------

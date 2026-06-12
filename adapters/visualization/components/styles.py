@@ -566,6 +566,7 @@ header[data-testid="stHeader"] { display: none !important; }
 .verdict-positive { border-left: 4px solid var(--success); }
 .verdict-negative { border-left: 4px solid var(--danger); }
 .verdict-neutral { border-left: 4px solid var(--accent); }
+.verdict-caution { border-left: 4px solid var(--warning, #CA8A04); }
 .dashboard-card {
     background: var(--bg-primary);
     border: 1px solid var(--border);
