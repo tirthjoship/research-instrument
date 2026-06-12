@@ -99,7 +99,7 @@ def test_styles_importable() -> None:
     assert callable(inject_global_css)
     assert isinstance(GLOBAL_CSS, str)
     assert "Inter" in GLOBAL_CSS
-    assert "#2563EB" in GLOBAL_CSS
+    assert "#1D4ED8" in GLOBAL_CSS
 
 
 def test_action_runner_importable() -> None:
