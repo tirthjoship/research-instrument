@@ -322,25 +322,35 @@
 The six-tab v2 dashboard was replaced by a two-surface cockpit redesign on branch
 `feat/cockpit-redesign` (plan: `docs/superpowers/plans/2026-06-12-cockpit-redesign.md`).
 
+Decision recorded in **ADR-055**. Shipped via PR #50 → develop → main.
+
 **Built:**
-- `adapters/visualization/cockpit/` package — assembler + 5 section renderers:
-  `danger_strip`, `your_calls`, `week_retro`, `look_into_next`, `lookup` (with
-  stock-detail `st.dialog` drawer).
-- `rank_by_diversification(factor_series, candidate_series)` — diversification-first
-  candidate ranking in the look-into-next feed.
-- Universe guard (Task 0): stale tickers pruned from the screen universe before
-  the cockpit build began.
-- Single-scroll priority order enforced: danger → calls → retro → look-into-next →
-  lookup. One design system throughout (reuses existing `styles.py` ws-card tokens).
+- `adapters/visualization/cockpit/` package — assembler (`cockpit.py`) + 5 section
+  renderers: `_danger`, `_calls`, `_retro`, `_discover`, `_lookup` (with stock-detail
+  `st.dialog` drawer `stock_detail.py`).
+- `application/diversification_query.py` — pure `rank_by_diversification(factor_series,
+  candidate_series)`, diversification-first ranking in the look-into-next feed. Network
+  fetch stays in the adapter (`_discover._diversification_ranks`); corr is date-aligned
+  (joint dropna).
+- `price_cache.fetch_week_changes` for the retro strip.
+- Universe guard (Task 0): delisted / foreign-suffix tickers pruned from the screen
+  universe.
+- Single-scroll priority order: danger → calls → retro → look-into-next → lookup. One
+  design system (reuses existing `styles.py` ws-card tokens).
 
-**Deleted:**
-- 4 v2 tab renderers (`tabs/home.py`, `tabs/screener.py`, `tabs/risk.py`,
-  `tabs/my_portfolio.py`) and their corresponding unit tests.
+**Deleted (render only — compute stays in core):**
+- `tabs/weekly_brief.py`, `tabs/research_candidates.py`, `tabs/positions.py`,
+  `tabs/stock_analysis.py` and their unit tests.
 
-**Relocated:**
-- `tabs/stock_analysis.py` logic → cockpit `lookup` section + drawer.
-- `tabs/trust.py` (falsification/methodology) → **Showcase** surface (intact,
-  reachable as second dashboard tab).
+**Kept / relocated:**
+- `tabs/risk.py` → cockpit danger drill-down (KEPT).
+- `tabs/trust.py` (falsification/methodology) → **Showcase** surface (KEPT, intact,
+  reachable as the second dashboard tab).
+- `tabs/stock_analysis.py` render logic → cockpit `_lookup` + `stock_detail` drawer.
 
-**Final suite:** 1613 tests passing, 94% coverage, mypy strict clean.
-Branch pending Opus verification sweep + PR to dev.
+**Verification:** `make check` = **1616 passing, 94% coverage, mypy strict clean.** Opus
+review sweep fixed 2 findings pre-merge (date-aligned diversification corr; empty-`as_of`
+write guard) + 3 regression tests.
+
+**Deferred (non-blocking, in ADR-055 + STATUS):** non-atomic discipline-log append;
+duplicate-ticker share summing; tighten one mypy override.

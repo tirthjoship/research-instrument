@@ -2,14 +2,18 @@
 
 **As of:** 2026-06-12
 **Branch:** feat/cockpit-redesign
-**Phase:** Cockpit redesign — IMPLEMENTED, Opus-verified, green. Ready to push + PR to dev.
+**Phase:** Cockpit redesign — SHIPPED & MERGED (develop ≡ main). Between phases.
 
 ## Current State
 
-Two-surface dashboard shipped on `feat/cockpit-redesign`. `make check` green:
-**1616 tests passing, 94% coverage, mypy strict clean.** Opus verification sweep done —
-2 blocking findings fixed (diversification correlation now date-aligned via joint dropna;
-empty-`as_of` write guarded) + dead imports dropped; 3 regression tests added (commit 9e04d20).
+Two-surface cockpit dashboard merged to **develop and main** (PR #50). Decision recorded
+in **ADR-055**. `make check` green: **1616 passing, 94% coverage, mypy strict clean.**
+Opus verification sweep done — 2 findings fixed (diversification corr date-aligned via
+joint dropna; empty-`as_of` write guarded) + 3 regression tests.
+
+Completed specs/plans were **archived** to `docs/superpowers/archive/` (18 specs + 16
+plans). Active `specs/`/`plans/` dirs are intentionally empty — no open build for the
+current phase. This is the anti-drift reset.
 
 **What was built:**
 - `adapters/visualization/cockpit/` package — assembler + 5 section renderers in
@@ -31,8 +35,11 @@ drill-down (KEPT); `tabs/trust.py` → Showcase surface (KEPT).
 
 ## Next Action
 
-1. `git push -u origin feat/cockpit-redesign` + open PR to `dev`.
-2. CI green → merge feature → dev → main per project flow.
+Pick the next phase and brainstorm it (`superpowers:brainstorming` → `writing-plans`):
+- **A2 — Showcase surface** (recruiter falsification/methodology redesign), OR
+- **Project B — Alpha re-open** (run `ds-methodology-review` + pre-register FIRST).
+
+No open spec/plan exists yet; start one before touching code.
 
 ## Deferred (minor, from Opus sweep — fix in a follow-up, not blocking)
 
