@@ -78,6 +78,11 @@ _GRADE_DISPLAY_NAMES: dict[str, str] = {
     "hold": "Hold",
     "may_sell": "May Sell",
     "immediate_sell": "Immediate Sell",
+    # Fit-verdict evidence grades (domain/fit.py)
+    "STRONG": "Strong",
+    "MODERATE": "Moderate",
+    "WEAK": "Weak",
+    "UNKNOWN": "Unknown",
 }
 
 _GRADE_CSS_CLASSES: dict[str, str] = {
@@ -86,6 +91,11 @@ _GRADE_CSS_CLASSES: dict[str, str] = {
     "hold": "grade-hold",
     "may_sell": "grade-may-sell",
     "immediate_sell": "grade-immediate-sell",
+    # Fit-verdict evidence grades reuse existing color classes
+    "STRONG": "grade-strong-buy",
+    "MODERATE": "grade-hold",
+    "WEAK": "grade-may-sell",
+    "UNKNOWN": "grade-hold",
 }
 
 

@@ -1,0 +1,48 @@
+{
+  "report": {
+    "strategy": {
+      "sharpe": 1.1,
+      "max_drawdown": 0.2,
+      "cagr": 0.12,
+      "sortino": 1.3
+    },
+    "buy_hold": {
+      "sharpe": 0.6,
+      "max_drawdown": 0.5,
+      "cagr": 0.1,
+      "sortino": 0.7
+    },
+    "spy": {
+      "sharpe": 0.7,
+      "max_drawdown": 0.34,
+      "cagr": 0.11,
+      "sortino": 0.8
+    }
+  },
+  "universe_size": 0,
+  "verdict": {
+    "decision": "PROCEED",
+    "drawdown_reduction": 0.6,
+    "sharpe_diff_ci_low": 459.936039,
+    "beats_sharpe": true,
+    "cuts_drawdown": true
+  },
+  "sharpe_diff_bootstrap": {
+    "n": 2,
+    "block_size": 2,
+    "n_resamples": 2000,
+    "point": 459.936039,
+    "ci_low": 459.936039,
+    "ci_high": 459.936039,
+    "p_value_le_0": 0.0
+  },
+  "mean_excess_return_bootstrap": {
+    "n": 2,
+    "block_size": 2,
+    "n_resamples": 2000,
+    "mean": 0.047494,
+    "ci_low": 0.047494,
+    "ci_high": 0.047494,
+    "p_value_ge_0": 0.0
+  }
+}

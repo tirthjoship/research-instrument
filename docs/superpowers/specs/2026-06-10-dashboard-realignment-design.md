@@ -208,3 +208,29 @@ Mirror the `product-experimentation-analytics` pattern:
 - New chart libraries / framework moves (Streamlit + Plotly stay).
 - Mobile layout, auth, deployment.
 - Rebuilding deleted tabs' functionality elsewhere.
+
+## Addendum (2026-06-11) — post-merge re-validation, plan supersedes where noted
+
+Unit C + hardening merged to develop/main 2026-06-11; both preconditions met. The
+implementation plan (`docs/superpowers/plans/2026-06-10-dashboard-realignment.md`)
+was re-validated against the merged code and amended. Where this spec and the plan
+differ, the PLAN is current:
+
+1. **§2.1 adherence placeholder → real section.** Unit C shipped; the Weekly Brief tab
+   renders resolved adherence records from `data/personal/adherence_log.jsonl`
+   (new `load_adherence_log` loader), not a placeholder caption.
+2. **§2.6 Unit B PASS branch is dead.** Final verdict = `INCONCLUSIVE_THIN_COVERAGE`
+   → practical KILL (ADR-053). Scoreboard renders "INCONCLUSIVE → practical KILL"
+   (amber); no paper-trade panel.
+3. **§7 settings.json:** repo already has a SUPERSET guard hook (guardrails.sh) —
+   plan Task 1 verifies instead of copying; expected NO change.
+4. **§2.2 Saturday-job wiring gap CLOSED in this plan, not hardening.** The hardening
+   sprint did NOT add `screen-candidates` (or `weekly-brief`) to
+   `scripts/discipline_weekly_review.sh`; plan Task 11.5 adds both (steps 5–6) so
+   `brief_summary.json` and `screen_<date>.json` actually refresh weekly.
+5. **New requirement — anti-flat UI/UX (user, 2026-06-11).** Tabs must use the SWST
+   design system (`ws-card`, hero metrics, pills, consistent Plotly theme), with a
+   `frontend-design` polish pass in plan Task 12. Default-Streamlit flat tables are
+   not acceptable as shipped UI.
+6. **§2.6 gate strip** shows accrued vs needed: ≥30 resolved REDUCE flags across ≥3
+   dates ≥10 days apart (validated against `application/calibration_readiness.py`).

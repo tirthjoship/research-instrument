@@ -138,3 +138,14 @@ def test_load_recommendations_latest_returns_list():
 
     result = load_recommendations_latest("nonexistent.db")
     assert isinstance(result, list)
+
+
+def test_verdict_reframe_has_no_grade_language():
+    import inspect
+
+    from adapters.visualization.tabs import stock_analysis
+
+    src = inspect.getsource(stock_analysis._render_verdict)
+    assert "RESEARCH ONLY" in src
+    assert "System Verdict" not in src
+    assert "conviction" not in src.lower()

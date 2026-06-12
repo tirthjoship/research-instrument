@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from collections.abc import Callable, MutableMapping
+from typing import TYPE_CHECKING, Any
 
 import streamlit as st
+from loguru import logger
+
+if TYPE_CHECKING:
+    from domain.fit import FitVerdict
 
 from adapters.visualization.components.cards import (
     criteria_card,
@@ -21,9 +26,29 @@ from adapters.visualization.components.charts import (
     gauge_chart,
     insider_bars,
     ownership_pie,
-    signal_radar,
 )
 from adapters.visualization.stock_analyzer import AnalysisResult
+from domain.fit import FitVerdict
+
+
+def _ensure_fit_cached(
+    session_state: MutableMapping[str | int, Any],
+    key: str,
+    compute_fn: Callable[[], "FitVerdict"],
+) -> "FitVerdict | None":
+    """Compute the fit verdict once per key; cache in session_state.
+
+    On compute failure, return None and do NOT cache (so a later rerun retries).
+    """
+    if key in session_state:
+        return session_state[key]  # type: ignore[no-any-return]
+    try:
+        verdict = compute_fn()
+    except Exception:
+        logger.warning("fit verdict computation failed")
+        return None
+    session_state[key] = verdict
+    return verdict
 
 
 def render() -> None:
@@ -64,6 +89,7 @@ def render() -> None:
 
             result = analyze_ticker(ticker, db_path="data/recommendations.db")
             st.session_state[f"analysis_{ticker}"] = result
+            st.session_state.pop(f"fit_{ticker}", None)
             progress.empty()
             status.empty()
         except Exception as exc:
@@ -78,6 +104,33 @@ def render() -> None:
     if lookup_key and f"analysis_{lookup_key}" in st.session_state:
         result = st.session_state[f"analysis_{lookup_key}"]
         _render_verdict(result)
+        fit_key = f"fit_{lookup_key}"
+
+        from datetime import datetime, timezone
+
+        from application.fit_use_case import (
+            default_beta_fn,
+            gather_and_assess,
+            market_systematic_share_threshold,
+        )
+
+        fit = _ensure_fit_cached(
+            st.session_state,
+            fit_key,
+            lambda: gather_and_assess(
+                ticker=lookup_key,
+                reports_dir="data/reports",
+                summary_path="data/personal/brief_summary.json",
+                holdings_path="data/personal/holdings.csv",
+                beta_fn=default_beta_fn,
+                as_of=datetime.now(timezone.utc),
+                systematic_share_threshold=market_systematic_share_threshold(),
+            ),
+        )
+        if fit is not None:
+            _render_fit_card(fit)
+        else:
+            st.caption("Fit verdict unavailable (see logs).")
         _render_valuation(result)
         _render_growth(result)
         _render_performance(result)
@@ -128,7 +181,7 @@ def _show_loading_steps(ticker: str) -> None:
 
 
 def _render_verdict(result: AnalysisResult) -> None:
-    """Render top verdict section: price, radar, grade, consensus comparison."""
+    """Render top verdict section: price, RESEARCH_ONLY notice, consensus comparison."""
     # Company header
     change_color = "#16A34A" if result.change_pct >= 0 else "#DC2626"
     change_sign = "+" if result.change_pct >= 0 else ""
@@ -150,72 +203,39 @@ def _render_verdict(result: AnalysisResult) -> None:
         unsafe_allow_html=True,
     )
 
-    # Radar + verdict side by side
-    col_radar, col_verdict = st.columns([2, 1])
-    with col_radar:
-        if result.signal_scores:
-            st.markdown(
-                tooltip(
-                    "**Signal Radar**",
-                    "6-axis spider chart showing strength across Technical, Sentiment, "
-                    "Fundamental, Cross-Asset, Event-Causal, and Smart Money dimensions. "
-                    "A larger shape means stronger multi-signal alignment.",
-                ),
-                unsafe_allow_html=True,
-            )
-            fig = signal_radar(result.signal_scores)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Signal radar data not available")
+    # RESEARCH_ONLY reframe (dashboard spec §2.5): no grade, no radar,
+    # no buy/sell call — prediction was falsified (ADR-039..050, ADR-053).
+    st.markdown(
+        '<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
+        '<span style="font-weight:700;color:#CA8A04;">RESEARCH ONLY</span> — '
+        "descriptive data below; this tool makes no buy/sell call. "
+        "Why: every predictive signal tested 2006–2024 was falsified "
+        "(see the Falsification Lab tab)."
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    with col_verdict:
-        grade_color = _grade_color(result.grade)
-        conviction_bar = min(100, int(result.conviction * 10))
-        st.markdown(
-            f'<div class="ws-card" style="text-align:center;padding:16px;">'
-            f"<div style=\"font-size:12px;color:#94A3B8;font-family:'DM Sans',sans-serif;"
-            f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">System Verdict</div>'
-            f'<div style="font-size:28px;font-weight:700;color:{grade_color};'
-            f"font-family:'DM Sans',sans-serif;margin-bottom:8px;\">{result.grade.upper()}</div>"
-            f'<div style="font-size:12px;color:#64748B;margin-bottom:6px;">'
-            + tooltip(
-                "Conviction",
-                "Weighted score (0-10) combining Technical, Sentiment, Fundamental, "
-                "Cross-Asset, Event-Causal, and Smart Money sub-scores. "
-                "Higher conviction = stronger multi-dimensional signal agreement.",
-            )
-            + "</div>"
-            + f'<div style="background:#E2E8F0;border-radius:999px;height:6px;margin-bottom:6px;">'
-            f'<div style="width:{conviction_bar}%;height:6px;background:{grade_color};'
-            f'border-radius:999px;"></div></div>'
-            f'<div style="font-size:13px;color:#1A202C;font-weight:600;margin-bottom:4px;">'
-            f"{result.conviction:.1f}/10</div>"
-            f'<div style="font-size:12px;color:#94A3B8;margin-top:8px;">{result.hold_duration}</div>'
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-
-        # Our system vs Wall Street
-        ws_rec = result.analyst_recommendation or "N/A"
-        analyst_count = result.analyst_count
-        target = result.analyst_mean_target
-        st.markdown(
-            f'<div class="ws-card" style="padding:12px;margin-top:8px;">'
-            f"<div style=\"font-size:12px;color:#94A3B8;font-family:'DM Sans',sans-serif;"
-            f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Analyst Consensus</div>'
-            f'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
-            f'<span style="font-size:13px;color:#64748B;">Recommendation</span>'
-            f'<span style="font-size:13px;font-weight:600;color:#1A202C;">{ws_rec}</span></div>'
-            f'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
-            f'<span style="font-size:13px;color:#64748B;">Price Target</span>'
-            f'<span style="font-size:13px;font-weight:600;color:#1A202C;">'
-            f"{'${:.2f}'.format(target) if target else 'N/A'}</span></div>"
-            f'<div style="display:flex;justify-content:space-between;">'
-            f'<span style="font-size:13px;color:#64748B;">Analysts</span>'
-            f'<span style="font-size:13px;font-weight:600;color:#1A202C;">{analyst_count}</span></div>'
-            f"</div>",
-            unsafe_allow_html=True,
-        )
+    # Our system vs Wall Street
+    ws_rec = result.analyst_recommendation or "N/A"
+    analyst_count = result.analyst_count
+    target = result.analyst_mean_target
+    st.markdown(
+        f'<div class="ws-card" style="padding:12px;margin-top:8px;">'
+        f"<div style=\"font-size:12px;color:#94A3B8;font-family:'DM Sans',sans-serif;"
+        f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Analyst Consensus</div>'
+        f'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+        f'<span style="font-size:13px;color:#64748B;">Recommendation</span>'
+        f'<span style="font-size:13px;font-weight:600;color:#1A202C;">{ws_rec}</span></div>'
+        f'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+        f'<span style="font-size:13px;color:#64748B;">Price Target</span>'
+        f'<span style="font-size:13px;font-weight:600;color:#1A202C;">'
+        f"{'${:.2f}'.format(target) if target else 'N/A'}</span></div>"
+        f'<div style="display:flex;justify-content:space-between;">'
+        f'<span style="font-size:13px;color:#64748B;">Analysts</span>'
+        f'<span style="font-size:13px;font-weight:600;color:#1A202C;">{analyst_count}</span></div>'
+        f"</div>",
+        unsafe_allow_html=True,
+    )
 
     # Watchlist / Portfolio buttons
     c1, c2, _ = st.columns([1, 1, 4])
@@ -227,6 +247,41 @@ def _render_verdict(result: AnalysisResult) -> None:
     with c2:
         if st.button("+ Portfolio", key=f"portfolio_{result.ticker}"):
             st.info(f"Use CLI: add-holding {result.ticker} <price> <shares>")
+
+
+_SEVERITY_CLASS = {
+    "INFO": "verdict-neutral",
+    "CAUTION": "verdict-caution",
+    "WARNING": "verdict-negative",
+}
+
+
+def _render_fit_card(verdict: FitVerdict, screen_as_of: str | None = None) -> None:
+    """Evidence grade + fit flags. Descriptive arithmetic only — never a forecast."""
+    from adapters.visualization.components.formatters import grade_badge_html
+
+    stale = f" · screen as of {screen_as_of}" if screen_as_of else ""
+    st.markdown(
+        f'<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
+        f"{grade_badge_html(verdict.evidence_grade)} "
+        f'<span style="font-weight:700;">Evidence + fit vs your book</span>'
+        f'<span style="color:#64748B;font-size:12px;">{stale}</span>'
+        f'<div style="font-size:14px;margin-top:8px;">{verdict.summary}</div>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    for flag in verdict.fit_flags:
+        css = _SEVERITY_CLASS.get(flag.severity, "verdict-neutral")
+        st.markdown(
+            f'<div class="verdict-card {css}">'
+            f'<div style="font-size:14px;color:#111827;">{flag.message}</div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
+    st.caption(
+        "Evidence + fit only — this tool does not forecast returns "
+        "(see Falsification Lab). Position weights are by cost basis."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -515,6 +570,10 @@ def _render_sentiment(result: AnalysisResult) -> None:
     if not section:
         return
     st.markdown("#### 6. Sentiment")
+    st.caption(
+        "Descriptive buzz only — predictive value was tested and falsified "
+        "(ADR-044: no cross-sectional IC on a clean 430-ticker universe)."
+    )
     st.markdown(
         criteria_card(section.title, section.score, section.max_score, section.summary),
         unsafe_allow_html=True,
@@ -656,15 +715,3 @@ def _fmt_market_cap(mc: float) -> str:
     if mc >= 1e6:
         return f"${mc / 1e6:.1f}M"
     return f"${mc:,.0f}"
-
-
-def _grade_color(grade: str) -> str:
-    """Return color for grade badge."""
-    _COLORS = {
-        "strong_buy": "#16A34A",
-        "buy": "#22C55E",
-        "hold": "#F59E0B",
-        "may_sell": "#F97316",
-        "immediate_sell": "#DC2626",
-    }
-    return _COLORS.get(grade.lower().replace(" ", "_"), "#64748B")

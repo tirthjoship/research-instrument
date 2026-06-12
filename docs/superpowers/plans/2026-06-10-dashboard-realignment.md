@@ -8,11 +8,31 @@
 
 **Tech Stack:** Python 3.12, Streamlit + Plotly (existing), pytest, click CLI, pre-commit (black/isort/mypy strict/ruff — NEVER `--no-verify`; if a hook reformats, re-add and commit again).
 
+**UI treatment — anti-flat (user requirement 2026-06-11, applies to Tasks 4/5/6/9/10):**
+The code blocks in this plan are FUNCTIONAL skeletons; do not ship them as bare
+`st.table`/`st.markdown` walls. Each tab must use the existing SWST design system
+(`components/styles.py` — global CSS already injected by `dashboard.py`):
+
+- Wrap each logical section in a `ws-card` div (has hover elevation) instead of bare markdown.
+- Headline numbers via `components/metrics.py` helpers — `render_hero_banner` (tab-top
+  state), `render_verdict_card` (Weekly Brief banner, Risk dominant-factor), `render_inline_context`
+  (plain-English asides) — and `st.metric` rows with `st.columns` for stat strips.
+- Verdict/status chips via `components/formatters.py` `status_pill_html` / `grade_badge_html`
+  (CSS pills, no emoji) rather than colored text spans where a pill reads better.
+- Plotly: consistent template across tabs (font Inter, accent `#2563EB`, transparent paper
+  background to sit on cards, `height=320`, no gridline clutter) — match the existing
+  builders in `components/charts.py`.
+- Falsification Lab scoreboard: render rows as cards with a colored left-border accent per
+  verdict (the `ws-card` pattern), not a plain markdown list with dividers.
+- Whitespace rhythm: `st.divider()` only between major sections; cards carry their own spacing.
+- During Task 12, invoke the `frontend-design` skill for a polish pass over all 7 tabs
+  (spec §6 step 3 already names it) — distinctive, production-grade, NOT generic-AI flat.
+
 ---
 
 ## PRECONDITIONS (verify before Task 2 — Task 1 is ungated)
 
-1. **Unit B verdict landed:** `data/reports/insider_cluster_falsification_2024.json` exists and ADR-053 is final. (Task 10's scoreboard row reads it; if verdict = PASS, Task 10 adds the paper-log panel variant described there.)
+1. **Unit B verdict landed (CONFIRMED 2026-06-11):** `data/reports/insider_cluster_falsification_2024.json` exists, verdict = `INCONCLUSIVE_THIN_COVERAGE` → practical KILL, ADR-053 final. Task 9's scoreboard maps this to an amber "INCONCLUSIVE → practical KILL" row; the PASS/paper-log branch is dead.
 2. **Venv fixed:** `python -c "import streamlit, plotly"` succeeds (hardening-sprint dependency). If it fails, STOP — the dashboard test suite cannot run.
 3. **Branch:** create `feat/dashboard-realignment` off up-to-date `develop`. Never commit to develop/main directly.
 4. Run baseline: `python -m pytest tests/ -q 2>&1 | tail -3` and record the pass/fail count (pre-existing failures from venv drift should be GONE if precondition 2 holds; if any remain, record them — your changes must not add new failures).
@@ -105,7 +125,7 @@ git commit -m "docs: wire skill routing (dashboard spec §7)"
 
 **Files:**
 - Create: `application/brief_summary.py`
-- Modify: `application/cli.py` (the `weekly_brief` command, ~line 2923–2952)
+- Modify: `application/cli.py` (the `weekly_brief` command; insert after `out_path.write_text(to_markdown(brief))`, cli.py:3074 as of 2026-06-11)
 - Test: `tests/application/test_brief_summary.py` (create)
 
 - [ ] **Step 1: Write the failing test** — create `tests/application/test_brief_summary.py`:
@@ -337,6 +357,29 @@ def test_staleness_days():
     nine_ago = (date.today() - timedelta(days=9)).isoformat()
     assert staleness_days(nine_ago) == 9
     assert staleness_days("not-a-date") is None
+
+
+def test_load_adherence_log_missing_returns_empty(tmp_path):
+    from adapters.visualization.data_loader import load_adherence_log
+
+    assert load_adherence_log(str(tmp_path / "nope.jsonl")) == []
+
+
+def test_load_adherence_log_parses_and_sorts(tmp_path):
+    from adapters.visualization.data_loader import load_adherence_log
+
+    p = tmp_path / "adherence_log.jsonl"
+    p.write_text(
+        '{"ticker": "ARKK", "verdict": "REDUCE", "flag_date": "2026-06-06", '
+        '"actual_cut_fraction": 0.0, "label": "IGNORED", "gap_cad": -120.0, '
+        '"gap_bps": -8.0}\n'
+        "garbage line\n"
+        '{"ticker": "XYZ", "verdict": "TRIM", "flag_date": "2026-05-30", '
+        '"actual_cut_fraction": 0.5, "label": "FOLLOWED", "gap_cad": 40.0, '
+        '"gap_bps": 3.0}\n'
+    )
+    rows = load_adherence_log(str(p))
+    assert [r["ticker"] for r in rows] == ["XYZ", "ARKK"]  # sorted by flag_date
 ```
 
 - [ ] **Step 2: Run to verify failure**
@@ -382,13 +425,36 @@ def staleness_days(iso_date: str) -> int | None:
     except (ValueError, TypeError):
         return None
     return (date.today() - then).days
+
+
+def load_adherence_log(
+    path: str = "data/personal/adherence_log.jsonl",
+) -> list[dict[str, Any]]:
+    """Resolved Unit C adherence records (append-only JSONL written by the
+    adherence-report CLI). Each line: ticker, verdict, flag_date,
+    actual_cut_fraction, label, gap_cad, gap_bps. Defensive per-line parse;
+    returns [] if the file is absent. Newest flag_date last."""
+    p = Path(path)
+    if not p.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    for line in p.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    rows.sort(key=lambda r: str(r.get("flag_date", "")))
+    return rows
 ```
 
-(Validated 2026-06-10: the file imports `json`, `Path`, `Any` but NOT `date` — add `from datetime import date` to the top import block.)
+(Validated 2026-06-11: the file imports `json`, `Path`, `Any` but NOT `date` — add `from datetime import date` to the top import block. Adherence record keys validated against `application/adherence.py` write block.)
 
 - [ ] **Step 4: Run green, commit**
 
-Run: `python -m pytest tests/test_dashboard_loaders.py -v` → 5 passed
+Run: `python -m pytest tests/test_dashboard_loaders.py -v` → 7 passed
 
 ```bash
 git add adapters/visualization/data_loader.py tests/test_dashboard_loaders.py
@@ -415,6 +481,7 @@ from __future__ import annotations
 import streamlit as st
 
 from adapters.visualization.data_loader import (
+    load_adherence_log,
     load_brief_summary,
     load_weekly_brief,
     staleness_days,
@@ -422,6 +489,7 @@ from adapters.visualization.data_loader import (
 
 _SUMMARY_PATH = "data/personal/brief_summary.json"
 _BRIEF_MD_PATH = "data/personal/weekly_brief.md"
+_ADHERENCE_PATH = "data/personal/adherence_log.jsonl"
 _GRADE_ORDER = ["REDUCE", "TRIM", "REVIEW", "HOLD", "ADD_OK"]
 _GRADE_COLOR = {
     "REDUCE": "#DC2626", "TRIM": "#EA580C", "REVIEW": "#CA8A04",
@@ -429,7 +497,7 @@ _GRADE_COLOR = {
 }
 
 
-def render(path: str = _SUMMARY_PATH) -> None:
+def render(path: str = _SUMMARY_PATH, adherence_path: str = _ADHERENCE_PATH) -> None:
     st.subheader("Weekly Brief")
     summary = load_brief_summary(path)
     if summary is None:
@@ -479,8 +547,36 @@ def render(path: str = _SUMMARY_PATH) -> None:
             ]
         )
 
-    # Adherence tracker placeholder — fills when Unit C lands.
-    st.caption("Adherence tracker: arrives with Unit C (tool-said vs you-did).")
+    # Adherence tracker (Unit C, shipped 2026-06-10): tool-said vs you-did,
+    # resolved at the 21-day horizon. Advisory only (L0), descriptive — no
+    # significance claims (Unit C Interpretation limits).
+    st.markdown("**Adherence tracker** — tool-said vs you-did (resolved, 21d horizon)")
+    adherence = load_adherence_log(adherence_path)
+    if not adherence:
+        st.caption(
+            "No resolved adherence records yet. Run "
+            "`python -m application.cli adherence-report` after flags age 21 days "
+            "(records stay on your machine)."
+        )
+    else:
+        st.table(
+            [
+                {
+                    "Flagged": r.get("flag_date", "?"),
+                    "Ticker": r.get("ticker", "?"),
+                    "Verdict": r.get("verdict", "?"),
+                    "You did": r.get("label", "?"),
+                    "Cut": f"{r.get('actual_cut_fraction', 0) * 100:.0f}%",
+                    "Gap (CAD)": f"{r.get('gap_cad', 0):+.0f}",
+                    "Gap (bps)": f"{r.get('gap_bps', 0):+.1f}",
+                }
+                for r in adherence[-12:]
+            ]
+        )
+        st.caption(
+            "Gap = counterfactual CAD difference if you had cut per the verdict "
+            "(f=0.5). Descriptive, underpowered by design."
+        )
 
     with st.expander("Full markdown brief"):
         md = load_weekly_brief(_BRIEF_MD_PATH)
@@ -503,6 +599,23 @@ def test_render_with_summary_fixture(tmp_path, monkeypatch):
     from adapters.visualization.tabs import weekly_brief
 
     weekly_brief.render(path=str(p))  # must not raise outside streamlit runtime
+
+
+def test_render_with_adherence_log(tmp_path):
+    import json
+
+    p = tmp_path / "brief_summary.json"
+    p.write_text(json.dumps({"as_of": "2026-06-13", "regime": "neutral",
+                             "abstained": True, "holdings": []}))
+    a = tmp_path / "adherence_log.jsonl"
+    a.write_text(json.dumps({
+        "ticker": "ARKK", "verdict": "REDUCE", "flag_date": "2026-05-16",
+        "actual_cut_fraction": 0.0, "label": "IGNORED",
+        "gap_cad": -120.0, "gap_bps": -8.0,
+    }) + "\n")
+    from adapters.visualization.tabs import weekly_brief
+
+    weekly_brief.render(path=str(p), adherence_path=str(a))  # must not raise
 ```
 
 (Streamlit calls run headless outside a server — they no-op or warn. If `st.table` raises outside runtime in this repo's streamlit version, wrap the call in the existing test pattern used by `tests/test_phase5_tabs.py` — follow that file's convention.)
@@ -883,17 +996,28 @@ _SCOREBOARD = [
 _VERDICT_COLOR = {"KILL": "#DC2626", "INCONCLUSIVE": "#CA8A04", "PASS": "#16A34A",
                   "PENDING": "#64748B"}
 
+# Unit B's report verdict string is INCONCLUSIVE_THIN_COVERAGE (validated against
+# data/reports/insider_cluster_falsification_2024.json, 2026-06-11). Per ADR-053
+# this resolved to a PRACTICAL KILL via the survivorship-honest coverage guard.
+# Map the raw verdict -> (display label, color key) so the scoreboard renders amber
+# and states the practical-kill outcome, not a gray "unrecognized" fallback.
+_VERDICT_DISPLAY = {
+    "INCONCLUSIVE_THIN_COVERAGE": ("INCONCLUSIVE → practical KILL", "INCONCLUSIVE"),
+}
+
 
 def _unit_b_row(report_path: str) -> dict[str, str]:
     row = {
         "hypothesis": "Do insider buying clusters in sub-$1B names predict 21-day returns?",
-        "test": "Event study vs liquidity-matched ETF, pre-registered 2-leg gate",
+        "test": "Event study vs liquidity-matched ETF, pre-registered coverage guard",
         "verdict": "PENDING", "adr": "docs/adr/053-insider-cluster-falsification-verdict.md",
     }
     p = Path(report_path)
     if p.exists():
         try:
-            row["verdict"] = str(json.loads(p.read_text()).get("verdict", "PENDING"))
+            raw = str(json.loads(p.read_text()).get("verdict", "PENDING"))
+            label, _ = _VERDICT_DISPLAY.get(raw, (raw, raw))
+            row["verdict"] = label
         except (json.JSONDecodeError, OSError):
             pass
     return row
@@ -912,9 +1036,14 @@ def _gate_strip(log_path: str) -> None:
             continue
     dates.discard("")
     st.markdown("**The one live experiment — discipline forward gate (ADR-048/051)**")
+    # Targets validated against application/calibration_readiness.py (2026-06-11):
+    # k_dates=3 distinct dates >=10 days apart, n_min=30 resolved flags. Rendered
+    # as static text — the dashboard never recomputes readiness (domain logic
+    # stays in the discipline-calibration-status CLI).
     st.caption(
-        f"{len(dates)} weekly reviews accrued · resolves ~mid-July 2026 — "
-        "evidence accrues weekly with zero code changes."
+        f"{len(dates)} weekly review dates accrued · gate needs ≥30 resolved "
+        "REDUCE flags across ≥3 dates ≥10 days apart (ADR-051) · resolves "
+        "~mid-July 2026 — evidence accrues weekly with zero code changes."
     )
 
 
@@ -931,7 +1060,9 @@ def render(
 
     rows = _SCOREBOARD + [_unit_b_row(report_path)]
     for r in rows:
-        color = _VERDICT_COLOR.get(r["verdict"], "#64748B")
+        # Color by the leading verdict token so display labels like
+        # "INCONCLUSIVE → practical KILL" still resolve to the amber key.
+        color = _VERDICT_COLOR.get(r["verdict"].split()[0], "#64748B")
         st.markdown(
             f'<span style="color:{color};font-weight:700;">{r["verdict"]}</span> — '
             f'**{r["hypothesis"]}**  \n'
@@ -943,7 +1074,7 @@ def render(
     _gate_strip(log_path)
 ```
 
-(All seven `adr` paths validated to exist 2026-06-10, including `039-conviction-validation-findings.md`. If Unit B's verdict is PASS, ALSO add a small expander reading `data/reports/insider_paper_log.jsonl` listing paper-trade entries — same defensive JSONL parsing as `_gate_strip`. EXHIBITS are REQUIRED by spec §2.6, not optional: transplant `_render_ablation` and `_render_shap` from `tabs/model_confidence.py` (lines ~370 and ~408, both use data_loader and transplant cleanly — validated) into this file, each preceded by `st.caption("FALSIFIED-era artifact — kept as exhibit")`, rendered between the scoreboard and the gate strip.)
+(All seven `adr` paths validated to exist 2026-06-10, including `039-conviction-validation-findings.md`. Unit B's verdict is FINAL = `INCONCLUSIVE_THIN_COVERAGE` → practical KILL (ADR-053, validated 2026-06-11); the old "if PASS, add paper-log expander" branch is DEAD — do not build it. EXHIBITS are REQUIRED by spec §2.6, not optional: transplant `_render_ablation` and `_render_shap` from `tabs/model_confidence.py` (lines ~370 and ~408, both use data_loader and transplant cleanly — validated) into this file, each preceded by `st.caption("FALSIFIED-era artifact — kept as exhibit")`, rendered between the scoreboard and the gate strip.)
 
 - [ ] **Step 2: Test** — create `tests/test_falsification_lab_tab.py`:
 
@@ -965,6 +1096,15 @@ def test_unit_b_row_reads_verdict(tmp_path):
     assert _unit_b_row(str(p))["verdict"] == "KILL"
 
 
+def test_unit_b_row_maps_real_thin_coverage_verdict(tmp_path):
+    # The actual report verdict string -> practical-kill display label (ADR-053).
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps({"verdict": "INCONCLUSIVE_THIN_COVERAGE"}))
+    from adapters.visualization.tabs.falsification_lab import _unit_b_row
+
+    assert _unit_b_row(str(p))["verdict"] == "INCONCLUSIVE → practical KILL"
+
+
 def test_render_no_raise(tmp_path):
     from adapters.visualization.tabs import falsification_lab
 
@@ -976,7 +1116,7 @@ def test_render_no_raise(tmp_path):
 
 - [ ] **Step 3: Run, commit**
 
-Run: `python -m pytest tests/test_falsification_lab_tab.py -q` → 3 passed
+Run: `python -m pytest tests/test_falsification_lab_tab.py -q` → 4 passed
 
 ```bash
 git add adapters/visualization/tabs/falsification_lab.py tests/test_falsification_lab_tab.py
@@ -1123,11 +1263,47 @@ git commit -m "feat: 7-tab honest cockpit router; delete falsified-era tabs (~1,
 
 ---
 
+### Task 11.5: Wire artifact refresh into the Saturday job (closes the pipeline gap)
+
+**Why (validated 2026-06-11):** `scripts/discipline_weekly_review.sh` runs holdings-risk /
+resolve-flags / calibration-status / adherence-report but NOT `weekly-brief` or
+`screen-candidates`. The spec assumed the hardening plan would add `screen-candidates`;
+it did not. Without this task, `brief_summary.json` (Tabs 1+3) and `screen_<date>.json`
+(Tab 2) never refresh — `data/reports/` currently has NO `screen_*.json` at all (only
+`screen_ic_*`), so Research Candidates would warn forever.
+
+**Files:**
+- Modify: `scripts/discipline_weekly_review.sh`
+
+- [ ] **Step 1:** Append two steps to the script block (after step 4, same `$PYTHON -m application.cli` pattern; both commands have working defaults — validated `weekly-brief` opts: `--market us --holdings <csv> --out data/personal/weekly_brief.md --report-dir data/reports/`; it writes `brief_summary.json` next to the markdown from Task 2 onward):
+
+```bash
+  echo "--- 5. weekly brief (markdown + brief_summary.json for the dashboard) ---"
+  "$PYTHON" -m application.cli weekly-brief --holdings "$HOLDINGS"
+  echo "--- 6. evidence screen (full ranked screen_<date>.json for the dashboard) ---"
+  "$PYTHON" -m application.cli screen-candidates
+```
+
+Also update the header comment block (steps list) to mention 5 and 6.
+
+- [ ] **Step 2:** Verify: `bash -n scripts/discipline_weekly_review.sh` → exit 0. Commit:
+
+```bash
+git add scripts/discipline_weekly_review.sh
+git commit -m "feat: Saturday job refreshes brief_summary.json + screen_<date>.json for the dashboard"
+```
+
+---
+
 ### Task 12: Smoke the real app + finish
 
-- [ ] **Step 1:** `streamlit run adapters/visualization/dashboard.py` locally; click all 7 tabs; verify fail-loud warnings appear where artifacts are missing and no tab crashes. (If running headless, `streamlit run --server.headless true` + curl the port for HTTP 200.)
-- [ ] **Step 2:** `pre-commit run --all-files` → all pass.
-- [ ] **Step 3:** Invoke `superpowers:finishing-a-development-branch` → PR `feat/dashboard-realignment` → `develop`.
+- [ ] **Step 1: UI polish pass.** Invoke the `frontend-design` skill and sweep all 7 tabs
+  against the "UI treatment — anti-flat" requirements at the top of this plan: ws-cards,
+  hero metrics, pills, consistent Plotly theme, left-border verdict accents. The dashboard
+  must read as a designed product (SWST language), not stacked default-Streamlit widgets.
+- [ ] **Step 2:** `streamlit run adapters/visualization/dashboard.py` locally; click all 7 tabs; verify fail-loud warnings appear where artifacts are missing and no tab crashes. (If running headless, `streamlit run --server.headless true` + curl the port for HTTP 200.)
+- [ ] **Step 3:** `pre-commit run --all-files` → all pass.
+- [ ] **Step 4:** Invoke `superpowers:finishing-a-development-branch` → PR `feat/dashboard-realignment` → `develop`.
 
 ---
 
@@ -1150,4 +1326,38 @@ Confirmed-correct by the same review: CLI insert anchor (cli.py:2947), screen JS
 key names (cli.py:2521–2546), brief_summary writer↔reader key contracts, loader
 signatures T3↔T4/5/6, all scoreboard ADR paths, frozen-dataclass rebuild in T2's
 test, `discipline_log.jsonl` line shape (`as_of` key).
+
+### Post-merge amendments (2026-06-11, after Unit C + hardening landed on develop)
+
+Re-validated every anchor against develop @ post-PR-#37/#38. All still hold; only
+positions drifted (text anchors used, not line numbers). Two substantive fixes:
+
+- **T9 Unit B verdict (was stale):** real report verdict string is
+  `INCONCLUSIVE_THIN_COVERAGE`, NOT a generic "INCONCLUSIVE"/"PASS". `_unit_b_row`
+  now maps it to display label "INCONCLUSIVE → practical KILL" (ADR-053) and the
+  scoreboard colors by leading token so it renders amber, not gray. PASS/paper-log
+  branch removed (dead). New test `test_unit_b_row_maps_real_thin_coverage_verdict`.
+- **T4 adherence (was a placeholder caption):** Unit C shipped 2026-06-10, so the
+  "arrives with Unit C" placeholder is replaced by a real `load_adherence_log`
+  loader (T3) + adherence table in the Weekly Brief tab, reading
+  `data/personal/adherence_log.jsonl` (keys validated against
+  `application/adherence.py`). New loader tests (T3) + populated-render test (T4).
+
+Net test-count deltas: T3 5→7, T4 +1, T9 3→4. CLI anchor now cli.py:3074
+(`out_path.write_text(to_markdown(brief))`); screen serializer ~cli.py:2623–2653.
+
+### Thoroughness review round 2 (2026-06-11, spec↔plan↔code cross-check)
+
+- **Task 11.5 ADDED (pipeline gap):** Saturday job never ran `weekly-brief` /
+  `screen-candidates`; no `screen_*.json` exists in data/reports. Spec §2.2 had
+  assigned this to the hardening plan, which didn't do it. Without 11.5, Tabs 1/2/3
+  show stale/missing warnings forever.
+- **T9 gate strip:** now states the gate's real targets (≥30 resolved across ≥3 dates
+  ≥10 days apart — `application/calibration_readiness.py` k_dates=3/d_days=10/n_min=30)
+  as static text; dashboard still computes no domain logic.
+- **UI treatment section ADDED (user requirement):** anti-flat — ws-cards, hero
+  metrics/`render_verdict_card`, `status_pill_html` pills, consistent Plotly theme,
+  verdict left-border accents, `frontend-design` polish pass in T12 (all component
+  symbols validated to exist in `components/{metrics,formatters}.py` + styles.py).
+- Spec updated with a matching Addendum section (plan supersedes §2.1/§2.2/§2.6/§7).
 ```
