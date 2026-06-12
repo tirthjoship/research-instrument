@@ -125,9 +125,27 @@ def test_price_cache_functions_exist():
     assert callable(fetch_ticker_info)
 
 
+def test_stock_analysis_tab_importable():
+    """Stock Analysis tab module is importable."""
+    from adapters.visualization.tabs.stock_analysis import render
+
+    assert callable(render)
+
+
 def test_load_recommendations_latest_returns_list():
     """data_loader.load_recommendations_latest returns a list (even if empty)."""
     from adapters.visualization.data_loader import load_recommendations_latest
 
     result = load_recommendations_latest("nonexistent.db")
     assert isinstance(result, list)
+
+
+def test_verdict_reframe_has_no_grade_language():
+    import inspect
+
+    from adapters.visualization.tabs import stock_analysis
+
+    src = inspect.getsource(stock_analysis._render_verdict)
+    assert "RESEARCH ONLY" in src
+    assert "System Verdict" not in src
+    assert "conviction" not in src.lower()
