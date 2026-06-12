@@ -78,27 +78,31 @@ def render() -> None:
     if lookup_key and f"analysis_{lookup_key}" in st.session_state:
         result = st.session_state[f"analysis_{lookup_key}"]
         _render_verdict(result)
-        try:
-            from datetime import datetime, timezone
+        fit_key = f"fit_{lookup_key}"
+        if fit_key not in st.session_state:
+            try:
+                from datetime import datetime, timezone
 
-            from application.fit_use_case import (
-                default_beta_fn,
-                gather_and_assess,
-                market_systematic_share_threshold,
-            )
+                from application.fit_use_case import (
+                    default_beta_fn,
+                    gather_and_assess,
+                    market_systematic_share_threshold,
+                )
 
-            fit = gather_and_assess(
-                ticker=lookup_key,
-                reports_dir="data/reports",
-                summary_path="data/personal/brief_summary.json",
-                holdings_path="data/personal/holdings.csv",
-                beta_fn=default_beta_fn,
-                as_of=datetime.now(timezone.utc),
-                systematic_share_threshold=market_systematic_share_threshold(),
-            )
-            _render_fit_card(fit)
-        except Exception:
-            st.caption("Fit verdict unavailable (see logs).")
+                fit = gather_and_assess(
+                    ticker=lookup_key,
+                    reports_dir="data/reports",
+                    summary_path="data/personal/brief_summary.json",
+                    holdings_path="data/personal/holdings.csv",
+                    beta_fn=default_beta_fn,
+                    as_of=datetime.now(timezone.utc),
+                    systematic_share_threshold=market_systematic_share_threshold(),
+                )
+                st.session_state[fit_key] = fit
+            except Exception:
+                st.caption("Fit verdict unavailable (see logs).")
+        if fit_key in st.session_state:
+            _render_fit_card(st.session_state[fit_key])
         _render_valuation(result)
         _render_growth(result)
         _render_performance(result)
