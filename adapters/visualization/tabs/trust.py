@@ -95,10 +95,10 @@ _FOUR_RULES = [
         "body": (
             "Every prediction may only use data that existed at "
             "that moment. Using tomorrow’s data to “predict” today is the most common way "
-            "backtests lie; our code raises ‘LookAheadBiasError’ if it ever happens."
+            "backtests lie; our code raises `LookAheadBiasError` if it ever happens."
         ),
         "example": (
-            "our code raises ‘LookAheadBiasError’ and halts rather than let tomorrow’s "
+            "our code raises `LookAheadBiasError` and halts rather than let tomorrow’s "
             "price leak into today’s signal."
         ),
     },
