@@ -316,3 +316,31 @@
   `origin/main..origin/develop` = 0). Plan: `docs/superpowers/plans/2026-06-12-dashboard-v2.md`.
 - **Project now closes to maintenance** — v2 was the sanctioned final UX scope. Open
   item unchanged: ADR-048/051 discipline forward gate resolves ~mid-July 2026.
+
+## 2026-06-12 — Cockpit redesign shipped (two-surface dashboard)
+
+The six-tab v2 dashboard was replaced by a two-surface cockpit redesign on branch
+`feat/cockpit-redesign` (plan: `docs/superpowers/plans/2026-06-12-cockpit-redesign.md`).
+
+**Built:**
+- `adapters/visualization/cockpit/` package — assembler + 5 section renderers:
+  `danger_strip`, `your_calls`, `week_retro`, `look_into_next`, `lookup` (with
+  stock-detail `st.dialog` drawer).
+- `rank_by_diversification(factor_series, candidate_series)` — diversification-first
+  candidate ranking in the look-into-next feed.
+- Universe guard (Task 0): stale tickers pruned from the screen universe before
+  the cockpit build began.
+- Single-scroll priority order enforced: danger → calls → retro → look-into-next →
+  lookup. One design system throughout (reuses existing `styles.py` ws-card tokens).
+
+**Deleted:**
+- 4 v2 tab renderers (`tabs/home.py`, `tabs/screener.py`, `tabs/risk.py`,
+  `tabs/my_portfolio.py`) and their corresponding unit tests.
+
+**Relocated:**
+- `tabs/stock_analysis.py` logic → cockpit `lookup` section + drawer.
+- `tabs/trust.py` (falsification/methodology) → **Showcase** surface (intact,
+  reachable as second dashboard tab).
+
+**Final suite:** 1613 tests passing, 94% coverage, mypy strict clean.
+Branch pending Opus verification sweep + PR to dev.
