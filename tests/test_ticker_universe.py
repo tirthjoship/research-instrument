@@ -42,3 +42,18 @@ def test_load_returns_sorted() -> None:
         result = load_ticker_universe([f])
 
         assert result == ["AAPL", "MSFT", "TSLA"]
+
+
+KNOWN_DELISTED = {"SIVB", "PXD", "SPLK", "WBA"}
+
+
+def test_universe_files_contain_no_known_delisted_or_foreign_suffix() -> None:
+    """Guard: known-delisted and foreign-suffix tickers must not appear in production universe files."""
+    config_dir = Path(__file__).parent.parent / "config" / "tickers"
+    universe = load_ticker_universe(
+        [config_dir / "sp500.txt", config_dir / "nasdaq100.txt"]
+    )
+    stale = KNOWN_DELISTED & set(universe)
+    assert not stale, f"delisted tickers still in universe files: {sorted(stale)}"
+    foreign = [t for t in universe if t.endswith(".TO") or t.endswith(".V")]
+    assert not foreign, f"foreign-suffix artifacts in US universe: {foreign}"
