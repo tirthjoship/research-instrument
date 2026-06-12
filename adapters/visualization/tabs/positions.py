@@ -24,6 +24,12 @@ DB_PATH = "data/recommendations.db"
 def render(db_path: str = DB_PATH) -> None:
     """Render the My Portfolio tab."""
     st.markdown("### My Portfolio")
+    st.markdown(
+        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        "Your tracked positions, trades, and watchlist — updated as you record them."
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
     trades = load_trades(db_path)
     outcomes = load_outcomes(db_path)
@@ -425,40 +431,26 @@ def _render_watchlist_card(
                 from adapters.data.sqlite_store import SQLiteStore
 
                 SQLiteStore(db_path).remove_watchlist(symbol)
-            except Exception:
-                pass
+            except Exception as exc:
+                st.warning(f"Watchlist update failed: {exc}")
             st.rerun()
     with btn_cols[1]:
         if st.button("Analyze", key=f"wl_az_{symbol}"):
             st.session_state["analyze_ticker"] = symbol
-            st.info(f"Switch to Stock Analysis tab and enter {symbol}")
+            st.info(f"{symbol} queued — open the Stock Analysis tab to see it run.")
 
 
 def _render_watchlist_add_form(db_path: str) -> None:
     st.markdown("#### Add to Watchlist")
     with st.form("add_watchlist_form", clear_on_submit=True):
-        cols = st.columns([2, 3, 3, 1])
+        cols = st.columns([3, 1])
         ticker = cols[0].text_input("Symbol", placeholder="TSLA")
-        reason = cols[1].selectbox(
-            "Reason",
-            [
-                "Earnings play",
-                "Sector rotation",
-                "Upstream signal",
-                "Technical setup",
-                "Insider activity",
-                "Momentum",
-                "Custom",
-            ],
-        )
-        notes = cols[2].text_input("Notes (optional)", placeholder="Details...")
-        submitted = cols[3].form_submit_button("Add")
+        submitted = cols[1].form_submit_button("Add")
         if submitted and ticker:
-            full_notes = f"{reason}" + (f" — {notes}" if notes else "")
             try:
                 from adapters.visualization.action_runner import run_add_watchlist
 
-                run_add_watchlist(ticker.upper(), full_notes, db_path=db_path)
-            except Exception:
-                pass
+                run_add_watchlist(ticker.upper(), "", db_path=db_path)
+            except Exception as exc:
+                st.warning(f"Watchlist update failed: {exc}")
             st.rerun()

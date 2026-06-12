@@ -29,3 +29,20 @@ def test_render_empty_dir_no_raise(tmp_path):  # type: ignore[no-untyped-def]
     from adapters.visualization.tabs import research_candidates
 
     research_candidates.render(reports_dir=str(tmp_path))
+
+
+def test_render_abstained_false_no_candidates_no_raise(tmp_path):  # type: ignore[no-untyped-def]
+    """abstained=false but candidates=[] (eligibility filtered all out) must render abstention card."""
+    (tmp_path / "screen_2026-06-11.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-11",
+                "universe_size": 512,
+                "abstained": False,
+                "candidates": [],
+            }
+        )
+    )
+    from adapters.visualization.tabs import research_candidates
+
+    research_candidates.render(reports_dir=str(tmp_path))
