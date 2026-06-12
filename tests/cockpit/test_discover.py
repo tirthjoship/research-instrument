@@ -97,3 +97,37 @@ def test_discover_source_has_no_forbidden_words():
     src = inspect.getsource(_discover).lower()
     for word in FORBIDDEN_WORDS:
         assert word not in src, f"forbidden word {word!r} in _discover source"
+
+
+def test_diversification_ranks_align_on_shared_calendar(monkeypatch):
+    # Regression: a candidate with a halted/missing day must stay date-aligned to
+    # the factor (joint dropna), not desync via independent per-column dropna.
+    import numpy as np
+    import pandas as pd
+
+    from adapters.visualization.cockpit import _discover
+
+    idx = pd.date_range("2026-01-01", periods=8, freq="D")
+    spy = [100, 101, 102, 101, 103, 104, 103, 105]
+    mirror = [50, 50.5, 51, 50.5, 51.5, 52, 51.5, 52.5]  # moves with SPY
+    flat = [50, 49.9, 50.1, 49.95, 50.05, 49.92, 50.08, 50.0]  # ~uncorrelated
+    df = pd.DataFrame(
+        {
+            ("Close", "SPY"): spy,
+            ("Close", "MIRROR"): mirror,
+            ("Close", "FLAT"): flat,
+        },
+        index=idx,
+    )
+    # a halt: MIRROR missing one day SPY trades -> desync under independent dropna
+    df.loc[idx[3], ("Close", "MIRROR")] = np.nan
+    df.columns = pd.MultiIndex.from_tuples(df.columns)
+
+    monkeypatch.setattr("yfinance.download", lambda *a, **k: df)
+    ranked = _discover._diversification_ranks(["MIRROR", "FLAT"], "SPY")
+
+    names = [t for t, _ in ranked]
+    assert set(names) == {"MIRROR", "FLAT"}
+    assert names[0] == "FLAT"  # diversifies more -> lower |corr| -> first
+    corr = dict(ranked)
+    assert abs(corr["MIRROR"]) > abs(corr["FLAT"])

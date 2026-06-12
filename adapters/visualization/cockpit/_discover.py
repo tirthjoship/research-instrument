@@ -9,7 +9,6 @@ from __future__ import annotations
 import streamlit as st
 
 from adapters.visualization.data_loader import load_brief_summary, load_latest_screen
-from adapters.visualization.price_cache import fetch_week_changes  # noqa: F401
 from application.diversification_query import rank_by_diversification
 from application.holdings_reader import read_holdings
 
@@ -20,19 +19,33 @@ _HISTORY_DAYS = 60
 def _diversification_ranks(
     candidates: list[str], dominant: str
 ) -> list[tuple[str, float]]:
-    """Fetch ~60d closes for candidates + dominant factor, rank by low |corr|."""
+    """Fetch ~60d closes for candidates + dominant factor, rank by low |corr|.
+
+    Columns are aligned on one shared trading calendar (joint dropna) BEFORE
+    returns are computed, so each correlation compares same-day moves. Without
+    this, a candidate with any halted/missing day would desync from the factor
+    calendar and yield a meaningless correlation.
+    """
     try:
         import yfinance as yf
 
-        data = yf.download(
+        close = yf.download(
             [*candidates, dominant],
             period=f"{_HISTORY_DAYS}d",
             interval="1d",
             progress=False,
             auto_adjust=True,
         )["Close"]
-        series = {t: [float(v) for v in data[t].dropna().tolist()] for t in candidates}
-        factor = [float(v) for v in data[dominant].dropna().tolist()]
+        present = [t for t in [*candidates, dominant] if t in close.columns]
+        if dominant not in present:
+            return []
+        aligned = close[present].dropna()  # one calendar shared by all columns
+        factor = [float(v) for v in aligned[dominant].tolist()]
+        series = {
+            t: [float(v) for v in aligned[t].tolist()]
+            for t in candidates
+            if t in aligned.columns
+        }
     except Exception:  # noqa: BLE001 — degraded state below
         return []
     return rank_by_diversification(factor_series=factor, candidate_series=series)

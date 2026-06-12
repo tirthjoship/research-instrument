@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from domain.fit import FitVerdict
 
 from adapters.visualization.components.snowflake import build_snowflake
-from adapters.visualization.data_loader import load_latest_screen  # noqa: F401
+from adapters.visualization.data_loader import load_latest_screen
 from domain.fit import FitVerdict
 
 # === BEGIN verbatim ports from tabs/stock_analysis.py (lines 65, 257, 675) ===

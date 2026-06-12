@@ -22,6 +22,16 @@ def test_detail_sections_present(monkeypatch):
     assert "_render_fit_card" in src and "_snowflake_axes" in src
 
 
+def test_stock_detail_keeps_research_only_caveat():
+    # Positive guard (replaces the one lost when tabs/stock_analysis.py was deleted):
+    # the drawer must keep its "does not forecast returns" caveat, or RESEARCH_ONLY
+    # framing silently erodes with no test failing.
+    from adapters.visualization.cockpit import stock_detail
+
+    src = inspect.getsource(stock_detail).lower()
+    assert "does not forecast returns" in src
+
+
 def test_stock_detail_source_has_no_forbidden_words():
     from adapters.visualization.cockpit import stock_detail
     from domain.fit import FORBIDDEN_WORDS
