@@ -10,14 +10,20 @@ from adapters.visualization.data_loader import load_latest_screen, staleness_day
 _TOP_N = 15
 
 _DISCLAIMER = (
-    "Ranked by **current factual evidence** (valuation · quality · health) — "
-    "**NOT predicted returns**. Prediction was tested 2006–2024 and falsified "
+    "Ranked by <strong>current factual evidence</strong> (valuation · quality · health) — "
+    "<strong>NOT predicted returns</strong>. Prediction was tested 2006–2024 and falsified "
     "(see the Falsification Lab tab)."
 )
 
 
 def render(reports_dir: str = "data/reports") -> None:
     st.subheader("Research Candidates")
+    st.markdown(
+        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        "The evidence screen's ranked research list — only names that cleared the locked bar."
+        "</div>",
+        unsafe_allow_html=True,
+    )
     st.markdown(
         '<div class="ws-card" style="padding:10px 16px;margin-bottom:12px;">'
         f"{_DISCLAIMER}"
@@ -37,19 +43,30 @@ def render(reports_dir: str = "data/reports") -> None:
     if days is not None and days > 8:
         st.error(f"Screen is {days} days old — re-run `screen-candidates`.")
 
-    if screen.get("abstained"):
+    candidates = screen.get("candidates", [])[:_TOP_N]
+
+    # Treat empty candidates as abstention regardless of the abstained flag.
+    # Real data pattern: abstained=false but candidates=[] (eligibility filtered all out).
+    if not candidates:
+        universe_size = screen.get("universe_size", "?")
+        as_of = screen.get("as_of", "?")
         st.markdown(
-            '<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
-            '<span style="font-weight:700;color:#64748B;">ABSTAINED</span> — '
-            "The evidence screen ABSTAINED — no name met the evidence bar. "
-            "That is the tool working, not failing."
+            '<div class="ws-card" style="padding:16px 20px;margin-bottom:12px;">'
+            f'<p style="font-size:16px;font-weight:700;margin:0 0 6px 0;">'
+            f"The screen looked at {universe_size} names — none met the evidence bar this week."
+            "</p>"
+            '<p style="color:#6B7280;margin:0 0 8px 0;">'
+            "That is the discipline working, not failing. A ranked list appears only when "
+            "names clear the pre-registered bar."
+            "</p>"
+            f'<span style="font-size:12px;color:#9CA3AF;">As of {as_of}</span>'
             "</div>",
             unsafe_allow_html=True,
         )
-
-    candidates = screen.get("candidates", [])[:_TOP_N]
-    if not candidates:
-        st.caption("No ranked candidates in the latest report.")
+        st.markdown(
+            "**Want to research a specific stock anyway?** "
+            "Open the **Stock Analysis** tab — type any ticker for a full evidence + portfolio-fit read."
+        )
         return
 
     as_of = screen.get("as_of", "?")
