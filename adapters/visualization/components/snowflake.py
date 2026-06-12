@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 _MIN_AXES = 3
 
 
-def build_snowflake(axes: dict[str, float]) -> "go.Figure | None":
+def build_snowflake(axes: dict[str, float]) -> go.Figure | None:
     """Radar figure from axis-name -> 0..100 score. None if < 3 axes."""
     if len(axes) < _MIN_AXES:
         return None
