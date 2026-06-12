@@ -1,16 +1,19 @@
 # STATUS — multi-modal-stock-recommender
 
 **As of:** 2026-06-12
-**Branch:** feat/dashboard-v2 (v2 IMPLEMENTED + verified; PR open, NOT yet merged)
-**Phase:** Dashboard v2 — built, review-gated; awaiting merge → wrap to maintenance
+**Branch:** develop ≡ main (Dashboard v2 SHIPPED + merged; docs follow-up on docs/v2-wrap)
+**Phase:** Maintenance — v2 was the sanctioned final UX scope; no new feature work
 
 ## Current State
 
-Dashboard v2 fully implemented on `feat/dashboard-v2` (T1–T8). Suite **1628 passing**,
-code pre-commit hooks green, 6-tab app launches clean (HTTP 200 / health ok).
-Final 3-way independent Opus review: no fabrication, no live vocab violation, no
-regressions; flagged items all fixed (dangling "Falsification Lab"→"Trust" refs,
-scoped home-hero vocab guard, dead `_GRADE_TONE` removed, generated screens gitignored).
+Dashboard v2 SHIPPED 2026-06-12: PR #46 → develop, release PR #47 develop → main, both
+CI-green and merged; `origin/main..origin/develop` = 0. Suite **1628 passing**, code
+pre-commit hooks green, 6-tab app launches clean (HTTP 200 / health ok). Final 3-way
+independent Opus verification (conformance / honesty-drift / integration): no fabrication,
+no live vocab violation, no regressions; all flagged items fixed pre-merge (dangling
+"Falsification Lab"→"Trust" refs incl. `domain/fit.py`, fabricated Trust claim reverted,
+scoped vocab guards added, dead `_GRADE_TONE` removed, generated screens gitignored).
+Docs (README/CONTEXT/PHASE_LOG + this file) updated on `docs/v2-wrap` (follow-up PR).
 
 Delivered:
 - **Theme/glossary** (T1): v2 tokens, card hover, `.section-chip`/`.tip`, `glossary.py`.
@@ -26,10 +29,11 @@ Delivered:
 
 ## Next Action
 
-1. Merge: confirm CI green on the open PR → develop, merge, then develop → main
-   release PR, merge (keep both branches in sync — standing user instruction).
-2. After merge: `git rev-list --count origin/main..origin/develop` should be 0.
-3. Then close to maintenance (v2 was the sanctioned final UX scope).
+1. Merge the `docs/v2-wrap` follow-up PR (README/CONTEXT/PHASE_LOG/STATUS) → develop →
+   main, keeping both in sync (`git rev-list --count origin/main..origin/develop` = 0).
+2. No feature work queued. Project is in maintenance.
+3. Standing watch: ADR-048/051 discipline forward gate resolves ~mid-July 2026 via the
+   weekly Saturday job (`scripts/discipline_weekly_review.sh`); ~Dec 2026 behavior-gap review.
 
 ## Caveats
 
