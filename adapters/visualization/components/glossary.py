@@ -9,13 +9,14 @@ from __future__ import annotations
 import html
 
 GLOSSARY: dict[str, str] = {
+    # ── Original 12 terms ──────────────────────────────────────────────────────
     "Confidence interval (CI)": (
         'The range the true average plausibly sits in. "CI low > 0" = even '
         "the pessimistic read is a profit."
     ),
     "Slippage": (
-        "The hidden cost of actually buying a thinly-traded stock — you move "
-        "the price against yourself."
+        "The hidden cost of trading a thinly-traded stock — your own order "
+        "moves the price against you."
     ),
     "Tercile": (
         'Split into thirds. "Bottom liquidity tercile" = the third of stocks '
@@ -43,7 +44,7 @@ GLOSSARY: dict[str, str] = {
         "goalposts."
     ),
     "Look-ahead bias": (
-        "Accidentally letting future data leak into a prediction — makes "
+        "Accidentally letting future data leak into a model — makes "
         "backtests look great and live trading fail."
     ),
     "Systematic share": (
@@ -57,6 +58,114 @@ GLOSSARY: dict[str, str] = {
     "Evidence grade": (
         "Where a stock ranks on present-day facts (valuation, quality, "
         "health) versus the screened universe. A description, not a forecast."
+    ),
+    # ── New terms (Stage 0 expansion) ─────────────────────────────────────────
+    "Net beta": (
+        "Your whole book's net sensitivity to the market after long and short "
+        "positions offset each other. Zero = market-neutral."
+    ),
+    "Universe": (
+        "The defined set of stocks the screen runs over. A stock not in the "
+        "universe receives no evidence grade."
+    ),
+    "Cleared the bar": (
+        "A stock passed every pre-registered gate (liquidity, data quality, "
+        "minimum history) and entered the evidence screen."
+    ),
+    "Abstention": (
+        "The screen declined to rank a stock — either because it failed a "
+        "gate or because the evidence was too thin to be meaningful."
+    ),
+    "Directional accuracy": (
+        "How often the up/down call matched what happened next. ~50% = no "
+        "edge over a coin flip."
+    ),
+    "Rank-IC": (
+        "Correlation between a signal's RANKING of stocks and the order of "
+        "what happened next. Zero = the ranking knows nothing."
+    ),
+    "Evidence screen": (
+        "The systematic pass over the universe that scores each stock on "
+        "present-day factual data. It describes; it does not forecast."
+    ),
+    "Trend filter": (
+        "A rule that checks whether a stock's price is above or below a "
+        "long-run moving average, used to flag macro momentum context."
+    ),
+    "Concentrated risk": (
+        "When a single position or a correlated cluster dominates the book's "
+        "risk, so one bad outcome disproportionately hurts the whole."
+    ),
+    "Reduce flag": (
+        "A signal to take some risk off a position — trim its size without "
+        "exiting fully."
+    ),
+    "Trim flag": (
+        "A signal to reduce the size of an existing holding, not to exit " "fully."
+    ),
+    "Hold flag": (
+        "A signal that the current position size is appropriate — no action "
+        "warranted."
+    ),
+    "Add-on flag": (
+        "A signal that adding to an existing holding fits the book's current "
+        "risk capacity."
+    ),
+    "Book health": (
+        "A summary of whether the portfolio's diversification, liquidity, "
+        "and factor exposures are within acceptable ranges."
+    ),
+    "Momentum factor": (
+        "A stock characteristic based on its recent relative performance — "
+        "stocks that have risen more than peers over a look-back window."
+    ),
+    "Revision factor": (
+        "A stock characteristic based on how much third-party analyst "
+        "earnings estimates have moved up or down recently."
+    ),
+    "Quality factor": (
+        "A stock characteristic capturing profitability, earnings stability, "
+        "and balance-sheet strength relative to peers."
+    ),
+    "Value factor": (
+        "A stock characteristic based on how cheap a stock is relative to "
+        "its fundamentals — e.g. low price-to-earnings or price-to-book."
+    ),
+    "Industry percentile": (
+        "Where a stock ranks within its industry on a given metric, "
+        "removing sector-level effects from the comparison."
+    ),
+    "Analyst consensus": (
+        "The central tendency of third-party analyst estimates or ratings for "
+        "a stock. Displayed as-sourced; this project does not adopt it."
+    ),
+    "Dispersion": (
+        "The spread among third-party analyst estimates — wide dispersion "
+        "signals high uncertainty about the stock's near-term path."
+    ),
+    "Snowflake": (
+        "A radar-chart visual showing a stock's scores across multiple "
+        "factor dimensions at once."
+    ),
+    "Portfolio fit": (
+        "An assessment of how well a stock complements the existing book — "
+        "factoring in beta overlap, concentration, and liquidity."
+    ),
+    "EMH": (
+        "Efficient-Market Hypothesis: public information is already in the "
+        "price, so a public signal rarely beats the market on its own."
+    ),
+    "SMA-200": (
+        "The 200-day simple moving average of a stock's closing price — a "
+        "widely watched long-run trend reference level."
+    ),
+    "Falsified": (
+        "A hypothesis that was pre-registered and then failed its gate when "
+        "tested on real data. Honest accounting of what did not work."
+    ),
+    "Snowflake chart": (
+        "Synonym for Snowflake — a radar chart summarising multiple factor "
+        "scores in a single view."
     ),
 }
 
