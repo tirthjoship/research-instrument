@@ -126,7 +126,6 @@ def _render_portfolio_hero(
     )
 
     sign = "+" if total_pnl >= 0 else ""
-    pnl_sign = "+" if total_pnl >= 0 else ""
 
     book_health_tip = tooltip("Book health", "Book health")
     concentrated_risk_tip = tooltip("Concentrated risk", "Concentrated risk")
@@ -142,7 +141,7 @@ def _render_portfolio_hero(
         "<div>"
         '<div class="ri-metric-lab">Total P&amp;L</div>'
         f'<div class="ri-metric-num" style="color:{pnl_color};">'
-        f"{pnl_sign}${total_pnl:,.0f}"
+        f"{sign}${total_pnl:,.0f}"
         f'<span style="font-size:1.1rem;margin-left:.5rem;color:{pnl_color};">'
         f"({sign}{pnl_pct:.1f}%)</span>"
         "</div>"

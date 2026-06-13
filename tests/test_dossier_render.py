@@ -67,7 +67,7 @@ def _make_analysis_result(
 
     peer_percentiles: dict[str, float | None] = {}
     if with_peer_percentiles:
-        peer_percentiles = {"P/E": 72.5, "Market Cap": 95.0, "P/B": None}
+        peer_percentiles = {"P/E": 72.5, "Market Cap": 95.0}
 
     return AnalysisResult(
         ticker="NVDA",
@@ -201,7 +201,7 @@ def test_render_peer_percentiles_data_gap_no_raise() -> None:
     from adapters.visualization.tabs.stock_analysis import _render_peer_percentiles
 
     result = _make_analysis_result()
-    result.peer_percentiles = {"P/E": None, "Market Cap": None, "P/B": None}
+    result.peer_percentiles = {"P/E": None, "Market Cap": None}
     _render_peer_percentiles(result)
 
 
@@ -286,7 +286,7 @@ def test_snowflake_axes_uses_trend_filter_label(monkeypatch, tmp_path) -> None: 
     fit = FitVerdict(ticker="NVDA", evidence_grade="STRONG", fit_flags=(), summary="s.")
     axes = stock_analysis._snowflake_axes(fit)
     assert "Trend filter" in axes, "axis key must be 'Trend filter', not 'Trend'"
-    assert "Trend" not in axes or "Trend filter" in axes  # no bare 'Trend' key
+    assert "Trend" not in axes  # no bare 'Trend' key remains
 
 
 # ---------------------------------------------------------------------------

@@ -247,17 +247,14 @@ def analyze_ticker(
 
             peer_percentiles["P/E"] = sector_percentile(this_pe, peer_pe_values)
             peer_percentiles["Market Cap"] = sector_percentile(this_mc, peer_mc_values)
-            # Additional comparable metrics available in info and peers if present
-            raw_pb = info.get("priceToBook")
-            this_pb: float | None = float(raw_pb) if raw_pb is not None else None
-            # peer_data doesn't carry P/B — will be None (DATA_GAP) which is correct
-            peer_percentiles["P/B"] = sector_percentile(this_pb, [None] * len(peers))
+            # Only P/E and Market Cap are carried in peer_data. P/B is omitted
+            # rather than rendered as a permanently-empty DATA_GAP column.
         else:
             # No peers — all DATA_GAP; log limitation
             logger.info(
                 "No peer data for {} — peer percentiles will be DATA_GAP", ticker
             )
-            peer_percentiles = {"P/E": None, "Market Cap": None, "P/B": None}
+            peer_percentiles = {"P/E": None, "Market Cap": None}
         result.peer_percentiles = peer_percentiles
     except Exception as exc:
         logger.warning("Could not compute peer percentiles for {}: {}", ticker, exc)
