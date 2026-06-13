@@ -724,6 +724,16 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .ri-tile.t-amber .ri-stamp{color:var(--ri-amber);}
 .ri-tile.t-green .ri-stamp{color:var(--ri-green);}
 .ri-tile.t-muted .ri-stamp{color:var(--ri-muted);border-style:dashed;}
+
+/* ===== Research Instrument — Screener Funnel ===== */
+.ri-funnel{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;padding:1.25rem 1.5rem;background:var(--ri-card);border:1px solid var(--ri-line);border-radius:16px;box-shadow:0 1px 2px rgba(20,40,60,.05),0 8px 20px rgba(20,40,60,.05);margin:.5rem 0 1.5rem;}
+.ri-funnel-step{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.5rem .9rem;border-radius:10px;background:var(--ri-hair);min-width:90px;}
+.ri-funnel-step--amber{background:#FEF3E2;}
+.ri-funnel-label{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ri-muted);}
+.ri-funnel-count{font-family:'Fraunces',serif;font-weight:600;font-size:2rem;line-height:1;color:var(--ri-ink);font-variant-numeric:tabular-nums;}
+.ri-funnel-step--amber .ri-funnel-count{color:var(--ri-amber);}
+.ri-funnel-step--amber .ri-funnel-label{color:var(--ri-amber);}
+.ri-funnel-arrow{font-size:1.2rem;color:var(--ri-muted);line-height:1;padding-top:.5rem;}
 </style>
 """
 
