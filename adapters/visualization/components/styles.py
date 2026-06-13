@@ -6,6 +6,7 @@ GLOBAL_CSS = """
 <style>
 /* ===== Fonts ===== */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 /* ===== CSS Variables ===== */
 :root {
@@ -683,6 +684,20 @@ header[data-testid="stHeader"] { display: none !important; }
 .hero-gradient {
     background: linear-gradient(135deg, #FFFFFF 0%, #EEF2FF 100%);
 }
+
+/* ===== Research Instrument Design Tokens ===== */
+:root{
+  --ri-app:#F4F6F8; --ri-card:#FFFFFF; --ri-ink:#14181F; --ri-ink2:#3A4250; --ri-muted:#717885;
+  --ri-line:#E3E7EC; --ri-hair:#EDF0F3; --ri-teal:#0F6E80;
+  --ri-crimson:#CE2F26; --ri-amber:#C9810E; --ri-green:#1F9254;
+}
+#MainMenu,header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"]{display:none!important;}
+html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px at 12% -8%,#FFF 0%,rgba(255,255,255,0) 55%),var(--ri-app)!important;}
+[data-testid="stMainBlockContainer"],.block-container{max-width:1180px!important;padding:2.2rem 2.4rem 3rem!important;font-family:'IBM Plex Sans',sans-serif;color:var(--ri-ink);}
+.ri-h1{font-family:'Fraunces',serif;font-weight:600;font-size:2.6rem;line-height:1.03;letter-spacing:-.015em;color:var(--ri-ink);}
+.ri-sub{font-family:'Fraunces',serif;font-style:italic;font-size:1.12rem;color:var(--ri-ink2);}
+.ri-sec{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:.8rem;margin:.4rem 0 1rem;}
+.ri-sec::after{content:"";flex:1;height:1px;background:var(--ri-hair);}
 </style>
 """
 
