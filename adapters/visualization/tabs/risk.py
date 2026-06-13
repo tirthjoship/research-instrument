@@ -5,18 +5,10 @@ from __future__ import annotations
 import plotly.graph_objects as go
 import streamlit as st
 
+from adapters.visualization.components.charts import apply_dossier_template
 from adapters.visualization.components.metrics import render_verdict_card
+from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import load_brief_summary
-
-_PLOTLY_LAYOUT = {
-    "font": {"family": "Inter, sans-serif"},
-    "paper_bgcolor": "rgba(0,0,0,0)",
-    "plot_bgcolor": "rgba(0,0,0,0)",
-    "height": 320,
-    "colorway": ["#2563EB", "#64748B", "#16A34A", "#DC2626", "#CA8A04"],
-    "showlegend": False,
-    "margin": {"l": 40, "r": 20, "t": 40, "b": 40},
-}
 
 _FLAG_MEANING = {
     "SYSTEMATIC_DOMINANT": (
@@ -57,23 +49,22 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
     dominant = macro.get("dominant_factor")
     sys_share = float(macro.get("systematic_share", 0.0))
 
-    # Hero metrics row — with plain-English tooltips
-    cols = st.columns(3)
+    # Hero metrics row — big numbers with plain-English glossary tooltips
     spy_beta = betas.get("SPY")
-    cols[0].metric(
-        "Net market beta (SPY)",
-        f"{spy_beta:+.2f}" if spy_beta is not None else "n/a",
-        help="How much your book moves when the market moves. +1.00 = exactly with the market.",
-    )
-    cols[1].metric(
-        "Systematic share",
-        f"{sys_share:.0%}",
-        help="How much of your book's movement is explained by broad market forces rather than your individual stock picks.",
-    )
-    cols[2].metric(
-        "Dominant factor",
-        dominant or "none",
-        help="The single macro force your book leans on hardest.",
+    beta_str = f"{spy_beta:+.2f}" if spy_beta is not None else "n/a"
+    st.markdown(
+        '<div class="ri-metric-row">'
+        f'<div class="ri-metric"><div class="ri-metric-lab">'
+        f"{tooltip('Net beta', 'Net market beta (SPY)')}</div>"
+        f'<div class="ri-metric-num">{beta_str}</div></div>'
+        f'<div class="ri-metric"><div class="ri-metric-lab">'
+        f"{tooltip('Systematic share')}</div>"
+        f'<div class="ri-metric-num">{sys_share:.0%}</div></div>'
+        f'<div class="ri-metric"><div class="ri-metric-lab">'
+        f"{tooltip('Concentrated risk', 'Dominant factor')}</div>"
+        f'<div class="ri-metric-num">{dominant or "none"}</div></div>'
+        "</div>",
+        unsafe_allow_html=True,
     )
 
     st.divider()
@@ -82,34 +73,38 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
     chart_col, donut_col = st.columns(2)
 
     with chart_col:
+        st.markdown('<div class="ri-sec">FACTOR EXPOSURE</div>', unsafe_allow_html=True)
         if betas:
             fig = go.Figure(
                 go.Bar(
                     x=list(betas.keys()),
                     y=list(betas.values()),
                     marker_color=[
-                        "#DC2626" if v < 0 else "#2563EB" for v in betas.values()
+                        "#CE2F26" if v < 0 else "#0F6E80" for v in betas.values()
                     ],
                 )
             )
             fig.add_hline(
                 y=1.0,
                 line_dash="dot",
-                line_color="#94A3B8",
+                line_color="#717885",
                 annotation_text="moves 1:1 with market",
                 annotation_font_size=11,
             )
+            apply_dossier_template(fig)
             fig.update_layout(
                 title="Dollar-weighted net beta by factor",
                 xaxis_title="Factor",
                 yaxis_title="Net beta",
-                **_PLOTLY_LAYOUT,
+                height=320,
+                showlegend=False,
             )
             st.plotly_chart(fig, use_container_width=True, height=300)
             if spy_beta is not None:
                 st.caption(f"Your book moves about {spy_beta:.2f}× the market.")
 
     with donut_col:
+        st.markdown('<div class="ri-sec">RISK SOURCES</div>', unsafe_allow_html=True)
         # Systematic vs idiosyncratic donut
         idio_share = max(0.0, 1.0 - sys_share)
         donut = go.Figure(
@@ -117,19 +112,33 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
                 labels=["Systematic (macro)", "Idiosyncratic (stock-specific)"],
                 values=[sys_share, idio_share],
                 hole=0.55,
-                marker_colors=["#2563EB", "#16A34A"],
+                marker_colors=["#0F6E80", "#1F9254"],
             )
         )
+        apply_dossier_template(donut)
         donut.update_layout(
             title="Where the book's risk comes from",
             showlegend=True,
-            **{k: v for k, v in _PLOTLY_LAYOUT.items() if k != "showlegend"},
+            height=320,
         )
         st.plotly_chart(donut, use_container_width=True, height=300)
-        st.caption(
-            f"{sys_share:.0%} of your book's swings come from one market-wide bet — "
-            "adding more stock picks will not diversify this. The risk flag fires at 60%."
+
+    # Plain-English conclusion band
+    if dominant is not None and sys_share > 0:
+        conclusion_text = (
+            f"{sys_share:.0%} of your book's swings trace to one market-wide "
+            f"bet ({dominant}) — adding another same-direction name will not "
+            f"diversify this."
         )
+    else:
+        conclusion_text = (
+            "DATA_GAP: systematic-share or dominant-factor missing — "
+            "run `python -m application.cli weekly-brief` to populate."
+        )
+    st.markdown(
+        f'<div class="ri-conclusion">{conclusion_text}</div>',
+        unsafe_allow_html=True,
+    )
 
     # Flag cards
     flags = macro.get("flags", [])

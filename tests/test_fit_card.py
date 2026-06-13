@@ -212,5 +212,5 @@ def test_snowflake_axes_full_from_screen(tmp_path, monkeypatch):
     assert axes["Valuation"] == 80.0
     assert axes["Quality"] == 60.0
     assert axes["Momentum"] == 50.0
-    assert axes["Trend"] == 70.0  # 50 + 0.4*50
+    assert axes["Trend filter"] == 70.0  # 50 + 0.4*50; relabelled per dossier spec
     assert axes["Book fit"] == 100.0

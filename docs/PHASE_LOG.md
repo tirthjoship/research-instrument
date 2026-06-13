@@ -316,3 +316,31 @@
   `origin/main..origin/develop` = 0). Plan: `docs/superpowers/plans/2026-06-12-dashboard-v2.md`.
 - **Project now closes to maintenance** — v2 was the sanctioned final UX scope. Open
   item unchanged: ADR-048/051 discipline forward gate resolves ~mid-July 2026.
+
+## 2026-06-13 — Research Instrument Redesign shipped
+- Reopened the flat v2 dashboard as a scoped **Research Instrument** redesign (ADR-055/056,
+  spike-validated in the prior design session; supersedes the reverted cockpit attempt,
+  PR #52). Executed the 15-task staged plan via **subagent-driven-development**: Sonnet
+  implementers per task; controller-led full-page screenshot **show-before-ship** gate at the
+  end of each stage (Home/Screener/Risk/My Portfolio/Trust); two independent **Opus**
+  verification passes (honesty/vocab + correctness/sloppiness) before merge.
+- Delivered: white/petrol design system (tokens, Fraunces + IBM Plex, shared
+  `apply_dossier_template`); hover-tooltip glossary 12→39 (vocab-guarded); Evidence Ledger +
+  anti-KPI proof-tile + abstention-funnel components; all 5 working tabs restyled; Stock
+  Analysis enriched to an **attributed** multi-source dossier — E1 sector percentiles
+  (`domain/peer_relative.py`, pure), E2 analyst panel (`application/analyst_panel.py`), E3
+  news context (`application/news_context.py`), E5 fit verdict + falsification badge. Durable
+  CDP screenshotter (`scripts/screenshot_dashboard.py`); honest-state snapshot tests.
+  **1628 → 1671 tests, 94% cov, make check green.**
+- Honesty held under pressure — slips caught + fixed mid-run: an `@import` placed where the
+  browser silently drops it (fonts wouldn't load); double-escaped tooltip HTML rendering as
+  raw text; "predict" in a new Home-hero / Stock-Analysis banner (reworded — Home/Stock
+  Analysis are NOT exempt surfaces, unlike Trust); a Rank-IC tile reading 0.000 from a
+  degenerate `n_dates=0` artifact (repointed to the real 496-date run → 0.004). E4/DCF
+  correctly deferred. Opus review also removed a permanently-empty P/B percentile column and
+  a brittle hand-maintained vocab test (now scans real render source).
+- Stock Analysis populated dossier verified by `tests/test_dossier_render.py` (15 tests) + a
+  live `analyze_ticker` run, NOT a screenshot — Streamlit's controlled-input can't be driven
+  to populate under headless CDP automation (documented limitation, not a defect).
+- Plan: `docs/superpowers/plans/2026-06-13-research-instrument-redesign.md`. ADR-055/056.
+  **Returns to maintenance.** Standing watch unchanged: ADR-048/051 forward gate ~mid-July 2026.

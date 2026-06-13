@@ -7,9 +7,15 @@ from pathlib import Path
 
 import streamlit as st
 
-from adapters.visualization.components.charts import ablation_bar_chart, shap_bar_chart
+from adapters.visualization.components.charts import (
+    ablation_bar_chart,
+    apply_dossier_template,
+    shap_bar_chart,
+)
 from adapters.visualization.components.formatters import status_pill_html
 from adapters.visualization.components.metrics import render_inline_context
+from adapters.visualization.components.proof_tile import render_tile
+from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.components.verdicts import ablation_verdict
 from adapters.visualization.data_loader import (
     load_ablation_results,
@@ -86,7 +92,7 @@ _FOUR_RULES = [
             '"just tweak it and re-run."'
         ),
         "example": (
-            "the insider-cluster test’s pass/fail numbers were locked on June 9, 2026 "
+            "the insider-cluster test's pass/fail numbers were locked on June 9, 2026 "
             "— the verdict was read against them on June 10, unchanged."
         ),
     },
@@ -94,11 +100,11 @@ _FOUR_RULES = [
         "title": "Point-in-time discipline",
         "body": (
             "Every prediction may only use data that existed at "
-            "that moment. Using tomorrow’s data to predict today is the most common way "
+            "that moment. Using tomorrow's data to predict today is the most common way "
             "backtests lie; our code raises `LookAheadBiasError` if it ever happens."
         ),
         "example": (
-            "it halts rather than let tomorrow’s price leak into today’s signal."
+            "it halts rather than let tomorrow's price leak into today's signal."
         ),
     },
     {
@@ -116,7 +122,7 @@ _FOUR_RULES = [
     {
         "title": "Abstention over bravado",
         "body": (
-            "When the evidence doesn’t clear the bar, the tool "
+            "When the evidence doesn't clear the bar, the tool "
             'says "no candidates" instead of guessing. Zero is an honest answer.'
         ),
         "example": (
@@ -145,6 +151,95 @@ def _unit_b_row(report_path: str) -> dict[str, str]:
     return row
 
 
+def _load_rank_ic(reports_dir: str) -> str:
+    """Load mean_ic from the newest divergence_ic_1m_*.json (n_dates > 0).
+
+    Returns formatted 3dp string, or ADR-044 recorded fallback "0.004".
+    Does NOT read divergence_ic_21d.json (degenerate empty run).
+    """
+    p = Path(reports_dir)
+    candidates = sorted(p.glob("divergence_ic_1m_*.json"), reverse=True)
+    for f in candidates:
+        try:
+            data = json.loads(f.read_text())
+            n_dates = int(data.get("n_dates", 0))
+            if n_dates > 0:
+                mean_ic = float(data["mean_ic"])
+                return f"{mean_ic:.3f}"
+        except (json.JSONDecodeError, OSError, KeyError, ValueError):
+            continue
+    return "0.004"
+
+
+def _render_hero_tiles(reports_dir: str = "data/reports") -> None:
+    """Render 3-tile anti-KPI hero row at the top of the Trust tab."""
+    # ── Tile 1: Rank-IC ──────────────────────────────────────────────────────
+    rank_ic_val = _load_rank_ic(reports_dir)
+    rank_ic_label = tooltip("Rank-IC")
+
+    # ── Tile 2: Directional accuracy ─────────────────────────────────────────
+    ablation = load_ablation_results(reports_dir)
+    dir_acc_val = "—"
+    if ablation:
+        for r in ablation:
+            if "technical_only" in r.get("variant", ""):
+                raw_acc = r.get("directional_accuracy")
+                if raw_acc is not None:
+                    dir_acc_val = f"{float(raw_acc):.1%}"
+                break
+    dir_acc_label = tooltip("Directional accuracy")
+
+    # ── Tile 3: Hypotheses retired ───────────────────────────────────────────
+    # Count verdicts that start with "KILL" or are the practical-KILL display label.
+    # Build full scoreboard (static rows + live unit-B row).
+    all_rows = list(_SCOREBOARD) + [
+        _unit_b_row("data/reports/insider_cluster_falsification_2024.json")
+    ]
+    n_total = len(all_rows)
+    n_dead = sum(
+        1
+        for r in all_rows
+        if r["verdict"].startswith("KILL")
+        or r["verdict"] == "INCONCLUSIVE → practical KILL"
+    )
+    retired_label = "Hypotheses retired"
+
+    cols = st.columns(3)
+    with cols[0]:
+        st.markdown(
+            render_tile(
+                label=rank_ic_label,
+                number=rank_ic_val,
+                stamp="FALSIFIED",
+                tone="crimson",
+                sub="the ranking signal knows ~nothing (ADR-044)",
+            ),
+            unsafe_allow_html=True,
+        )
+    with cols[1]:
+        st.markdown(
+            render_tile(
+                label=dir_acc_label,
+                number=dir_acc_val,
+                stamp="= EMH",
+                tone="muted",
+                sub="no edge over a coin flip",
+            ),
+            unsafe_allow_html=True,
+        )
+    with cols[2]:
+        st.markdown(
+            render_tile(
+                label=retired_label,
+                number=f"{n_dead}/{n_total}",
+                stamp="RETIRED",
+                tone="crimson",
+                sub="ideas tested and shelved — none trade live",
+            ),
+            unsafe_allow_html=True,
+        )
+
+
 def _render_ablation_exhibit(reports_dir: str = "data/reports") -> None:
     st.caption("FALSIFIED-era artifact — kept as exhibit")
     ablation = load_ablation_results(reports_dir)
@@ -168,6 +263,7 @@ def _render_ablation_exhibit(reports_dir: str = "data/reports") -> None:
     variants = [r.get("variant", "?") for r in ablation]
     accs = [r.get("directional_accuracy", 0.0) for r in ablation]
     fig = ablation_bar_chart(variants, accs)
+    fig = apply_dossier_template(fig)
     st.plotly_chart(fig, use_container_width=True)
 
     for r in ablation:
@@ -200,40 +296,64 @@ def _render_shap_exhibit(shap_path: str = "data/reports/shap_importance.json") -
         features = list(shap_data.keys())
         importances = [shap_data[f].get("mean", 0.0) for f in features]
         fig = shap_bar_chart(features, importances)
+        fig = apply_dossier_template(fig)
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.caption("No SHAP data — run SHAP analysis to populate.")
 
 
 def _render_trophy_grid(report_path: str) -> None:
+    """Render experiment cards: one per hypothesis in Claim→Test→Result→Decision format."""
     rows = _SCOREBOARD + [_unit_b_row(report_path)]
-    # Chunk rows into groups of 3 for the column grid
-    for chunk_start in range(0, len(rows), 3):
-        chunk = rows[chunk_start : chunk_start + 3]
-        cols = st.columns(3)
-        for col, r in zip(cols, chunk):
-            # Color by the leading verdict token so display labels like
-            # "INCONCLUSIVE → practical KILL" still resolve to the amber key.
-            color = _VERDICT_COLOR.get(r["verdict"].split()[0], "#64748B")
-            # Derive "what this means for you" from the leading verdict token
-            meaning = _VERDICT_MEANING.get(
-                r["verdict"],
-                _VERDICT_MEANING.get(r["verdict"].split()[0], ""),
-            )
-            card_html = (
-                f'<div class="ws-card" style="border-left:4px solid {color};'
-                f'padding:10px 16px;margin-bottom:8px;height:100%;">'
-                f'<span style="color:{color};font-weight:700;">{r["verdict"]}</span><br>'
-                f'<span style="font-weight:600;font-size:14px;">{r["hypothesis"]}</span><br>'
-                f'<span style="color:#64748B;font-size:13px;">{r["test"]}</span><br>'
-                f'<span style="color:#475569;font-size:13px;font-style:italic;">{meaning}</span>'
-                "</div>"
-            )
-            with col:
-                st.markdown(card_html, unsafe_allow_html=True)
-                with st.expander("evidence trail"):
-                    st.markdown(f"`{r['adr']}`")
-                    st.caption(f"Test: {r['test']}")
+
+    for r in rows:
+        verdict = r["verdict"]
+        leading_token = verdict.split()[0]
+
+        # Left-rule color: crimson for KILL/practical-KILL, amber for INCONCLUSIVE
+        if leading_token == "KILL" or verdict == "INCONCLUSIVE → practical KILL":
+            rule_color = "#DC2626"
+            rule_class = "ri-exp-kill"
+        elif leading_token == "INCONCLUSIVE":
+            rule_color = "#CA8A04"
+            rule_class = "ri-exp-inconclusive"
+        else:
+            rule_color = "#64748B"
+            rule_class = "ri-exp-pending"
+
+        # Decision text from _VERDICT_MEANING
+        decision = _VERDICT_MEANING.get(
+            verdict,
+            _VERDICT_MEANING.get(leading_token, ""),
+        )
+
+        card_html = (
+            f'<div class="ri-experiment {rule_class}" '
+            f'style="border-left:4px solid {rule_color};">'
+            f'<div class="ri-exp-verdict" style="color:{rule_color};">{verdict}</div>'
+            f'<div class="ri-exp-row">'
+            f'<span class="ri-exp-field">Claim</span>'
+            f'<span class="ri-exp-value">{r["hypothesis"]}</span>'
+            f"</div>"
+            f'<div class="ri-exp-row">'
+            f'<span class="ri-exp-field">Test</span>'
+            f'<span class="ri-exp-value">{r["test"]}</span>'
+            f"</div>"
+            f'<div class="ri-exp-row">'
+            f'<span class="ri-exp-field">Result</span>'
+            f'<span class="ri-exp-value ri-exp-result" style="color:{rule_color};">'
+            f"{verdict}</span>"
+            f"</div>"
+            f'<div class="ri-exp-row">'
+            f'<span class="ri-exp-field">Decision</span>'
+            f'<span class="ri-exp-value ri-exp-decision">{decision}</span>'
+            f"</div>"
+            f"</div>"
+        )
+        st.markdown(card_html, unsafe_allow_html=True)
+        with st.expander("evidence trail"):
+            st.markdown(f"`{r['adr']}`")
+            st.caption(f"Test: {r['test']}")
 
 
 def _render_four_rules() -> None:
@@ -295,7 +415,7 @@ def render(
     st.subheader("Trust")
     st.markdown(
         '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
-        "Every prediction idea we tested and the verdicts — the receipts behind the app’s honesty."
+        "Every prediction idea we tested and the verdicts — the receipts behind the app's honesty."
         "</div>",
         unsafe_allow_html=True,
     )
@@ -312,7 +432,16 @@ def render(
         unsafe_allow_html=True,
     )
 
-    # Trophy grid — 3-column layout, one card per verdict row
+    # Anti-KPI hero — 3 stamped tiles summarising the evidence
+    _render_hero_tiles()
+
+    st.divider()
+
+    # Experiment cards — Claim / Test / Result / Decision, one per hypothesis
+    st.markdown(
+        '<div class="ri-sec">Experiments — what was tested and what happened</div>',
+        unsafe_allow_html=True,
+    )
     _render_trophy_grid(report_path)
 
     st.divider()
