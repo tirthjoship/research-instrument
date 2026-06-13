@@ -148,6 +148,34 @@ def test_missing_cash_config_is_stale_not_ok(tmp_path) -> None:
     assert summary["buffer"]["verdict"] == "STALE_CASH"
 
 
+def test_mixed_naive_and_aware_as_of_does_not_crash(tmp_path) -> None:
+    """Regression: a date-only (naive) as_of next to a tz-aware as_of on the SAME
+    date must not raise TypeError in _snapshots' max() comparison. The real
+    discipline_log mixes formats (e.g. "2026-06-11" and "2026-06-11T20:30:04+00:00"),
+    which crashed the weekly adherence step with
+    'can't compare offset-naive and offset-aware datetimes'."""
+    log = tmp_path / "discipline_log.jsonl"
+    rows = [
+        _row("AC.TO", "REDUCE", "2026-06-13", 100.0, 5000.0),  # date-only -> naive
+        _row(
+            "AC.TO", "REDUCE", "2026-06-13T09:00:00+00:00", 100.0, 5000.0
+        ),  # tz-aware, same date
+        _row("AC.TO", "HOLD", W2, 40.0, 2000.0),  # a second date so the report runs
+    ]
+    _write_log(log, rows)
+    summary = run_adherence_report(
+        log_path=str(log),
+        adherence_log_path=str(tmp_path / "adh.jsonl"),
+        cash_config_path=str(tmp_path / "missing.json"),
+        price_provider=_falling_provider,
+        today=date(2026, 7, 10),
+    )
+    # _snapshots completed without crashing across the mixed-tz collision date
+    assert summary["n_snapshots"] == 2
+    # the later aware 09:00 row wins over the naive midnight row on 2026-06-13
+    assert summary["latest_snapshot"]["AC.TO"] == 40.0
+
+
 def test_same_day_rerun_keeps_latest(tmp_path) -> None:
     log = tmp_path / "discipline_log.jsonl"
     rows = _log_rows() + [
