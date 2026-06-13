@@ -32,6 +32,20 @@ _LAYOUT_DEFAULTS: dict[str, object] = {
 }
 
 
+def apply_dossier_template(fig: go.Figure) -> go.Figure:
+    """Apply the shared dossier visual theme (transparent bg, IBM Plex Sans, teal colorway)."""
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="IBM Plex Sans, sans-serif", color="#3A4250", size=13),
+        margin=dict(l=8, r=8, t=28, b=8),
+        colorway=["#0F6E80", "#1F9254", "#C9810E", "#CE2F26", "#717885"],
+    )
+    fig.update_xaxes(showgrid=False, zeroline=False, linecolor="#E3E7EC")
+    fig.update_yaxes(showgrid=True, gridcolor="#EDF0F3", zeroline=False)
+    return fig
+
+
 def accuracy_line_chart(
     fold_accuracies: list[float],
     baseline: float = 0.5,

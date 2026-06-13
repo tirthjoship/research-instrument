@@ -5,6 +5,8 @@ from __future__ import annotations
 import streamlit as st
 
 from adapters.visualization.components.formatters import status_pill_html
+from adapters.visualization.components.funnel import render_funnel
+from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import (
     load_latest_screen,
     load_screen_history,
@@ -128,18 +130,29 @@ def render(reports_dir: str = "data/reports") -> None:
     # Treat empty candidates as abstention regardless of the abstained flag.
     # Real data pattern: abstained=false but candidates=[] (eligibility filtered all out).
     if not candidates:
-        universe_size = screen.get("universe_size", "?")
+        raw_universe = screen.get("universe_size")
+        universe_size: int = (
+            int(raw_universe) if isinstance(raw_universe, (int, float)) else 0
+        )
         as_of = screen.get("as_of", "?")
+
+        # Build a 2-stage funnel from the two REAL values in the screen artifact:
+        # universe_size (how many names the screen ran over) and len(candidates)
+        # (how many cleared the bar — currently 0).  No intermediate stage is
+        # invented; no count is fabricated.
+        funnel_stages: list[tuple[str, int]] = [
+            (tooltip("Universe"), universe_size),
+            (tooltip("Cleared the bar"), len(candidates)),
+        ]
         st.markdown(
-            '<div class="ws-card" style="padding:16px 20px;margin-bottom:12px;">'
-            f'<p style="font-size:16px;font-weight:700;margin:0 0 6px 0;">'
-            f"The screen looked at {universe_size} names — none met the evidence bar this week."
-            "</p>"
-            '<p style="color:#6B7280;margin:0 0 8px 0;">'
+            '<div class="ri-sec">Screen result</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(render_funnel(funnel_stages), unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="color:var(--ri-muted,#717885);font-size:13px;margin-top:-8px;margin-bottom:16px;">'
             "That is the discipline working, not failing. A ranked list appears only when "
-            "names clear the pre-registered bar."
-            "</p>"
-            f'<span style="font-size:12px;color:#9CA3AF;">As of {as_of}</span>'
+            f"names clear the pre-registered bar. &nbsp;·&nbsp; As of {as_of}"
             "</div>",
             unsafe_allow_html=True,
         )
