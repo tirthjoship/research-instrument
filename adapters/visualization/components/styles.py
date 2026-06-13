@@ -742,6 +742,17 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .ri-metric-row{display:flex;gap:3rem;margin:.3rem 0 1.4rem;flex-wrap:wrap;}
 .ri-metric-lab{font-size:.82rem;color:var(--ri-muted);margin-bottom:.15rem;}
 .ri-metric-num{font-family:'Fraunces',serif;font-weight:600;font-size:2.1rem;line-height:1;color:var(--ri-ink);font-variant-numeric:tabular-nums;}
+
+/* ===== Portfolio Tab — Hero + Position Cards ===== */
+.port-hero{background:var(--ri-card);border:1px solid var(--ri-line);border-radius:16px;padding:1.6rem 2rem;margin-bottom:1.2rem;box-shadow:0 1px 2px rgba(20,40,60,.05),0 8px 20px rgba(20,40,60,.05);}
+.port-hero .ri-metric-row{margin-bottom:0;}
+.port-pos-card{background:var(--ri-card);border:1px solid var(--ri-line);border-radius:14px;padding:1.1rem 1.4rem;margin-bottom:.75rem;box-shadow:0 1px 2px rgba(20,40,60,.04),0 6px 14px rgba(20,40,60,.05);position:relative;overflow:hidden;}
+.port-pos-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:14px 0 0 14px;}
+.port-pos-gain::before{background:var(--ri-green);}
+.port-pos-loss::before{background:var(--ri-crimson);}
+.port-drill{font-size:.78rem;color:var(--ri-muted);margin-top:.35rem;}
+.port-drill a{color:var(--ri-teal);text-decoration:none;}
+.port-drill a:hover{text-decoration:underline;}
 </style>
 """
 
