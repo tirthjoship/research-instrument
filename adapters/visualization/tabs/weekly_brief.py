@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
 
 from adapters.visualization.components.formatters import status_pill_html
+from adapters.visualization.components.ledger import render_ledger
+from adapters.visualization.components.proof_tile import render_tile
+from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import (
+    load_ablation_results,
     load_adherence_log,
     load_brief_summary,
     load_latest_screen,
@@ -27,6 +33,49 @@ _GRADE_COLOR = {
     "HOLD": "#64748B",
     "ADD_OK": "#16A34A",
 }
+
+
+# Rank-IC primary result: mean IC = 0.004 over 496 dates (1m/21d horizon).
+# Source: data/reports/divergence_ic_1m_*.json — ADR-044 divergence-ic-verdict
+# (KILL; bootstrap CI spans zero). A degenerate run (n_dates == 0) is ignored, and
+# we fall back to the ADR-recorded value, so the tile always reflects the real
+# falsification finding rather than an empty regeneration.
+_RANK_IC_FALSIFIED = "0.004"  # ADR-044: mean IC = 0.0040 over 496 dates, KILL
+
+
+def _load_rank_ic(reports_dir: str) -> str:
+    """Mean rank-IC from the primary divergence-IC run (ADR-044).
+
+    Reads the real artifact (``divergence_ic_1m_*.json``, n_dates > 0) and formats
+    its mean IC. Falls back to the ADR-recorded value when no genuine run is present;
+    never reports a degenerate empty run.
+    """
+    for path in sorted(Path(reports_dir).glob("divergence_ic_1m_*.json"), reverse=True):
+        try:
+            data = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if data.get("n_dates", 0) and data.get("mean_ic") is not None:
+            return f"{data['mean_ic']:.3f}"
+    return _RANK_IC_FALSIFIED
+
+
+def _load_directional_accuracy(reports_dir: str) -> str:
+    """Load baseline (technical_only) directional accuracy. Returns formatted % or DATA_GAP."""
+    rows = load_ablation_results(reports_dir)
+    if not rows:
+        return "—"
+    # Use the technical_only (baseline) variant — most conservative honest number
+    for row in rows:
+        if row.get("variant") == "technical_only":
+            val = row.get("directional_accuracy")
+            if val is not None:
+                return f"{val * 100:.1f}%"
+    # Fallback: use first row if no technical_only found
+    val = rows[0].get("directional_accuracy")
+    if val is not None:
+        return f"{val * 100:.1f}%"
+    return "—"
 
 
 def _verdict_pill(grade: str) -> str:
@@ -88,34 +137,126 @@ def render(
             "`python -m application.cli weekly-brief` for a fresh one."
         )
 
-    # --- Hero: book-health banner + systematic-share gauge ---
     holdings = summary.get("holdings", [])
     attention = [h for h in holdings if h.get("verdict") in ("REDUCE", "TRIM")]
     macro = summary.get("macro") or {}
     share = float(macro.get("systematic_share", 0.0))
 
-    hero_cols = st.columns([3, 1])
-    with hero_cols[0]:
+    # ── Hero headline (Research Instrument system) ──────────────────────────────
+    as_of = summary.get("as_of", "?")
+    regime = summary.get("regime", "?")
+    st.markdown(
+        '<div class="ri-h1">A research instrument that knows when not to call it.</div>'
+        '<div class="ri-sub">It earns trust by staying silent when the evidence is thin.</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Evidence ledger strip ────────────────────────────────────────────────────
+    screen = load_latest_screen(reports_dir)
+    universe_size = screen.get("universe_size", "?") if screen else "?"
+    candidates = screen.get("candidates", []) if screen else []
+    adherence_rows = load_adherence_log(adherence_path)
+
+    net_beta_str = "—"
+    if macro.get("systematic_share") is not None:
+        net_beta_str = f"{share:.0%}"
+
+    ledger_html = render_ledger(
+        [
+            (tooltip("Universe"), str(universe_size)),
+            ("CLEARED", str(len(candidates))),
+            (tooltip("Net beta"), net_beta_str),
+            ("HOLDINGS", str(len(holdings))),
+            ("AS OF", as_of),
+            ("REGIME", str(regime).upper()),
+            ("ADHERENCE LOG", str(len(adherence_rows)) + " records"),
+        ]
+    )
+    st.markdown(ledger_html, unsafe_allow_html=True)
+
+    # ── Anti-KPI tiles — the three honest verdicts ──────────────────────────────
+    st.markdown('<div class="ri-sec">VALIDATION FINDINGS</div>', unsafe_allow_html=True)
+
+    # Tile 1: Universe → Cleared (abstention story)
+    if screen is not None:
+        tile1_number = f"{universe_size} → {len(candidates)}"
+        tile1_stamp: str | None = "ABSTAINED" if len(candidates) == 0 else None
+        tile1_tone = "amber" if len(candidates) == 0 else "muted"
+        tile1_sub = (
+            "No names cleared every gate this week — the screen declined to rank."
+            if len(candidates) == 0
+            else f"{len(candidates)} name(s) cleared the evidence gates."
+        )
+    else:
+        tile1_number = "—"
+        tile1_stamp = None
+        tile1_tone = "muted"
+        tile1_sub = "No screen file found (DATA GAP)."
+
+    # Tile 2: Directional accuracy
+    da_str = _load_directional_accuracy(reports_dir)
+    if da_str == "—":
+        tile2_number = "—"
+        tile2_stamp = None
+        tile2_tone = "muted"
+        tile2_sub = "Directional accuracy unavailable (DATA GAP)."
+    else:
+        tile2_number = da_str
+        tile2_stamp = "= EMH"
+        tile2_tone = "muted"
+        tile2_sub = "no edge over a coin flip on direction (technical-only baseline)"
+
+    # Tile 3: Rank-IC — sourced from divergence_ic_1m_*.json (real run) / ADR-044
+    rank_ic_str = _load_rank_ic(reports_dir)
+    tile3 = render_tile(
+        label=tooltip("Rank-IC"),
+        number=rank_ic_str,
+        stamp="FALSIFIED",
+        tone="crimson",
+        sub="the ranking signal knows ~nothing (ADR-044, 1m primary horizon)",
+    )
+
+    tile_cols = st.columns(3)
+    with tile_cols[0]:
         st.markdown(
-            f'<div class="ws-card hero-gradient" style="padding:20px 24px;">'
-            f'<div style="font-size:13px;color:#5C6370;">YOUR BOOK · '
-            f'{summary.get("as_of", "?")} · regime {summary.get("regime", "?")}</div>'
-            f'<div style="font-size:26px;font-weight:800;margin-top:4px;">'
-            f"{len(attention)} things need attention this week</div>"
-            f'<div style="font-size:14px;color:#5C6370;margin-top:4px;">'
-            f"{len(holdings)} holdings tracked · "
-            f"{share:.0%} of movement is one market-wide bet</div>"
-            f"</div>",
+            render_tile(
+                label=tooltip("Evidence screen"),
+                number=tile1_number,
+                stamp=tile1_stamp,
+                tone=tile1_tone,
+                sub=tile1_sub,
+            ),
             unsafe_allow_html=True,
         )
-    with hero_cols[1]:
-        if macro:
-            st.plotly_chart(_gauge(share), use_container_width=True)
-            st.caption("Systematic share — flag at 60%")
+    with tile_cols[1]:
+        st.markdown(
+            render_tile(
+                label=tooltip("Directional accuracy"),
+                number=tile2_number,
+                stamp=tile2_stamp,
+                tone=tile2_tone,
+                sub=tile2_sub,
+            ),
+            unsafe_allow_html=True,
+        )
+    with tile_cols[2]:
+        st.markdown(tile3, unsafe_allow_html=True)
 
-    # --- Attention row: top 5 REDUCE / TRIM as compact cards ---
+    # ── Book health gauge + systematic share ─────────────────────────────────────
+    if macro:
+        st.markdown('<div class="ri-sec">BOOK HEALTH</div>', unsafe_allow_html=True)
+        gauge_cols = st.columns([1, 3])
+        with gauge_cols[0]:
+            st.plotly_chart(_gauge(share), use_container_width=True)
+            st.caption(
+                f"{tooltip('Systematic share')} — flag at 60%", unsafe_allow_html=True
+            )
+
+    st.divider()
+
+    # ── Attention row: REDUCE / TRIM cards ──────────────────────────────────────
+    st.markdown('<div class="ri-sec">DISCIPLINE FLAGS</div>', unsafe_allow_html=True)
     if attention:
-        st.markdown("**Needs attention this week**")
         top5 = attention[:5]
         attn_cols = st.columns(len(top5))
         for col, h in zip(attn_cols, top5):
@@ -124,12 +265,15 @@ def render(
             unrealized = h.get("unrealized_pct")
             unrealized_str = f"{unrealized:.1f}%" if unrealized is not None else "?"
             pill_html = _verdict_pill(verdict)
+            trend_state = h.get("trend_state", "?")
             col.markdown(
                 f'<div class="ws-card {css_class}" style="padding:10px 12px;">'
                 f'<div style="font-weight:700;font-size:15px;">{h.get("ticker", "?")}</div>'
                 f'<div style="margin:4px 0;">{pill_html}</div>'
                 f'<div style="font-size:13px;color:#64748B;">{unrealized_str}</div>'
-                f'<div style="font-size:12px;color:#94A3B8;margin-top:4px;">{h.get("why", "")}</div>'
+                f'<div style="font-size:12px;color:#94A3B8;margin-top:4px;">'
+                f'{tooltip("Trend filter")}: {trend_state}</div>'
+                f'<div style="font-size:12px;color:#94A3B8;margin-top:2px;">{h.get("why", "")}</div>'
                 f"</div>",
                 unsafe_allow_html=True,
             )
@@ -141,74 +285,34 @@ def render(
             unsafe_allow_html=True,
         )
 
-    # --- Week strip: 3 small ws-cards ---
-    strip_cols = st.columns(3)
-
-    # Card 1: Screen one-liner
-    with strip_cols[0]:
-        screen = load_latest_screen(reports_dir)
-        if screen is None:
-            screen_text = "no screen yet"
-        else:
-            universe_size = screen.get("universe_size", "?")
-            candidates = screen.get("candidates", [])
-            screen_text = f"{universe_size} screened · {len(candidates)} passed"
-        st.markdown(
-            f'<div class="ws-card" style="padding:12px 14px;">'
-            f'<div style="font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px;">SCREEN</div>'
-            f'<div style="font-size:14px;">{screen_text}</div>'
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-
-    # Card 2: Adherence count
-    with strip_cols[1]:
-        adherence_rows = load_adherence_log(adherence_path)
-        adherence_count = len(adherence_rows)
-        st.markdown(
-            f'<div class="ws-card" style="padding:12px 14px;">'
-            f'<div style="font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px;">ADHERENCE</div>'
-            f'<div style="font-size:14px;">{adherence_count} resolved records</div>'
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-
-    # Card 3: Gate line
-    with strip_cols[2]:
-        st.markdown(
-            '<div class="ws-card" style="padding:12px 14px;">'
-            '<div style="font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px;">FORWARD GATE</div>'
-            '<div style="font-size:14px;">resolves ~mid-July 2026</div>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-    st.divider()
-
-    # Buy side abstention info
+    # ── Abstention notice ────────────────────────────────────────────────────────
+    st.markdown('<div class="ri-sec">RESEARCH SCREEN</div>', unsafe_allow_html=True)
     if summary.get("abstained", True):
         st.markdown(
             '<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
-            '<span style="font-weight:700;color:#64748B;">RESEARCH_ONLY</span> — '
-            "Evidence screen: 0 buy candidates met the bar this week — "
-            "the screen abstained (no buy language)."
+            f'<span style="font-weight:700;color:#64748B;">RESEARCH_ONLY</span> — '
+            f'{tooltip("Evidence screen")}: 0 names met the bar this week — '
+            f"the screen {tooltip('Abstention','abstained')} (no recommendation language)."
             "</div>",
             unsafe_allow_html=True,
         )
     else:
-        candidates = summary.get("candidates", [])
+        candidates_list = summary.get("candidates", [])
         st.markdown(
             '<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
             f'<span style="font-weight:700;color:#16A34A;">CANDIDATES</span> — '
-            f"{len(candidates)} name(s) surfaced this week (RESEARCH_ONLY, not a buy call)."
+            f"{len(candidates_list)} name(s) surfaced this week (RESEARCH_ONLY, not a recommendation)."
             "</div>",
             unsafe_allow_html=True,
         )
 
-    # Concentration flags
+    # ── Concentration flags ──────────────────────────────────────────────────────
     concentration = summary.get("concentration", [])
     if concentration:
-        st.markdown("**Concentration flags**")
+        st.markdown(
+            f'<div class="ri-sec">{tooltip("Concentrated risk","CONCENTRATION FLAGS")}</div>',
+            unsafe_allow_html=True,
+        )
         for flag in concentration:
             pill = status_pill_html(
                 "warning" if flag.get("soft_warning") else "danger", "FLAG"
@@ -221,13 +325,15 @@ def render(
             )
         st.divider()
 
-    # --- Grade chip strip ---
+    # ── Grade chip strip ─────────────────────────────────────────────────────────
     grades_present = [
         g for g in _GRADE_ORDER if any(h.get("verdict") == g for h in holdings)
     ]
 
     if grades_present:
-        st.markdown("**Discipline flags** — grouped by urgency")
+        st.markdown(
+            '<div class="ri-sec">VERDICT DISTRIBUTION</div>', unsafe_allow_html=True
+        )
         chip_cols = st.columns(len(grades_present))
         for col, grade in zip(chip_cols, grades_present):
             count = sum(1 for h in holdings if h.get("verdict") == grade)
@@ -240,7 +346,7 @@ def render(
                 unsafe_allow_html=True,
             )
 
-        # --- All attention items: REDUCE + TRIM dataframe ---
+        # All attention items: REDUCE + TRIM dataframe
         urgent_rows = [h for h in holdings if h.get("verdict") in ("REDUCE", "TRIM")]
         if urgent_rows:
             st.markdown("#### All attention items")
@@ -256,7 +362,7 @@ def render(
                             if h.get("unrealized_pct") is not None
                             else "?"
                         ),
-                        "Trend": h.get("trend_state", "?"),
+                        "Trend filter": h.get("trend_state", "?"),
                         "Why": h.get("why", ""),
                     }
                     for h in urgent_rows
@@ -264,7 +370,7 @@ def render(
             )
             st.dataframe(df_urgent, use_container_width=True, hide_index=True)
 
-        # --- Everything else: REVIEW / HOLD / ADD_OK collapsed ---
+        # Everything else: REVIEW / HOLD / ADD_OK collapsed
         other_rows = [
             h for h in holdings if h.get("verdict") in ("REVIEW", "HOLD", "ADD_OK")
         ]
@@ -282,7 +388,7 @@ def render(
                                 if h.get("unrealized_pct") is not None
                                 else "?"
                             ),
-                            "Trend": h.get("trend_state", "?"),
+                            "Trend filter": h.get("trend_state", "?"),
                             "Why": h.get("why", ""),
                         }
                         for h in other_rows
@@ -297,7 +403,7 @@ def render(
         st.info("No discipline flags this week.")
         st.divider()
 
-    # --- Adherence tracker: collapsed in expander ---
+    # ── Adherence tracker ─────────────────────────────────────────────────────────
     with st.expander("Adherence tracker — tool said vs you did"):
         st.caption(
             "Tool-said vs you-did (resolved, 21d horizon). "

@@ -9,9 +9,13 @@ from __future__ import annotations
 import os
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from application.analyst_panel import AnalystPanel
+    from application.news_context import NewsContext
 
 
 @dataclass
@@ -67,6 +71,15 @@ class AnalysisResult:
     recommendation_data: Any = None
     peer_data: list[dict[str, Any]] = field(default_factory=list)
     supply_chain_group: dict[str, Any] | None = None
+
+    # E1: Industry-relative percentiles (metric -> 0-100 or None for DATA_GAP)
+    peer_percentiles: dict[str, float | None] = field(default_factory=dict)
+
+    # E2: Attributed third-party analyst panel (None if import fails)
+    analyst_panel: "AnalystPanel | None" = None
+
+    # E3: Attributed news/event context (None if no signals)
+    news_context: "NewsContext | None" = None
 
 
 # ---------------------------------------------------------------------------
@@ -178,6 +191,74 @@ def analyze_ticker(
         result.analyst_recommendation = "Hold"
     else:
         result.analyst_recommendation = "Sell"
+
+    # E2: Attributed analyst panel — normalise yfinance key names before calling
+    import datetime as _dt
+
+    as_of = _dt.date.today().isoformat()
+    try:
+        from application.analyst_panel import build_analyst_panel
+
+        # build_analyst_panel expects "analyst_count" and "analyst_recommendation_mean"
+        # (its own field naming); yfinance uses different key names.
+        panel_info: dict[str, object] = dict(info)
+        panel_info["analyst_count"] = info.get("numberOfAnalystOpinions", 0)
+        panel_info["analyst_recommendation_mean"] = info.get("recommendationMean")
+        result.analyst_panel = build_analyst_panel(panel_info, as_of)
+    except Exception as exc:
+        logger.warning("Could not build analyst panel for {}: {}", ticker, exc)
+        result.analyst_panel = None
+
+    # E3: Attributed news/event context — map BuzzSignal objects to dicts
+    try:
+        from application.news_context import build_news_context
+
+        signal_dicts: list[dict[str, object]] = []
+        for b in buzz:
+            fetched = getattr(b, "fetched_at", None)
+            date_str = str(fetched)[:10] if fetched is not None else ""
+            source = getattr(b, "source", "unknown")
+            mention_count = getattr(b, "mention_count", 0)
+            sentiment = getattr(b, "sentiment_raw", 0.0)
+            sent_label = (
+                "positive"
+                if float(sentiment) > 0
+                else "negative" if float(sentiment) < 0 else "neutral"
+            )
+            title = f"{source}: {mention_count} mention(s), sentiment {sent_label} ({float(sentiment):.2f})"
+            signal_dicts.append({"source": source, "title": title, "date": date_str})
+        result.news_context = build_news_context(signal_dicts, 10)
+    except Exception as exc:
+        logger.warning("Could not build news context for {}: {}", ticker, exc)
+        result.news_context = None
+
+    # E1: Industry-relative peer percentiles
+    # peer_data dicts have: ticker, name, pe, market_cap, change_pct, role
+    try:
+        from domain.peer_relative import sector_percentile
+
+        peer_percentiles: dict[str, float | None] = {}
+        if peers:
+            peer_pe_values: list[float | None] = [p.get("pe") for p in peers]
+            peer_mc_values: list[float | None] = [p.get("market_cap") for p in peers]
+            raw_pe = info.get("trailingPE")
+            this_pe: float | None = float(raw_pe) if raw_pe is not None else None
+            this_mc: float | None = float(info.get("marketCap", 0) or 0) or None
+
+            peer_percentiles["P/E"] = sector_percentile(this_pe, peer_pe_values)
+            peer_percentiles["Market Cap"] = sector_percentile(this_mc, peer_mc_values)
+            # Only P/E and Market Cap are carried in peer_data. P/B is omitted
+            # rather than rendered as a permanently-empty DATA_GAP column.
+        else:
+            # No peers — all DATA_GAP; log limitation
+            logger.info(
+                "No peer data for {} — peer percentiles will be DATA_GAP", ticker
+            )
+            peer_percentiles = {"P/E": None, "Market Cap": None}
+        result.peer_percentiles = peer_percentiles
+    except Exception as exc:
+        logger.warning("Could not compute peer percentiles for {}: {}", ticker, exc)
+        result.peer_percentiles = {}
 
     return result
 

@@ -831,3 +831,54 @@ stock_analysis/Screener/home-hero copy). Trust, weekly_brief, and glossary legit
 in falsification/educational/negation context and are deliberately NOT whole-module guarded — a blanket scan
 there would wrongly trip on honest copy. See `glossary.py` GLOSSARY (single-source term defs, mirrored in
 README's glossary table — keep in sync).
+
+---
+
+## Research Instrument Redesign — domain language (2026-06-12, ADR-055 / ADR-056)
+
+The v2 dashboard is being redesigned in place (still Streamlit) into a **"Research Instrument"** —
+distinctive, intuitive, SWST-grade — with **no new prediction**. Spec:
+`docs/superpowers/specs/2026-06-12-research-instrument-redesign-design.md`. New ubiquitous terms:
+
+### Research Instrument
+The redesign identity: white/cool base, **owned petrol-teal accent** (`--teal:#0F6E80`; deliberately
+not the warm cream that read as Anthropic branding), 3-font pairing (**Fraunces** display serif ·
+**IBM Plex Sans** body · **IBM Plex Mono** metrics), generous padding, soft cards, and **scarce, bold
+semantic color** (crimson = falsified/trend-broken, amber = abstain/caution, green = pass/intact).
+
+### Evidence Ledger
+The signature element: a persistent monospace strip under the H1 on every tab —
+`state · universe · cleared · net β · book · as-of` — populated with real numbers. The dashboard's
+heartbeat line.
+
+### Anti-KPI tile
+A proof tile that presents a *failure* as a badge of honor: a big number + rubber-stamp badge —
+`Rank-IC 0.004 [FALSIFIED]`, `49.8% [= EMH]`, `512→0 [ABSTAINED]`. Makes honesty legible in 10 seconds.
+
+### Abstention funnel
+The Screener's redesigned empty state: `Universe 512 → filters → 0` rendered as a designed exhibit
+(from the existing candidate-distribution data), so honest abstention reads as discipline, not a bug.
+
+### Attributed vs adopted (the honesty distinction — ADR-056)
+The principle that resolves "why can't we show forecasts like SimplyWall.st." The engine may
+**display third-party forecasts as theirs** ("the Street expects…", attributed, with dispersion) but
+must **never adopt** them as its own claim. *Displaying* an attributed forecast is honest; the engine
+*making* a return forecast is the falsified thing (ADR-044). SWST itself is honest-evidence, not a
+return predictor — so matching it does not breach the thesis.
+
+### Attributed Evidence Dossier (Stock Analysis)
+The enriched Stock Analysis surface: every axis scored **vs GICS sector peers** (E1), an **attributed
+analyst-estimate panel** with dispersion (E2), an attributed **news/event CONTEXT panel** labeled
+"context, not signal" (E3), and the project's differentiators surfaced — **portfolio-fit + a
+falsification badge** (E5). Factors stay descriptive percentiles, never predictions. **DCF fair-value
+(E4) is deferred** — and only ever a bull/base/bear *range + sensitivity*, never a point target.
+
+### Tooltip-glossary system
+A first-class hover-tooltip ("cloud") on **every** metric/term/verdict across all tabs, sourced from a
+single expanded `glossary.py` (12 → ~40 terms) via one `tooltip()` helper. Explains each term's
+meaning *and* its implication. The primary "not-intuitive" fix.
+
+**Honesty boundary (binding):** FORBIDDEN_WORDS + RESEARCH_ONLY hold on every new component (source +
+output); all third-party data is attributed with dispersion; no engine return forecast; abstention
+stays visible and framed as rigor. The redesign's decisiveness comes entirely from honest evidence,
+never from manufactured confidence.
