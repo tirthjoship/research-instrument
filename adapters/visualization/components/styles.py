@@ -743,6 +743,15 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .ri-metric-lab{font-size:.82rem;color:var(--ri-muted);margin-bottom:.15rem;}
 .ri-metric-num{font-family:'Fraunces',serif;font-weight:600;font-size:2.1rem;line-height:1;color:var(--ri-ink);font-variant-numeric:tabular-nums;}
 
+/* ===== Trust Tab — Experiment Cards ===== */
+.ri-experiment{background:var(--ri-card);border:1px solid var(--ri-line);border-radius:14px;padding:1.1rem 1.4rem;margin-bottom:.85rem;box-shadow:0 1px 2px rgba(20,40,60,.04),0 6px 14px rgba(20,40,60,.05);}
+.ri-exp-verdict{font-family:'IBM Plex Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.6rem;}
+.ri-exp-row{display:flex;gap:.75rem;align-items:baseline;margin-bottom:.3rem;font-size:.88rem;line-height:1.45;}
+.ri-exp-field{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ri-muted);flex-shrink:0;width:4.5rem;}
+.ri-exp-value{color:var(--ri-ink2);}
+.ri-exp-result{font-weight:600;}
+.ri-exp-decision{font-style:italic;color:var(--ri-muted);}
+
 /* ===== Portfolio Tab — Hero + Position Cards ===== */
 .port-hero{background:var(--ri-card);border:1px solid var(--ri-line);border-radius:16px;padding:1.6rem 2rem;margin-bottom:1.2rem;box-shadow:0 1px 2px rgba(20,40,60,.05),0 8px 20px rgba(20,40,60,.05);}
 .port-hero .ri-metric-row{margin-bottom:0;}
