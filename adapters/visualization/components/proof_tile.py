@@ -29,7 +29,8 @@ def render_tile(
     corner.
 
     Args:
-        label: Short metric name shown in monospace uppercase caps.
+        label: Short metric name shown in monospace uppercase caps. May carry
+            trusted markup (e.g. a :func:`tooltip` span); inserted as-is.
         number: Primary numeric value displayed large (Fraunces typeface).
         stamp: Optional outcome badge text (e.g. ``"FALSIFIED"``). Rendered
             only when not ``None`` or empty.
@@ -42,7 +43,6 @@ def render_tile(
     """
     safe_tone = tone if tone in _VALID_TONES else "muted"
 
-    safe_label = _html.escape(label)
     safe_number = _html.escape(number)
 
     stamp_html = ""
@@ -58,7 +58,7 @@ def render_tile(
     return (
         f'<div class="ri-tile t-{safe_tone}">\n'
         f"{stamp_html}"
-        f'<span class="ri-lab">{safe_label}</span>\n'
+        f'<span class="ri-lab">{label}</span>\n'
         f'<p class="ri-num">{safe_number}</p>\n'
         f"{sub_html}"
         f"</div>"

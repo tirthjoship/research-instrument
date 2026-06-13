@@ -156,19 +156,35 @@ def test_render_zero_attention_no_columns_crash(tmp_path) -> None:  # type: igno
 def test_weekly_brief_hero_copy_has_no_forbidden_words() -> None:
     # Scoped guard: the NEW v2 hero/week-strip descriptive copy must stay clean
     # of recommendation vocabulary. NOT a whole-module scan — weekly_brief
-    # legitimately says "0 buy candidates met the bar" in factual/negation
-    # context elsewhere (the screen one-liner), which a blanket scan would trip.
+    # legitimately says "0 names met the bar" in factual/negation context
+    # elsewhere (the screen one-liner), which a blanket scan would trip.
     from domain.fit import FORBIDDEN_WORDS
 
     new_hero_copy = " ".join(
         [
-            "YOUR BOOK",
-            "things need attention this week",
-            "holdings tracked",
-            "of movement is one market-wide bet",
-            "Systematic share — flag at 60%",
+            # Hero headline + subtitle
+            "A research instrument that knows when not to call it.",
+            "It earns trust by staying silent when the evidence is thin.",
+            # Evidence ledger labels
+            "CLEARED",
+            "HOLDINGS",
+            "AS OF",
+            "REGIME",
+            "ADHERENCE LOG",
+            # Section labels
+            "VALIDATION FINDINGS",
+            "BOOK HEALTH",
+            "DISCIPLINE FLAGS",
+            "RESEARCH SCREEN",
+            "VERDICT DISTRIBUTION",
+            # Abstention / discipline descriptive text
             "Nothing needs attention this week — all positions within discipline.",
-            "resolves ~mid-July 2026",
+            "RESEARCH_ONLY",
+            "0 names met the bar this week — the screen abstained (no recommendation language).",
+            # Proof tile sub-captions
+            "No names cleared every gate this week — the screen declined to rank.",
+            "no edge over a coin flip on direction (technical-only baseline)",
+            "the ranking signal knows ~nothing (ADR-044, 1m primary horizon)",
         ]
     ).lower()
     for word in FORBIDDEN_WORDS:

@@ -20,16 +20,16 @@ def render_ledger(segments: list[tuple[str, str]]) -> str:
     it via ``st.markdown(..., unsafe_allow_html=True)``.
 
     Args:
-        segments: Ordered list of (label, value) pairs. Both strings are
-            escaped with :func:`html.escape` before insertion.
+        segments: Ordered list of (label, value) pairs. ``value`` is data and is
+            escaped with :func:`html.escape`; ``label`` may carry trusted markup
+            (e.g. a :func:`tooltip` span) and is inserted as-is.
 
     Returns:
         An HTML ``<div class="ri-ledger">`` string.
     """
     parts: list[str] = []
     for label, value in segments:
-        safe_label = _html.escape(label)
         safe_value = _html.escape(value)
-        parts.append(f'<span class="ri-seg">{safe_label} <b>{safe_value}</b></span>')
+        parts.append(f'<span class="ri-seg">{label} <b>{safe_value}</b></span>')
     inner = "\n".join(parts)
     return f'<div class="ri-ledger">\n{inner}\n</div>'
