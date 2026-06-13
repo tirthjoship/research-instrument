@@ -1,9 +1,9 @@
 # STATUS — multi-modal-stock-recommender
 
 **As of:** 2026-06-13
-**Branch:** `feat/research-instrument-redesign` (16 feature commits) → merging to `develop`,
-then releasing `develop` → `main`. Baseline was **1628 tests**; now **1671 passing**.
-**Phase:** Research Instrument Redesign — **IMPLEMENTED + verified, shipping.**
+**Branch:** **SHIPPED** — merged to `develop` (PR #53) and released to `main` (PR #54), both
+CI-green; `origin/main` ≡ `origin/develop`. **1628 → 1671 tests passing, 94% cov.**
+**Phase:** Research Instrument Redesign — **SHIPPED. Project back to maintenance.**
 
 ## Current State
 
