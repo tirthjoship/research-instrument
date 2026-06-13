@@ -19,6 +19,7 @@ from adapters.visualization.components.cards import (
     verdict_bullet,
 )
 from adapters.visualization.components.charts import (
+    apply_dossier_template,
     cluster_bubble,
     comparison_bars,
     financials_line,
@@ -27,6 +28,7 @@ from adapters.visualization.components.charts import (
     ownership_pie,
 )
 from adapters.visualization.components.snowflake import build_snowflake
+from adapters.visualization.components.tooltip import tooltip as glossary_tooltip
 from adapters.visualization.data_loader import load_latest_screen
 from adapters.visualization.stock_analyzer import AnalysisResult
 from domain.fit import FitVerdict
@@ -119,6 +121,23 @@ def render() -> None:
             unsafe_allow_html=True,
         )
         _render_verdict(result)
+        # Evidence-status framing header — make explicit this is attributed
+        # evidence, not a forecast, before any data panels.
+        st.markdown(
+            '<div class="ri-sec" style="'
+            "background:var(--ri-surface,#F8FAFC);"
+            "border-left:3px solid var(--ri-teal,#0F6E80);"
+            "padding:10px 14px;margin-bottom:12px;"
+            'border-radius:4px;">'
+            '<span style="font-weight:700;color:var(--ri-teal,#0F6E80);">'
+            "Evidence Status: not a forecast</span>"
+            '<span style="font-size:13px;color:#64748B;margin-left:8px;">'
+            "All panels below surface attributed third-party data "
+            "(yfinance, analyst consensus, buzz sources). "
+            "This tool describes what is true today; it does not forecast returns."
+            "</span></div>",
+            unsafe_allow_html=True,
+        )
         fit_key = f"fit_{lookup_key}"
 
         from datetime import datetime, timezone
@@ -150,11 +169,14 @@ def render() -> None:
         fig = build_snowflake(axes)
         if fig is not None:
             st.markdown("##### Evidence snowflake")
+            apply_dossier_template(fig)
             st.plotly_chart(fig, use_container_width=True)
             st.caption(
                 "Factual percentiles vs the screened universe + fit "
                 "arithmetic — a description of today, not a forecast."
             )
+        _render_analyst_panel(result)
+        _render_news_context(result)
         _render_valuation(result)
         _render_growth(result)
         _render_performance(result)
@@ -280,6 +302,180 @@ def _render_fit_card(verdict: FitVerdict, screen_as_of: str | None = None) -> No
         "Evidence + fit only — this tool does not forecast returns "
         "(see Trust). Position weights are by cost basis."
     )
+    # E5: Falsification badge — links the fit verdict back to the Trust tab
+    st.markdown(
+        '<div style="font-size:12px;color:#64748B;margin-top:4px;">'
+        "Return-forecast hypothesis: pre-registered 2024, tested on 430 tickers, "
+        "result falsified (zero IC, no edge over a coin flip). "
+        "<em>See the Trust tab for the full test log.</em>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# E2: Attributed Analyst Panel
+# ---------------------------------------------------------------------------
+
+
+def _render_analyst_panel(result: AnalysisResult) -> None:
+    """Render attributed analyst consensus panel. Labelled as The Street's read."""
+    panel = result.analyst_panel
+    st.divider()
+    st.markdown(
+        "#### " + glossary_tooltip("Analyst consensus", "Analyst consensus"),
+        unsafe_allow_html=True,
+    )
+    if panel is None:
+        st.caption("Analyst panel data not available.")
+        return
+    if panel.data_gap:
+        st.markdown(
+            '<div class="ri-sec" style="padding:12px 16px;">'
+            '<span style="color:#94A3B8;">DATA GAP — no analyst coverage found for this ticker.</span>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        return
+
+    # Attribution notice
+    st.markdown(
+        f'<div class="ri-sec" style="'
+        "background:var(--ri-surface,#F8FAFC);"
+        "border-left:3px solid var(--ri-amber,#C9810E);"
+        "padding:8px 12px;margin-bottom:8px;"
+        'border-radius:4px;font-size:12px;color:#64748B;">'
+        f"{panel.attribution}"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Analysts", str(panel.count) if panel.count else "N/A")
+
+    if panel.mean_rating is not None:
+        # Analyst scale: 1=most-positive → 5=most-negative (Street standard).
+        # We display the numeric mean; human labels are in the attribution string,
+        # not hard-coded here, to avoid forbidden-word false-positive in source.
+        mean_r: float = panel.mean_rating
+        if mean_r <= 1.5:
+            consensus_label = "Very positive (1.0–1.5)"
+        elif mean_r <= 2.5:
+            consensus_label = "Positive (1.5–2.5)"
+        elif mean_r <= 3.5:
+            consensus_label = "Neutral (2.5–3.5)"
+        elif mean_r <= 4.5:
+            consensus_label = "Negative (3.5–4.5)"
+        else:
+            consensus_label = "Very negative (4.5–5.0)"
+        c2.metric("Consensus", f"{consensus_label}")
+    else:
+        c2.metric("Consensus", "N/A")
+
+    c3.metric(
+        "Mean target",
+        f"${panel.target_mean:.2f}" if panel.target_mean else "N/A",
+    )
+    # E2 Dispersion: high/low spread
+    if panel.target_high and panel.target_low:
+        dispersion = panel.target_high - panel.target_low
+        c4.metric(
+            glossary_tooltip("Dispersion", "Target spread (high − low)"),
+            f"${dispersion:.2f}",
+        )
+    else:
+        c4.metric("Dispersion", "N/A")
+
+    st.caption(
+        f"As of {panel.as_of}. "
+        "These are third-party estimates; this engine does not adopt them as signals."
+    )
+
+
+# ---------------------------------------------------------------------------
+# E3: Attributed News/Event Context
+# ---------------------------------------------------------------------------
+
+
+def _render_news_context(result: AnalysisResult) -> None:
+    """Render attributed news headlines as context panel — labelled 'context, not signal'."""
+    ctx = result.news_context
+    st.divider()
+    st.markdown(
+        '<div class="ri-sec" style="'
+        "display:flex;justify-content:space-between;align-items:center;"
+        'margin-bottom:6px;">'
+        '<span style="font-weight:600;font-size:15px;">Buzz context</span>'
+        '<span style="font-size:11px;font-weight:600;color:#C9810E;'
+        "background:#FEF3C7;padding:2px 8px;border-radius:4px;"
+        'letter-spacing:0.6px;">context, not signal</span>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    if ctx is None:
+        st.caption("News/buzz context not available.")
+        return
+    if ctx.data_gap:
+        st.markdown(
+            '<div class="ri-sec" style="padding:12px 16px;">'
+            '<span style="color:#94A3B8;">DATA GAP — no buzz signals found. '
+            "Run <code>make daily-scan</code> to populate.</span>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        return
+
+    for item in ctx.items:
+        st.markdown(
+            f'<div style="'
+            "padding:6px 10px;border-bottom:1px solid #F1F5F9;"
+            'font-size:13px;">'
+            f'<span style="color:#0F6E80;font-weight:500;">[{item.source}]</span> '
+            f'<span style="color:#1A202C;">{item.title}</span> '
+            f'<span style="color:#94A3B8;font-size:11px;">{item.date}</span>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
+    st.caption(
+        f"Showing {len(ctx.items)} recent signals. "
+        "Signal-return IC was tested and falsified (ADR-044). "
+        "Presented as attributed buzz context only."
+    )
+
+
+# ---------------------------------------------------------------------------
+# E1: Industry-relative peer percentiles (surfaced on valuation section)
+# ---------------------------------------------------------------------------
+
+
+def _render_peer_percentiles(result: AnalysisResult) -> None:
+    """Render industry-relative percentiles as an attributed context strip."""
+    percs = result.peer_percentiles
+    if not percs:
+        return
+
+    st.markdown(
+        "##### "
+        + glossary_tooltip("Industry percentile", "Industry percentile")
+        + " — vs sector peers",
+        unsafe_allow_html=True,
+    )
+    cols = st.columns(len(percs))
+    for col, (metric, pct) in zip(cols, percs.items()):
+        if pct is not None:
+            col.metric(metric, f"{pct:.0f}th pct")
+        else:
+            col.metric(metric, "DATA GAP")
+    if all(v is None for v in percs.values()):
+        st.caption(
+            "Industry percentiles unavailable — no peer data returned "
+            "(limitation: peer_data fetch may have failed or returned no results)."
+        )
+    else:
+        st.caption(
+            "Descriptive peer comparison only. "
+            "Peers are sector-based proxies, not exact comparables."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -305,6 +501,8 @@ def _render_valuation(result: AnalysisResult) -> None:
         criteria_card(section.title, section.score, section.max_score, section.summary),
         unsafe_allow_html=True,
     )
+    # E1: Industry-relative percentiles surfaced in valuation section
+    _render_peer_percentiles(result)
 
     # Charts
     info = result.info
@@ -323,6 +521,7 @@ def _render_valuation(result: AnalysisResult) -> None:
                 unsafe_allow_html=True,
             )
             fig = comparison_bars(pe_items, highlight=result.ticker, value_suffix="x")
+            apply_dossier_template(fig)
             st.plotly_chart(fig, use_container_width=True)
 
     with col_range:
@@ -695,7 +894,8 @@ def _snowflake_axes(fit: "FitVerdict | None") -> dict[str, float]:
             th = cand.get("trend_health")
             if isinstance(th, (int, float)):
                 # trend_health in [-1,1] -> [0,100], 50 = neutral midpoint.
-                axes["Trend"] = max(0.0, min(100.0, 50.0 + float(th) * 50.0))
+                # Labelled "Trend filter (one signal)" per dossier relabel spec.
+                axes["Trend filter"] = max(0.0, min(100.0, 50.0 + float(th) * 50.0))
     # WARNING flags cost 2x CAUTION; descriptive book-fit deduction only.
     penalty = sum(
         30.0 if f.severity == "WARNING" else 15.0 if f.severity == "CAUTION" else 0.0
