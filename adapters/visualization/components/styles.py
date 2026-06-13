@@ -734,6 +734,14 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .ri-funnel-step--amber .ri-funnel-count{color:var(--ri-amber);}
 .ri-funnel-step--amber .ri-funnel-label{color:var(--ri-amber);}
 .ri-funnel-arrow{font-size:1.2rem;color:var(--ri-muted);line-height:1;padding-top:.5rem;}
+
+/* ===== Research Instrument — Conclusion Band ===== */
+.ri-conclusion{display:block;width:100%;background:#FFFFFF;border-left:4px solid var(--ri-teal);border-radius:0 10px 10px 0;padding:1rem 1.4rem;margin:1.2rem 0 1.5rem;font-family:'IBM Plex Sans',sans-serif;font-size:1.05rem;line-height:1.55;color:var(--ri-ink2);box-shadow:0 1px 3px rgba(15,110,128,.08);}
+
+/* ===== Research Instrument — Inline Metric Row ===== */
+.ri-metric-row{display:flex;gap:3rem;margin:.3rem 0 1.4rem;flex-wrap:wrap;}
+.ri-metric-lab{font-size:.82rem;color:var(--ri-muted);margin-bottom:.15rem;}
+.ri-metric-num{font-family:'Fraunces',serif;font-weight:600;font-size:2.1rem;line-height:1;color:var(--ri-ink);font-variant-numeric:tabular-nums;}
 </style>
 """
 
