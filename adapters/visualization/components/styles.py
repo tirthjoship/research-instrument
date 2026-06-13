@@ -702,6 +702,28 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .ri-tip{position:absolute;bottom:142%;left:50%;transform:translateX(-50%) translateY(5px);background:#1b2733;color:#eef3f6;font-family:'IBM Plex Sans';font-size:.76rem;line-height:1.45;padding:.65rem .8rem;border-radius:10px;width:240px;box-shadow:0 10px 30px rgba(15,30,45,.22);opacity:0;visibility:hidden;transition:.15s;z-index:60;text-align:left;}
 .ri-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1b2733;}
 .ri-ttip:hover .ri-tip{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+
+/* ===== Research Instrument — Evidence Ledger ===== */
+.ri-ledger{display:flex;align-items:center;flex-wrap:wrap;border-top:1.5px solid var(--ri-ink);border-bottom:1px solid var(--ri-hair);font-family:'IBM Plex Mono',monospace;font-size:.78rem;letter-spacing:.04em;color:var(--ri-ink2);margin:.2rem 0 2rem;padding:.6rem 0;}
+.ri-seg{padding:0 1.1rem;border-right:1px solid var(--ri-hair);white-space:nowrap;}
+.ri-seg:first-child{padding-left:0;}
+.ri-ledger b{color:var(--ri-ink);font-weight:600;}
+
+/* ===== Research Instrument — Proof Tiles ===== */
+.ri-tile{background:var(--ri-card);border:1px solid var(--ri-line);border-radius:16px;padding:1.5rem 1.5rem 1.35rem;position:relative;overflow:visible;box-shadow:0 1px 2px rgba(20,40,60,.05),0 12px 28px rgba(20,40,60,.06);}
+.ri-tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:16px 0 0 16px;}
+.ri-tile.t-crimson::before{background:var(--ri-crimson);}
+.ri-tile.t-amber::before{background:var(--ri-amber);}
+.ri-tile.t-green::before{background:var(--ri-green);}
+.ri-tile.t-muted::before{background:var(--ri-muted);}
+.ri-lab{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ri-muted);display:inline-block;}
+.ri-num{font-family:'Fraunces',serif;font-weight:600;font-size:3.05rem;line-height:1;margin:.5rem 0 .35rem;color:var(--ri-ink);font-variant-numeric:tabular-nums;}
+.ri-tile .ri-sub{font-size:.85rem;color:var(--ri-ink2);line-height:1.45;}
+.ri-stamp{position:absolute;top:1.15rem;right:1.1rem;font-family:'IBM Plex Mono',monospace;font-size:.62rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;padding:.22rem .5rem;border:2px solid currentColor;border-radius:5px;transform:rotate(3deg);}
+.ri-tile.t-crimson .ri-stamp{color:var(--ri-crimson);}
+.ri-tile.t-amber .ri-stamp{color:var(--ri-amber);}
+.ri-tile.t-green .ri-stamp{color:var(--ri-green);}
+.ri-tile.t-muted .ri-stamp{color:var(--ri-muted);border-style:dashed;}
 </style>
 """
 
