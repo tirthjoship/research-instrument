@@ -154,25 +154,19 @@ def test_render_zero_attention_no_columns_crash(tmp_path) -> None:  # type: igno
 
 
 def test_weekly_brief_hero_copy_has_no_forbidden_words() -> None:
-    # Scoped guard: the NEW v2 hero/week-strip descriptive copy must stay clean
-    # of recommendation vocabulary. NOT a whole-module scan — weekly_brief
-    # legitimately says "0 buy candidates met the bar" in factual/negation
-    # context elsewhere (the screen one-liner), which a blanket scan would trip.
+    # Guard: the Home tab is NOT an exempt surface (unlike Trust), so its
+    # rendered copy must carry no recommendation/forecast vocabulary. Scan the
+    # REAL module source — not a hand-maintained copy literal — so any NEW copy
+    # added to render()/helpers is caught (the literal-scan this replaced could
+    # only ever see words the author already listed).
+    import inspect
+
+    from adapters.visualization.tabs import weekly_brief
     from domain.fit import FORBIDDEN_WORDS
 
-    new_hero_copy = " ".join(
-        [
-            "YOUR BOOK",
-            "things need attention this week",
-            "holdings tracked",
-            "of movement is one market-wide bet",
-            "Systematic share — flag at 60%",
-            "Nothing needs attention this week — all positions within discipline.",
-            "resolves ~mid-July 2026",
-        ]
-    ).lower()
+    src = inspect.getsource(weekly_brief).lower()
     for word in FORBIDDEN_WORDS:
-        assert word not in new_hero_copy, f"forbidden word {word!r} in v2 hero copy"
+        assert word not in src, f"forbidden word {word!r} in weekly_brief source"
 
 
 def test_render_missing_macro_skips_gauge(tmp_path) -> None:  # type: ignore[no-untyped-def]

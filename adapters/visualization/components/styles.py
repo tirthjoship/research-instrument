@@ -6,6 +6,7 @@ GLOBAL_CSS = """
 <style>
 /* ===== Fonts ===== */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 /* ===== CSS Variables ===== */
 :root {
@@ -683,6 +684,84 @@ header[data-testid="stHeader"] { display: none !important; }
 .hero-gradient {
     background: linear-gradient(135deg, #FFFFFF 0%, #EEF2FF 100%);
 }
+
+/* ===== Research Instrument Design Tokens ===== */
+:root{
+  --ri-app:#F4F6F8; --ri-card:#FFFFFF; --ri-ink:#14181F; --ri-ink2:#3A4250; --ri-muted:#717885;
+  --ri-line:#E3E7EC; --ri-hair:#EDF0F3; --ri-teal:#0F6E80;
+  --ri-crimson:#CE2F26; --ri-amber:#C9810E; --ri-green:#1F9254;
+}
+#MainMenu,header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"]{display:none!important;}
+html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px at 12% -8%,#FFF 0%,rgba(255,255,255,0) 55%),var(--ri-app)!important;}
+[data-testid="stMainBlockContainer"],.block-container{max-width:1180px!important;padding:2.2rem 2.4rem 3rem!important;font-family:'IBM Plex Sans',sans-serif;color:var(--ri-ink);}
+.ri-h1{font-family:'Fraunces',serif;font-weight:600;font-size:2.6rem;line-height:1.03;letter-spacing:-.015em;color:var(--ri-ink);}
+.ri-sub{font-family:'Fraunces',serif;font-style:italic;font-size:1.12rem;color:var(--ri-ink2);}
+.ri-sec{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:.8rem;margin:.4rem 0 1rem;}
+.ri-sec::after{content:"";flex:1;height:1px;background:var(--ri-hair);}
+.ri-ttip{position:relative;cursor:help;border-bottom:1px dotted var(--ri-muted);}
+.ri-tip{position:absolute;bottom:142%;left:50%;transform:translateX(-50%) translateY(5px);background:#1b2733;color:#eef3f6;font-family:'IBM Plex Sans';font-size:.76rem;line-height:1.45;padding:.65rem .8rem;border-radius:10px;width:240px;box-shadow:0 10px 30px rgba(15,30,45,.22);opacity:0;visibility:hidden;transition:.15s;z-index:60;text-align:left;}
+.ri-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1b2733;}
+.ri-ttip:hover .ri-tip{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+
+/* ===== Research Instrument — Evidence Ledger ===== */
+.ri-ledger{display:flex;align-items:center;flex-wrap:wrap;border-top:1.5px solid var(--ri-ink);border-bottom:1px solid var(--ri-hair);font-family:'IBM Plex Mono',monospace;font-size:.78rem;letter-spacing:.04em;color:var(--ri-ink2);margin:.2rem 0 2rem;padding:.6rem 0;}
+.ri-seg{padding:0 1.1rem;border-right:1px solid var(--ri-hair);white-space:nowrap;}
+.ri-seg:first-child{padding-left:0;}
+.ri-ledger b{color:var(--ri-ink);font-weight:600;}
+
+/* ===== Research Instrument — Proof Tiles ===== */
+.ri-tile{background:var(--ri-card);border:1px solid var(--ri-line);border-radius:16px;padding:1.5rem 1.5rem 1.35rem;position:relative;overflow:visible;box-shadow:0 1px 2px rgba(20,40,60,.05),0 12px 28px rgba(20,40,60,.06);}
+.ri-tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:16px 0 0 16px;}
+.ri-tile.t-crimson::before{background:var(--ri-crimson);}
+.ri-tile.t-amber::before{background:var(--ri-amber);}
+.ri-tile.t-green::before{background:var(--ri-green);}
+.ri-tile.t-muted::before{background:var(--ri-muted);}
+.ri-lab{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ri-muted);display:inline-block;}
+.ri-num{font-family:'Fraunces',serif;font-weight:600;font-size:3.05rem;line-height:1;margin:.5rem 0 .35rem;color:var(--ri-ink);font-variant-numeric:tabular-nums;}
+.ri-tile .ri-sub{font-size:.85rem;color:var(--ri-ink2);line-height:1.45;}
+.ri-stamp{position:absolute;top:1.15rem;right:1.1rem;font-family:'IBM Plex Mono',monospace;font-size:.62rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;padding:.22rem .5rem;border:2px solid currentColor;border-radius:5px;transform:rotate(3deg);}
+.ri-tile.t-crimson .ri-stamp{color:var(--ri-crimson);}
+.ri-tile.t-amber .ri-stamp{color:var(--ri-amber);}
+.ri-tile.t-green .ri-stamp{color:var(--ri-green);}
+.ri-tile.t-muted .ri-stamp{color:var(--ri-muted);border-style:dashed;}
+
+/* ===== Research Instrument — Screener Funnel ===== */
+.ri-funnel{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;padding:1.25rem 1.5rem;background:var(--ri-card);border:1px solid var(--ri-line);border-radius:16px;box-shadow:0 1px 2px rgba(20,40,60,.05),0 8px 20px rgba(20,40,60,.05);margin:.5rem 0 1.5rem;}
+.ri-funnel-step{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.5rem .9rem;border-radius:10px;background:var(--ri-hair);min-width:90px;}
+.ri-funnel-step--amber{background:#FEF3E2;}
+.ri-funnel-label{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ri-muted);}
+.ri-funnel-count{font-family:'Fraunces',serif;font-weight:600;font-size:2rem;line-height:1;color:var(--ri-ink);font-variant-numeric:tabular-nums;}
+.ri-funnel-step--amber .ri-funnel-count{color:var(--ri-amber);}
+.ri-funnel-step--amber .ri-funnel-label{color:var(--ri-amber);}
+.ri-funnel-arrow{font-size:1.2rem;color:var(--ri-muted);line-height:1;padding-top:.5rem;}
+
+/* ===== Research Instrument — Conclusion Band ===== */
+.ri-conclusion{display:block;width:100%;background:#FFFFFF;border-left:4px solid var(--ri-teal);border-radius:0 10px 10px 0;padding:1rem 1.4rem;margin:1.2rem 0 1.5rem;font-family:'IBM Plex Sans',sans-serif;font-size:1.05rem;line-height:1.55;color:var(--ri-ink2);box-shadow:0 1px 3px rgba(15,110,128,.08);}
+
+/* ===== Research Instrument — Inline Metric Row ===== */
+.ri-metric-row{display:flex;gap:3rem;margin:.3rem 0 1.4rem;flex-wrap:wrap;}
+.ri-metric-lab{font-size:.82rem;color:var(--ri-muted);margin-bottom:.15rem;}
+.ri-metric-num{font-family:'Fraunces',serif;font-weight:600;font-size:2.1rem;line-height:1;color:var(--ri-ink);font-variant-numeric:tabular-nums;}
+
+/* ===== Trust Tab — Experiment Cards ===== */
+.ri-experiment{background:var(--ri-card);border:1px solid var(--ri-line);border-radius:14px;padding:1.1rem 1.4rem;margin-bottom:.85rem;box-shadow:0 1px 2px rgba(20,40,60,.04),0 6px 14px rgba(20,40,60,.05);}
+.ri-exp-verdict{font-family:'IBM Plex Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.6rem;}
+.ri-exp-row{display:flex;gap:.75rem;align-items:baseline;margin-bottom:.3rem;font-size:.88rem;line-height:1.45;}
+.ri-exp-field{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ri-muted);flex-shrink:0;width:4.5rem;}
+.ri-exp-value{color:var(--ri-ink2);}
+.ri-exp-result{font-weight:600;}
+.ri-exp-decision{font-style:italic;color:var(--ri-muted);}
+
+/* ===== Portfolio Tab — Hero + Position Cards ===== */
+.port-hero{background:var(--ri-card);border:1px solid var(--ri-line);border-radius:16px;padding:1.6rem 2rem;margin-bottom:1.2rem;box-shadow:0 1px 2px rgba(20,40,60,.05),0 8px 20px rgba(20,40,60,.05);}
+.port-hero .ri-metric-row{margin-bottom:0;}
+.port-pos-card{background:var(--ri-card);border:1px solid var(--ri-line);border-radius:14px;padding:1.1rem 1.4rem;margin-bottom:.75rem;box-shadow:0 1px 2px rgba(20,40,60,.04),0 6px 14px rgba(20,40,60,.05);position:relative;overflow:hidden;}
+.port-pos-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:14px 0 0 14px;}
+.port-pos-gain::before{background:var(--ri-green);}
+.port-pos-loss::before{background:var(--ri-crimson);}
+.port-drill{font-size:.78rem;color:var(--ri-muted);margin-top:.35rem;}
+.port-drill a{color:var(--ri-teal);text-decoration:none;}
+.port-drill a:hover{text-decoration:underline;}
 </style>
 """
 
