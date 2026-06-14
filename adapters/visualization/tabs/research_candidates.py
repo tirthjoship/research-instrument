@@ -12,6 +12,9 @@ from adapters.visualization.data_loader import (
     load_screen_history,
     staleness_days,
 )
+from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
+
+_SCREEN_COVERAGE_FLOOR = 0.5  # default; no key in us.yaml yet
 
 _TOP_N = 15
 
@@ -136,23 +139,77 @@ def render(reports_dir: str = "data/reports") -> None:
         )
         as_of = screen.get("as_of", "?")
 
-        # Build a 2-stage funnel from the two REAL values in the screen artifact:
-        # universe_size (how many names the screen ran over) and len(candidates)
-        # (how many cleared the bar — currently 0).  No intermediate stage is
-        # invented; no count is fabricated.
-        funnel_stages: list[tuple[str, int]] = [
-            (tooltip("Universe"), universe_size),
-            (tooltip("Cleared the bar"), len(candidates)),
-        ]
+        # --- Parse diagnostics from persisted JSON (4 ints, present from this sprint) ---
+        diag: ScreenDiagnostics | None = None
+        raw_diag = screen.get("diagnostics")
+        if isinstance(raw_diag, dict):
+            try:
+                diag = ScreenDiagnostics(
+                    scanned=int(raw_diag["scanned"]),
+                    had_history=int(raw_diag["had_history"]),
+                    above_trend=int(raw_diag["above_trend"]),
+                    cleared=int(raw_diag["cleared"]),
+                )
+            except (KeyError, ValueError, TypeError):
+                diag = None
+
+        # --- Build funnel stages ---
+        # 4-stage when diagnostics available; 2-stage fallback for old cached JSON.
+        if diag is not None:
+            funnel_stages: list[tuple[str, int]] = [
+                (tooltip("Universe"), diag.scanned),
+                (tooltip("Had history"), diag.had_history),
+                (tooltip("Above trend"), diag.above_trend),
+                (tooltip("Cleared the bar"), diag.cleared),
+            ]
+            verdict = classify_screen(diag, _SCREEN_COVERAGE_FLOOR)
+        else:
+            # Graceful fallback: synthesize minimal diagnostics from universe_size.
+            # cleared=0 by definition (no candidates), had_history = universe_size
+            # (we don't know better — this path only fires for pre-threading JSON).
+            # Use EARNED_ABSTENTION as the conservative, honest default: we cannot
+            # distinguish UNDER_POWERED from EARNED_ABSTENTION without the counts.
+            fallback_diag = ScreenDiagnostics(
+                scanned=universe_size,
+                had_history=universe_size,
+                above_trend=0,
+                cleared=0,
+            )
+            funnel_stages = [
+                (tooltip("Universe"), universe_size),
+                (tooltip("Cleared the bar"), 0),
+            ]
+            verdict = classify_screen(fallback_diag, _SCREEN_COVERAGE_FLOOR)
+
+        # --- Verdict headline (truthful, driven by domain logic) ---
+        if verdict == ScreenVerdict.UNDER_POWERED:
+            assert diag is not None  # HAS_CANDIDATES is impossible here (cleared=0)
+            headline = (
+                f'<div style="color:#DC2626;font-weight:600;font-size:15px;margin-bottom:8px;">'
+                f"&#9888; Screen under-powered — only {diag.had_history} of {diag.scanned} "
+                "had usable price history"
+                "</div>"
+            )
+        elif verdict == ScreenVerdict.EARNED_ABSTENTION:
+            headline = (
+                '<div style="color:#16A34A;font-weight:600;font-size:15px;margin-bottom:8px;">'
+                "&#10003; Working as designed — scanned &amp; scored, none cleared the bar"
+                "</div>"
+            )
+        else:
+            # HAS_CANDIDATES cannot reach here (candidates is empty), but be safe.
+            headline = ""
+
         st.markdown(
             '<div class="ri-sec">Screen result</div>',
             unsafe_allow_html=True,
         )
+        if headline:
+            st.markdown(headline, unsafe_allow_html=True)
         st.markdown(render_funnel(funnel_stages), unsafe_allow_html=True)
         st.markdown(
             f'<div style="color:var(--ri-muted,#717885);font-size:13px;margin-top:-8px;margin-bottom:16px;">'
-            "That is the discipline working, not failing. A ranked list appears only when "
-            f"names clear the pre-registered bar. &nbsp;·&nbsp; As of {as_of}"
+            f"RESEARCH_ONLY &nbsp;·&nbsp; As of {as_of}"
             "</div>",
             unsafe_allow_html=True,
         )

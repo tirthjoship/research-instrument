@@ -2651,12 +2651,24 @@ def screen_candidates(top: int, report_dir: str) -> None:
     report_path = Path(report_dir)
     report_path.mkdir(parents=True, exist_ok=True)
     out_file = report_path / f"screen_{as_of}.json"
+    # Serialize diagnostics if available (4 raw ints — no fabrication).
+    diagnostics_payload: dict[str, int] | None = None
+    if result.diagnostics is not None:
+        d = result.diagnostics
+        diagnostics_payload = {
+            "scanned": d.scanned,
+            "had_history": d.had_history,
+            "above_trend": d.above_trend,
+            "cleared": d.cleared,
+        }
+
     payload: dict[str, object] = {
         "as_of": as_of,
         "universe_size": result.universe_size,
         "top_n": top,
         "regime": result.regime,
         "abstained": result.abstained,
+        "diagnostics": diagnostics_payload,
         "candidates": [
             {
                 "ticker": c.ticker,
