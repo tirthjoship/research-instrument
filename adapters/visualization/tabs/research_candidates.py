@@ -277,8 +277,22 @@ def render(reports_dir: str = "data/reports") -> None:
             raw_value: object = fd.get("value") if fd else None
             raw_pct: object = fd.get("percentile") if fd else None
 
-            if raw_value is None or raw_pct is None:
-                # DATA-GAP: factor absent or None — never fabricate a number
+            # DATA-GAP when: factor absent (None) OR both value==0.0 and percentile==0.0.
+            # The second condition matches the real missing-coverage shape from
+            # evidence_screen_use_case.py — it never emits None; it coerces absent
+            # sub-scores to value=0.0, percentile=0.0.  Check raw fractions (before ×100
+            # scaling) so we don't accidentally gap a real z=0 name at p50.
+            # The AND guards a genuine bottom-of-universe name: percentile==0.0 alone
+            # is possible but value==0.0 AND percentile==0.0 together means no coverage.
+            _is_data_gap = (
+                raw_value is None
+                or raw_pct is None
+                or (
+                    float(raw_value) == 0.0 and float(raw_pct) == 0.0  # type: ignore[arg-type]
+                )
+            )
+            if _is_data_gap:
+                # DATA-GAP: factor absent, None, or all-zeros — never fabricate a number
                 factor_rows_html += (
                     f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
                     f'<span style="width:80px;font-size:12px;color:#6B7280;">{fname}</span>'
@@ -331,6 +345,9 @@ def render(reports_dir: str = "data/reports") -> None:
             rv: object = fd.get("value")
             rp: object = fd.get("percentile")
             if rv is None or rp is None:
+                continue
+            # Skip all-zeros gap factors (same convention as factor-row rendering above)
+            if float(rv) == 0.0 and float(rp) == 0.0:  # type: ignore[arg-type]
                 continue
             fv = float(rv)  # type: ignore[arg-type]
             if fv > best_val:
@@ -405,7 +422,11 @@ def render(reports_dir: str = "data/reports") -> None:
                 if not isinstance(fd, dict):
                     continue
                 rv2: object = fd.get("value")
+                rp2: object = fd.get("percentile")
                 if rv2 is None:
+                    continue
+                # Skip all-zeros gap factors (same convention as rich-card rendering)
+                if float(rv2) == 0.0 and (rp2 is None or float(rp2) == 0.0):  # type: ignore[arg-type]
                     continue
                 fv2 = float(rv2)  # type: ignore[arg-type]
                 if fv2 > top_v:
