@@ -126,8 +126,9 @@ _FOUR_RULES = [
             'says "no candidates" instead of guessing. Zero is an honest answer.'
         ),
         "example": (
-            "on June 11, 2026 the screen looked at 512 names and ranked zero. "
-            "That empty list is the feature."
+            "the seven return-prediction hypotheses all failed testing — "
+            "rather than lower the bar, each was retired. "
+            "The app surfaces only attributed third-party signals, never its own return forecasts."
         ),
     },
 ]
