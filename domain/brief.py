@@ -84,6 +84,9 @@ class WeeklyBrief:
     scorecard: ScorecardSnapshot
     screen_label: ScreenLabel
     macro: BookMacroExposure | None = None
+    # Single source of truth: threaded from ScreenResult.abstained at construction.
+    # Never recomputed from len(candidates) — those are orthogonal concerns.
+    abstained: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +207,7 @@ def assemble_brief(
         scorecard=scorecard,
         screen_label=screen_label,
         macro=macro,
+        abstained=screen_result.abstained,
     )
 
 
