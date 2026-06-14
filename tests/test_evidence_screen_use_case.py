@@ -321,3 +321,42 @@ def test_verdict_halt_yields_research_only(tmp_path: object) -> None:
 
     label = label_from_verdict_file(str(tmp_path))
     assert label == ScreenLabel.RESEARCH_ONLY
+
+
+# ---------------------------------------------------------------------------
+# Task 2: ScreenDiagnostics gate counts threaded through run()
+# ---------------------------------------------------------------------------
+
+
+def test_diagnostics_gate_counts() -> None:
+    """run() must populate ScreenDiagnostics with accurate funnel counts.
+
+    Universe: A, B, C
+      A: has_min_history=True,  trend_health=+2.0  → cleared (eligible)
+      B: has_min_history=True,  trend_health=-1.0  → had_history but NOT above_trend / cleared
+      C: has_min_history=False, trend_health=0.0   → scanned only
+
+    expected: scanned=3, had_history=2, above_trend=1, cleared=len(candidates)
+    """
+
+    class DiagPrice:
+        _history = {"A": True, "B": True, "C": False}
+        _trend = {"A": 2.0, "B": -1.0, "C": 0.0}
+
+        def monthly_closes(self, t: str) -> list[float]:
+            return [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24]
+
+        def trend_health(self, t: str) -> float:
+            return self._trend[t]
+
+        def has_min_history(self, t: str) -> bool:
+            return self._history[t]
+
+    uc = EvidenceScreenUseCase(DiagPrice(), FakeAnalyst(), FakeFund(), FakeNarrator())
+    res = uc.run(universe=["A", "B", "C"], as_of="2026-06-08", top_n=10)
+
+    assert res.diagnostics is not None
+    assert res.diagnostics.scanned == 3
+    assert res.diagnostics.had_history == 2  # A, B
+    assert res.diagnostics.above_trend == 1  # A only (trend_health > 0)
+    assert res.diagnostics.cleared == len(res.candidates)

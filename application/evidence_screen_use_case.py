@@ -20,6 +20,7 @@ from domain.factor_scores import (
     zscore,
 )
 from domain.screen import abstain_if_thin, eligible, rank_universe
+from domain.screen_diagnostics import ScreenDiagnostics
 from domain.screen_models import FactorScore, ScreenCandidate, ScreenLabel, ScreenResult
 from domain.surfaced_call import (
     EvidenceItem,
@@ -74,9 +75,16 @@ class EvidenceScreenUseCase:
     ) -> ScreenResult:
         # --- gather raw signals (ineligible tickers are filtered) ---
         raw: list[tuple[str, float | None, float | None, dict[str, float], float]] = []
+        _scanned = len(universe)
+        _had_history = 0
+        _above_trend = 0
         for t in universe:
             th = self._price.trend_health(t)
             hist_ok = self._price.has_min_history(t)
+            if hist_ok:
+                _had_history += 1
+                if th > 0.0:
+                    _above_trend += 1
             if not eligible(th, hist_ok):
                 continue
             mom = trend_rules.momentum_12_1(self._price.monthly_closes(t))
@@ -91,6 +99,12 @@ class EvidenceScreenUseCase:
                 universe_size=len(universe),
                 regime="NEUTRAL",
                 scorecard_ref=None,
+                diagnostics=ScreenDiagnostics(
+                    scanned=_scanned,
+                    had_history=_had_history,
+                    above_trend=_above_trend,
+                    cleared=0,
+                ),
             )
 
         # --- cross-sectional z-scores (None-safe) ---
@@ -173,6 +187,12 @@ class EvidenceScreenUseCase:
             regime="NEUTRAL",
             scorecard_ref=None,
             abstained=_thin,
+            diagnostics=ScreenDiagnostics(
+                scanned=_scanned,
+                had_history=_had_history,
+                above_trend=_above_trend,
+                cleared=len(ranked),
+            ),
         )
 
     def surface_calls(
