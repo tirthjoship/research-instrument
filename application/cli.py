@@ -2479,39 +2479,45 @@ def _build_evidence_screen(deps: dict[str, Any]) -> "Any":
         """Wraps YFinanceAdapter to satisfy PricePort."""
 
         def monthly_closes(self, ticker: str) -> list[float]:
+            # Only the network fetch is tolerated to fail (per-ticker, expected).
+            # The transform runs OUTSIDE the try so a field/shape bug surfaces
+            # instead of silently returning [] (this is how the s.close bug hid).
             try:
                 now = datetime.now(timezone.utc)
                 two_years_ago = now.replace(year=now.year - 2)
                 signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
-                if not signals:
-                    return []
-                by_month: dict[str, float] = {}
-                for s in signals:
-                    key = f"{s.timestamp.year}-{s.timestamp.month:02d}"
-                    by_month[key] = s.close
-                return [by_month[k] for k in sorted(by_month)]
             except Exception:
                 return []
+            if not signals:
+                return []
+            by_month: dict[str, float] = {}
+            for s in signals:
+                key = f"{s.timestamp.year}-{s.timestamp.month:02d}"
+                by_month[key] = s.price
+            return [by_month[k] for k in sorted(by_month)]
 
         def trend_health(self, ticker: str) -> float:
-            try:
-                from domain.trend_rules import atr, sma
-                from domain.trend_rules import trend_health as _th
+            from domain.trend_rules import atr, sma
+            from domain.trend_rules import trend_health as _th
 
+            # Only the network fetch is tolerated to fail (per-ticker, expected).
+            # The computation runs OUTSIDE the try so a field/shape bug surfaces
+            # instead of silently returning 0.0 (this is how the s.close bug hid).
+            try:
                 now = datetime.now(timezone.utc)
                 two_years_ago = now.replace(year=now.year - 2)
                 signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
-                if len(signals) < 22:
-                    return 0.0
-                closes = [s.close for s in signals]
-                highs = [s.high for s in signals]
-                lows = [s.low for s in signals]
-                sma_val = sma(closes, min(200, len(closes)))
-                atr_val = atr(highs, lows, closes, 22)
-                th = _th(closes[-1], sma_val, atr_val)
-                return th if th is not None else 0.0
             except Exception:
                 return 0.0
+            if len(signals) < 22:
+                return 0.0
+            closes = [s.price for s in signals]
+            highs = [s.high for s in signals]
+            lows = [s.low for s in signals]
+            sma_val = sma(closes, min(200, len(closes)))
+            atr_val = atr(highs, lows, closes, 22)
+            th = _th(closes[-1], sma_val, atr_val)
+            return th if th is not None else 0.0
 
         def has_min_history(self, ticker: str) -> bool:
             try:
