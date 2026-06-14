@@ -143,6 +143,10 @@ def test_has_candidates_verdict_shows_cleared_count(
     assert (
         "discipline working" not in fake.joined.lower()
     ), "False 'discipline working' copy must not appear"
+    # Issue 3: headline "{cleared} cleared, of {scanned} scanned" must render above the list
+    assert (
+        "cleared, of" in fake.joined.lower()
+    ), "HAS_CANDIDATES must render a headline containing 'cleared, of' (e.g. '70 cleared, of 512 scanned')"
 
 
 # ---------------------------------------------------------------------------
@@ -255,6 +259,15 @@ def test_no_diagnostics_fallback_no_crash_no_false_copy(
     assert (
         "discipline working" not in fake.joined.lower()
     ), "False 'discipline working' copy must not appear even for old JSON without diagnostics"
+    assert (
+        "working as designed" not in fake.joined.lower()
+    ), "Fallback must not claim 'working as designed' — we don't know if names were scored"
+    assert (
+        "discipline" not in fake.joined.lower()
+    ), "Fallback must not emit 'discipline' copy — verdict is unknown for old cached JSON"
+    assert (
+        "diagnostics unavailable" in fake.joined.lower()
+    ), "Fallback must render a neutral 'diagnostics unavailable' message for old cached JSON"
 
 
 # ---------------------------------------------------------------------------
