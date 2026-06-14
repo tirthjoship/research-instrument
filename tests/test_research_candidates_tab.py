@@ -642,3 +642,181 @@ def test_candidate_card_shows_research_read_and_do_next(
         "what this tells you" in joined
     ), "'What this tells you' section must appear in candidate card"
     assert "do next" in joined, "'Do next' research step must appear in candidate card"
+
+
+# ---------------------------------------------------------------------------
+# Task 6 BLOCKING FIX: value==0.0 & percentile==0.0 is a DATA-GAP (real shape)
+# ---------------------------------------------------------------------------
+
+# The REAL data shape: all 4 factor dicts are PRESENT in factor_scores but
+# revision has value=0.0, percentile=0.0, contribution=0.0 — produced by
+# evidence_screen_use_case.py when analyst revision coverage is absent.
+# Pre-fix: renders "+0.00 · p0/100" (fabricated-looking zero).
+# Post-fix: renders DATA-GAP (muted), never "+0.00" or "p0".
+
+_ZERO_REVISION_SCREEN = {
+    "as_of": "2026-06-13",
+    "universe_size": 512,
+    "abstained": False,
+    "diagnostics": {
+        "scanned": 512,
+        "had_history": 490,
+        "above_trend": 300,
+        "cleared": 70,
+    },
+    "candidates": [
+        {
+            "ticker": "MCD",
+            "composite": 0.88,
+            "trend_health": 0.65,
+            "label": "RESEARCH_ONLY",
+            "why": "solid quality signal",
+            # All 4 factor dicts PRESENT — revision is all-zeros (no analyst coverage)
+            "factor_scores": [
+                {
+                    "name": "momentum",
+                    "value": 0.72,
+                    "percentile": 0.68,
+                    "contribution": 0.30,
+                },
+                {
+                    "name": "revision",
+                    "value": 0.0,
+                    "percentile": 0.0,
+                    "contribution": 0.0,
+                },
+                {
+                    "name": "quality",
+                    "value": 0.51,
+                    "percentile": 0.64,
+                    "contribution": 0.35,
+                },
+                {
+                    "name": "value",
+                    "value": 0.38,
+                    "percentile": 0.55,
+                    "contribution": 0.35,
+                },
+            ],
+        }
+    ],
+}
+
+# A separate fixture to confirm a REAL mid-pack factor (value=0.0 but percentile!=0.0)
+# is NOT treated as a gap — only the AND of both being 0.0 is a gap.
+_REAL_ZERO_VALUE_SCREEN = {
+    "as_of": "2026-06-13",
+    "universe_size": 512,
+    "abstained": False,
+    "diagnostics": {
+        "scanned": 512,
+        "had_history": 490,
+        "above_trend": 300,
+        "cleared": 70,
+    },
+    "candidates": [
+        {
+            "ticker": "IBM",
+            "composite": 0.77,
+            "trend_health": 0.50,
+            "label": "RESEARCH_ONLY",
+            "why": "mixed signals",
+            "factor_scores": [
+                {
+                    "name": "momentum",
+                    "value": 0.72,
+                    "percentile": 0.68,
+                    "contribution": 0.30,
+                },
+                # revision: value exactly 0.0 but percentile=0.5 — legitimately mid-pack
+                {
+                    "name": "revision",
+                    "value": 0.0,
+                    "percentile": 0.5,
+                    "contribution": 0.10,
+                },
+                {
+                    "name": "quality",
+                    "value": 0.51,
+                    "percentile": 0.64,
+                    "contribution": 0.35,
+                },
+                {
+                    "name": "value",
+                    "value": 0.38,
+                    "percentile": 0.55,
+                    "contribution": 0.35,
+                },
+            ],
+        }
+    ],
+}
+
+
+def test_zero_value_and_zero_pct_revision_renders_data_gap(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """A factor with value==0.0 AND percentile==0.0 must show DATA-GAP, never '+0.00' or 'p0'.
+
+    This is the REAL missing-coverage shape from evidence_screen_use_case.py — it never
+    emits None, it emits all-zeros. Pre-fix: renders '+0.00 · p0/100' (fabricated).
+    Post-fix: renders DATA-GAP (muted).
+    """
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(tmp_path, "screen_2026-06-13.json", _ZERO_REVISION_SCREEN)
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))
+
+    joined = fake.joined
+    joined_lower = joined.lower()
+
+    # DATA-GAP must appear (case-insensitive match for data-gap or data gap)
+    assert (
+        "data-gap" in joined_lower
+        or "data gap" in joined_lower
+        or "n/a" in joined_lower
+    ), (
+        "Revision with value==0.0 and percentile==0.0 must render DATA-GAP (no analyst coverage), "
+        f"but got: {joined!r}"
+    )
+
+    # Must NOT show the fabricated-looking "+0.00" for revision
+    assert "+0.00" not in joined, (
+        "Revision with value==0.0 and percentile==0.0 must NOT render '+0.00' — "
+        f"that is a fabricated-looking zero. Got: {joined!r}"
+    )
+
+    # Must NOT show "p0/100" for revision
+    assert "p0/100" not in joined, (
+        "Revision with value==0.0 and percentile==0.0 must NOT render 'p0/100' — "
+        f"that is fabricated. Got: {joined!r}"
+    )
+
+
+def test_zero_value_nonzero_pct_revision_is_not_a_gap(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """A factor with value==0.0 but percentile==0.5 is a REAL mid-pack factor — NOT a gap.
+
+    The AND condition (value==0.0 AND percentile==0.0) must not mis-detect a
+    legitimate zero-z-score name with a real percentile rank.
+    """
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(tmp_path, "screen_2026-06-13.json", _REAL_ZERO_VALUE_SCREEN)
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))
+
+    joined = fake.joined
+
+    # revision row must render a numeric value, NOT DATA-GAP
+    # percentile 0.5 → p50/100 should appear
+    assert "p50" in joined, (
+        "Revision with value==0.0 but percentile==0.5 is a real mid-pack factor — "
+        f"must render p50, not DATA-GAP. Got: {joined!r}"
+    )
