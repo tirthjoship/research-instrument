@@ -153,8 +153,8 @@ def render(reports_dir: str = "data/reports") -> None:
             except (KeyError, ValueError, TypeError):
                 diag = None
 
-        # --- Build funnel stages ---
-        # 4-stage when diagnostics available; 2-stage fallback for old cached JSON.
+        # --- Build funnel stages and verdict headline ---
+        # 4-stage when diagnostics available; honest neutral fallback for old cached JSON.
         if diag is not None:
             funnel_stages: list[tuple[str, int]] = [
                 (tooltip("Universe"), diag.scanned),
@@ -163,48 +163,46 @@ def render(reports_dir: str = "data/reports") -> None:
                 (tooltip("Cleared the bar"), diag.cleared),
             ]
             verdict = classify_screen(diag, _SCREEN_COVERAGE_FLOOR)
+
+            # Verdict headline (truthful, driven by domain logic)
+            if verdict == ScreenVerdict.UNDER_POWERED:
+                headline = (
+                    f'<div style="color:#DC2626;font-weight:600;font-size:15px;margin-bottom:8px;">'
+                    f"&#9888; Screen under-powered — only {diag.had_history} of {diag.scanned} "
+                    "had usable price history"
+                    "</div>"
+                )
+            else:
+                # EARNED_ABSTENTION: all names scored, none cleared the bar
+                headline = (
+                    '<div style="color:#16A34A;font-weight:600;font-size:15px;margin-bottom:8px;">'
+                    "&#10003; Working as designed — scanned &amp; scored, none cleared the bar"
+                    "</div>"
+                )
         else:
-            # Graceful fallback: synthesize minimal diagnostics from universe_size.
-            # cleared=0 by definition (no candidates), had_history = universe_size
-            # (we don't know better — this path only fires for pre-threading JSON).
-            # Use EARNED_ABSTENTION as the conservative, honest default: we cannot
-            # distinguish UNDER_POWERED from EARNED_ABSTENTION without the counts.
-            fallback_diag = ScreenDiagnostics(
-                scanned=universe_size,
-                had_history=universe_size,
-                above_trend=0,
-                cleared=0,
-            )
+            # Old cached JSON without diagnostics: we do NOT know whether names were
+            # scored. Do NOT fabricate a verdict or render a green "working as designed".
+            # Show only the numbers we actually have and a neutral advisory.
             funnel_stages = [
                 (tooltip("Universe"), universe_size),
                 (tooltip("Cleared the bar"), 0),
             ]
-            verdict = classify_screen(fallback_diag, _SCREEN_COVERAGE_FLOOR)
-
-        # --- Verdict headline (truthful, driven by domain logic) ---
-        if verdict == ScreenVerdict.UNDER_POWERED:
-            assert diag is not None  # HAS_CANDIDATES is impossible here (cleared=0)
-            headline = (
-                f'<div style="color:#DC2626;font-weight:600;font-size:15px;margin-bottom:8px;">'
-                f"&#9888; Screen under-powered — only {diag.had_history} of {diag.scanned} "
-                "had usable price history"
-                "</div>"
-            )
-        elif verdict == ScreenVerdict.EARNED_ABSTENTION:
-            headline = (
-                '<div style="color:#16A34A;font-weight:600;font-size:15px;margin-bottom:8px;">'
-                "&#10003; Working as designed — scanned &amp; scored, none cleared the bar"
-                "</div>"
-            )
-        else:
-            # HAS_CANDIDATES cannot reach here (candidates is empty), but be safe.
             headline = ""
 
         st.markdown(
             '<div class="ri-sec">Screen result</div>',
             unsafe_allow_html=True,
         )
-        if headline:
+        if diag is None:
+            # Neutral, honest fallback — no verdict claim, no color
+            st.markdown(
+                '<div style="color:#717885;font-size:14px;margin-bottom:8px;">'
+                "Screen diagnostics unavailable for this older result — "
+                "re-run the screen for a full readout."
+                "</div>",
+                unsafe_allow_html=True,
+            )
+        elif headline:
             st.markdown(headline, unsafe_allow_html=True)
         st.markdown(render_funnel(funnel_stages), unsafe_allow_html=True)
         st.markdown(
@@ -223,10 +221,32 @@ def render(reports_dir: str = "data/reports") -> None:
         return
 
     as_of = screen.get("as_of", "?")
-    universe_size = screen.get("universe_size", "?")
+    raw_universe_size = screen.get("universe_size", "?")
     first_label = screen.get("candidates", [{}])[0].get("label", "RESEARCH_ONLY")
+
+    # --- HAS_CANDIDATES headline: "{cleared} cleared, of {scanned} scanned" ---
+    # Prefer real diagnostics counts; fall back to len(candidates)/universe_size.
+    raw_diag_has = screen.get("diagnostics")
+    if isinstance(raw_diag_has, dict):
+        try:
+            _cleared = int(raw_diag_has["cleared"])
+            _scanned = int(raw_diag_has["scanned"])
+            cleared_headline = f"{_cleared} cleared, of {_scanned} scanned"
+        except (KeyError, ValueError, TypeError):
+            cleared_headline = (
+                f"{len(candidates)} cleared, of {raw_universe_size} scanned"
+            )
+    else:
+        cleared_headline = f"{len(candidates)} cleared, of {raw_universe_size} scanned"
+    st.markdown(
+        f'<div style="font-weight:600;font-size:15px;margin-bottom:4px;">'
+        f"{cleared_headline}"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
     st.caption(
-        f"Top {len(candidates)} of {universe_size} by factual composite · "
+        f"Top {len(candidates)} of {raw_universe_size} by factual composite · "
         f"as of {as_of} · label: {first_label}"
     )
 
