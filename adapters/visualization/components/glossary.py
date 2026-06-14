@@ -167,6 +167,17 @@ GLOSSARY: dict[str, str] = {
         "Synonym for Snowflake — a radar chart summarising multiple factor "
         "scores in a single view."
     ),
+    # ── Screen diagnostics funnel (Task 5 / ADR-05x) ─────────────────────────
+    "Had history": (
+        "Of the universe scanned, these names had enough price history (at "
+        "least the minimum required trading days) to be scored. Names missing "
+        "sufficient history are excluded before scoring begins."
+    ),
+    "Above trend": (
+        "Of those with sufficient history, these names were trading above the "
+        "long-run trend filter (SMA-200). Below-trend names are excluded from "
+        "the scored pool — they pass the data gate but not the trend gate."
+    ),
 }
 
 

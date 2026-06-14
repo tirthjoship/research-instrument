@@ -1,4 +1,265 @@
+"""Render-contract tests for the Research Candidates tab.
+
+Guards:
+- verdict-driven headline uses real diagnostics counts (no fabricated "discipline working")
+- UNDER_POWERED path surfaces "under-powered" when history coverage is thin
+- HAS_CANDIDATES path surfaces cleared count
+- EARNED_ABSTENTION path surfaces "working as designed" and never the old false copy
+- Graceful fallback when diagnostics key absent (old cached JSON)
+"""
+
+from __future__ import annotations
+
 import json
+from typing import Any
+
+# ---------------------------------------------------------------------------
+# Shared FakeSt — reused across verdict-contract tests
+# ---------------------------------------------------------------------------
+
+
+class _FakeCol:
+    def __enter__(self) -> "_FakeCol":
+        return self
+
+    def __exit__(self, *a: object) -> bool:
+        return False
+
+
+class _FakeSt:
+    session_state: dict[str, object] = {}
+
+    def __init__(self) -> None:
+        self._captured: list[str] = []
+
+    def markdown(self, body: object, **k: object) -> None:
+        self._captured.append(str(body))
+
+    def dataframe(self, *a: object, **k: object) -> None:
+        self._captured.append("DATAFRAME")
+
+    def divider(self) -> None:
+        pass
+
+    def caption(self, *a: object, **k: object) -> None:
+        pass
+
+    def subheader(self, *a: object, **k: object) -> None:
+        pass
+
+    def title(self, *a: object, **k: object) -> None:
+        pass
+
+    def info(self, *a: object, **k: object) -> None:
+        pass
+
+    def warning(self, *a: object, **k: object) -> None:
+        pass
+
+    def error(self, *a: object, **k: object) -> None:
+        pass
+
+    def text_area(self, *a: object, **k: object) -> str:
+        return ""
+
+    def file_uploader(self, *a: object, **k: object) -> None:
+        return None
+
+    def button(self, *a: object, **k: object) -> bool:
+        return False
+
+    def columns(self, n: object, **k: object) -> "list[_FakeCol]":
+        count = n if isinstance(n, int) else len(n)  # type: ignore[arg-type]
+        return [_FakeCol() for _ in range(count)]
+
+    def expander(self, *a: object, **k: object) -> "_FakeCol":
+        return _FakeCol()
+
+    def progress(self, *a: object, **k: object) -> "_FakeSt":
+        return self
+
+    def plotly_chart(self, *a: object, **k: object) -> None:
+        pass
+
+    def metric(self, *a: object, **k: object) -> None:
+        pass
+
+    def empty(self) -> "_FakeSt":
+        return self
+
+    @property
+    def joined(self) -> str:
+        return " ".join(self._captured)
+
+
+def _write_screen(tmp_path: Any, filename: str, payload: dict[str, Any]) -> None:
+    (tmp_path / filename).write_text(json.dumps(payload))
+
+
+# ---------------------------------------------------------------------------
+# Verdict-contract: HAS_CANDIDATES — cleared count visible, no false copy
+# ---------------------------------------------------------------------------
+
+
+def test_has_candidates_verdict_shows_cleared_count(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """diagnostics(512,490,300,70) → '70' visible; 'discipline working' absent."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(
+        tmp_path,
+        "screen_2026-06-13.json",
+        {
+            "as_of": "2026-06-13",
+            "universe_size": 512,
+            "abstained": False,
+            "diagnostics": {
+                "scanned": 512,
+                "had_history": 490,
+                "above_trend": 300,
+                "cleared": 70,
+            },
+            "candidates": [
+                {
+                    "ticker": "AAPL",
+                    "composite": 0.85,
+                    "why": "cheap",
+                    "label": "RESEARCH_ONLY",
+                    "factor_scores": [
+                        {"name": "value", "percentile": 0.9, "contribution": 0.3}
+                    ],
+                    "trend_health": 0.7,
+                }
+            ],
+        },
+    )
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))
+
+    assert "70" in fake.joined, "'70' (cleared count) must appear in rendered output"
+    assert (
+        "discipline working" not in fake.joined.lower()
+    ), "False 'discipline working' copy must not appear"
+
+
+# ---------------------------------------------------------------------------
+# Verdict-contract: UNDER_POWERED — under-powered copy when thin history
+# ---------------------------------------------------------------------------
+
+
+def test_under_powered_verdict_shows_under_powered(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """diagnostics(512,20,0,0) → 'under-powered' visible; 'discipline working' absent."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(
+        tmp_path,
+        "screen_2026-06-13.json",
+        {
+            "as_of": "2026-06-13",
+            "universe_size": 512,
+            "abstained": False,
+            "diagnostics": {
+                "scanned": 512,
+                "had_history": 20,
+                "above_trend": 0,
+                "cleared": 0,
+            },
+            "candidates": [],
+        },
+    )
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))
+
+    assert (
+        "under-powered" in fake.joined.lower()
+    ), "'under-powered' must appear in rendered output for thin-history screen"
+    assert (
+        "discipline working" not in fake.joined.lower()
+    ), "False 'discipline working' copy must not appear on UNDER_POWERED path"
+
+
+# ---------------------------------------------------------------------------
+# Verdict-contract: EARNED_ABSTENTION — correct copy, no false copy
+# ---------------------------------------------------------------------------
+
+
+def test_earned_abstention_verdict_shows_correct_copy(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """diagnostics(512,490,300,0) → 'working as designed'; 'discipline working' absent."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(
+        tmp_path,
+        "screen_2026-06-13.json",
+        {
+            "as_of": "2026-06-13",
+            "universe_size": 512,
+            "abstained": True,
+            "diagnostics": {
+                "scanned": 512,
+                "had_history": 490,
+                "above_trend": 300,
+                "cleared": 0,
+            },
+            "candidates": [],
+        },
+    )
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))
+
+    assert (
+        "working as designed" in fake.joined.lower()
+    ), "'working as designed' must appear for EARNED_ABSTENTION verdict"
+    assert (
+        "discipline working" not in fake.joined.lower()
+    ), "False 'discipline working' copy must not appear on EARNED_ABSTENTION path"
+
+
+# ---------------------------------------------------------------------------
+# Graceful fallback: no diagnostics key (old cached JSON) — no crash, no false copy
+# ---------------------------------------------------------------------------
+
+
+def test_no_diagnostics_fallback_no_crash_no_false_copy(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """Old JSON without 'diagnostics' key must not crash and must not emit false copy."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(
+        tmp_path,
+        "screen_2026-06-10.json",
+        {
+            "as_of": "2026-06-10",
+            "universe_size": 430,
+            "abstained": False,
+            "candidates": [],
+            # no 'diagnostics' key — simulates pre-threading cached JSON
+        },
+    )
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))  # must not raise
+
+    assert (
+        "discipline working" not in fake.joined.lower()
+    ), "False 'discipline working' copy must not appear even for old JSON without diagnostics"
+
+
+# ---------------------------------------------------------------------------
+# Original tests below (unchanged)
+# ---------------------------------------------------------------------------
 
 
 def test_research_candidates_source_has_no_forbidden_words():
