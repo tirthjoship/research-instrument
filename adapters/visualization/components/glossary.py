@@ -167,6 +167,22 @@ GLOSSARY: dict[str, str] = {
         "Synonym for Snowflake — a radar chart summarising multiple factor "
         "scores in a single view."
     ),
+    # ── Triage strip (Task 8 / home hybrid) ──────────────────────────────────
+    "Need review": (
+        "Holdings whose discipline verdict is REDUCE or TRIM — signals that "
+        "a position size may need adjusting. These are review prompts, not "
+        "trade instructions."
+    ),
+    "vs Market (1y)": (
+        "How the book's total return compared to SPY over the trailing year. "
+        "Not pre-computed in the weekly brief — re-run the macro-beta report "
+        "for a live figure."
+    ),
+    "Regime": (
+        "The current broad market regime (e.g. RISK_ON / RISK_OFF / NEUTRAL) "
+        "as classified by the macro overlay. It provides context for discipline "
+        "decisions but does not alter the evidence grades."
+    ),
     # ── Screen diagnostics funnel (Task 5 / ADR-05x) ─────────────────────────
     "Had history": (
         "Of the universe scanned, these names had enough price history (at "

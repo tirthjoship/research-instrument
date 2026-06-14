@@ -20,12 +20,15 @@ from adapters.visualization.data_loader import (
     load_weekly_brief,
     staleness_days,
 )
+from domain.risk_rubric import classify_net_beta
+from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
 
 _SUMMARY_PATH = "data/personal/brief_summary.json"
 _BRIEF_MD_PATH = "data/personal/weekly_brief.md"
 _ADHERENCE_PATH = "data/personal/adherence_log.jsonl"
 _REPORTS_DIR = "data/reports"
 _GRADE_ORDER = ["REDUCE", "TRIM", "REVIEW", "HOLD", "ADD_OK"]
+_SCREEN_COVERAGE_FLOOR = 0.5  # mirrors research_candidates.py
 _GRADE_COLOR = {
     "REDUCE": "#DC2626",
     "TRIM": "#EA580C",
@@ -89,6 +92,84 @@ def _verdict_pill(grade: str) -> str:
     return status_pill_html(tone_map.get(grade, "neutral"), grade)
 
 
+def _parse_screen_diagnostics(
+    screen: dict[str, Any] | None
+) -> ScreenDiagnostics | None:
+    """Parse ScreenDiagnostics from a screen JSON dict.
+
+    Mirrors the same defensive parsing used in research_candidates.py.
+    Returns None when diagnostics are absent or malformed.
+    """
+    if screen is None:
+        return None
+    raw_diag = screen.get("diagnostics")
+    if not isinstance(raw_diag, dict):
+        return None
+    try:
+        return ScreenDiagnostics(
+            scanned=int(raw_diag["scanned"]),
+            had_history=int(raw_diag["had_history"]),
+            above_trend=int(raw_diag["above_trend"]),
+            cleared=int(raw_diag["cleared"]),
+        )
+    except (KeyError, ValueError, TypeError):
+        return None
+
+
+def _screen_tile_content(
+    screen: dict[str, Any] | None,
+) -> tuple[str, str | None, str, str]:
+    """Derive honest (number, stamp, tone, sub) for the screen evidence tile.
+
+    Rules:
+    - HAS_CANDIDATES  → "{cleared} cleared / {scanned}" · no stamp · muted
+    - UNDER_POWERED   → "screen under-powered" · no stamp · muted
+    - EARNED_ABSTENTION → "{scanned} scanned / 0 cleared" · no stamp · muted
+    - No diagnostics (old JSON) → "screen: re-run" · no stamp · muted
+    - No screen file → "—" · no stamp · muted
+
+    The =EMH / ABSTAINED stamp is NEVER applied here — it belongs only on the
+    return-model falsification tiles (directional accuracy, Rank-IC).
+    """
+    if screen is None:
+        return "—", None, "muted", "No screen file found (DATA GAP)."
+
+    diag = _parse_screen_diagnostics(screen)
+
+    if diag is None:
+        # Old cached JSON without diagnostics: neutral, no verdict claim
+        return (
+            "screen: re-run",
+            None,
+            "muted",
+            "Screen diagnostics unavailable — re-run screen-candidates for a full readout.",
+        )
+
+    verdict = classify_screen(diag, _SCREEN_COVERAGE_FLOOR)
+
+    if verdict == ScreenVerdict.HAS_CANDIDATES:
+        return (
+            f"{diag.cleared} cleared / {diag.scanned}",
+            None,
+            "muted",
+            f"{diag.cleared} name(s) cleared every gate this week.",
+        )
+    if verdict == ScreenVerdict.UNDER_POWERED:
+        return (
+            "screen under-powered",
+            None,
+            "muted",
+            f"Only {diag.had_history} of {diag.scanned} had usable price history.",
+        )
+    # EARNED_ABSTENTION: all names scored, none cleared the bar
+    return (
+        f"{diag.scanned} scanned / 0 cleared",
+        None,
+        "muted",
+        "All names scored — none cleared the evidence bar this week.",
+    )
+
+
 def _gauge(share: float) -> Any:
     import plotly.graph_objects as go
 
@@ -139,6 +220,10 @@ def render(
 
     holdings = summary.get("holdings", [])
     attention = [h for h in holdings if h.get("verdict") in ("REDUCE", "TRIM")]
+    review_count = len(
+        [h for h in holdings if h.get("verdict") in ("REDUCE", "TRIM", "REVIEW")]
+    )
+    total_holdings = len(holdings)
     macro = summary.get("macro") or {}
     share = float(macro.get("systematic_share", 0.0))
 
@@ -151,12 +236,84 @@ def render(
         unsafe_allow_html=True,
     )
 
-    # ── Evidence ledger strip ────────────────────────────────────────────────────
+    # ── TRIAGE STRIP (action-lead, above evidence ledger) ───────────────────────
     screen = load_latest_screen(reports_dir)
     universe_size = screen.get("universe_size", "?") if screen else "?"
     candidates = screen.get("candidates", []) if screen else []
     adherence_rows = load_adherence_log(adherence_path)
 
+    # Net beta from macro block (SPY factor coefficient is the headline net-beta proxy)
+    spy_beta = macro.get("net_beta_by_factor", {}).get("SPY")
+    net_beta_val: float | None = float(spy_beta) if spy_beta is not None else None
+    net_beta_display = f"{net_beta_val:.2f}" if net_beta_val is not None else "—"
+    net_beta_band_str = (
+        classify_net_beta(net_beta_val).value if net_beta_val is not None else ""
+    )
+
+    # "Need review" = REDUCE + TRIM + REVIEW verdicts (discipline review prompts)
+    need_review_label = f"{review_count} / {total_holdings}"
+    triage_plain = (
+        f"{review_count} of your {total_holdings} holdings "
+        f"{'has' if review_count == 1 else 'have'} signals worth reviewing."
+    )
+
+    st.markdown('<div class="ri-sec">TRIAGE</div>', unsafe_allow_html=True)
+    triage_cols = st.columns(4)
+    with triage_cols[0]:
+        # Dominant tile: "Need review" count
+        tone_review = "amber" if review_count > 0 else "muted"
+        st.markdown(
+            render_tile(
+                label=tooltip("Need review"),
+                number=need_review_label,
+                stamp=None,
+                tone=tone_review,
+                sub="holdings with REDUCE / TRIM / REVIEW signals",
+            ),
+            unsafe_allow_html=True,
+        )
+    with triage_cols[1]:
+        # vs Market (1y): not pre-computed in brief — show DATA GAP honestly
+        st.markdown(
+            render_tile(
+                label=tooltip("vs Market (1y)"),
+                number="—",
+                stamp=None,
+                tone="muted",
+                sub="not pre-computed in brief (re-run macro-beta report)",
+            ),
+            unsafe_allow_html=True,
+        )
+    with triage_cols[2]:
+        band_sub = f"{net_beta_band_str} band" if net_beta_band_str else "no macro data"
+        st.markdown(
+            render_tile(
+                label=tooltip("Net beta"),
+                number=net_beta_display,
+                stamp=None,
+                tone="muted",
+                sub=band_sub,
+            ),
+            unsafe_allow_html=True,
+        )
+    with triage_cols[3]:
+        st.markdown(
+            render_tile(
+                label=tooltip("Regime"),
+                number=str(regime).upper(),
+                stamp=None,
+                tone="muted",
+                sub="macro regime classification",
+            ),
+            unsafe_allow_html=True,
+        )
+    st.markdown(
+        f'<div style="color:#64748B;font-size:13px;margin:-4px 0 16px 0;">'
+        f"{triage_plain}</div>",
+        unsafe_allow_html=True,
+    )
+
+    # ── Evidence ledger strip ────────────────────────────────────────────────────
     net_beta_str = "—"
     if macro.get("systematic_share") is not None:
         net_beta_str = f"{share:.0%}"
@@ -177,21 +334,10 @@ def render(
     # ── Anti-KPI tiles — the three honest verdicts ──────────────────────────────
     st.markdown('<div class="ri-sec">VALIDATION FINDINGS</div>', unsafe_allow_html=True)
 
-    # Tile 1: Universe → Cleared (abstention story)
-    if screen is not None:
-        tile1_number = f"{universe_size} → {len(candidates)}"
-        tile1_stamp: str | None = "ABSTAINED" if len(candidates) == 0 else None
-        tile1_tone = "amber" if len(candidates) == 0 else "muted"
-        tile1_sub = (
-            "No names cleared every gate this week — the screen declined to rank."
-            if len(candidates) == 0
-            else f"{len(candidates)} name(s) cleared the evidence gates."
-        )
-    else:
-        tile1_number = "—"
-        tile1_stamp = None
-        tile1_tone = "muted"
-        tile1_sub = "No screen file found (DATA GAP)."
+    # Tile 1: Screen verdict — honest, derived from diagnostics + classify_screen.
+    # NEVER shows "512→0 ABSTAINED =EMH" — that was a bug-driven false claim.
+    # =EMH framing is reserved for the return-model falsification tiles (tiles 2 & 3).
+    tile1_number, tile1_stamp, tile1_tone, tile1_sub = _screen_tile_content(screen)
 
     # Tile 2: Directional accuracy
     da_str = _load_directional_accuracy(reports_dir)
