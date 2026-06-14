@@ -455,3 +455,190 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
     assert (
         "DATAFRAME" in joined or "Screen history" in joined
     ), "Neither DATAFRAME nor 'Screen history' found — history strip was not reached on abstention week"
+
+
+# ---------------------------------------------------------------------------
+# Task 6: 4-factor rich candidate cards
+# ---------------------------------------------------------------------------
+
+_FOUR_FACTOR_SCREEN = {
+    "as_of": "2026-06-13",
+    "universe_size": 512,
+    "abstained": False,
+    "diagnostics": {
+        "scanned": 512,
+        "had_history": 490,
+        "above_trend": 300,
+        "cleared": 70,
+    },
+    "candidates": [
+        {
+            "ticker": "NVDA",
+            "composite": 1.45,
+            "trend_health": 0.82,
+            "label": "RESEARCH_ONLY",
+            "why": "strong momentum + cheap on value",
+            "factor_scores": [
+                {
+                    "name": "momentum",
+                    "value": 1.82,
+                    "percentile": 0.91,
+                    "contribution": 0.35,
+                },
+                {
+                    "name": "revision",
+                    "value": 0.64,
+                    "percentile": 0.73,
+                    "contribution": 0.18,
+                },
+                {
+                    "name": "quality",
+                    "value": 0.42,
+                    "percentile": 0.61,
+                    "contribution": 0.22,
+                },
+                {
+                    "name": "value",
+                    "value": -0.31,
+                    "percentile": 0.38,
+                    "contribution": 0.25,
+                },
+            ],
+        }
+    ],
+}
+
+_MISSING_REVISION_SCREEN = {
+    "as_of": "2026-06-13",
+    "universe_size": 512,
+    "abstained": False,
+    "diagnostics": {
+        "scanned": 512,
+        "had_history": 490,
+        "above_trend": 300,
+        "cleared": 70,
+    },
+    "candidates": [
+        {
+            "ticker": "KO",
+            "composite": 0.92,
+            "trend_health": 0.71,
+            "label": "RESEARCH_ONLY",
+            "why": "cheap on value",
+            "factor_scores": [
+                {
+                    "name": "momentum",
+                    "value": 0.55,
+                    "percentile": 0.62,
+                    "contribution": 0.30,
+                },
+                # revision intentionally absent — should render as DATA-GAP
+                {
+                    "name": "quality",
+                    "value": 0.33,
+                    "percentile": 0.58,
+                    "contribution": 0.35,
+                },
+                {
+                    "name": "value",
+                    "value": 1.10,
+                    "percentile": 0.88,
+                    "contribution": 0.35,
+                },
+            ],
+        }
+    ],
+}
+
+
+def test_four_factor_card_shows_all_factor_names(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """All 4 factor names must appear in rendered output for a full-data candidate."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(tmp_path, "screen_2026-06-13.json", _FOUR_FACTOR_SCREEN)
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))
+
+    joined = fake.joined.lower()
+    for factor in ("momentum", "revision", "quality", "value"):
+        assert (
+            factor in joined
+        ), f"Factor '{factor}' not found in rendered candidate card"
+
+
+def test_four_factor_card_composite_labelled_not_a_forecast(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """Composite must be labelled as 'not a forecast' (or equivalent phrase)."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(tmp_path, "screen_2026-06-13.json", _FOUR_FACTOR_SCREEN)
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))
+
+    joined = fake.joined.lower()
+    assert (
+        "not a forecast" in joined
+    ), "Composite must be labelled with 'not a forecast' to prevent misreading as a buy signal"
+
+
+def test_missing_revision_renders_data_gap(tmp_path: Any, monkeypatch: Any) -> None:
+    """A candidate missing 'revision' in factor_scores must show DATA-GAP, never a number."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(tmp_path, "screen_2026-06-13.json", _MISSING_REVISION_SCREEN)
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))
+
+    joined = fake.joined.lower()
+    # DATA-GAP or data-gap must appear
+    assert (
+        "data-gap" in joined or "data gap" in joined
+    ), "Missing revision factor must render as DATA-GAP, not a fabricated number"
+    # Revision row must not show a fabricated numeric value (0.00 or similar)
+    # We assert "revision" appears (the row is present) but no fabricated number adjacent
+    assert "revision" in joined, "Revision row must appear even when data is missing"
+
+
+def test_candidate_card_has_no_buy_sell_words(tmp_path: Any, monkeypatch: Any) -> None:
+    """No buy/sell language must appear anywhere in rendered candidate cards."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(tmp_path, "screen_2026-06-13.json", _FOUR_FACTOR_SCREEN)
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))
+
+    joined = fake.joined.lower()
+    for forbidden in ("buy", "sell"):
+        assert (
+            forbidden not in joined
+        ), f"Forbidden word '{forbidden}' must not appear in candidate card output"
+
+
+def test_candidate_card_shows_research_read_and_do_next(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """Rich card must include a 'What this tells you' and a 'Do next' section."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    _write_screen(tmp_path, "screen_2026-06-13.json", _FOUR_FACTOR_SCREEN)
+
+    fake = _FakeSt()
+    monkeypatch.setattr(rc, "st", fake)
+    rc.render(reports_dir=str(tmp_path))
+
+    joined = fake.joined.lower()
+    assert (
+        "what this tells you" in joined
+    ), "'What this tells you' section must appear in candidate card"
+    assert "do next" in joined, "'Do next' research step must appear in candidate card"

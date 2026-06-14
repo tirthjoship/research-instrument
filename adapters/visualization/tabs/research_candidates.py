@@ -18,6 +18,10 @@ _SCREEN_COVERAGE_FLOOR = 0.5  # default; no key in us.yaml yet
 
 _TOP_N = 15
 
+# Canonical factor order shown in every rich card.  If a factor is absent
+# from the candidate's factor_scores list it renders as DATA-GAP.
+_CANONICAL_FACTORS: tuple[str, ...] = ("momentum", "revision", "quality", "value")
+
 _DISCLAIMER = (
     "Ranked by <strong>current factual evidence</strong> (valuation · quality · health) — "
     "<strong>NOT forecast returns</strong>. The return-forecast hypothesis was tested 2006–2024 and falsified "
@@ -250,24 +254,169 @@ def render(reports_dir: str = "data/reports") -> None:
         f"as of {as_of} · label: {first_label}"
     )
 
-    for i, c in enumerate(candidates, start=1):
-        factors = c.get("factor_scores", [])
-        # percentile is a 0–1 FRACTION in the screen JSON — multiply by 100 for display
-        chips = " · ".join(
-            f"{f.get('name', '?')} p{f.get('percentile', 0) * 100:.0f}" for f in factors
-        )
+    rich_candidates = candidates[:10]
+    compact_candidates = candidates[10:]
+
+    for i, c in enumerate(rich_candidates, start=1):
         ticker = c.get("ticker", "?")
-        composite = c.get("composite", 0)
+        composite = c.get("composite", 0.0)
         why = c.get("why", "")
         label = c.get("label", "RESEARCH_ONLY")
         pill = status_pill_html("neutral", label)
+
+        # Build a lookup of factor data keyed by name
+        raw_factors = c.get("factor_scores", [])
+        factor_by_name: dict[str, dict[str, object]] = {
+            f.get("name", ""): f for f in raw_factors if isinstance(f, dict)
+        }
+
+        # --- Factor rows (all 4 canonical factors, DATA-GAP for missing) ---
+        factor_rows_html = ""
+        for fname in _CANONICAL_FACTORS:
+            fd = factor_by_name.get(fname)
+            raw_value: object = fd.get("value") if fd else None
+            raw_pct: object = fd.get("percentile") if fd else None
+
+            if raw_value is None or raw_pct is None:
+                # DATA-GAP: factor absent or None — never fabricate a number
+                factor_rows_html += (
+                    f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+                    f'<span style="width:80px;font-size:12px;color:#6B7280;">{fname}</span>'
+                    f'<span style="font-size:12px;color:#9CA3AF;font-style:italic;">DATA-GAP</span>'
+                    f"</div>"
+                )
+            else:
+                val = float(raw_value)  # type: ignore[arg-type]
+                pct_frac = float(raw_pct)  # type: ignore[arg-type]
+                pct_display = pct_frac * 100  # 0–1 fraction → 0–100
+                val_color = "#16A34A" if val >= 0 else "#DC2626"
+                sign = "+" if val >= 0 else ""
+                # Diverging bar: width proportional to abs(val), capped at ±3σ
+                bar_pct = min(100.0, abs(val) / 3.0 * 100)
+                if val >= 0:
+                    bar_html = (
+                        f'<div style="display:inline-block;width:60px;height:8px;'
+                        f'background:#E5E7EB;border-radius:4px;vertical-align:middle;">'
+                        f'<div style="width:{bar_pct:.0f}%;height:8px;background:#16A34A;'
+                        f'border-radius:4px;"></div></div>'
+                    )
+                else:
+                    bar_html = (
+                        f'<div style="display:inline-block;width:60px;height:8px;'
+                        f"background:#E5E7EB;border-radius:4px;vertical-align:middle;"
+                        f'direction:rtl;">'
+                        f'<div style="width:{bar_pct:.0f}%;height:8px;background:#DC2626;'
+                        f'border-radius:4px;"></div></div>'
+                    )
+                factor_rows_html += (
+                    f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+                    f'<span style="width:80px;font-size:12px;color:#6B7280;">{fname}</span>'
+                    f'<span style="font-size:12px;font-weight:600;color:{val_color};'
+                    f'min-width:40px;">{sign}{val:.2f}</span>'
+                    f"{bar_html}"
+                    f'<span style="font-size:11px;color:#9CA3AF;min-width:52px;">'
+                    f"p{pct_display:.0f}/100</span>"
+                    f"</div>"
+                )
+
+        # --- "What this tells you" research read ---
+        # Derive the top positive factor for the read line (highest z-value present).
+        best_factor: str | None = None
+        best_val: float = -999.0
+        best_pct_display: float = 0.0
+        for fname in _CANONICAL_FACTORS:
+            fd = factor_by_name.get(fname)
+            if fd is None:
+                continue
+            rv: object = fd.get("value")
+            rp: object = fd.get("percentile")
+            if rv is None or rp is None:
+                continue
+            fv = float(rv)  # type: ignore[arg-type]
+            if fv > best_val:
+                best_val = fv
+                best_factor = fname
+                best_pct_display = float(rp) * 100  # type: ignore[arg-type]
+
+        if best_factor is not None and best_val > 0:
+            research_read = (
+                f"Strongest signal on <strong>{best_factor}</strong> "
+                f"(top {100 - best_pct_display:.0f}% of universe) — {why}. "
+                "A reason to investigate this name, not a return forecast."
+            )
+        else:
+            research_read = (
+                f"{why} — check the Stock Analysis tab for a full evidence read."
+            )
+
+        # --- "Do next" investigation step ---
+        do_next = (
+            "Check next earnings date, read the last two earnings call transcripts, "
+            "and verify why the stock appears cheap or strong on these factors — "
+            "look for a structural reason before acting."
+        )
+
         st.markdown(
-            f'<div class="ws-card" style="padding:12px 16px;margin-bottom:8px;">'
-            f"<strong>{i}. {ticker}</strong> — composite {composite:.2f} {pill}<br>"
-            f'<span style="color:#6B7280;font-size:13px;">{chips}</span><br>'
-            f"<em>{why}</em> — research it in the Stock Analysis tab."
+            f'<div class="ws-card" style="padding:14px 16px;margin-bottom:10px;">'
+            # Header: ticker + composite (labelled as research-priority score, not a forecast)
+            f'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">'
+            f'<strong style="font-size:16px;">{i}. {ticker}</strong>'
+            f"{pill}"
+            f'<span style="font-size:12px;color:#6B7280;margin-left:4px;">'
+            f"research-priority score {composite:.2f} &nbsp;"
+            f'<span style="font-style:italic;">(not a forecast)</span></span>'
+            f"</div>"
+            # Factor rows
+            f"{factor_rows_html}"
+            # Divider
+            f'<div style="border-top:1px solid #E5E7EB;margin:8px 0;"></div>'
+            # What this tells you
+            f'<div style="margin-bottom:6px;">'
+            f'<span style="font-size:12px;font-weight:600;color:#374151;">'
+            f"What this tells you:</span> "
+            f'<span style="font-size:13px;color:#4B5563;">{research_read}</span>'
+            f"</div>"
+            # Do next
+            f"<div>"
+            f'<span style="font-size:12px;font-weight:600;color:#374151;">'
+            f"Do next:</span> "
+            f'<span style="font-size:13px;color:#4B5563;">{do_next}</span>'
+            f"</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+    # Compact list for candidates beyond the top 10
+    if compact_candidates:
+        st.markdown(
+            '<div style="font-size:13px;font-weight:600;color:#374151;margin:12px 0 6px 0;">'
+            f"Remaining {len(compact_candidates)} candidates — open in Stock Analysis tab for full read"
             "</div>",
             unsafe_allow_html=True,
         )
+        for c in compact_candidates:
+            ticker = c.get("ticker", "?")
+            composite = c.get("composite", 0.0)
+            raw_factors = c.get("factor_scores", [])
+            # Top factor by value (skip missing)
+            top_f: str = "—"
+            top_v: float = -999.0
+            for fd in raw_factors:
+                if not isinstance(fd, dict):
+                    continue
+                rv2: object = fd.get("value")
+                if rv2 is None:
+                    continue
+                fv2 = float(rv2)  # type: ignore[arg-type]
+                if fv2 > top_v:
+                    top_v = fv2
+                    top_f = str(fd.get("name", "?"))
+            st.markdown(
+                f'<div style="font-size:13px;color:#4B5563;padding:3px 0;">'
+                f"<strong>{ticker}</strong> &nbsp;·&nbsp; score {composite:.2f} "
+                f"&nbsp;·&nbsp; top factor: {top_f}"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
 
     _render_history_and_upload(reports_dir)
