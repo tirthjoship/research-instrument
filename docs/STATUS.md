@@ -30,7 +30,14 @@ Shipped:
 
 ## Next Action
 
-Project returns to **maintenance**. The redesign is the sanctioned UX. No open implementation work.
+**OPEN: PR #58** (`fix/screen-trend-health-price-attr` → develop) — fixes a silent bug where the
+screener was dead (adapter read `s.close`; `Signal` has `s.price`; `AttributeError` swallowed by a
+bare except → `trend_health`=0.0 for all → 0 candidates every week). 1675 green.
+⚠️ **BLOCK before main:** the shipped **512→0 ABSTAINED anti-KPI** (Home tile + Screener abstention
+funnel) rests on this bug — re-source/remove those honesty claims, else main presents a bug as EMH
+evidence. See memory `project-screener-silent-bug`.
+**Also pending (separate task):** reconcile the 4 redesign specs on `feat/per-stock-decision-card`
+(home/per-stock/risk/screener, 2026-06-13) against the now-shipped Research Instrument.
 
 ## Caveats
 
