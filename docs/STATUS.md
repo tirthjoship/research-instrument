@@ -30,14 +30,27 @@ Shipped:
 
 ## Next Action
 
-**OPEN: PR #58** (`fix/screen-trend-health-price-attr` → develop) — fixes a silent bug where the
-screener was dead (adapter read `s.close`; `Signal` has `s.price`; `AttributeError` swallowed by a
-bare except → `trend_health`=0.0 for all → 0 candidates every week). 1675 green.
-⚠️ **BLOCK before main:** the shipped **512→0 ABSTAINED anti-KPI** (Home tile + Screener abstention
-funnel) rests on this bug — re-source/remove those honesty claims, else main presents a bug as EMH
-evidence. See memory `project-screener-silent-bug`.
-**Also pending (separate task):** reconcile the 4 redesign specs on `feat/per-stock-decision-card`
-(home/per-stock/risk/screener, 2026-06-13) against the now-shipped Research Instrument.
+**Legibility redesign BUILT on branch `feat/dashboard-legibility-redesign`** (stacked on the
+`s.close→s.price` fix; 16 commits). 5 of 6 tabs done via subagent-driven dev + per-task Opus review:
+Screener (verdict funnel + 4-factor cards), Risk (additive distance-ramp bands), Home (triage strip
++ honest screen tile, 512→0 ABSTAINED gone), My Portfolio (decision-card rows), Trust (512→0
+citation re-sourced — it WAS citing the bug at trust.py:129). **1718 tests pass, mypy clean, pre-commit green.**
+New pure-domain: `domain/screen_diagnostics.py`, `domain/risk_rubric.py`.
+
+**NEXT SESSION (visual review):**
+1. **Run the screener live** (`screen-candidates`) so a fresh `screen_*.json` carries `diagnostics`
+   + real candidates — the smoke screenshots used STALE cached data (0 candidates, no diagnostics),
+   so Screener cards + Home HAS_CANDIDATES tile showed fallback states. Re-screenshot to eyeball rich states.
+2. **Stock Analysis (tab 4) decision-card** = the one deferred tab — build next (see plan).
+3. **PR/merge ordering:** PR #58 (the fix) merges to develop first; this branch stacks on it.
+   ⚠️ Still BLOCK-before-main: confirm no shipped surface presents 512→0 as EMH/discipline (Home
+   tile + Trust now fixed on this branch; verify on develop after merge).
+4. Known DATA-GAPs surfaced honestly (not bugs): per-holding **5-signal RAG array doesn't exist** in
+   data (Portfolio shows trend_state + "other signals: DATA-GAP"); **vs-Market(1y)** not in brief.
+   If wanted, add real computations later. Minor: two different "net beta" numbers on Home (ledger
+   uses systematic-share %, triage uses SPY coeff) — future copy pass.
+5. Plan: `docs/superpowers/plans/2026-06-14-dashboard-legibility-redesign.md`. Decisions: memory
+   `project-whole-site-redesign-decisions`. Mockup: `.superpowers/brainstorm/whole-site/...`.
 
 ## Caveats
 
