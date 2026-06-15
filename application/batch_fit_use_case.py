@@ -18,6 +18,7 @@ class BatchFitRow:
     ticker: str
     verdict: FitVerdict
     fetch_ok: bool
+    factor_scores: tuple[dict[str, object], ...] = ()
 
 
 MAX_TICKERS = 25

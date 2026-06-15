@@ -7,6 +7,31 @@ def _fake_fit(ticker: str) -> FitVerdict:
     )
 
 
+def _fake_verdict() -> FitVerdict:
+    return FitVerdict(
+        ticker="KO", evidence_grade="MODERATE", fit_flags=(), summary="KO ok."
+    )
+
+
+def test_batchfitrow_carries_factor_scores() -> None:
+    from application.batch_fit_use_case import BatchFitRow
+
+    row = BatchFitRow(
+        ticker="KO",
+        verdict=_fake_verdict(),
+        fetch_ok=True,
+        factor_scores=({"name": "quality", "value": 0.5, "percentile": 0.80},),
+    )
+    assert row.factor_scores[0]["name"] == "quality"
+
+
+def test_batchfitrow_factor_scores_defaults_empty() -> None:
+    from application.batch_fit_use_case import BatchFitRow
+
+    row = BatchFitRow(ticker="KO", verdict=_fake_verdict(), fetch_ok=True)
+    assert row.factor_scores == ()
+
+
 def test_parse_tickers_text_variants():
     from application.batch_fit_use_case import parse_tickers
 
