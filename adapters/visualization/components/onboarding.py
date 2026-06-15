@@ -53,20 +53,22 @@ def render_landing_door_html(local: bool) -> str:
     """
     if local:
         privacy = (
-            '<p style="margin:0;font-size:12.5px;color:rgba(255,255,255,.82)">'
-            "See the instrument on a sample book, or load your own. "
+            '<p style="margin:0;font-size:12.5px;color:rgba(255,255,255,.82);line-height:1.5">'
+            "Explore a sample book or load your own. "
             '<b style="color:#fff">Everything stays on your machine</b>'
             " — never uploaded.</p>"
         )
     else:
         privacy = (
-            '<p style="margin:0;font-size:12.5px;color:rgba(255,255,255,.82)">'
-            "See the instrument on a sample book. Holdings upload is disabled — "
+            '<p style="margin:0;font-size:12.5px;color:rgba(255,255,255,.82);line-height:1.5">'
+            "Explore the sample book. Holdings upload is disabled — "
             "this build isn't running local-only.</p>"
         )
+    # Note: .door CSS has border-radius:18px 18px 0 0 (square bottom) so it connects
+    # flush to the .door-actions panel / Streamlit column row that follows immediately.
     return (
         '<div class="door">'
-        '<h2 style="font-family:Fraunces,serif;font-weight:700;font-size:19px;margin:0 0 8px">'
+        '<h2 style="font-family:Fraunces,serif;font-weight:700;font-size:18px;margin:0 0 6px">'
         "Load a book to begin</h2>"
         f"{privacy}"
         "</div>"
