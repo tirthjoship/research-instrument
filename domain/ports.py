@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Protocol, runtime_checkable
 
 from .analyst import AnalystRating
+from .case_models import CaseContext, CaseResult
 from .conviction import SmartMoneySignal
 from .insider_cluster import InsiderTransaction
 from .models import (
@@ -332,3 +333,13 @@ class NarratorPort(Protocol):
     narrates, never picks)."""
 
     def narrate(self, context: dict[str, object]) -> str: ...
+
+
+@runtime_checkable
+class CaseSummarizerPort(Protocol):
+    """Summarises cited facts + news into the two-sided attributed case block.
+
+    Receives only already-fetched evidence (CaseContext); cannot influence the
+    verdict. Any failure must return data_gap=True — never fabricated output."""
+
+    def summarize_case(self, ctx: CaseContext) -> CaseResult: ...
