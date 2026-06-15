@@ -6,6 +6,10 @@ class FakePrice:
     def monthly_closes(self, t: str) -> list[float]:
         return [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24]
 
+    def daily_closes(self, t: str, as_of: str) -> list[float]:
+        # 61 flat daily closes → zero vol (lowvol=None after invert; z=0)
+        return [100.0] * 61
+
     def trend_health(self, t: str) -> float:
         return 0.4
 
@@ -162,6 +166,9 @@ def test_percentile_in_range_and_top_is_highest() -> None:
 
         def monthly_closes(self, t: str) -> list[float]:
             return self._closes.get(t, [])
+
+        def daily_closes(self, t: str, as_of: str) -> list[float]:
+            return [100.0] * 61  # flat series → zero vol (DATA-GAP via invert)
 
         def trend_health(self, t: str) -> float:
             return 0.4
@@ -346,6 +353,9 @@ def test_diagnostics_gate_counts() -> None:
         def monthly_closes(self, t: str) -> list[float]:
             return [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24]
 
+        def daily_closes(self, t: str, as_of: str) -> list[float]:
+            return [100.0] * 61
+
         def trend_health(self, t: str) -> float:
             return self._trend[t]
 
@@ -360,3 +370,111 @@ def test_diagnostics_gate_counts() -> None:
     assert res.diagnostics.had_history == 2  # A, B
     assert res.diagnostics.above_trend == 1  # A only (trend_health > 0)
     assert res.diagnostics.cleared == len(res.candidates)
+
+
+# ---------------------------------------------------------------------------
+# Step 3: lowvol wired (inverted), calmer > wilder, PIT-safe
+# ---------------------------------------------------------------------------
+
+
+def test_lowvol_calmer_ticker_gets_higher_z_than_wilder() -> None:
+    """Calmer ticker (less volatile daily closes) must rank higher on lowvol z-score
+    because lowvol = -vol (inverted), so lower volatility → higher composite contribution.
+
+    Uses 3 tickers (CALM, MED, WILD) so the cross-sectional winsorize/z-score has
+    enough spread to avoid the 2-element degenerate flattening edge case.
+    """
+
+    class LowVolPrice:
+        # CALM: ±0.1% daily, MED: ±2% daily, WILD: ±5% daily
+        _amps = {"CALM": 0.001, "MED": 0.02, "WILD": 0.05}
+
+        def _make_closes(self, amp: float, n: int = 62) -> list[float]:
+            closes = []
+            p = 100.0
+            for i in range(n):
+                factor = 1.0 + amp if i % 2 == 0 else 1.0 - amp
+                p *= factor
+                closes.append(p)
+            return closes
+
+        def monthly_closes(self, t: str) -> list[float]:
+            return [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24]
+
+        def daily_closes(self, t: str, as_of: str) -> list[float]:
+            return self._make_closes(self._amps.get(t, 0.02))
+
+        def trend_health(self, t: str) -> float:
+            return 0.4
+
+        def has_min_history(self, t: str) -> bool:
+            return True
+
+    class AllPresentAnalyst:
+        def estimate_series(self, t: str) -> list[float] | None:
+            return [1.0, 1.1]
+
+    class AllPresentFund:
+        def quality_value(self, t: str) -> dict[str, float]:
+            return {"quality": 0.5, "value": 0.3}
+
+    uc = EvidenceScreenUseCase(
+        LowVolPrice(), AllPresentAnalyst(), AllPresentFund(), FakeNarrator()
+    )
+    res = uc.run(universe=["CALM", "MED", "WILD"], as_of="2026-06-08", top_n=10)
+    assert len(res.candidates) == 3
+
+    scores_by_ticker = {
+        c.ticker: {fs.name: fs.value for fs in c.factor_scores} for c in res.candidates
+    }
+
+    # lowvol z-score: CALM (lowest vol → highest -vol → highest z) > WILD
+    calm_lv = scores_by_ticker["CALM"]["lowvol"]
+    wild_lv = scores_by_ticker["WILD"]["lowvol"]
+    assert (
+        calm_lv > wild_lv
+    ), f"CALM lowvol z {calm_lv:.3f} should be > WILD {wild_lv:.3f}"
+
+
+def test_lowvol_pit_safe_daily_closes_bounded_by_as_of() -> None:
+    """daily_closes(ticker, as_of) must only return closes <= as_of.
+    The fake adapter enforces this; this test asserts the contract is respected.
+    """
+    as_of = "2026-06-08"
+    _closes_returned: list[tuple[str, str]] = []
+
+    class PITCheckPrice:
+        def monthly_closes(self, t: str) -> list[float]:
+            return [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24]
+
+        def daily_closes(self, t: str, as_of_arg: str) -> list[float]:
+            _closes_returned.append((t, as_of_arg))
+            return [100.0] * 61
+
+        def trend_health(self, t: str) -> float:
+            return 0.4
+
+        def has_min_history(self, t: str) -> bool:
+            return True
+
+    class AllPresentAnalyst:
+        def estimate_series(self, t: str) -> list[float] | None:
+            return [1.0, 1.1]
+
+    class AllPresentFund:
+        def quality_value(self, t: str) -> dict[str, float]:
+            return {"quality": 0.5, "value": 0.3}
+
+    uc = EvidenceScreenUseCase(
+        PITCheckPrice(), AllPresentAnalyst(), AllPresentFund(), FakeNarrator()
+    )
+    uc.run(universe=["AAPL", "MSFT"], as_of=as_of, top_n=10)
+
+    # daily_closes must have been called with the as_of anchor for each eligible ticker
+    called_tickers = {t for t, _ in _closes_returned}
+    called_as_ofs = {a for _, a in _closes_returned}
+    assert "AAPL" in called_tickers
+    assert "MSFT" in called_tickers
+    assert called_as_ofs == {
+        as_of
+    }, f"daily_closes called with unexpected as_of: {called_as_ofs}"

@@ -28,10 +28,12 @@ from domain.surfaced_call import (
     SurfacedCall,
     make_call_id,
 )
+from domain.trend_rules import trailing_volatility
 
 
 class PricePort(Protocol):
     def monthly_closes(self, ticker: str) -> list[float]: ...
+    def daily_closes(self, ticker: str, as_of: str) -> list[float]: ...
     def trend_health(self, ticker: str) -> float: ...
     def has_min_history(self, ticker: str) -> bool: ...
 
@@ -74,7 +76,13 @@ class EvidenceScreenUseCase:
         top_n: int = 10,
     ) -> ScreenResult:
         # --- gather raw signals (ineligible tickers are filtered) ---
-        raw: list[tuple[str, float | None, float | None, dict[str, float], float]] = []
+        # Tuple: (ticker, mom, rev, qv, th, raw_neg_vol)
+        # raw_neg_vol = -trailing_volatility (inverted: calmer → higher) or None (DATA-GAP)
+        raw: list[
+            tuple[
+                str, float | None, float | None, dict[str, float], float, float | None
+            ]
+        ] = []
         _scanned = len(universe)
         _had_history = 0
         _above_trend = 0
@@ -90,7 +98,11 @@ class EvidenceScreenUseCase:
             mom = trend_rules.momentum_12_1(self._price.monthly_closes(t))
             rev = revision_momentum(self._analyst.estimate_series(t))
             qv = self._fund.quality_value(t)
-            raw.append((t, mom, rev, qv, th))
+            # PIT-safe: daily_closes() must only include closes <= as_of
+            daily = self._price.daily_closes(t, as_of)
+            vol = trailing_volatility(daily)
+            raw_neg_vol: float | None = -vol if vol is not None else None
+            raw.append((t, mom, rev, qv, th, raw_neg_vol))
 
         if not raw:
             return ScreenResult(
@@ -112,9 +124,8 @@ class EvidenceScreenUseCase:
         zrev = self._z([r[2] for r in raw])
         zqual = self._z([r[3].get("quality") for r in raw])
         zval = self._z([r[3].get("value") for r in raw])
-        # lowvol: DATA-GAP for all tickers until Step 3 wires daily closes.
-        # The _z() of all-None returns all-None (correct; no fake data).
-        zlowvol: list[float | None] = self._z([None for _ in raw])
+        # lowvol: -vol (inverted, calmer=higher); None = DATA-GAP (insufficient daily history)
+        zlowvol: list[float | None] = self._z([r[5] for r in raw])
 
         cands: list[ScreenCandidate] = []
         present_fractions: list[float] = []
@@ -144,7 +155,7 @@ class EvidenceScreenUseCase:
                     per_item.append(rank / max(n_present - 1, 1))
             factor_percentiles[k] = per_item
 
-        for i, (t, _mom, _rev, _qv, th) in enumerate(raw):
+        for i, (t, _mom, _rev, _qv, th, _negvol) in enumerate(raw):
             subs: dict[str, float | None] = {
                 "momentum": zmom[i],
                 "revision": zrev[i],
