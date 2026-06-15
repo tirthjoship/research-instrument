@@ -538,7 +538,8 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
             f"<span style=\"font-family:'Fraunces',serif;font-style:italic;"
             f'font-size:11px;color:var(--text-muted);font-weight:400;">'
             f"{sub}</span>"
-            f"{tooltip('Reason bucket')}"
+            f'<span style="color:var(--text-muted);font-size:11px;">'
+            f"{tooltip('Reason bucket', 'ⓘ')}</span>"
             f"</div>"
         )
 
