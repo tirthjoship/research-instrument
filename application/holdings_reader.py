@@ -38,6 +38,33 @@ def _to_yf(symbol: str, exchange: str) -> str:
     return base
 
 
+def make_manual_holding(
+    ticker: str,
+    shares: float,
+    cost_basis: float,
+    account_type: str = "TFSA",
+) -> Holding:
+    """Build a Holding from user-supplied fields.
+
+    Ticker is uppercased automatically.  ``account_type`` defaults to ``"TFSA"``.
+
+    Args:
+        ticker: Stock ticker symbol (will be uppercased).
+        shares: Number of shares held.
+        cost_basis: Total book value / cost basis in account currency.
+        account_type: Account type label (e.g. "TFSA", "RRSP", "Non-reg").
+
+    Returns:
+        A frozen :class:`Holding` ready to append to ``st.session_state["book"]``.
+    """
+    return Holding(
+        ticker=ticker.upper().strip(),
+        shares=shares,
+        cost_basis=cost_basis,
+        account_type=account_type,
+    )
+
+
 def read_holdings(path: str) -> list[Holding]:
     """Parse the CSV; skip blank-symbol / non-numeric-quantity / zero-share rows."""
     if not os.path.exists(path):

@@ -23,7 +23,7 @@ from adapters.visualization.data_loader import (
 )
 from application.card_loading import select_case_summarizer
 from application.evidence_card import EvidenceCard
-from application.holdings_reader import read_holdings
+from application.holdings_reader import make_manual_holding, read_holdings
 from application.runtime_guard import is_local_runtime
 from application.sample_book import load_sample_book
 from domain.discipline import Verdict
@@ -553,7 +553,42 @@ def _handle_onboarding() -> None:
 
     with col3:
         if st.button("+ Add manually", key="ob_manual"):
-            st.info("Manual entry coming soon — use sample book or CSV for now.")
+            st.session_state["_show_manual_form"] = not st.session_state.get(
+                "_show_manual_form", False
+            )
+
+    # Manual-entry form — toggled by the button above
+    if st.session_state.get("_show_manual_form", False):
+        with st.form("manual_holding_form", clear_on_submit=True):
+            st.markdown(
+                '<div class="ri-sec">Add holding manually</div>',
+                unsafe_allow_html=True,
+            )
+            f_ticker = st.text_input("Ticker symbol", placeholder="e.g. AAPL")
+            f_shares = st.number_input("Shares", min_value=0.0, step=1.0, value=1.0)
+            f_cost = st.number_input(
+                "Cost basis / book value", min_value=0.0, step=0.01, value=0.0
+            )
+            f_account = st.text_input(
+                "Account type", value="TFSA", placeholder="e.g. TFSA, RRSP, Non-reg"
+            )
+            submitted = st.form_submit_button("Add to book")
+            if submitted:
+                ticker_clean = f_ticker.strip().upper()
+                if not ticker_clean:
+                    st.error("Ticker symbol is required.")
+                else:
+                    holding = make_manual_holding(
+                        ticker=ticker_clean,
+                        shares=float(f_shares),
+                        cost_basis=float(f_cost),
+                        account_type=f_account.strip() or "TFSA",
+                    )
+                    existing: list[object] = list(st.session_state.get("book", []))
+                    existing.append(holding)
+                    st.session_state["book"] = existing
+                    st.session_state["_show_manual_form"] = False
+                    st.rerun()
 
 
 def render(
