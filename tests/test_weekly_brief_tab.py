@@ -268,6 +268,19 @@ def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-de
         patch.object(wb, "_fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
         patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
+        # FIX B: stub network fetches so _render_one_holding doesn't hit yfinance
+        patch(
+            "adapters.visualization.price_cache.fetch_prices",
+            return_value={"YUMC": {"price": 44.63, "change_pct": 0.5}},
+        ),
+        patch(
+            "adapters.visualization.price_cache.fetch_price_history",
+            return_value={
+                "closes": [float(100 + i) for i in range(200)],
+                "atr": None,
+                "ma200": None,
+            },
+        ),
     ):
         wb.render(
             path=str(p),
@@ -714,6 +727,176 @@ def test_home_render_shows_door_and_book_vitals_together(tmp_path: object) -> No
         "Load a book to begin" in html
     ), "Landing door must be present even when a brief exists"
     assert "YOUR BOOK" in html, "Book vitals strip must also be present"
+
+
+# ---------------------------------------------------------------------------
+# FIX B: pure helper unit tests (RED — must fail before helpers are added)
+# ---------------------------------------------------------------------------
+
+
+def test_implied_cost_known_values() -> None:
+    """implied_cost(price=44.63, unrealized_pct=22.7) → ~36.37 (±0.01)."""
+    from adapters.visualization.tabs.weekly_brief import (
+        implied_cost,  # type: ignore[attr-defined]
+    )
+
+    result = implied_cost(44.63, 22.7)
+    assert result is not None
+    assert abs(result - 36.37) < 0.01, f"Expected ~36.37, got {result}"
+
+
+def test_implied_cost_zero_unrealized() -> None:
+    """When unrealized_pct == 0, cost == price."""
+    from adapters.visualization.tabs.weekly_brief import (
+        implied_cost,  # type: ignore[attr-defined]
+    )
+
+    result = implied_cost(100.0, 0.0)
+    assert result is not None
+    assert abs(result - 100.0) < 1e-9
+
+
+def test_implied_cost_none_when_price_none() -> None:
+    """When price is None, implied_cost returns None (honest gap)."""
+    from adapters.visualization.tabs.weekly_brief import (
+        implied_cost,  # type: ignore[attr-defined]
+    )
+
+    assert implied_cost(None, 22.7) is None  # type: ignore[arg-type]
+
+
+def test_implied_cost_none_when_unrealized_none() -> None:
+    """When unrealized_pct is None, implied_cost returns None (honest gap)."""
+    from adapters.visualization.tabs.weekly_brief import (
+        implied_cost,  # type: ignore[attr-defined]
+    )
+
+    assert implied_cost(100.0, None) is None  # type: ignore[arg-type]
+
+
+def test_window_returns_basic() -> None:
+    """window_returns with 200 closes returns a 4-tuple for (7,30,90,180)."""
+    from adapters.visualization.tabs.weekly_brief import (
+        window_returns,  # type: ignore[attr-defined]
+    )
+
+    closes = [float(100 + i * 0.1) for i in range(200)]
+    result = window_returns(closes)
+    assert len(result) == 4  # one per window
+
+
+def test_window_returns_values_correct() -> None:
+    """7d return from 200 closes of known values is calculable."""
+    from adapters.visualization.tabs.weekly_brief import (
+        window_returns,  # type: ignore[attr-defined]
+    )
+
+    # All closes are 100 except last 8 which rise by 1 each
+    closes = [100.0] * 192 + [101.0, 102.0, 103.0, 104.0, 105.0, 106.0, 107.0, 108.0]
+    result = window_returns(closes)
+    # 7d: closes[-1]=108, closes[-8]=101 → (108/101 - 1)*100 ≈ 6.93
+    assert abs(result[0] - (108.0 / 101.0 - 1) * 100) < 0.01, f"7d: {result[0]}"
+
+
+def test_window_returns_short_history_skips_unavailable() -> None:
+    """With only 10 closes, windows >10 must be absent (not fabricated)."""
+    from adapters.visualization.tabs.weekly_brief import (
+        window_returns,  # type: ignore[attr-defined]
+    )
+
+    closes = [float(100 + i) for i in range(10)]  # only 10 days
+    result = window_returns(closes)
+    # 7d is available (needs 8 closes), 30/90/180 are not available (< 31 closes)
+    assert len(result) <= 4
+    # The 7d return should be present since we have 10 closes (index -8 exists)
+    assert len(result) >= 1
+
+
+def test_window_returns_empty_closes() -> None:
+    """Empty closes → empty tuple."""
+    from adapters.visualization.tabs.weekly_brief import (
+        window_returns,  # type: ignore[attr-defined]
+    )
+
+    result = window_returns([])
+    assert result == ()
+
+
+def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: ignore[no-untyped-def]
+    """FIX B: when fetch_prices returns a real price, the expanded card HTML
+    must contain that price value (e.g. '295.0'), not '—'.
+    """
+    import json
+    from unittest.mock import MagicMock, patch
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+    from application.evidence_card import EvidenceCard
+
+    p = tmp_path / "brief_summary.json"  # type: ignore[operator]
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-14",
+                "regime": "RISK_ON",
+                "abstained": False,
+                "holdings": [
+                    {
+                        "ticker": "YUMC",
+                        "verdict": "TRIM",
+                        "unrealized_pct": 22.7,
+                        "trend_state": "broken",
+                        "why": "pulled back below trend",
+                    }
+                ],
+                "macro": {"systematic_share": 0.50, "net_beta_by_factor": {"SPY": 1.0}},
+            }
+        )
+    )
+    captured: list[str] = []
+    progress_mock = MagicMock()
+
+    # 200 fake closes so all 4 windows are available
+    fake_closes = [float(100 + i * 0.1) for i in range(200)]
+    fake_history = {"closes": fake_closes, "atr": 1.5, "ma200": 110.0, "vs_spy": None}
+    fake_prices = {"YUMC": {"price": 44.63, "change_pct": 0.5}}
+
+    with (
+        patch.object(
+            st, "markdown", side_effect=lambda c, **k: captured.append(str(c))
+        ),
+        patch.object(st, "download_button"),
+        patch.object(st, "caption"),
+        patch.object(st, "expander"),
+        patch.object(st, "divider"),
+        patch.object(
+            st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
+        ),
+        patch.object(st, "progress", return_value=progress_mock),
+        patch.object(wb, "_fetch_card", return_value=EvidenceCard("YUMC", (), ())),
+        patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
+        patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
+        patch.object(wb, "is_local_runtime", return_value=False),
+        patch(
+            "adapters.visualization.price_cache.fetch_prices", return_value=fake_prices
+        ),
+        patch(
+            "adapters.visualization.price_cache.fetch_price_history",
+            return_value=fake_history,
+        ),
+    ):
+        wb.render(
+            path=str(p),
+            adherence_path=str(tmp_path / "a.jsonl"),  # type: ignore[operator]
+            reports_dir=str(tmp_path),  # type: ignore[arg-type]
+        )
+
+    html = "\n".join(captured)
+    # The expanded card must contain the real price "44.63" (not just "—")
+    assert (
+        "44.63" in html
+    ), f"Expected real price 44.63 in expanded card HTML, got: {html[:500]}"
 
 
 def test_fetch_card_analyst_key_mapping_lights_analysts_square() -> None:

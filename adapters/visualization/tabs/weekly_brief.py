@@ -40,6 +40,62 @@ _ADHERENCE_PATH = "data/personal/adherence_log.jsonl"
 _REPORTS_DIR = "data/reports"
 _SCREEN_COVERAGE_FLOOR = 0.5  # mirrors research_candidates.py
 
+_WINDOW_DAYS = (7, 30, 90, 180)
+
+
+# ---------------------------------------------------------------------------
+# FIX B — pure helpers for price / cost / windowed returns
+# ---------------------------------------------------------------------------
+
+
+def implied_cost(price: float | None, unrealized_pct: float | None) -> float | None:
+    """Back-calculate cost basis from price and unrealized %.
+
+    Formula: cost = price / (1 + unrealized_pct / 100)
+
+    Returns None when either input is None so the card shows "—" honestly.
+
+    Examples:
+        implied_cost(44.63, 22.7) → ~36.37
+        implied_cost(100.0, 0.0) → 100.0
+        implied_cost(None, 22.7) → None
+        implied_cost(100.0, None) → None
+    """
+    if price is None or unrealized_pct is None:
+        return None
+    divisor = 1.0 + unrealized_pct / 100.0
+    if divisor == 0.0:
+        return None
+    return price / divisor
+
+
+def window_returns(
+    closes: list[float],
+    windows: tuple[int, ...] = _WINDOW_DAYS,
+) -> tuple[float, ...]:
+    """Compute % change for each look-back window from a list of daily closes.
+
+    For each window W in ``windows``, returns ``(closes[-1] / closes[-1-W] - 1) * 100``
+    when there are enough data points (at least W+1 closes), otherwise skips that window.
+
+    Returns a tuple of available returns (may be shorter than ``windows``).
+    Empty closes → empty tuple.
+
+    Examples:
+        window_returns([], (7, 30)) → ()
+        window_returns(closes_200, (7, 30, 90, 180)) → 4-tuple of floats
+    """
+    if not closes:
+        return ()
+    last = closes[-1]
+    results: list[float] = []
+    for w in windows:
+        if len(closes) >= w + 1:
+            base = closes[-1 - w]
+            if base != 0.0:
+                results.append((last / base - 1.0) * 100.0)
+    return tuple(results)
+
 
 def _render_onboarding_html(
     has_book: bool,
@@ -318,12 +374,32 @@ def _render_one_holding(ticker: str, h: dict[str, Any], summarizer: object) -> N
     This is the inner implementation.  Production callers must use
     ``_render_one_holding_fragment`` (the ``st.fragment``-wrapped version) so
     that each row gets an isolated render cycle in Streamlit (spec §7).
+
+    FIX B: wires real price (from fetch_prices), implied cost (back-calculated),
+    and windowed returns (from fetch_price_history closes) into the expanded card.
+    Where data is genuinely unavailable, passes None/() so the card shows "—"
+    honestly — never fabricates.
     """
+    from adapters.visualization.price_cache import (  # noqa: PLC0415
+        fetch_price_history,
+        fetch_prices,
+    )
+
     card = _fetch_card(ticker)
     verdict = Verdict(str(h["verdict"]))
     unrealized = h.get("unrealized_pct")
     unrealized_f = float(unrealized) if unrealized is not None else None
     oneliner = str(h.get("why", ""))
+
+    # ── FIX B: fetch real price + history ─────────────────────────────────────
+    price_data = fetch_prices((ticker,)).get(ticker, {})
+    live_price: float | None = price_data.get("price")
+
+    hist = fetch_price_history(ticker) or {}
+    closes: list[float] = hist.get("closes") or []
+
+    cost = implied_cost(live_price, unrealized_f)
+    rets = window_returns(closes)
 
     st.markdown(
         render_collapsed_row(
@@ -350,9 +426,9 @@ def _render_one_holding(ticker: str, h: dict[str, Any], summarizer: object) -> N
                 name=ticker,
                 unrealized_pct=unrealized_f,
                 means=oneliner,
-                price=None,
-                cost=None,
-                returns=(),
+                price=live_price,
+                cost=cost,
+                returns=rets,
                 reliability="measured forward; see Trust",
             ),
             unsafe_allow_html=True,
