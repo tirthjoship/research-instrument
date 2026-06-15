@@ -1,6 +1,9 @@
 # tests/domain/test_evidence_rag.py
 import dataclasses
 
+from hypothesis import given
+from hypothesis import strategies as st
+
 from domain.evidence_rag import (
     DIMENSIONS,
     RagColor,
@@ -182,3 +185,27 @@ def test_analysts_gap():
         ).color
         is RagColor.GAP
     )
+
+
+@given(
+    beats=st.integers(min_value=0, max_value=20),
+    total=st.integers(min_value=1, max_value=20),
+)
+def test_earnings_color_total_in_range(beats: int, total: int) -> None:
+    sig = classify_earnings(min(beats, total), total)
+    assert sig.color in {
+        RagColor.RED,
+        RagColor.AMBER,
+        RagColor.GREEN,
+    }  # never GAP when total>0
+
+
+@given(atr=st.floats(min_value=-10, max_value=10, allow_nan=False))
+def test_technicals_monotone_buckets(atr: float) -> None:
+    c = classify_technicals(atr, 0.0).color
+    if atr >= 0.5:
+        assert c is RagColor.GREEN
+    elif atr <= -1.5:
+        assert c is RagColor.RED
+    else:
+        assert c is RagColor.AMBER
