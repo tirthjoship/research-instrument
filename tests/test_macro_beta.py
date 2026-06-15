@@ -334,3 +334,45 @@ def test_brief_macro_none_renders_safely():
     md = to_markdown(brief)
     assert "MACRO EXPOSURE" in md
     assert "not computed" in md
+
+
+def test_book_macro_exposure_carries_new_fields():
+    from domain.models import BookMacroExposure
+
+    b = BookMacroExposure(
+        as_of="2026-06-15",
+        factors=("SPY",),
+        net_beta_by_factor={"SPY": 1.18},
+        systematic_share=0.71,
+        idiosyncratic_share=0.29,
+        dominant_factor="SPY",
+        flags=(),
+        holdings=(),
+        coverage_holdings=58,
+        total_holdings=66,
+        coverage_value_frac=0.9,
+        enb=3.2,
+        pc_variance=(0.64, 0.14, 0.09),
+        pc_labels=("PC1", "PC2", "PC3"),
+        systematic_share_adj=0.66,
+        systematic_share_ci=(0.66, 0.76),
+        beta_ci_by_factor={"SPY": (1.09, 1.27)},
+        suppressed_factors=(),
+        downside_beta=1.31,
+        risk_contribution={"NVDA": 0.14},
+        holdings_meta=(
+            {
+                "ticker": "NVDA",
+                "name": "Nvidia",
+                "sector": "Information Technology",
+                "weight": 0.09,
+            },
+        ),
+        sector_weights={"Information Technology": 0.52},
+        sector_hhi=0.34,
+        sector_gaps=("Health Care",),
+        vif_by_factor={"SPY": 1.0},
+        diversification_ratio=1.4,
+        sys_share_history=(("2026-06-08", 0.64), ("2026-06-15", 0.71)),
+    )
+    assert b.enb == 3.2 and b.downside_beta == 1.31
