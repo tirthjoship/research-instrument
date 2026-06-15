@@ -427,13 +427,14 @@ def _build_candidate_row_html(
     gai_id = f"gai-{ticker.lower()}"
     gai_placeholder = (
         f'<div id="{gai_id}" class="gai" style="font-size:10.5px;'
-        f"color:var(--text-secondary);background:#F7F5FF;"
-        f"border:1px solid #E4DCFB;border-radius:8px;padding:7px 10px;"
-        f'margin:8px 0 6px;">'
-        f"&#128269; <b>Google-AI read</b> "
-        f'<span style="color:var(--text-muted);">(summary beside the score — '
-        f"never an input to the score; arrives in S6)</span>"
-        f"</div>"
+        "color:var(--text-secondary);background:#F7F5FF;"
+        "border:1px solid #E4DCFB;border-radius:8px;padding:7px 10px;"
+        'margin:8px 0 6px;">'
+        "&#128269; <b>Google-AI read</b> "
+        f'<span style="color:var(--text-muted);">&mdash; open <b>{ticker} in '
+        "Stock Analysis</b> for the full cited case. A companion to the evidence, "
+        "never an input to the score.</span>"
+        "</div>"
     )
 
     do_next = (
