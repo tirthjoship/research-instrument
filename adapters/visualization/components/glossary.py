@@ -183,6 +183,11 @@ GLOSSARY: dict[str, str] = {
         "as classified by the macro overlay. It provides context for discipline "
         "decisions but does not alter the evidence grades."
     ),
+    # ── Home Front-Desk strip (S4) ────────────────────────────────────────────
+    "Screen": (
+        "The systematic weekly pass over the universe that scores each stock "
+        "on present-day evidence. Shows how many names cleared every gate."
+    ),
     # ── Screen diagnostics funnel (Task 5 / ADR-05x) ─────────────────────────
     "Had history": (
         "Of the universe scanned, these names had enough price history (at "

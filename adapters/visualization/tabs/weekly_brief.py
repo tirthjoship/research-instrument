@@ -197,6 +197,63 @@ def _gauge(share: float) -> Any:
     return fig
 
 
+_NEEDS_REVIEW: set[str] = {"REDUCE", "TRIM", "REVIEW"}
+
+
+def _render_book_strip_html(
+    *,
+    need_review: int,
+    total: int,
+    vs_market: float | None,
+    net_beta: float | None,
+    regime: str,
+    screen_cleared: int,
+    screen_universe: int,
+) -> str:
+    t_review = render_tile(
+        label=tooltip("Need review"),
+        number=f"{need_review} / {total}",
+        tone="crimson" if need_review else "muted",
+        sub="holdings a rule fired on",
+    )
+    vm = "—" if vs_market is None else f"{vs_market:+.1f}%"
+    t_vm = render_tile(
+        label=tooltip("vs Market (1y)"), number=vm, tone="muted", sub="realized, vs SPY"
+    )
+    if net_beta is None:
+        t_nb = render_tile(
+            label=tooltip("Net beta"), number="—", tone="muted", sub="no macro data"
+        )
+    else:
+        band = classify_net_beta(net_beta).value
+        t_nb = render_tile(
+            label=tooltip("Net beta"),
+            number=f"{net_beta:.2f}",
+            stamp=band.upper(),
+            tone="muted",
+            sub=f"moves ~{net_beta:.2f}x the market",
+        )
+    t_scr = render_tile(
+        label=tooltip("Screen"),
+        number=str(screen_cleared),
+        tone="green" if screen_cleared else "muted",
+        sub=f"cleared of {screen_universe}",
+    )
+    regime_badge = (
+        f"<span style=\"font-family:'IBM Plex Mono';font-size:10px;text-transform:uppercase;"
+        f'color:#0F6E80;background:#e6f1f3;border-radius:6px;padding:2px 7px;margin-left:8px">'
+        f"{regime}</span>"
+    )
+    return (
+        f"<div>"
+        f'<div style="display:flex;align-items:center;margin-bottom:8px">'
+        f"<span style=\"font-family:'IBM Plex Mono';font-size:10px;text-transform:uppercase;color:#94a8ad\">Macro regime</span>"
+        f"{regime_badge}</div>"
+        f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">'
+        f"{t_review}{t_vm}{t_nb}{t_scr}</div></div>"
+    )
+
+
 def render(
     path: str = _SUMMARY_PATH,
     adherence_path: str = _ADHERENCE_PATH,
