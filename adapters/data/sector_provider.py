@@ -38,6 +38,7 @@ class SectorProvider:
             return self._cache[ticker]
         got = self._fetch(ticker) or "Unknown"
         self._cache[ticker] = got
-        self._path.parent.mkdir(parents=True, exist_ok=True)
-        self._path.write_text(json.dumps(self._cache, indent=2))
+        if got != "Unknown":
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            self._path.write_text(json.dumps(self._cache, indent=2))
         return got
