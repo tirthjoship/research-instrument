@@ -13,6 +13,7 @@ from adapters.visualization.price_cache import (
     _fetch_insider_transactions_impl,
     _fetch_ticker_info_impl,
     _is_market_hours,
+    parse_price_history,
 )
 
 
@@ -169,6 +170,72 @@ class TestFetchInsiderTransactions:
             result = _fetch_insider_transactions_impl("AAPL")
 
         assert result == []
+
+
+class TestParsePriceHistory:
+    """Pure parser tests — no network, no yfinance calls."""
+
+    def _make_df(self, n: int = 252, include_hl: bool = True) -> pd.DataFrame:
+        """Build a fake daily OHLC DataFrame with n rows."""
+        closes = [100.0 + i * 0.1 for i in range(n)]
+        data: dict[str, list[float]] = {"Close": closes}
+        if include_hl:
+            data["High"] = [c + 2.0 for c in closes]
+            data["Low"] = [c - 2.0 for c in closes]
+        return pd.DataFrame(
+            data, index=pd.date_range("2025-06-01", periods=n, freq="B")
+        )
+
+    def test_closes_length_matches_input(self) -> None:
+        df = self._make_df(252)
+        result = parse_price_history(df)
+        assert result is not None
+        assert len(result["closes"]) == 252
+
+    def test_ma200_is_mean_of_last_200(self) -> None:
+        df = self._make_df(252)
+        result = parse_price_history(df)
+        assert result is not None
+        closes = result["closes"]
+        expected_ma200 = sum(closes[-200:]) / 200
+        assert result["ma200"] == pytest.approx(expected_ma200, rel=1e-6)
+
+    def test_ma200_uses_all_when_fewer_than_200_rows(self) -> None:
+        df = self._make_df(50)
+        result = parse_price_history(df)
+        assert result is not None
+        expected_ma200 = sum(result["closes"]) / 50
+        assert result["ma200"] == pytest.approx(expected_ma200, rel=1e-6)
+
+    def test_atr_computed_from_high_low(self) -> None:
+        df = self._make_df(252, include_hl=True)
+        result = parse_price_history(df)
+        assert result is not None
+        # High-Low difference is always 4.0 (each row: high=c+2, low=c-2)
+        assert result["atr"] == pytest.approx(4.0, rel=1e-6)
+
+    def test_atr_falls_back_to_abs_diff_without_high_low(self) -> None:
+        df = self._make_df(252, include_hl=False)
+        result = parse_price_history(df)
+        assert result is not None
+        # closes are 100, 100.1, 100.2 ... → each daily diff = 0.1
+        assert result["atr"] == pytest.approx(0.1, rel=1e-3)
+
+    def test_vs_spy_is_none(self) -> None:
+        df = self._make_df(30)
+        result = parse_price_history(df)
+        assert result is not None
+        assert result["vs_spy"] is None
+
+    def test_none_df_returns_none(self) -> None:
+        assert parse_price_history(None) is None
+
+    def test_empty_df_returns_none(self) -> None:
+        assert parse_price_history(pd.DataFrame()) is None
+
+    def test_df_missing_close_returns_none(self) -> None:
+        df = pd.DataFrame({"High": [100.0], "Low": [99.0]})
+        assert parse_price_history(df) is None
 
 
 class TestFetchIndexPrices:

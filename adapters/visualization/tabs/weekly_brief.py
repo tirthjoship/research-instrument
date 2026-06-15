@@ -308,7 +308,11 @@ def _fetch_card(ticker: str) -> EvidenceCard:
     """
     try:
         from adapters.data.earnings_history_adapter import fetch_earnings_history
-        from adapters.visualization.price_cache import fetch_prices, fetch_ticker_info
+        from adapters.visualization.price_cache import (
+            fetch_price_history,
+            fetch_prices,
+            fetch_ticker_info,
+        )
         from application.analyst_panel import build_analyst_panel
         from application.evidence_card import build_evidence_card
 
@@ -328,13 +332,14 @@ def _fetch_card(ticker: str) -> EvidenceCard:
         # target keys are already camelCase and match build_analyst_panel directly:
         # targetMeanPrice, targetHighPrice, targetLowPrice — no remap needed
         panel = build_analyst_panel(panel_info, "")
-        # fetch_prices returns {"price", "change_pct"} — no closes/atr/ma200/vs_spy
+        # Fetch 1-year price history for closes/ATR/MA200 (lights Technicals + sparkline)
+        hist = fetch_price_history(ticker) or {}
         prices: dict[str, Any] = {
-            "closes": [],  # DATA-GAP: batch price fetch returns no history
-            "atr": None,  # DATA-GAP: not available from price_cache
-            "ma200": None,  # DATA-GAP: not available from price_cache
-            "spy_1y": None,  # DATA-GAP: not tracked per holding
-            "book_1y": None,  # DATA-GAP: not tracked per holding
+            "closes": hist.get("closes", []),
+            "atr": hist.get("atr"),
+            "ma200": hist.get("ma200"),
+            "spy_1y": None,  # DATA-GAP: not tracked per holding on Home
+            "book_1y": None,  # DATA-GAP: not tracked per holding on Home
         }
         peers: list[float | None] = []  # DATA-GAP: peer data not fetched on Home
         return build_evidence_card(
