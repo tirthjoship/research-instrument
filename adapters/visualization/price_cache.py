@@ -287,7 +287,7 @@ def _fetch_price_history_impl(ticker: str) -> dict[str, Any] | None:
     import yfinance as yf  # lazy import for CI safety
 
     try:
-        df: DataFrame = yf.Ticker(ticker).history(period="1y")
+        df: DataFrame = yf.Ticker(ticker).history(period="2y")
     except Exception as exc:  # noqa: BLE001 — network/parse failures → None
         logger.warning("Price history fetch failed for {}: {}", ticker, exc)
         return None

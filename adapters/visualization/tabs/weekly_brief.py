@@ -40,7 +40,7 @@ _ADHERENCE_PATH = "data/personal/adherence_log.jsonl"
 _REPORTS_DIR = "data/reports"
 _SCREEN_COVERAGE_FLOOR = 0.5  # mirrors research_candidates.py
 
-_WINDOW_DAYS = (7, 30, 90, 180)
+_WINDOW_DAYS = (7, 30, 90, 180, 252)
 
 
 # ---------------------------------------------------------------------------

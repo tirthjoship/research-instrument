@@ -145,7 +145,13 @@ def render_expanded_card(
     reliability: str,
 ) -> str:
     pct = "—" if unrealized_pct is None else f"{unrealized_pct:+.1f}%"
-    ret = " · ".join(f"{r:+.1f}" for r in returns) if returns else "—"
+    # Build the returns display: first 4 windows (7/30/90/180d) then 1y separated
+    if returns:
+        core = " · ".join(f"{r:+.1f}" for r in returns[:4])
+        yr_val = f"{returns[4]:+.1f}" if len(returns) >= 5 else "—"
+        ret = f"{core} | 1y: {yr_val}"
+    else:
+        ret = "—"
     return (
         '<div class="dc-card-inner">'
         f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
@@ -157,7 +163,7 @@ def render_expanded_card(
         f'<div style="flex:1;background:#f4f8f9;border-radius:7px;padding:7px 9px">Price<br><b>{"—" if price is None else f"${price:,.2f}"}</b></div>'
         f'<div style="flex:1;background:#f4f8f9;border-radius:7px;padding:7px 9px">Your cost<br><b>{"—" if cost is None else f"${cost:,.2f}"}</b></div>'
         f'<div style="flex:1;background:#eafaf3;border-radius:7px;padding:7px 9px">Unrealized<br><b>{pct}</b></div>'
-        f'<div style="flex:2;background:#f4f8f9;border-radius:7px;padding:7px 9px">7/30/90/180d<br><b>{ret}</b></div></div>'
+        f'<div style="flex:2;background:#f4f8f9;border-radius:7px;padding:7px 9px">7/30/90/180d · 1y<br><b>{ret}</b></div></div>'
         f"{_case_html(case)}"
         f"{_rag_table_html(card)}"
         f'<div class="dc-learn"><h4 style="margin:0 0 5px;font-size:13px">How this verdict learns &amp; gets multi-factor</h4>'

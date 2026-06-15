@@ -961,3 +961,67 @@ def test_fetch_card_analyst_key_mapping_lights_analysts_square() -> None:
         f"Analysts square must NOT be GAP when numberOfAnalystOpinions=18, "
         f"got color={analysts_sig.color}"
     )
+
+
+# ── FIX 2: 1-year return window (252 trading days) ───────────────────────────
+
+
+def test_window_returns_five_values_for_long_series() -> None:
+    """window_returns with windows=(7,30,90,180,252) and 300 closes returns 5 values."""
+    from adapters.visualization.tabs.weekly_brief import window_returns
+
+    closes = [float(i) for i in range(1, 302)]  # 301 elements, all windows available
+    result = window_returns(closes, windows=(7, 30, 90, 180, 252))
+    assert len(result) == 5, f"expected 5 values, got {len(result)}"
+    # 252-window value: (closes[-1] / closes[-1-252] - 1) * 100 = (301/49 - 1)*100
+    expected_1y = (closes[-1] / closes[-1 - 252] - 1.0) * 100.0
+    assert abs(result[4] - expected_1y) < 1e-6
+
+
+def test_window_returns_skips_1y_for_short_series() -> None:
+    """window_returns with a 100-close series skips the 252 window (returns 4 values)."""
+    from adapters.visualization.tabs.weekly_brief import window_returns
+
+    closes = [
+        float(i) for i in range(1, 102)
+    ]  # 101 elements: covers 7/30/90, not 180 or 252
+    result = window_returns(closes, windows=(7, 30, 90, 180, 252))
+    # 101 closes: 7+1=8 ✓, 30+1=31 ✓, 90+1=91 ✓, 180+1=181 ✗, 252+1=253 ✗ → 3 values
+    assert (
+        len(result) == 3
+    ), f"expected 3 values for 101-close series, got {len(result)}"
+
+
+def test_window_returns_default_includes_252() -> None:
+    """After FIX 2, window_returns() default windows tuple includes 252."""
+    import inspect
+
+    from adapters.visualization.tabs.weekly_brief import window_returns
+
+    sig = inspect.signature(window_returns)
+    default_windows = sig.parameters["windows"].default
+    assert 252 in default_windows, f"252 not in default windows: {default_windows}"
+
+
+def test_expanded_card_shows_1y_label() -> None:
+    """render_expanded_card must include '1y' in the returns label after FIX 2."""
+    from adapters.visualization.components.decision_card import render_expanded_card
+    from application.evidence_card import EvidenceCard
+    from domain.discipline import Verdict
+    from domain.evidence_rag import RagColor, RagSignal
+
+    sigs = (RagSignal("Technicals", RagColor.GREEN, "above trend"),)
+    card = EvidenceCard(ticker="AAPL", signals=sigs, sparkline=())
+    html = render_expanded_card(
+        card,
+        case=None,
+        verdict=Verdict.HOLD,
+        name="Apple",
+        unrealized_pct=10.0,
+        means="Trending well.",
+        price=150.0,
+        cost=120.0,
+        returns=(2.0, 5.0, 12.0, 18.0, 35.0),
+        reliability="n/a",
+    )
+    assert "1y" in html, "expanded card must contain '1y' label after FIX 2"
