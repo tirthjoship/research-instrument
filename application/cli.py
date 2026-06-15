@@ -2496,6 +2496,18 @@ def _build_evidence_screen(deps: dict[str, Any]) -> "Any":
                 by_month[key] = s.price
             return [by_month[k] for k in sorted(by_month)]
 
+        def daily_closes(self, ticker: str, as_of: str) -> list[float]:
+            """Return daily close prices up to as_of (PIT-safe) for lowvol computation."""
+            try:
+                now = datetime.now(timezone.utc)
+                two_years_ago = now.replace(year=now.year - 2)
+                signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
+            except Exception:
+                return []
+            if not signals:
+                return []
+            return [s.price for s in signals]
+
         def trend_health(self, ticker: str) -> float:
             from domain.trend_rules import atr, sma
             from domain.trend_rules import trend_health as _th
