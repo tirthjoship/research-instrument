@@ -37,8 +37,10 @@ def _render_history_and_upload(reports_dir: str) -> None:
     """
     hist = load_screen_history(reports_dir)
     if hist:
-        st.divider()
-        st.markdown("#### Screen history")
+        st.markdown(
+            '<div class="ri-sec" style="margin-top:1.4rem">Screen history</div>',
+            unsafe_allow_html=True,
+        )
         hist_rows = [
             {
                 "Date": h["as_of"],
@@ -50,12 +52,12 @@ def _render_history_and_upload(reports_dir: str) -> None:
         ]
         st.dataframe(hist_rows, hide_index=True)
 
-    st.divider()
-    st.markdown("#### Check your own list")
     st.markdown(
-        '<div style="color:#5C6370;font-size:14px;">Paste tickers or upload a '
-        "CSV — each name gets an evidence grade and a fit check against your "
-        "book. Capped at 25 names per run (live data fetch per name).</div>",
+        '<div class="ri-sec" style="margin-top:1.4rem">Check your own list</div>'
+        '<div class="ri-conclusion" style="margin-bottom:.8rem">'
+        "Paste tickers or upload a CSV — each name gets an evidence grade "
+        "and a fit check against your book. Capped at 25 names per run "
+        "(live data fetch per name).</div>",
         unsafe_allow_html=True,
     )
     text = st.text_area(
@@ -106,15 +108,15 @@ def _render_history_and_upload(reports_dir: str) -> None:
 
 
 def render(reports_dir: str = "data/reports") -> None:
-    st.subheader("Research Candidates")
     st.markdown(
-        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
-        "The evidence screen's ranked research list — only names that cleared the locked bar."
-        "</div>",
+        '<h1 class="ri-h1" style="font-size:1.9rem;margin-bottom:.25rem">'
+        "Research Candidates</h1>"
+        '<p class="ri-sub" style="margin-bottom:1rem">'
+        "Evidence screen — only names that cleared the locked bar.</p>",
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="ws-card" style="padding:10px 16px;margin-bottom:12px;">'
+        '<div class="ri-conclusion" style="margin-bottom:1.2rem">'
         f"{_DISCLAIMER}"
         "</div>",
         unsafe_allow_html=True,
@@ -243,15 +245,15 @@ def render(reports_dir: str = "data/reports") -> None:
     else:
         cleared_headline = f"{len(candidates)} cleared, of {raw_universe_size} scanned"
     st.markdown(
-        f'<div style="font-weight:600;font-size:15px;margin-bottom:4px;">'
-        f"{cleared_headline}"
-        "</div>",
+        '<div class="ri-sec">Screen result</div>'
+        f"<div style=\"font-family:'Fraunces',serif;font-weight:600;font-size:1.5rem;"
+        f'color:var(--ri-ink);margin-bottom:.2rem">{cleared_headline}</div>'
+        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:.75rem;"
+        f'color:var(--ri-muted);margin-bottom:1rem;letter-spacing:.04em">'
+        f"Top {len(candidates)} of {raw_universe_size} by factual composite"
+        f" &nbsp;&middot;&nbsp; as of {as_of}"
+        f" &nbsp;&middot;&nbsp; {first_label}</div>",
         unsafe_allow_html=True,
-    )
-
-    st.caption(
-        f"Top {len(candidates)} of {raw_universe_size} by factual composite · "
-        f"as of {as_of} · label: {first_label}"
     )
 
     rich_candidates = candidates[:10]
@@ -374,30 +376,33 @@ def render(reports_dir: str = "data/reports") -> None:
         )
 
         st.markdown(
-            f'<div class="ws-card" style="padding:14px 16px;margin-bottom:10px;">'
-            # Header: ticker + composite (labelled as research-priority score, not a forecast)
-            f'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">'
-            f'<strong style="font-size:16px;">{i}. {ticker}</strong>'
+            f'<div class="ws-card" style="padding:16px 18px;margin-bottom:10px;">'
+            # Header row: rank + ticker (Fraunces) + pill + mono score label
+            f'<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px;">'
+            f"<span style=\"font-family:'Fraunces',serif;font-weight:600;font-size:1.15rem;"
+            f'color:var(--ri-ink)">{i}. {ticker}</span>'
             f"{pill}"
-            f'<span style="font-size:12px;color:#6B7280;margin-left:4px;">'
-            f"research-priority score {composite:.2f} &nbsp;"
-            f'<span style="font-style:italic;">(not a forecast)</span></span>'
+            f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:.68rem;"
+            f'letter-spacing:.1em;text-transform:uppercase;color:var(--ri-muted);margin-left:4px;">'
+            f"score {composite:.2f} &nbsp;&middot;&nbsp; not a forecast</span>"
             f"</div>"
             # Factor rows
             f"{factor_rows_html}"
             # Divider
-            f'<div style="border-top:1px solid #E5E7EB;margin:8px 0;"></div>'
+            f'<div style="border-top:1px solid var(--ri-hair);margin:8px 0;"></div>'
             # What this tells you
             f'<div style="margin-bottom:6px;">'
-            f'<span style="font-size:12px;font-weight:600;color:#374151;">'
-            f"What this tells you:</span> "
-            f'<span style="font-size:13px;color:#4B5563;">{research_read}</span>'
+            f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:.65rem;"
+            f'letter-spacing:.12em;text-transform:uppercase;color:var(--ri-muted);">'
+            f"What this tells you</span> "
+            f'<span style="font-size:13px;color:var(--ri-ink2)">{research_read}</span>'
             f"</div>"
             # Do next
             f"<div>"
-            f'<span style="font-size:12px;font-weight:600;color:#374151;">'
-            f"Do next:</span> "
-            f'<span style="font-size:13px;color:#4B5563;">{do_next}</span>'
+            f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:.65rem;"
+            f'letter-spacing:.12em;text-transform:uppercase;color:var(--ri-muted);">'
+            f"Do next</span> "
+            f'<span style="font-size:13px;color:var(--ri-ink2)">{do_next}</span>'
             f"</div>"
             f"</div>",
             unsafe_allow_html=True,
@@ -406,9 +411,10 @@ def render(reports_dir: str = "data/reports") -> None:
     # Compact list for candidates beyond the top 10
     if compact_candidates:
         st.markdown(
-            '<div style="font-size:13px;font-weight:600;color:#374151;margin:12px 0 6px 0;">'
-            f"Remaining {len(compact_candidates)} candidates — open in Stock Analysis tab for full read"
-            "</div>",
+            '<div class="ri-sec" style="margin-top:1rem">Further candidates</div>'
+            f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:.72rem;"
+            f'color:var(--ri-muted);margin-bottom:.6rem;letter-spacing:.04em">'
+            f"Remaining {len(compact_candidates)} — open in Stock Analysis tab for full read</div>",
             unsafe_allow_html=True,
         )
         for c in compact_candidates:
@@ -433,10 +439,13 @@ def render(reports_dir: str = "data/reports") -> None:
                     top_v = fv2
                     top_f = str(fd.get("name", "?"))
             st.markdown(
-                f'<div style="font-size:13px;color:#4B5563;padding:3px 0;">'
-                f"<strong>{ticker}</strong> &nbsp;·&nbsp; score {composite:.2f} "
-                f"&nbsp;·&nbsp; top factor: {top_f}"
-                f"</div>",
+                f'<div class="ws-card" style="padding:8px 14px;margin-bottom:6px;">'
+                f"<span style=\"font-family:'Fraunces',serif;font-weight:600;"
+                f'font-size:.95rem;color:var(--ri-ink)">{ticker}</span>'
+                f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:.68rem;"
+                f'color:var(--ri-muted);margin-left:10px;letter-spacing:.06em">'
+                f"score {composite:.2f} &nbsp;&middot;&nbsp; top factor: {top_f}"
+                f"</span></div>",
                 unsafe_allow_html=True,
             )
 
