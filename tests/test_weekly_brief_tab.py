@@ -245,7 +245,11 @@ def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-de
         )
     )
     # render must not raise; capture markdown
-    # S5: stub _fetch_card (network) and st.progress (bare-mode CI)
+    # S5: stub _fetch_card (network) and st.progress (bare-mode CI).
+    # _render_one_holding_fragment is wrapped with st.fragment which, in bare mode,
+    # routes calls through an internal path that bypasses a patched st.markdown.
+    # We therefore redirect the fragment attribute to the inner function so tests
+    # can still capture st.markdown output without changing production behaviour.
     captured = []
     progress_mock = MagicMock()
     with (
@@ -260,6 +264,7 @@ def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-de
         patch.object(st, "progress", return_value=progress_mock),
         patch.object(wb, "_fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
+        patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
     ):
         wb.render(
             path=str(p),
