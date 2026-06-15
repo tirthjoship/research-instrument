@@ -807,25 +807,49 @@ h1.ri-app-title, h1[class*="ri-app-title"] {
 [role="tabpanel"] > div:first-child {
     padding-top: 1.2rem !important;
 }
-/* Door banner: consistent 0 top-margin (padding-top above handles it), 1.25rem below */
+/* Door banner: 0 top-margin; no bottom margin — .door-actions sits flush below it */
 .door {
     margin-top: 0 !important;
-    margin-bottom: 1.25rem !important;
+    margin-bottom: 0 !important;
+}
+/* .door-actions panel provides the 1.25rem gap below the whole unit */
+.door-actions {
+    /* defined in Landing Door block above */
 }
 /* Onboarding button row: tighten the gap below it */
 .ob-row-spacer {
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 /* ===== Landing Door (S6 onboarding) ===== */
-.door{background:linear-gradient(135deg,#0F6E80 0%,#0a4a57 100%);border-radius:18px;padding:28px 30px;box-shadow:0 4px 24px rgba(15,110,128,.22);}
+/* Banner: square bottom so it flows directly into the action panel below */
+.door{background:linear-gradient(135deg,#0F6E80 0%,#0a4a57 100%);border-radius:18px 18px 0 0;padding:22px 30px 18px;box-shadow:0 4px 24px rgba(15,110,128,.22);}
 .door h2{color:#fff;}
+/* Action panel: connects directly under the banner — no gap, matching width,
+   light petrol tint background so banner+buttons read as one cohesive block */
+.door-actions{background:#f0f7f8;border:1px solid #c8dfe3;border-top:none;border-radius:0 0 18px 18px;padding:16px 30px 20px;margin-bottom:1.25rem;box-shadow:0 4px 24px rgba(15,110,128,.12);}
 /* .db classes kept for backward compat but dead buttons removed from HTML */
 .db{display:inline-flex;align-items:center;justify-content:center;padding:9px 18px;border-radius:10px;font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s,transform .12s;}
 .db.primary{background:#fff;color:#0F6E80;}
 .db.primary:hover{opacity:.92;transform:translateY(-1px);}
 .db.ghost{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);}
 .db.ghost:hover{background:rgba(255,255,255,.22);transform:translateY(-1px);}
+
+/* ===== Door + action-panel cohesion (AREA 1) ===== */
+/* The .door-actions div is injected via st.markdown immediately before and after
+   the 3-column button row. Since Streamlit renders widgets as siblings (not children)
+   of inline HTML divs, we use a CSS rule to background-color the column group that
+   directly follows .door — targeting the stHorizontalBlock sibling. */
+.door + div > div[data-testid="stHorizontalBlock"],
+.door + div[data-testid="stHorizontalBlock"] {
+    background: #f0f7f8 !important;
+    border: 1px solid #c8dfe3 !important;
+    border-top: none !important;
+    border-radius: 0 0 18px 18px !important;
+    padding: 14px 18px 18px !important;
+    margin-bottom: 1.25rem !important;
+    box-shadow: 0 4px 16px rgba(15,110,128,.10) !important;
+}
 
 /* ===== Onboarding action widgets — petrol on-brand ===== */
 /* All action buttons — full-width, minimum height, IBM Plex Sans */
