@@ -103,3 +103,20 @@ def top_fraction_threshold(values: list[float], fraction: float) -> float | None
         return None
     k = max(1, math.floor(len(clean) * fraction))
     return sorted(clean, reverse=True)[k - 1]
+
+
+def trailing_volatility(monthly_closes: list[float]) -> float | None:
+    """Std-dev of trailing monthly simple returns. Needs >=13 closes (12 returns).
+    Returns the raw volatility (>=0); the screen inverts + z-scores it cross-sectionally.
+    """
+    if len(monthly_closes) < 13:
+        return None
+    rets: list[float] = []
+    for prev, cur in zip(monthly_closes[-13:-1], monthly_closes[-12:]):
+        if prev <= 0:
+            return None
+        rets.append(cur / prev - 1.0)
+    n = len(rets)
+    mean = sum(rets) / n
+    var = sum((r - mean) ** 2 for r in rets) / n
+    return math.sqrt(var)
