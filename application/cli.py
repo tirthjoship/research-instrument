@@ -39,6 +39,9 @@ from config.loader import load_market_config
 from domain.exceptions import SourceThrottledError
 from domain.models import WeeklyReport
 
+# Path for weekly systematic-share history (gitignored — data/personal/).
+MACRO_HISTORY_PATH = "data/personal/macro_history.jsonl"
+
 
 def _build_dependencies(market: str, use_cache: bool = False) -> dict[str, Any]:
     """Wire adapters to ports — composition root."""
@@ -3169,9 +3172,16 @@ def weekly_brief(
     import json
 
     from application.brief_summary import brief_to_summary_dict
+    from application.macro_history_store import append_systematic_share
 
     summary_path = out_path.with_name("brief_summary.json")
     summary_path.write_text(json.dumps(brief_to_summary_dict(brief), indent=2))
+
+    # Persist weekly systematic-share to drift history (gitignored data/personal/).
+    if brief.macro is not None:
+        append_systematic_share(
+            MACRO_HISTORY_PATH, brief.macro.as_of, brief.macro.systematic_share
+        )
 
     click.echo(to_stdout_masked(brief))
     click.echo(f"\nFull brief (gitignored) written to: {out_path}")
