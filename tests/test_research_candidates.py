@@ -528,3 +528,48 @@ def test_zone2_cap_25_unchanged() -> None:
     from application.batch_fit_use_case import MAX_TICKERS
 
     assert MAX_TICKERS == 25
+
+
+def test_reason_view_opens_one_hero():
+    """The first candidate (top of first non-empty bucket) renders as an open hero;
+    the rest stay collapsed (mockup .row.open + elevated .hero)."""
+    from adapters.visualization.tabs.research_candidates import build_reason_view_html
+
+    cands = [
+        {
+            "ticker": "SPG",
+            "composite": 1.31,
+            "why": "x",
+            "factor_scores": [
+                {"name": "quality", "value": 2.8, "percentile": 0.95},
+                {"name": "value", "value": 1.3, "percentile": 0.87},
+            ],
+        },
+        {
+            "ticker": "APA",
+            "composite": 1.14,
+            "why": "y",
+            "factor_scores": [
+                {"name": "value", "value": 2.0, "percentile": 0.95},
+                {"name": "quality", "value": 0.4, "percentile": 0.78},
+            ],
+        },
+    ]
+    html = build_reason_view_html(cands)
+    assert (
+        html.count("<details open") == 1
+    ), "exactly one hero should be open by default"
+    assert "#CBD5E1" in html, "hero should use the elevated border colour"
+
+
+def test_rank_view_opens_top_hero():
+    from adapters.visualization.tabs.research_candidates import build_rank_view_html
+
+    cands = [
+        {"ticker": "SPG", "composite": 1.31, "why": "x", "factor_scores": []},
+        {"ticker": "APA", "composite": 1.14, "why": "y", "factor_scores": []},
+    ]
+    html = build_rank_view_html(cands)
+    assert html.count("<details open") == 1
+    # #1 by composite is the hero
+    assert html.index("SPG") < html.index("APA")
