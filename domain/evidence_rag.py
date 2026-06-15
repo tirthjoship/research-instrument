@@ -45,3 +45,29 @@ def classify_technicals(
     if atr_vs_200d <= -1.5:
         return RagSignal("Technicals", RagColor.RED, detail)
     return RagSignal("Technicals", RagColor.AMBER, detail)
+
+
+def classify_valuation(
+    peg: float | None, pe: float | None, sector_pctile: float | None
+) -> RagSignal:
+    if peg is None and pe is None and sector_pctile is None:
+        return RagSignal("Valuation", RagColor.GAP, "DATA-GAP: no valuation data")
+    parts = []
+    if peg is not None:
+        parts.append(f"PEG {peg:.1f}")
+    if pe is not None:
+        parts.append(f"P/E {pe:.0f}")
+    if sector_pctile is not None:
+        parts.append(f"cheaper than {sector_pctile:.0f}% of sector")
+    detail = " · ".join(parts)
+    cheap = (peg is not None and peg <= 1.2) or (
+        sector_pctile is not None and sector_pctile >= 60
+    )
+    rich = (peg is not None and peg >= 2.5) or (
+        sector_pctile is not None and sector_pctile <= 25
+    )
+    if cheap and not rich:
+        return RagSignal("Valuation", RagColor.GREEN, detail)
+    if rich and not cheap:
+        return RagSignal("Valuation", RagColor.RED, detail)
+    return RagSignal("Valuation", RagColor.AMBER, detail)
