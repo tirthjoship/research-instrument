@@ -46,7 +46,8 @@ def risk_contributions(
     weights: Sequence[float], marginal: Sequence[float], portfolio_var: float
 ) -> list[float]:
     """Euler decomposition: RCᵢ = wᵢ·(Σw)ᵢ / (wᵀΣw). `marginal` = (Σw) per asset.
-    Returns fractions summing to 1.0 (empty/zero-var → empty list)."""
+    Returns fractions summing to 1.0 (empty weights → empty list; zero-var →
+    all-zero vector aligned to weights)."""
     if portfolio_var <= 0.0 or not weights:
         return [0.0 for _ in weights]
     return [w * m / portfolio_var for w, m in zip(weights, marginal)]
