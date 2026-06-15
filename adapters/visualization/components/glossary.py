@@ -202,7 +202,7 @@ GLOSSARY: dict[str, str] = {
     # ── S3 Screener redesign terms ─────────────────────────────────────────────
     "Evidence score": (
         "Equal-weight average of the factor z-scores. Higher = more factors look "
-        "strong now. A ranking aid, not a predicted return."
+        "strong now. A ranking aid, not a return forecast."
     ),
     "Percentile": (
         "Where a name ranks among this week's trend-eligible cohort. p95 = stronger "
