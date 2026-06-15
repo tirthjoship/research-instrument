@@ -260,7 +260,10 @@ def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-de
         patch.object(st, "caption"),
         patch.object(st, "expander"),
         patch.object(st, "divider"),
-        patch.object(st, "columns"),
+        # FIX A: _handle_onboarding is now always called; columns must unpack to 3
+        patch.object(
+            st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
+        ),
         patch.object(st, "progress", return_value=progress_mock),
         patch.object(wb, "_fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
@@ -632,10 +635,85 @@ def test_home_shows_door_when_no_book(monkeypatch: object) -> None:  # type: ign
     assert "Load a book to begin" in html and "Explore sample book" in html
 
 
-def test_home_hides_door_when_book_present() -> None:
+def test_home_door_always_present_even_with_book(monkeypatch: object) -> None:
+    """FIX A: door must render regardless of whether a book is loaded.
+
+    Old test (test_home_hides_door_when_book_present) asserted door is hidden
+    when has_book=True.  New behaviour: door is ALWAYS rendered so the user can
+    always reach Upload/Add-manually.
+    """
     from adapters.visualization.tabs import weekly_brief as wb
 
-    assert wb._render_onboarding_html(has_book=True) == ""  # type: ignore[attr-defined]
+    monkeypatch.setattr(wb, "is_local_runtime", lambda: True)  # type: ignore[attr-defined]
+    html = wb._render_onboarding_html(has_book=True)  # type: ignore[attr-defined]
+    assert "Load a book to begin" in html, "Door must render even when book is loaded"
+    assert "Explore sample book" in html
+
+
+def test_home_render_shows_door_and_book_vitals_together(tmp_path: object) -> None:  # type: ignore[no-untyped-def]
+    """FIX A: when brief_summary.json exists, render() must show BOTH the
+    landing door AND the Front-Desk vitals ('YOUR BOOK') in the same render.
+    """
+    import json
+    from unittest.mock import MagicMock, patch
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+    from application.evidence_card import EvidenceCard
+
+    p = tmp_path / "brief_summary.json"  # type: ignore[operator]
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-14",
+                "regime": "RISK_ON",
+                "abstained": False,
+                "holdings": [
+                    {
+                        "ticker": "YUMC",
+                        "verdict": "TRIM",
+                        "unrealized_pct": 22.7,
+                        "trend_state": "broken",
+                        "why": "pulled back below trend",
+                    }
+                ],
+                "macro": {
+                    "systematic_share": 0.628,
+                    "net_beta_by_factor": {"SPY": 1.42},
+                },
+            }
+        )
+    )
+    captured: list[str] = []
+    progress_mock = MagicMock()
+    with (
+        patch.object(
+            st, "markdown", side_effect=lambda c, **k: captured.append(str(c))
+        ),
+        patch.object(st, "download_button"),
+        patch.object(st, "caption"),
+        patch.object(st, "expander"),
+        patch.object(st, "divider"),
+        patch.object(
+            st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
+        ),
+        patch.object(st, "progress", return_value=progress_mock),
+        patch.object(wb, "_fetch_card", return_value=EvidenceCard("YUMC", (), ())),
+        patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
+        patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
+        patch.object(wb, "is_local_runtime", return_value=False),
+    ):
+        wb.render(
+            path=str(p),
+            adherence_path=str(tmp_path / "a.jsonl"),  # type: ignore[operator]
+            reports_dir=str(tmp_path),  # type: ignore[arg-type]
+        )
+    html = "\n".join(captured)
+    assert (
+        "Load a book to begin" in html
+    ), "Landing door must be present even when a brief exists"
+    assert "YOUR BOOK" in html, "Book vitals strip must also be present"
 
 
 def test_fetch_card_analyst_key_mapping_lights_analysts_square() -> None:

@@ -41,10 +41,15 @@ _REPORTS_DIR = "data/reports"
 _SCREEN_COVERAGE_FLOOR = 0.5  # mirrors research_candidates.py
 
 
-def _render_onboarding_html(has_book: bool) -> str:
-    """Return landing-door HTML when no book is loaded, empty string otherwise."""
-    if has_book:
-        return ""
+def _render_onboarding_html(
+    has_book: bool,
+) -> str:  # noqa: ARG001 — has_book kept for API compat
+    """Return landing-door HTML — ALWAYS rendered so the user can always reach
+    Upload/Add-manually even when a book is already loaded (FIX A).
+
+    The ``has_book`` parameter is retained for call-site compatibility and may be
+    used in the future to adjust copy (e.g. "Switch book" vs "Load a book").
+    """
     return render_landing_door_html(local=is_local_runtime())
 
 
@@ -417,19 +422,21 @@ def _render_honesty_line_html() -> str:
     )
 
 
-def _handle_onboarding() -> bool:
-    """Render door + button handlers when no book is in session. Returns True if door shown.
+def _handle_onboarding() -> None:
+    """Render landing door + button handlers — ALWAYS, regardless of book state (FIX A).
+
+    The door is now persistent so the user can always reach Upload / Add-manually
+    even when a book is already in session or a brief_summary.json exists.
 
     Buttons:
     - Explore sample book → loads 10-stock demo book into session
     - Upload holdings CSV → file_uploader (only when is_local_runtime())
     - Add manually → placeholder (future work)
+
+    Returns nothing — caller always proceeds to render Front-Desk afterwards.
     """
     has_book = "book" in st.session_state
     door_html = _render_onboarding_html(has_book=has_book)
-    if not door_html:
-        return False  # book already loaded — proceed to Front-Desk
-
     st.markdown(door_html, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([2, 2, 2])
@@ -472,8 +479,6 @@ def _handle_onboarding() -> bool:
         if st.button("+ Add manually", key="ob_manual"):
             st.info("Manual entry coming soon — use sample book or CSV for now.")
 
-    return True
-
 
 def render(
     path: str = _SUMMARY_PATH,
@@ -482,17 +487,25 @@ def render(
 ) -> None:
     summary = load_brief_summary(path)
 
-    # ── Onboarding gate: show landing door when no book is in session AND
-    #    no analysed brief summary exists (new-user first-run state) ───────
-    if summary is None and _handle_onboarding():
-        return
+    # ── Landing door — ALWAYS rendered (FIX A: persistent so CSV/manual stay
+    #    reachable even when a book/brief is loaded).  Button handlers set
+    #    st.session_state["book"] and call st.rerun() so the Front-Desk below
+    #    picks up the new book on the next cycle. ──────────────────────────────
+    _handle_onboarding()
 
-    if summary is None:
+    # ── If no brief and no session book, nothing to show below the door ──────
+    if summary is None and "book" not in st.session_state:
         st.warning(
             "No structured brief found. Run "
             "`python -m application.cli weekly-brief` to generate it "
             "(stays on your machine)."
         )
+        return
+
+    if summary is None:
+        # Session book present (uploaded or sample) but no brief_summary.json.
+        # Defer to future sprint: for now show a neutral notice.
+        st.info("Book loaded from session. Run weekly-brief to see Front-Desk vitals.")
         return
 
     days = staleness_days(summary.get("as_of", ""))
