@@ -1,7 +1,13 @@
 # tests/domain/test_evidence_rag.py
 import dataclasses
 
-from domain.evidence_rag import DIMENSIONS, RagColor, RagSignal, classify_technicals
+from domain.evidence_rag import (
+    DIMENSIONS,
+    RagColor,
+    RagSignal,
+    classify_technicals,
+    classify_valuation,
+)
 
 
 def test_dimensions_fixed_order():
@@ -47,3 +53,27 @@ def test_technicals_missing_is_gap():
     sig = classify_technicals(atr_vs_200d=None, vs_spy_pct=None)
     assert sig.color is RagColor.GAP
     assert "DATA-GAP" in sig.detail
+
+
+def test_valuation_cheap_is_green():
+    sig = classify_valuation(peg=0.9, pe=19.0, sector_pctile=62.0)
+    assert sig.color is RagColor.GREEN
+    assert "PEG 0.9" in sig.detail and "62%" in sig.detail
+
+
+def test_valuation_expensive_is_red():
+    assert (
+        classify_valuation(peg=3.1, pe=44.0, sector_pctile=15.0).color is RagColor.RED
+    )
+
+
+def test_valuation_mid_is_amber():
+    assert (
+        classify_valuation(peg=1.8, pe=22.0, sector_pctile=45.0).color is RagColor.AMBER
+    )
+
+
+def test_valuation_missing_is_gap():
+    assert (
+        classify_valuation(peg=None, pe=None, sector_pctile=None).color is RagColor.GAP
+    )
