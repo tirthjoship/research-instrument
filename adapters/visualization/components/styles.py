@@ -47,6 +47,18 @@ h1 {
     color: var(--text-primary) !important;
     letter-spacing: -0.5px !important;
 }
+
+/* ===== App-level title — Fraunces display override (beats h1 DM Sans rule) ===== */
+.ri-app-title {
+    font-family: 'Fraunces', Georgia, serif !important;
+    font-weight: 600 !important;
+    font-size: 32px !important;
+    letter-spacing: -0.01em !important;
+    color: #14181F !important;
+    line-height: 1.1 !important;
+    margin-bottom: 4px !important;
+    margin-top: 0 !important;
+}
 h2 {
     font-family: 'DM Sans', sans-serif !important;
     font-size: 20px !important;
