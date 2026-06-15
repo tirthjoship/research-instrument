@@ -1,67 +1,57 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-13
-**Branch:** **SHIPPED** — merged to `develop` (PR #53) and released to `main` (PR #54), both
-CI-green; `origin/main` ≡ `origin/develop`. **1628 → 1671 tests passing, 94% cov.**
-**Phase:** Research Instrument Redesign — **SHIPPED. Project back to maintenance.**
+**As of:** 2026-06-14 (evening)
+**Branch:** `feat/dashboard-legibility-redesign` (16 prior commits + this session's work, **UNCOMMITTED**).
+**Phase:** **Home + Decision-Card redesign — DESIGN LOCKED, SPEC written, plans S1/S3 of 6 written.** Next: write S4/S2/S5/S6, then execute.
 
 ## Current State
 
-The flat v2 dashboard is rebuilt into a distinctive "Research Instrument" (white/petrol design
-system, Fraunces + IBM Plex) purely by presenting already-computed honest evidence better — **zero
-return predictions**. Executed the staged plan via subagent-driven development (Sonnet
-implementers, two independent **Opus** verification passes at the end).
+This session pivoted from visual review into a full **grill + brainstorm + frontend-design** pass that
+**locked the Home + decision-card redesign** and produced a spec + the first 2 of 6 implementation plans.
 
-Shipped:
-- **Design system** — tokens + fonts + base CSS (`components/styles.py`), shared Plotly template
-  (`apply_dossier_template`), hover-tooltip glossary (12 → 39 terms, vocab-guarded), signature
-  components: Evidence Ledger, anti-KPI proof-tile, abstention funnel.
-- **Home** — Fraunces hero, evidence ledger, 3 honest anti-KPI tiles (512→0 ABSTAINED · 47.4%
-  =EMH · Rank-IC 0.004 FALSIFIED, sourced from the real 496-date run), book-health gauge.
-- **Screener** — abstention funnel (UNIVERSE 512 → CLEARED 0, renders on empty weeks).
-- **Risk** — petrol dossier charts + big-number metric row + plain-English conclusion band.
-- **My Portfolio** — progressive disclosure (expanders) + drill-down (Yahoo link + Stock-Analysis
-  pre-fill).
-- **Trust** — anti-KPI hero + 7 Claim→Test→Result→Decision experiment cards.
-- **Stock Analysis** — attributed evidence dossier: E1 sector percentiles (pure
-  `domain/peer_relative.py`), E2 attributed analyst panel (`application/analyst_panel.py`), E3
-  news context (`application/news_context.py`), E5 fit verdict + falsification badge.
-- Durable CDP screenshotter (`scripts/screenshot_dashboard.py`); honest-state snapshot tests.
+**Shipped this session (UNCOMMITTED on branch):**
+- 🔴 **Diagnostics bug fixed** — `screen-candidates` rebuilt `ScreenResult` and dropped `diagnostics`
+  (always wrote `diagnostics: null`). Fix = `replace(result, candidates=…)` (`application/cli.py` ~2621)
+  + regression test `test_screen_candidates_json_preserves_diagnostics`. Live run now: 512→304 candidates,
+  funnel **512 scanned→494 had_history→304 above_trend→304 cleared**. 42 screener tests pass, mypy clean.
+- 📐 **Design LOCKED** (mockups in `.superpowers/brainstorm/97077-1781379305/content/`):
+  `home-FINAL.html` (canonical Home flow), `per-stock-v9.html` (canonical decision card),
+  `collapsed-expanded.html`, `loading-states-AB.html`, `home-redesign-AB.html`, `compare-v8-v9.html`.
+- 📄 **SPEC** `docs/superpowers/specs/2026-06-14-home-decision-card-redesign-spec.md` (6 subsystems S1–S6,
+  every UI claim pinned to a mockup, every data claim to a real file; R1 privacy + R4 holding-model resolved).
+- 📋 **Plans written:** `docs/superpowers/plans/2026-06-14-S1-evidence-signal-layer.md`,
+  `…-S3-decision-card-stock-analysis.md` (TDD, no placeholders, validated against 2 codebase maps).
+
+**Key locked decisions** (also in memory `project-decision-card-v9-spec`):
+- Home = **Option A "Front Desk"**: landing door (sample/CSV/manual) → 4 vitals (ONE net-beta) + book-health
+  ring → "why doubt us → Trust" line → needs-review collapsed v9 rows → holding-steady → footer (brief download).
+- Decision card = **v9** (full 5/5 cited Google-AI case + 5-row RAG evidence table). Card = the redesigned
+  **Stock Analysis tab** (tab already EXISTS — it's a redesign, not new). Home/Portfolio rows = collapsed form.
+- RAG squares = 5 FUNDAMENTAL dims (Technicals/Valuation/Financials/Earnings/Analysts), fixed order, hover,
+  **DATA-GAP = hatched** (≠ loading shimmer). NOT the screen factors.
+- Loading = progressive fill + global progress bar + **lazy AI-case on expand**; shimmer≠hatched.
+- Verdict source = `domain/discipline.grade_position` (the trend-break rule v1). Google-AI case = NEW
+  `GeminiNarratorAdapter`. Privacy = local-only + `is_local_runtime()` fail-safe guard + CI tripwire.
 
 ## Next Action
 
-**Legibility redesign BUILT on branch `feat/dashboard-legibility-redesign`** (stacked on the
-`s.close→s.price` fix; 16 commits). 5 of 6 tabs done via subagent-driven dev + per-task Opus review:
-Screener (verdict funnel + 4-factor cards), Risk (additive distance-ramp bands), Home (triage strip
-+ honest screen tile, 512→0 ABSTAINED gone), My Portfolio (decision-card rows), Trust (512→0
-citation re-sourced — it WAS citing the bug at trust.py:129). **1718 tests pass, mypy clean, pre-commit green.**
-New pure-domain: `domain/screen_diagnostics.py`, `domain/risk_rubric.py`.
-
-**NEXT SESSION (visual review):**
-1. **Run the screener live** (`screen-candidates`) so a fresh `screen_*.json` carries `diagnostics`
-   + real candidates — the smoke screenshots used STALE cached data (0 candidates, no diagnostics),
-   so Screener cards + Home HAS_CANDIDATES tile showed fallback states. Re-screenshot to eyeball rich states.
-2. **Stock Analysis (tab 4) decision-card** = the one deferred tab — build next (see plan).
-3. **PR/merge ordering:** PR #58 (the fix) merges to develop first; this branch stacks on it.
-   ⚠️ Still BLOCK-before-main: confirm no shipped surface presents 512→0 as EMH/discipline (Home
-   tile + Trust now fixed on this branch; verify on develop after merge).
-4. Known DATA-GAPs surfaced honestly (not bugs): per-holding **5-signal RAG array doesn't exist** in
-   data (Portfolio shows trend_state + "other signals: DATA-GAP"); **vs-Market(1y)** not in brief.
-   If wanted, add real computations later. Minor: two different "net beta" numbers on Home (ledger
-   uses systematic-share %, triage uses SPY coeff) — future copy pass.
-5. Plan: `docs/superpowers/plans/2026-06-14-dashboard-legibility-redesign.md`. Decisions: memory
-   `project-whole-site-redesign-decisions`. Mockup: `.superpowers/brainstorm/whole-site/...`.
+1. **Write remaining plans** (same TDD/no-placeholder rigor, build order): **S4** (Home rewrite + net-beta
+   bug fix + vs-Market + section moves) → **S2** (`GeminiNarratorAdapter` cited case) → **S5** (loading infra:
+   st.fragment + progress + lazy-case + cache) → **S6** (CSV upload + add-manually + sample book + privacy guard).
+2. **Then execute** via subagent-driven-development (Sonnet implementers, Opus review per task).
+3. **Two codebase maps already done** this session (backend modules + viz component layer) — anchors are in
+   the S1/S3 plans; reuse for S4–S6. Verdict=`grade_position`; CSS injector=`inject_global_css()`; validation
+   tiles ALREADY on Trust; `tooltip()` KeyErrors on undocumented terms (squares use bespoke hover, not tooltip).
+4. **PR ordering:** PR #58 (diagnostics + s.close→s.price) → develop first; this branch stacks. BLOCK-before-main:
+   confirm no surface presents 512→0 as EMH/discipline.
 
 ## Caveats
 
-- **Honesty held under pressure:** FORBIDDEN_WORDS guard + RESEARCH_ONLY on every new surface;
-  third-party data is **attributed**, never adopted. Two verification slips were caught + fixed
-  mid-run (a "predict" in a Home hero / Stock-Analysis banner; a Rank-IC sourced from a degenerate
-  empty file). E4/DCF correctly deferred.
-- **Stock Analysis populated dossier** verified by `tests/test_dossier_render.py` (15 tests) +
-  a live `analyze_ticker` run, NOT a screenshot — Streamlit's controlled-input doesn't sync under
-  headless CDP automation. Empty state screenshotted. Run a ticker live to eyeball the populated layout.
-- `git checkout data/reports/` before any pre-commit/CI verify (tests strip trailing newlines from
-  2 tracked JSONs: `divergence_ic_21d.json`, `momentum_discipline.json`).
-- Standing watch (unchanged): ADR-048/051 discipline forward gate resolves ~mid-July 2026 (weekly
-  Saturday job); ~Dec 2026 behavior-gap review.
+- **Nothing committed this session** — diagnostics fix + spec + 2 plans all sit uncommitted on the branch.
+- **Honesty invariant holds:** FORBIDDEN_WORDS (`domain/fit.py`, 7 words) source-scanned per new module; v9
+  footer reworded "not a trade signal" to pass; third-party data attributed, never adopted; DATA-GAP never faked.
+- `git checkout data/reports/` before any pre-commit/CI verify (tests strip trailing newlines from 2 tracked JSONs).
+- **Verify-via-context7 flags in the plans:** yfinance `earnings_dates` API (S1), `st.fragment`/`st.status`
+  availability (S5), Streamlit server-address/client-host API for the privacy guard (S6).
+- Standing watch: ADR-048/051 discipline forward gate resolves ~mid-July 2026 (weekly Saturday job); ~Dec 2026
+  behavior-gap review.
