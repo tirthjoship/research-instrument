@@ -409,3 +409,65 @@ def test_zone2_card_subtitle_source_annotation() -> None:
     html = rc.build_check_your_own_html(_make_fake_batch_rows())
     assert "week" in html.lower() or "screen" in html.lower()
     assert "live" in html.lower() or "computed" in html.lower()
+
+
+# ---------------------------------------------------------------------------
+# S5 Task 5: Honesty gate — Zone ② HTML
+# ---------------------------------------------------------------------------
+
+
+def test_zone2_no_forbidden_words() -> None:
+    """Zone ② HTML must not contain FORBIDDEN_WORDS from domain/fit.py."""
+    import re
+
+    from adapters.visualization.tabs import research_candidates as rc
+    from domain.fit import FORBIDDEN_WORDS
+
+    html = rc.build_check_your_own_html(_make_fake_batch_rows()).lower()
+    words = set(re.findall(r"\b\w+\b", html))
+    for w in FORBIDDEN_WORDS:
+        assert w not in words, f"Forbidden word {w!r} in Zone ② HTML"
+
+
+def test_zone2_data_gap_shows_data_gap_label_not_number() -> None:
+    """DATA-GAP rows must show the text 'DATA-GAP', not a fabricated number."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    # Use only a row with all DATA-GAP factor scores (off-universe)
+    from application.batch_fit_use_case import BatchFitRow
+    from domain.fit import FitVerdict
+
+    verdict = FitVerdict(
+        ticker="FAKE",
+        evidence_grade="UNKNOWN",
+        fit_flags=(),
+        summary="FAKE could not be assessed.",
+    )
+    row = BatchFitRow(
+        ticker="FAKE",
+        verdict=verdict,
+        fetch_ok=False,
+        factor_scores=(
+            {"name": "momentum", "value": None, "percentile": None, "source": "live"},
+            {"name": "revision", "value": None, "percentile": None, "source": "live"},
+            {"name": "quality", "value": None, "percentile": None, "source": "live"},
+            {"name": "value", "value": None, "percentile": None, "source": "live"},
+            {"name": "lowvol", "value": None, "percentile": None, "source": "live"},
+        ),
+    )
+    html = rc.build_check_your_own_html([row])
+    assert "DATA-GAP" in html
+    # Should NOT contain a percentile number notation like p92
+    import re
+
+    pct_matches = re.findall(r"\bp\d{2,3}\b", html)
+    assert (
+        len(pct_matches) == 0
+    ), f"Fabricated percentile found in DATA-GAP card: {pct_matches}"
+
+
+def test_zone2_cap_25_unchanged() -> None:
+    """MAX_TICKERS must remain 25 — batch_fit cap must not change."""
+    from application.batch_fit_use_case import MAX_TICKERS
+
+    assert MAX_TICKERS == 25
