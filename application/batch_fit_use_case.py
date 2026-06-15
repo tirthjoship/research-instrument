@@ -6,7 +6,7 @@ import csv
 import io
 import re
 from dataclasses import dataclass
-from typing import Callable, Sequence
+from typing import Any, Callable, Sequence
 
 from loguru import logger
 
@@ -63,15 +63,37 @@ def batch_fit(
     tickers: Sequence[str],
     fit_fn: Callable[[str], FitVerdict],
     progress: Callable[[float, str], None] | None = None,
+    screen: dict[str, Any] | None = None,
 ) -> list[BatchFitRow]:
-    """Run *fit_fn* per ticker; failures become UNKNOWN/DATA_GAP rows."""
+    """Run *fit_fn* per ticker; failures become UNKNOWN/DATA_GAP rows.
+
+    Args:
+        tickers: Ticker symbols to assess.
+        fit_fn: Callable returning a FitVerdict for a single ticker.
+        progress: Optional progress callback (fraction, ticker).
+        screen: Optional persisted screen dict. When provided, factor_scores
+            are looked up (in-screen) or left empty (off-universe) via
+            ticker_factor_scores. When None, factor_scores stays empty.
+    """
+    from application.ticker_factors_use_case import ticker_factor_scores
+
     rows: list[BatchFitRow] = []
     n = len(tickers)
     for i, t in enumerate(tickers):
         if progress is not None:
             progress((i + 1) / max(n, 1), t)
         try:
-            rows.append(BatchFitRow(ticker=t, verdict=fit_fn(t), fetch_ok=True))
+            verdict = fit_fn(t)
+            fs: tuple[dict[str, Any], ...] = ()
+            if screen is not None:
+                # no fetch_fn for off-universe — DATA-GAP fallback built in
+                def _no_fetch(_ticker: str) -> dict[str, float | None]:
+                    raise RuntimeError("No live fetch wired in batch_fit")
+
+                fs = tuple(ticker_factor_scores(t, screen=screen, fetch_fn=_no_fetch))
+            rows.append(
+                BatchFitRow(ticker=t, verdict=verdict, fetch_ok=True, factor_scores=fs)
+            )
         except Exception as exc:
             logger.warning(f"batch fit failed for {t}: {exc}")
             rows.append(
