@@ -143,3 +143,74 @@ def test_genuine_falsification_content_survives():  # type: ignore[no-untyped-de
     assert (
         "= EMH" in source
     ), "Hero tile must still carry '= EMH' stamp on directional accuracy (47.4% = coin flip)"
+
+
+# ---------------------------------------------------------------------------
+# Task 1 (S7): build_screen_history_html renders history table on Trust tab
+# ---------------------------------------------------------------------------
+
+
+def test_build_screen_history_html_contains_headers():  # type: ignore[no-untyped-def]
+    """build_screen_history_html renders Date/Universe/Passed/Abstained headers."""
+    from adapters.visualization.tabs.trust import build_screen_history_html
+
+    history = [
+        {
+            "as_of": "2026-06-13",
+            "universe_size": 512,
+            "n_candidates": 15,
+            "abstained": False,
+        },
+        {
+            "as_of": "2026-06-06",
+            "universe_size": 500,
+            "n_candidates": 0,
+            "abstained": True,
+        },
+    ]
+    html = build_screen_history_html(history)
+    assert "Universe" in html
+    assert "Passed" in html
+    assert "Abstained" in html
+
+
+def test_build_screen_history_html_contains_heading():  # type: ignore[no-untyped-def]
+    """build_screen_history_html output contains 'Screen history' or 'Past screens'."""
+    from adapters.visualization.tabs.trust import build_screen_history_html
+
+    history = [
+        {
+            "as_of": "2026-06-13",
+            "universe_size": 512,
+            "n_candidates": 15,
+            "abstained": False,
+        },
+    ]
+    html = build_screen_history_html(history)
+    assert "Screen history" in html or "Past screens" in html
+
+
+def test_build_screen_history_html_renders_row_data():  # type: ignore[no-untyped-def]
+    """build_screen_history_html includes actual row values from history list."""
+    from adapters.visualization.tabs.trust import build_screen_history_html
+
+    history = [
+        {
+            "as_of": "2026-06-13",
+            "universe_size": 512,
+            "n_candidates": 15,
+            "abstained": False,
+        },
+    ]
+    html = build_screen_history_html(history)
+    assert "2026-06-13" in html
+    assert "512" in html
+    assert "15" in html
+
+
+def test_build_screen_history_html_empty_returns_string():  # type: ignore[no-untyped-def]
+    """build_screen_history_html with empty list still returns a string (no crash)."""
+    from adapters.visualization.tabs.trust import build_screen_history_html
+
+    html = build_screen_history_html([])
+    assert isinstance(html, str)

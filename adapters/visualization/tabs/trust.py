@@ -19,6 +19,7 @@ from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.components.verdicts import ablation_verdict
 from adapters.visualization.data_loader import (
     load_ablation_results,
+    load_screen_history,
     load_shap_importance,
 )
 
@@ -462,6 +463,12 @@ def render(
     st.divider()
     _gate_strip(log_path)
 
+    st.divider()
+    st.markdown(
+        build_screen_history_html(load_screen_history("data/reports")),
+        unsafe_allow_html=True,
+    )
+
     # Glossary reference
     with st.expander("Glossary — every term in plain English"):
         import pandas as pd
@@ -473,3 +480,44 @@ def render(
             hide_index=True,
             use_container_width=True,
         )
+
+
+def build_screen_history_html(history: list[dict[str, object]]) -> str:
+    """Render the past-screen history table (relocated here from the screener).
+
+    Columns: Date / Universe / Passed / Abstained. Empty history still returns a
+    valid string (a short 'no past screens yet' note).
+    """
+    head = (
+        "<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
+        "font-weight:600;letter-spacing:.14em;color:var(--text-muted,#94A3B8);"
+        'text-transform:uppercase;margin:6px 0 10px;">Screen history</div>'
+    )
+    if not history:
+        return (
+            head + '<div style="font-size:12px;color:var(--text-secondary,#5C6370);">'
+            "No past screens recorded yet.</div>"
+        )
+    rows = "".join(
+        '<tr><td style="padding:4px 14px 4px 0;">{date}</td>'
+        '<td style="padding:4px 14px 4px 0;">{uni}</td>'
+        '<td style="padding:4px 14px 4px 0;">{passed}</td>'
+        '<td style="padding:4px 0;">{abst}</td></tr>'.format(
+            date=h.get("as_of", "?"),
+            uni=h.get("universe_size", "?"),
+            passed=h.get("n_candidates", "?"),
+            abst="yes" if h.get("abstained") else "no",
+        )
+        for h in history
+    )
+    table = (
+        '<table style="font-size:12px;color:var(--text-secondary,#5C6370);'
+        'border-collapse:collapse;font-variant-numeric:tabular-nums;">'
+        '<thead><tr style="color:var(--text-muted,#94A3B8);text-align:left;">'
+        '<th style="padding:4px 14px 4px 0;font-weight:600;">Date</th>'
+        '<th style="padding:4px 14px 4px 0;font-weight:600;">Universe</th>'
+        '<th style="padding:4px 14px 4px 0;font-weight:600;">Passed</th>'
+        '<th style="padding:4px 0;font-weight:600;">Abstained</th></tr></thead>'
+        f"<tbody>{rows}</tbody></table>"
+    )
+    return head + table

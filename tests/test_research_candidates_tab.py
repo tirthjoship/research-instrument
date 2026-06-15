@@ -457,11 +457,14 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
     assert (
         "Check your own list" in joined
     ), "'Check your own list' header not found — upload section was not reached on abstention week"
-    # History strip: with one abstention screen, load_screen_history returns it as history.
-    # Either a DATAFRAME was rendered or the 'Screen history' heading appeared.
+    # S7: the screen-history table was MOVED to the Trust tab; the screener now
+    # shows only a link, not the in-tab DATAFRAME/'Screen history' heading.
     assert (
-        "DATAFRAME" in joined or "Screen history" in joined
-    ), "Neither DATAFRAME nor 'Screen history' found — history strip was not reached on abstention week"
+        "Trust tab" in joined or "See past screens" in joined
+    ), "Trust-tab history link not found — Zone ③ link should replace the in-screener history table"
+    assert (
+        "DATAFRAME" not in joined
+    ), "Screen-history DATAFRAME still rendered in the screener — it should live on Trust now"
 
 
 # ---------------------------------------------------------------------------
