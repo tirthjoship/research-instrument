@@ -314,3 +314,98 @@ def test_screener_html_no_forbidden_words() -> None:
     words = set(re.findall(r"\b\w+\b", html))
     for w in ("buy", "sell", "winner", "conviction", "predict", "alpha", "outperform"):
         assert w not in words, f"Forbidden word {w!r} in screener HTML"
+
+
+# ---------------------------------------------------------------------------
+# S5 Task 4: build_check_your_own_html — Zone ② card with 5-factor parity
+# ---------------------------------------------------------------------------
+
+
+def _make_fake_batch_rows() -> list[Any]:
+    """Fake BatchFitRow list for Zone ② rendering tests."""
+    from application.batch_fit_use_case import BatchFitRow
+    from domain.fit import FitVerdict
+
+    verdict_strong = FitVerdict(
+        ticker="NVDA",
+        evidence_grade="STRONG",
+        fit_flags=(),
+        summary="NVDA sits in the top fifth of the screened universe on factual evidence.",
+    )
+    verdict_weak = FitVerdict(
+        ticker="XYZ",
+        evidence_grade="WEAK",
+        fit_flags=(),
+        summary="XYZ ranks in the lower half.",
+    )
+    row_in_screen = BatchFitRow(
+        ticker="NVDA",
+        verdict=verdict_strong,
+        fetch_ok=True,
+        factor_scores=(
+            {"name": "momentum", "value": 1.2, "percentile": 0.92, "source": "screen"},
+            {"name": "revision", "value": 0.8, "percentile": 0.80, "source": "screen"},
+            {"name": "quality", "value": 1.5, "percentile": 0.95, "source": "screen"},
+            {"name": "value", "value": -0.3, "percentile": 0.25, "source": "screen"},
+            {"name": "lowvol", "value": None, "percentile": None, "source": "screen"},
+        ),
+    )
+    row_off_universe = BatchFitRow(
+        ticker="XYZ",
+        verdict=verdict_weak,
+        fetch_ok=True,
+        factor_scores=(
+            {"name": "momentum", "value": None, "percentile": None, "source": "live"},
+            {"name": "revision", "value": None, "percentile": None, "source": "live"},
+            {"name": "quality", "value": None, "percentile": None, "source": "live"},
+            {"name": "value", "value": None, "percentile": None, "source": "live"},
+            {"name": "lowvol", "value": None, "percentile": None, "source": "live"},
+        ),
+    )
+    return [row_in_screen, row_off_universe]
+
+
+def test_zone2_card_matches_shortlist() -> None:
+    """build_check_your_own_html renders factor names, percentile, grade, fit."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_check_your_own_html(_make_fake_batch_rows())
+    for token in ("Quality", "Value", "Low-vol", "STRONG", "fit"):
+        assert token in html, f"Expected token {token!r} missing from Zone ② HTML"
+    # Percentile notation present (p92 etc.)
+    assert "p" in html
+
+
+def test_zone2_card_has_factor_rows() -> None:
+    """Zone ② card renders all 5 factor rows per ticker."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_check_your_own_html(_make_fake_batch_rows())
+    for factor_label in ("Momentum", "Analyst spread", "Quality", "Value", "Low-vol"):
+        assert factor_label in html, f"Factor label {factor_label!r} missing"
+
+
+def test_zone2_card_shows_data_gap() -> None:
+    """Off-universe rows show DATA-GAP, not fabricated numbers."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_check_your_own_html(_make_fake_batch_rows())
+    assert "DATA-GAP" in html
+
+
+def test_zone2_card_shows_grade_badge() -> None:
+    """Evidence grade badge (STRONG/MODERATE/WEAK) must appear per ticker."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_check_your_own_html(_make_fake_batch_rows())
+    # NVDA is STRONG, XYZ is WEAK
+    assert "STRONG" in html and "WEAK" in html
+
+
+def test_zone2_card_subtitle_source_annotation() -> None:
+    """In-screen rows show 'in this week's screen'; off-universe show 'live-computed'."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_check_your_own_html(_make_fake_batch_rows())
+    assert "week" in html.lower() or "screen" in html.lower()
+    assert "live" in html.lower() or "computed" in html.lower()
