@@ -99,6 +99,15 @@ ignore_missing_imports = true
 module = "application.cli"
 disallow_untyped_decorators = false
 
+# google-generativeai ships incomplete type info; its top-level helpers
+# (configure / GenerativeModel / GenerationConfig) are flagged attr-defined.
+[[tool.mypy.overrides]]
+module = [
+    "adapters.ml.gemini_narrator",
+    "adapters.ml.gemini_event_classifier",
+]
+disable_error_code = ["attr-defined"]
+
 [[tool.mypy.overrides]]
 module = [
     "adapters.visualization.price_cache",

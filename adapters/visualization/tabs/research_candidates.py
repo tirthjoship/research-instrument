@@ -1113,10 +1113,11 @@ def render(reports_dir: str = "data/reports") -> None:
 
     if not candidates:
         # Abstention / under-powered path
-        st.markdown(
-            build_body_html(screen, view="reason", reports_dir=reports_dir),
-            unsafe_allow_html=True,
-        )
+        with st.spinner("Loading screen result…"):
+            st.markdown(
+                build_body_html(screen, view="reason", reports_dir=reports_dir),
+                unsafe_allow_html=True,
+            )
         st.markdown(
             "**Want to research a specific stock anyway?** "
             "Open the **Stock Analysis** tab — type any ticker for a full evidence read."
@@ -1133,11 +1134,11 @@ def render(reports_dir: str = "data/reports") -> None:
         new_view = "reason" if selected != "Rank only" else "rank"
         st.session_state["screener_view"] = new_view
 
-        # Main body (reason or rank view)
-        st.markdown(
-            build_body_html(screen, view=new_view, reports_dir=reports_dir),
-            unsafe_allow_html=True,
-        )
+        # Main body (reason or rank view) — wrapped in a spinner so the tab shows
+        # progress instead of appearing blank while the (large) card HTML renders.
+        with st.spinner("Loading this week's research shortlist…"):
+            body_html = build_body_html(screen, view=new_view, reports_dir=reports_dir)
+            st.markdown(body_html, unsafe_allow_html=True)
 
     # Zone ② — Check your own list
     st.markdown(
