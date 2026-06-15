@@ -5,6 +5,7 @@ from domain.evidence_rag import (
     DIMENSIONS,
     RagColor,
     RagSignal,
+    classify_earnings,
     classify_financials,
     classify_technicals,
     classify_valuation,
@@ -110,3 +111,18 @@ def test_financials_missing_is_gap():
         ).color
         is RagColor.GAP
     )
+
+
+def test_earnings_mostly_beats_is_green():
+    sig = classify_earnings(beats=3, total=4)
+    assert sig.color is RagColor.GREEN
+    assert "beat 3 of 4" in sig.detail and "revenue surprise" in sig.detail.lower()
+
+
+def test_earnings_mostly_miss_is_red():
+    assert classify_earnings(beats=0, total=4).color is RagColor.RED
+
+
+def test_earnings_no_data_is_gap():
+    assert classify_earnings(beats=None, total=None).color is RagColor.GAP
+    assert classify_earnings(beats=0, total=0).color is RagColor.GAP

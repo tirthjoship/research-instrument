@@ -102,3 +102,16 @@ def classify_financials(
     if fcf_positive is False or levered:
         return RagSignal("Financials", RagColor.RED, detail)
     return RagSignal("Financials", RagColor.AMBER, detail)
+
+
+def classify_earnings(beats: int | None, total: int | None) -> RagSignal:
+    if total is None or total == 0:
+        return RagSignal("Earnings", RagColor.GAP, "DATA-GAP: no earnings history")
+    b = beats or 0
+    detail = f"EPS beat {b} of {total} · revenue surprise: needs estimates feed"
+    ratio = b / total
+    if ratio >= 0.75:
+        return RagSignal("Earnings", RagColor.GREEN, detail)
+    if ratio <= 0.25:
+        return RagSignal("Earnings", RagColor.RED, detail)
+    return RagSignal("Earnings", RagColor.AMBER, detail)
