@@ -115,3 +115,32 @@ def classify_earnings(beats: int | None, total: int | None) -> RagSignal:
     if ratio <= 0.25:
         return RagSignal("Earnings", RagColor.RED, detail)
     return RagSignal("Earnings", RagColor.AMBER, detail)
+
+
+def classify_analysts(
+    count: int,
+    target_mean: float | None,
+    target_high: float | None,
+    target_low: float | None,
+    data_gap: bool,
+    current_price: float | None,
+) -> RagSignal:
+    if data_gap or target_mean is None:
+        return RagSignal("Analysts", RagColor.GAP, "DATA-GAP: no analyst coverage")
+    pieces = [f"{count} cover"]
+    upside = None
+    if current_price and current_price > 0:
+        upside = (target_mean - current_price) / current_price
+        pieces.append(f"target {upside:+.0%}")
+    spread = None
+    if target_high is not None and target_low is not None and target_mean:
+        spread = (target_high - target_low) / target_mean
+        pieces.append("wide spread" if spread >= 0.30 else "tight spread")
+    detail = " · ".join(pieces)
+    if spread is not None and spread >= 0.30:
+        return RagSignal("Analysts", RagColor.AMBER, detail)
+    if upside is None:
+        return RagSignal("Analysts", RagColor.AMBER, detail)
+    return RagSignal(
+        "Analysts", RagColor.GREEN if upside >= 0 else RagColor.RED, detail
+    )

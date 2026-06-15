@@ -5,6 +5,7 @@ from domain.evidence_rag import (
     DIMENSIONS,
     RagColor,
     RagSignal,
+    classify_analysts,
     classify_earnings,
     classify_financials,
     classify_technicals,
@@ -126,3 +127,58 @@ def test_earnings_mostly_miss_is_red():
 def test_earnings_no_data_is_gap():
     assert classify_earnings(beats=None, total=None).color is RagColor.GAP
     assert classify_earnings(beats=0, total=0).color is RagColor.GAP
+
+
+def test_analysts_wide_spread_is_amber():
+    sig = classify_analysts(
+        count=43,
+        target_mean=47.8,
+        target_high=70.0,
+        target_low=30.0,
+        data_gap=False,
+        current_price=44.63,
+    )  # spread ~0.84
+    assert sig.color is RagColor.AMBER
+    assert "43 cover" in sig.detail
+
+
+def test_analysts_tight_upside_is_green():
+    assert (
+        classify_analysts(
+            count=43,
+            target_mean=50.0,
+            target_high=52.0,
+            target_low=48.0,
+            data_gap=False,
+            current_price=44.63,
+        ).color
+        is RagColor.GREEN
+    )
+
+
+def test_analysts_tight_downside_is_red():
+    assert (
+        classify_analysts(
+            count=43,
+            target_mean=40.0,
+            target_high=42.0,
+            target_low=39.0,
+            data_gap=False,
+            current_price=44.63,
+        ).color
+        is RagColor.RED
+    )
+
+
+def test_analysts_gap():
+    assert (
+        classify_analysts(
+            count=0,
+            target_mean=None,
+            target_high=None,
+            target_low=None,
+            data_gap=True,
+            current_price=44.63,
+        ).color
+        is RagColor.GAP
+    )
