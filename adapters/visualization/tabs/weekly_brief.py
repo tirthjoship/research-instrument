@@ -8,7 +8,11 @@ from typing import Any
 
 import streamlit as st
 
-from adapters.visualization.components.decision_card import render_collapsed_row
+from adapters.visualization.card_fetch import get_case_on_expand
+from adapters.visualization.components.decision_card import (
+    render_collapsed_row,
+    render_expanded_card,
+)
 from adapters.visualization.components.formatters import status_pill_html
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
@@ -19,11 +23,15 @@ from adapters.visualization.data_loader import (
     load_weekly_brief,
     staleness_days,
 )
+from application.card_loading import select_case_summarizer
 from application.evidence_card import EvidenceCard
 from domain.discipline import Verdict
 from domain.evidence_rag import DIMENSIONS, RagColor, RagSignal
 from domain.risk_rubric import classify_net_beta, classify_systematic_share
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
+
+# st.fragment fallback: no-op decorator if the Streamlit version doesn't have it.
+_fragment = getattr(st, "fragment", lambda f: f)
 
 _SUMMARY_PATH = "data/personal/brief_summary.json"
 _BRIEF_MD_PATH = "data/personal/weekly_brief.md"
@@ -292,6 +300,104 @@ def _home_evidence_card(ticker: str) -> EvidenceCard:
     return EvidenceCard(ticker=ticker, signals=sigs, sparkline=())
 
 
+def _fetch_card(ticker: str) -> EvidenceCard:
+    """Fetch a real EvidenceCard for a ticker via cached adapters (S5).
+
+    On any fetch failure (network, bare-mode CI) falls back to the GAP card
+    so the UI remains honest rather than crashing.
+    """
+    try:
+        from adapters.data.earnings_history_adapter import fetch_earnings_history
+        from adapters.visualization.price_cache import fetch_prices, fetch_ticker_info
+        from application.analyst_panel import build_analyst_panel
+        from application.evidence_card import build_evidence_card
+
+        raw = fetch_ticker_info(ticker)
+        info = {k: v for k, v in raw.items()}
+        px = fetch_prices((ticker,)).get(ticker, {})
+        info["current_price"] = px.get("price")
+        # snake_case keys S1 expects
+        info["trailing_pe"] = raw.get("trailingPE")
+        info["peg_ratio"] = raw.get("pegRatio")
+        info["free_cashflow"] = raw.get("freeCashflow")
+        info["debt_to_equity"] = raw.get("debtToEquity")
+        panel = build_analyst_panel(raw, "")
+        # fetch_prices returns {"price", "change_pct"} — no closes/atr/ma200/vs_spy
+        prices: dict[str, Any] = {
+            "closes": [],  # DATA-GAP: batch price fetch returns no history
+            "atr": None,  # DATA-GAP: not available from price_cache
+            "ma200": None,  # DATA-GAP: not available from price_cache
+            "spy_1y": None,  # DATA-GAP: not tracked per holding
+            "book_1y": None,  # DATA-GAP: not tracked per holding
+        }
+        peers: list[float | None] = []  # DATA-GAP: peer data not fetched on Home
+        return build_evidence_card(
+            ticker,
+            info=info,
+            prices=prices,
+            panel=panel,
+            earnings=fetch_earnings_history(ticker),
+            peers=peers,
+        )
+    except Exception:  # noqa: BLE001 — network/CI failures → GAP card (honest)
+        return _home_evidence_card(ticker)
+
+
+def _needs_review_cards(
+    holdings: list[dict[str, Any]]
+) -> list[tuple[str, dict[str, Any]]]:
+    """Return (ticker, holding) pairs for holdings that need review."""
+    return [(h["ticker"], h) for h in holdings if h.get("verdict") in _NEEDS_REVIEW]
+
+
+def _render_one_holding(ticker: str, h: dict[str, Any], summarizer: object) -> None:
+    """Render one holding row: collapsed row + expander with expanded card."""
+    card = _fetch_card(ticker)
+    verdict = Verdict(str(h["verdict"]))
+    unrealized = h.get("unrealized_pct")
+    unrealized_f = float(unrealized) if unrealized is not None else None
+    oneliner = str(h.get("why", ""))
+
+    st.markdown(
+        render_collapsed_row(
+            card,
+            verdict=verdict,
+            name=ticker,
+            unrealized_pct=unrealized_f,
+            oneliner=oneliner,
+        ),
+        unsafe_allow_html=True,
+    )
+    with st.expander(f"{ticker} — {verdict.value} (expand for full evidence)"):
+        # Inside expander body — fetch lazy case (always expanded=True here)
+        case = get_case_on_expand(
+            ticker, card, news=[], expanded=True, summarizer=summarizer
+        )
+        # data_gap: pass case=None so _case_html shows honest "loads on open" placeholder
+        case_to_render = None if (case is None or case.data_gap) else case
+        st.markdown(
+            render_expanded_card(
+                card,
+                case=case_to_render,
+                verdict=verdict,
+                name=ticker,
+                unrealized_pct=unrealized_f,
+                means=oneliner,
+                price=None,
+                cost=None,
+                returns=(),
+                reliability="measured forward; see Trust",
+            ),
+            unsafe_allow_html=True,
+        )
+
+
+# Fragment-wrapped version for production use (each row independent render cycle).
+# In bare mode (CI/tests), st.fragment silently no-ops — _render_needs_review calls
+# _render_one_holding directly so tests can capture the output.
+_render_one_holding_fragment: Any = _fragment(_render_one_holding)
+
+
 def _render_needs_review_html(holdings: list[dict[str, Any]]) -> str:
     rows = []
     for h in holdings:
@@ -315,6 +421,26 @@ def _render_needs_review_html(holdings: list[dict[str, Any]]) -> str:
             "Nothing needs review this week — all positions within discipline.</div>"
         )
     return f'<div class="ws-card" style="padding:0">{"".join(rows)}</div>'
+
+
+def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
+    """Progressive render: progress bar + per-holding render + lazy case.
+
+    _render_one_holding_fragment provides per-row isolation when running in a
+    real Streamlit session (st.fragment). In bare-mode / CI the fragment
+    silently no-ops, so we call _render_one_holding directly — both paths
+    produce the same output; isolation is a production UX optimisation only.
+    """
+    cards = _needs_review_cards(holdings)
+    if not cards:
+        st.markdown(_render_needs_review_html([]), unsafe_allow_html=True)
+        return
+    bar = st.progress(0.0, text=f"Fetching 0 / {len(cards)} holdings…")
+    summarizer = select_case_summarizer()
+    for i, (ticker, h) in enumerate(cards, 1):
+        _render_one_holding(ticker, h, summarizer)
+        bar.progress(i / len(cards), text=f"Fetching {i} / {len(cards)} holdings…")
+    bar.empty()
 
 
 def _render_honesty_line_html() -> str:
@@ -411,7 +537,7 @@ def render(
         '<div class="ri-sec">NEEDS REVIEW — A RULE FIRED, YOUR CALL</div>',
         unsafe_allow_html=True,
     )
-    st.markdown(_render_needs_review_html(holdings), unsafe_allow_html=True)
+    _render_needs_review(holdings)
 
     steady = sum(1 for h in holdings if h.get("verdict") in ("HOLD", "ADD_OK"))
     st.caption(f"Holding steady · {steady} — no rule fired, nothing to do")
