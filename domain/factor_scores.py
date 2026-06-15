@@ -27,7 +27,16 @@ FACTOR_KEYS = ("momentum", "revision", "quality", "value", "lowvol")
 
 
 def revision_momentum(estimate_series: list[float] | None) -> float | None:
-    """Normalized drift of analyst EPS estimates (oldest..newest)."""
+    """Analyst target-price dispersion: (last - first) / abs(first).
+
+    HONESTY NOTE: this function is fed a target-price snapshot [low, mean, high]
+    as sourced by yfinance, NOT a temporal series of EPS estimate revisions.
+    It therefore measures analyst price-target SPREAD (dispersion), not temporal
+    estimate drift (revision momentum in the academic sense).  True point-in-time
+    EPS revision history is not sourceable from yfinance, so we use the target
+    spread as a proxy.  Callers and the glossary label this "Analyst spread".
+    Higher value = wider analyst disagreement about the target price.
+    """
     if estimate_series is None or len(estimate_series) < 2:
         return None
     first, last = estimate_series[0], estimate_series[-1]
