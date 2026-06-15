@@ -16,6 +16,30 @@ _MIN_DRIFT_BETA = (
 )
 
 
+def aligned_return_matrix(
+    holding_returns: dict[str, list[tuple[datetime, float]]],
+) -> tuple[list[str], list[list[float]]]:
+    """Holdings return matrix over dates present in EVERY holding series.
+
+    Returns (tickers, rows) where tickers is the column order and rows[i] is the
+    cross-sectional return vector on common date i (rows ascending by date).
+    Empty/degenerate (no holdings or no common dates) → (tickers, []).
+    """
+    tickers = list(holding_returns)
+    if not tickers:
+        return (tickers, [])
+    date_maps: dict[str, dict[datetime, float]] = {
+        t: dict(holding_returns[t]) for t in tickers
+    }
+    common: set[datetime] = set(date_maps[tickers[0]].keys())
+    for t in tickers[1:]:
+        common &= date_maps[t].keys()
+    if not common:
+        return (tickers, [])
+    rows = [[date_maps[t][d] for t in tickers] for d in sorted(common)]
+    return (tickers, rows)
+
+
 def daily_returns(
     series: list[tuple[datetime, float]],
 ) -> list[tuple[datetime, float]]:
