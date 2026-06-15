@@ -732,6 +732,167 @@ def build_zone3_html() -> str:
 
 
 # ---------------------------------------------------------------------------
+# S5 Task 4: build_check_your_own_html — Zone ② full 5-factor card
+# ---------------------------------------------------------------------------
+
+# Grade badge styles matching the shortlist (same CSS var tokens)
+_GRADE_STYLE: dict[str, str] = {
+    "STRONG": "background:#DCFCE7;color:var(--success)",
+    "MODERATE": "background:#DBEAFE;color:var(--accent)",
+    "WEAK": "background:#FEE2E2;color:var(--danger)",
+    "UNKNOWN": "background:#F1F5F9;color:var(--text-muted)",
+}
+
+
+def _build_zone2_row_html(row: Any) -> str:
+    """Build a collapsible card HTML for one BatchFitRow (Zone ②)."""
+    ticker = _html.escape(str(row.ticker))
+    grade = str(row.verdict.evidence_grade)
+    grade_style = _GRADE_STYLE.get(grade, _GRADE_STYLE["UNKNOWN"])
+    safe_grade = _html.escape(grade)
+
+    factor_scores: list[dict[str, Any]] = [dict(f) for f in row.factor_scores]
+
+    # Determine source annotation: in-screen vs live-computed
+    sources = {f.get("source", "live") for f in factor_scores}
+    if "screen" in sources and "live" not in sources:
+        source_note = "in this week&#39;s screen"
+    elif "live" in sources and "screen" not in sources:
+        source_note = "your list &middot; live-computed"
+    else:
+        # mixed (shouldn't happen) or empty
+        source_note = "your list &middot; live-computed"
+
+    # Build factor rows HTML (5 factors)
+    factor_rows_html = ""
+    factor_by_name: dict[str, dict[str, Any]] = {
+        f.get("name", ""): f for f in factor_scores
+    }
+    for fname in _ALL_FACTORS:
+        fd = factor_by_name.get(fname)
+        value: float | None = None
+        percentile: float | None = None
+        if fd is not None:
+            rv = fd.get("value")
+            rp = fd.get("percentile")
+            if rv is not None and rp is not None:
+                value = float(rv)
+                percentile = float(rp)
+        factor_rows_html += render_factor_row(fname, value=value, percentile=percentile)
+
+    # Plain read for factor bands (same as shortlist)
+    bands: dict[str, Band] = {}
+    for fname in _LIVE_FACTORS:
+        fd = factor_by_name.get(fname)
+        if fd:
+            pct = fd.get("percentile")
+            val = fd.get("value")
+            if pct is not None and val is not None:
+                bands[fname] = band_for_percentile(float(pct))
+    plain = _html.escape(plain_read(bands))
+
+    # Grade badge with glossary "i" tooltip
+    grade_badge = (
+        f'<span style="font-weight:600;font-size:10px;padding:2px 8px;'
+        f"border-radius:11px;display:inline-block;{grade_style};"
+        f'margin-left:6px;">'
+        f"{safe_grade}"
+        f"</span>"
+    )
+
+    # Sub-line: ticker · source annotation · grade badge
+    sub_line = (
+        f'<div style="font-size:11px;color:var(--text-muted);'
+        f"margin:8px 0 7px;font-family:'Fraunces',serif;font-style:italic;\">"
+        f"{ticker} &middot; {source_note}"
+        f"{grade_badge}"
+        f"</div>"
+    )
+
+    # Fit-vs-book line: honest summary from verdict
+    summary_text = _html.escape(str(row.verdict.summary))
+    fit_line = (
+        f'<div style="font-size:11px;color:var(--text-secondary);margin-top:5px;">'
+        f'<b style="color:var(--text-primary);">fit vs book:</b> {summary_text}'
+        f"</div>"
+    )
+
+    # Google-AI hook (S6 fills later)
+    gai_id = f"gai-z2-{ticker.lower()}"
+    gai_placeholder = (
+        f'<div id="{gai_id}" class="gai" style="font-size:10.5px;'
+        f"color:var(--text-secondary);background:#F7F5FF;"
+        f"border:1px solid #E4DCFB;border-radius:8px;padding:7px 10px;"
+        f'margin:8px 0 6px;">'
+        f"&#128269; <b>Google-AI read</b> "
+        f'<span style="color:var(--text-muted);">(arrives in S6)</span>'
+        f"</div>"
+    )
+
+    body_html = (
+        sub_line
+        + factor_rows_html
+        + gai_placeholder
+        + '<div style="font-size:11px;color:var(--text-secondary);margin-top:6px;">'
+        + f'<b style="color:var(--text-primary);">Plain read:</b> {plain}'
+        + "</div>"
+        + fit_line
+    )
+
+    # Collapsible row (same pattern as shortlist)
+    summary_html = (
+        f'<summary style="display:grid;'
+        f"grid-template-columns:56px 1fr auto 16px;"
+        f"gap:10px;align-items:center;font-size:12px;"
+        f'padding:9px 13px;cursor:pointer;list-style:none;">'
+        f"<b style=\"font-family:'DM Sans',sans-serif;\">{ticker}</b>"
+        f'<span style="color:var(--text-secondary);">{source_note}</span>'
+        f'<span style="font-weight:600;font-size:10px;padding:2px 8px;'
+        f"border-radius:11px;display:inline-block;"
+        f'{grade_style};">{safe_grade}</span>'
+        f'<span style="color:var(--text-muted);font-size:10px;">&#9654;</span>'
+        f"</summary>"
+    )
+
+    return (
+        f'<details style="background:var(--bg-primary);'
+        f"border:1px solid var(--border);border-radius:10px;"
+        f"margin-bottom:7px;overflow:hidden;"
+        f'box-shadow:var(--shadow-sm);">'
+        f"{summary_html}"
+        f'<div style="padding:2px 14px 13px;'
+        f'border-top:1px solid #F1F5F9;">'
+        f"{body_html}"
+        f"</div>"
+        f"</details>"
+    )
+
+
+def build_check_your_own_html(rows: list[Any]) -> str:
+    """Return HTML for Zone ② result cards — one collapsible card per BatchFitRow.
+
+    Each card renders the same 5-factor matrix as the shortlist (factor bands,
+    percentile-vs-cohort, grade badge, fit-vs-book line, Google-AI hook).
+    Source annotation distinguishes in-screen reuse from live-computed.
+    DATA-GAP is shown honestly where data is thin; never fabricated.
+    No FORBIDDEN_WORDS. Cap of 25 is enforced by batch_fit upstream.
+    """
+    if not rows:
+        return (
+            '<div style="font-size:11px;color:var(--text-muted);'
+            "font-family:'Fraunces',serif;font-style:italic;"
+            'padding:8px 0;">'
+            "No results to show."
+            "</div>"
+        )
+
+    parts: list[str] = []
+    for row in rows:
+        parts.append(_build_zone2_row_html(row))
+    return "\n".join(parts)
+
+
+# ---------------------------------------------------------------------------
 # Render helper: "Check your own list" (Zone ②)
 # ---------------------------------------------------------------------------
 
@@ -792,9 +953,10 @@ def _render_history_and_upload(reports_dir: str) -> None:
                 )
                 bar.empty()
                 st.session_state[key] = rows
-            from adapters.visualization.components.scorecard import render_scorecard
-
-            render_scorecard(st.session_state[key])
+            st.markdown(
+                build_check_your_own_html(st.session_state[key]),
+                unsafe_allow_html=True,
+            )
 
 
 # ---------------------------------------------------------------------------
