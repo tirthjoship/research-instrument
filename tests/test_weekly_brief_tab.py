@@ -201,6 +201,34 @@ def test_render_missing_macro_skips_gauge(tmp_path) -> None:  # type: ignore[no-
 # ---------------------------------------------------------------------------
 
 
+def test_needs_review_rows_render_collapsed(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    holdings = [
+        {
+            "ticker": "YUMC",
+            "verdict": "TRIM",
+            "unrealized_pct": 22.7,
+            "trend_state": "broken",
+            "why": "Winner pulled back below trend.",
+        }
+    ]
+    html = wb._render_needs_review_html(holdings)
+    assert "YUMC" in html and "TRIM" in html and "+22.7%" in html
+    assert "dc-row" in html and "dc-sq" in html  # uses the S3 component
+
+
+def test_home_honesty_line_points_to_trust() -> None:
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_honesty_line_html()
+    assert "Trust" in html and (
+        "coin flip" in html.lower() or "falsified" in html.lower()
+    )
+    for w in ("buy", "sell", "predict"):
+        assert w not in html.lower()
+
+
 def test_book_health_bar_flags_above_60() -> None:
     from adapters.visualization.tabs import weekly_brief as wb
 
