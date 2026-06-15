@@ -114,3 +114,24 @@ def test_relative_strength_none_when_insufficient():
     from domain.trend_rules import relative_strength
 
     assert relative_strength([1.0], [1.0], 5) is None
+
+
+def test_trailing_volatility_constant_series_is_zero():
+    from domain.trend_rules import trailing_volatility
+
+    # flat prices → zero returns → zero vol
+    assert trailing_volatility([100.0] * 14) == 0.0
+
+
+def test_trailing_volatility_more_volatile_is_larger():
+    from domain.trend_rules import trailing_volatility
+
+    calm = [100, 101, 100, 101, 100, 101, 100, 101, 100, 101, 100, 101, 100, 101]
+    wild = [100, 130, 90, 140, 80, 150, 70, 160, 60, 170, 50, 180, 40, 190]
+    assert trailing_volatility(wild) > trailing_volatility(calm)
+
+
+def test_trailing_volatility_insufficient_history_returns_none():
+    from domain.trend_rules import trailing_volatility
+
+    assert trailing_volatility([100.0, 101.0]) is None
