@@ -214,8 +214,12 @@ def test_weekly_brief_no_forbidden_words() -> None:
 
 def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-def]
     import json
+    from unittest.mock import MagicMock, patch  # noqa: PLC0415
+
+    import streamlit as st  # noqa: PLC0415
 
     from adapters.visualization.tabs import weekly_brief as wb
+    from application.evidence_card import EvidenceCard
 
     p = tmp_path / "brief_summary.json"
     p.write_text(
@@ -241,11 +245,9 @@ def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-de
         )
     )
     # render must not raise; capture markdown
-    from unittest.mock import patch  # noqa: PLC0415
-
-    import streamlit as st  # noqa: PLC0415
-
+    # S5: stub _fetch_card (network) and st.progress (bare-mode CI)
     captured = []
+    progress_mock = MagicMock()
     with (
         patch.object(
             st, "markdown", side_effect=lambda c, **k: captured.append(str(c))
@@ -255,6 +257,9 @@ def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-de
         patch.object(st, "expander"),
         patch.object(st, "divider"),
         patch.object(st, "columns"),
+        patch.object(st, "progress", return_value=progress_mock),
+        patch.object(wb, "_fetch_card", return_value=EvidenceCard("YUMC", (), ())),
+        patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
     ):
         wb.render(
             path=str(p),
@@ -587,3 +592,17 @@ def test_rendered_home_honesty_line_references_falsified(
         "VERDICT DISTRIBUTION" not in all_html
     ), "Verdict dist block must be deleted from Home"
     assert "ri-ledger" not in all_html, "Evidence ledger must be deleted from Home"
+
+
+def test_home_cards_loader_returns_one_per_needs_review(monkeypatch: object) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import weekly_brief as wb
+    from application.evidence_card import EvidenceCard
+
+    holds = [
+        {"ticker": "YUMC", "verdict": "TRIM", "unrealized_pct": 1.0, "why": "x"},
+        {"ticker": "AAPL", "verdict": "HOLD", "unrealized_pct": 2.0, "why": "y"},
+    ]
+    # stub the cached fetch to avoid network
+    monkeypatch.setattr(wb, "_fetch_card", lambda t: EvidenceCard(t, (), ()))  # type: ignore[attr-defined]
+    cards = wb._needs_review_cards(holds)  # type: ignore[attr-defined]
+    assert [t for t, _ in cards] == ["YUMC"]  # only the TRIM row
