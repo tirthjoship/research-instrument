@@ -476,6 +476,10 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
     }
 
     parts: list[str] = []
+    # The first member of the first non-empty bucket is the "hero" — open by
+    # default with elevated styling (mockup .row.open + .hero), so a non-expert
+    # sees a "start here" card instead of a flat wall of collapsed rows.
+    hero_done = False
 
     for bucket in PRIORITY:
         members = bucket_map[bucket]
@@ -552,11 +556,17 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
                 f"</summary>"
             )
 
+            is_hero = not hero_done
+            hero_done = True
+            open_attr = " open" if is_hero else ""
+            border_color = "#CBD5E1" if is_hero else "var(--border)"
+            shadow = "0 1px 3px rgba(15,23,42,.08)" if is_hero else "var(--shadow-sm)"
+
             row_html = (
-                f'<details style="background:var(--bg-primary);'
-                f"border:1px solid var(--border);border-radius:10px;"
+                f'<details{open_attr} style="background:var(--bg-primary);'
+                f"border:1px solid {border_color};border-radius:10px;"
                 f"margin-bottom:7px;overflow:hidden;"
-                f'box-shadow:var(--shadow-sm);">'
+                f'box-shadow:{shadow};">'
                 f"{summary_html}"
                 f'<div style="padding:2px 14px 13px;'
                 f'border-top:1px solid #F1F5F9;">'
@@ -607,11 +617,16 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
             f"</summary>"
         )
 
+        is_hero = rank_i == 1
+        open_attr = " open" if is_hero else ""
+        border_color = "#CBD5E1" if is_hero else "var(--border)"
+        shadow = "0 1px 3px rgba(15,23,42,.08)" if is_hero else "var(--shadow-sm)"
+
         row_html = (
-            f'<details style="background:var(--bg-primary);'
-            f"border:1px solid var(--border);border-radius:10px;"
+            f'<details{open_attr} style="background:var(--bg-primary);'
+            f"border:1px solid {border_color};border-radius:10px;"
             f"margin-bottom:7px;overflow:hidden;"
-            f'box-shadow:var(--shadow-sm);">'
+            f'box-shadow:{shadow};">'
             f"{summary_html}"
             f'<div style="padding:2px 14px 13px;'
             f'border-top:1px solid #F1F5F9;">'
