@@ -619,6 +619,25 @@ def test_home_cards_loader_returns_one_per_needs_review(monkeypatch: object) -> 
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# S6 Task 4: landing door + onboarding routing
+# ---------------------------------------------------------------------------
+
+
+def test_home_shows_door_when_no_book(monkeypatch: object) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(wb, "is_local_runtime", lambda: True)  # type: ignore[attr-defined]
+    html = wb._render_onboarding_html(has_book=False)  # type: ignore[attr-defined]
+    assert "Load a book to begin" in html and "Explore sample book" in html
+
+
+def test_home_hides_door_when_book_present() -> None:
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    assert wb._render_onboarding_html(has_book=True) == ""  # type: ignore[attr-defined]
+
+
 def test_fetch_card_analyst_key_mapping_lights_analysts_square() -> None:
     """_fetch_card must remap numberOfAnalystOpinions → analyst_count so
     build_analyst_panel builds a non-GAP panel when coverage is present."""

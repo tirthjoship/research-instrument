@@ -14,6 +14,7 @@ from adapters.visualization.components.decision_card import (
     render_expanded_card,
 )
 from adapters.visualization.components.formatters import status_pill_html
+from adapters.visualization.components.onboarding import render_landing_door_html
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import (
@@ -25,6 +26,9 @@ from adapters.visualization.data_loader import (
 )
 from application.card_loading import select_case_summarizer
 from application.evidence_card import EvidenceCard
+from application.holdings_reader import read_holdings
+from application.runtime_guard import is_local_runtime
+from application.sample_book import load_sample_book
 from domain.discipline import Verdict
 from domain.evidence_rag import DIMENSIONS, RagColor, RagSignal
 from domain.risk_rubric import classify_net_beta, classify_systematic_share
@@ -54,6 +58,13 @@ _GRADE_COLOR = {
 # we fall back to the ADR-recorded value, so the tile always reflects the real
 # falsification finding rather than an empty regeneration.
 _RANK_IC_FALSIFIED = "0.004"  # ADR-044: mean IC = 0.0040 over 496 dates, KILL
+
+
+def _render_onboarding_html(has_book: bool) -> str:
+    """Return landing-door HTML when no book is loaded, empty string otherwise."""
+    if has_book:
+        return ""
+    return render_landing_door_html(local=is_local_runtime())
 
 
 def _load_rank_ic(reports_dir: str) -> str:
@@ -471,12 +482,76 @@ def _render_honesty_line_html() -> str:
     )
 
 
+def _handle_onboarding() -> bool:
+    """Render door + button handlers when no book is in session. Returns True if door shown.
+
+    Buttons:
+    - Explore sample book → loads 10-stock demo book into session
+    - Upload holdings CSV → file_uploader (only when is_local_runtime())
+    - Add manually → placeholder (future work)
+    """
+    has_book = "book" in st.session_state
+    door_html = _render_onboarding_html(has_book=has_book)
+    if not door_html:
+        return False  # book already loaded — proceed to Front-Desk
+
+    st.markdown(door_html, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col1:
+        if st.button("Explore sample book (10 stocks)", key="ob_sample"):
+            st.session_state["book"] = load_sample_book()
+            st.rerun()
+
+    if is_local_runtime():
+        with col2:
+            uploaded = st.file_uploader(
+                "Upload holdings CSV",
+                type=["csv"],
+                key="ob_csv",
+                label_visibility="collapsed",
+            )
+            if uploaded is not None:
+                try:
+                    content = uploaded.read().decode("utf-8")
+                    import tempfile  # noqa: PLC0415
+
+                    with tempfile.NamedTemporaryFile(
+                        mode="w", suffix=".csv", delete=False
+                    ) as tmp:
+                        tmp.write(content)
+                        tmp_path = tmp.name
+                    holdings = read_holdings(tmp_path)
+                    if not holdings:
+                        st.error(
+                            "No valid holdings found. Check columns: "
+                            "symbol, quantity, book value (cad), exchange, account type."
+                        )
+                    else:
+                        st.session_state["book"] = holdings
+                        st.rerun()
+                except Exception as exc:  # noqa: BLE001
+                    st.error(f"Could not parse holdings CSV: {exc}")
+
+    with col3:
+        if st.button("+ Add manually", key="ob_manual"):
+            st.info("Manual entry coming soon — use sample book or CSV for now.")
+
+    return True
+
+
 def render(
     path: str = _SUMMARY_PATH,
     adherence_path: str = _ADHERENCE_PATH,
     reports_dir: str = _REPORTS_DIR,
 ) -> None:
     summary = load_brief_summary(path)
+
+    # ── Onboarding gate: show landing door when no book is in session AND
+    #    no analysed brief summary exists (new-user first-run state) ───────
+    if summary is None and _handle_onboarding():
+        return
+
     if summary is None:
         st.warning(
             "No structured brief found. Run "
