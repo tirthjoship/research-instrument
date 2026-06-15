@@ -794,8 +794,31 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .dc-ch{font-family:'IBM Plex Mono';font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:6px;}
 .dc-learn{border:1.5px solid var(--ri-teal);border-radius:10px;padding:12px;background:#f7fdfe;margin-bottom:13px;}
 
+/* ===== Top-region vertical rhythm ===== */
+/* Breathing room between the app title and the tab bar */
+h1.ri-app-title, h1[class*="ri-app-title"] {
+    margin-bottom: 12px !important;
+}
+/* Give the tab bar a little breathing room below it before content starts */
+.stTabs [data-baseweb="tab-list"] {
+    margin-bottom: 4px !important;
+}
+/* Tab panel top-padding: first content sits 1.2rem below the tab strip */
+[role="tabpanel"] > div:first-child {
+    padding-top: 1.2rem !important;
+}
+/* Door banner: consistent 0 top-margin (padding-top above handles it), 1.25rem below */
+.door {
+    margin-top: 0 !important;
+    margin-bottom: 1.25rem !important;
+}
+/* Onboarding button row: tighten the gap below it */
+.ob-row-spacer {
+    margin-bottom: 1rem;
+}
+
 /* ===== Landing Door (S6 onboarding) ===== */
-.door{background:linear-gradient(135deg,#0F6E80 0%,#0a4a57 100%);border-radius:18px;padding:28px 30px;margin-bottom:1rem;box-shadow:0 4px 24px rgba(15,110,128,.22);}
+.door{background:linear-gradient(135deg,#0F6E80 0%,#0a4a57 100%);border-radius:18px;padding:28px 30px;box-shadow:0 4px 24px rgba(15,110,128,.22);}
 .door h2{color:#fff;}
 /* .db classes kept for backward compat but dead buttons removed from HTML */
 .db{display:inline-flex;align-items:center;justify-content:center;padding:9px 18px;border-radius:10px;font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s,transform .12s;}
