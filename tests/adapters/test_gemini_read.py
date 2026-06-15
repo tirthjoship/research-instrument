@@ -125,3 +125,71 @@ def test_render_gemini_read_to_watch_marker_present() -> None:
     )
     html = render_gemini_read(res)
     assert "▼" in html or "watch" in html.lower()
+
+
+# ---------------------------------------------------------------------------
+# Task 4: Static honesty gate — gemini_read + research_candidates never
+#          reference composite/factor score values when building CaseContext.
+# ---------------------------------------------------------------------------
+
+
+def test_gemini_read_module_does_not_import_composite_or_score() -> None:
+    """gemini_read.py must not import or reference composite/score/evidence_grade."""
+    import ast
+    import inspect
+
+    import adapters.visualization.components.gemini_read as mod
+
+    source = inspect.getsource(mod)
+    tree = ast.parse(source)
+
+    # Collect all Name and Attribute nodes that might reference score fields
+    forbidden_refs = {"composite", "evidence_grade", "factor_score", "score"}
+    found: list[str] = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and node.id in forbidden_refs:
+            found.append(node.id)
+        elif isinstance(node, ast.Attribute) and node.attr in forbidden_refs:
+            found.append(node.attr)
+
+    assert not found, (
+        f"gemini_read.py references forbidden score fields: {found}. "
+        "CaseContext must be built from facts/news only — never from scores."
+    )
+
+
+def test_maybe_render_gemini_does_not_pass_composite_to_build_context() -> None:
+    """maybe_render_gemini signature accepts facts+news only — no composite/score param."""
+    import inspect
+
+    from adapters.visualization.tabs.research_candidates import maybe_render_gemini
+
+    sig = inspect.signature(maybe_render_gemini)
+    param_names = set(sig.parameters.keys())
+
+    # These score-derived fields must NEVER appear as parameters
+    forbidden_params = {"composite", "score", "evidence_grade", "factor_scores"}
+    collisions = param_names & forbidden_params
+    assert not collisions, (
+        f"maybe_render_gemini has forbidden score-bearing params: {collisions}. "
+        "Gemini context must never receive composite or score values."
+    )
+
+
+def test_build_case_context_result_has_exactly_three_fields() -> None:
+    """CaseContext returned by build_case_context must have ticker, facts, news only."""
+    import dataclasses
+
+    from adapters.visualization.components.gemini_read import build_case_context
+
+    ctx = build_case_context(
+        ticker="TEST",
+        facts={"momentum": "above trend"},
+        news=[{"title": "Strong earnings", "source": "Reuters"}],
+    )
+    field_names = {f.name for f in dataclasses.fields(ctx)}
+    assert field_names == {"ticker", "facts", "news"}, (
+        f"CaseContext has unexpected fields: {field_names}. "
+        "Must only contain ticker, facts, news — no score/composite/grade."
+    )
