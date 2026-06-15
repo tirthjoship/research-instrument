@@ -454,9 +454,10 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
 
     joined = " ".join(captured_md)
     # Upload section must be reachable past the former early-return on abstention.
+    # (Header copy is now "Have your own names? Check them" in Home tokens.)
     assert (
-        "Check your own list" in joined
-    ), "'Check your own list' header not found — upload section was not reached on abstention week"
+        "Have your own names" in joined or "evidence card" in joined
+    ), "Zone 2 'check your own names' section was not reached on abstention week"
     # S7: the screen-history table was MOVED to the Trust tab; the screener now
     # shows only a link, not the in-tab DATAFRAME/'Screen history' heading.
     assert (

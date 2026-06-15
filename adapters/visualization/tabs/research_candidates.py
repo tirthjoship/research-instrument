@@ -42,9 +42,10 @@ logger = logging.getLogger(__name__)
 _SCREEN_COVERAGE_FLOOR = 0.5
 _TOP_N = 15
 
-# Canonical live factor order (4 live + lowvol always shown as DATA-GAP for now)
-_LIVE_FACTORS: tuple[str, ...] = ("momentum", "revision", "quality", "value")
-_ALL_FACTORS: tuple[str, ...] = ("momentum", "revision", "quality", "value", "lowvol")
+# Canonical display order (mockup hero): strongest-evidence factors first,
+# momentum LAST (no proven forward edge). lowvol shows DATA-GAP until wired live.
+_LIVE_FACTORS: tuple[str, ...] = ("quality", "value", "revision", "momentum")
+_ALL_FACTORS: tuple[str, ...] = ("quality", "value", "revision", "lowvol", "momentum")
 
 # Bucket signature subtitles matching the mockup .bktsub
 _BUCKET_SUBS: dict[Any, str] = {}
@@ -98,6 +99,48 @@ def _bucket_sub(bucket: Any) -> str:
         Bucket.QUALITY_COMPOUNDERS: "top-quartile quality, not cheap",
         Bucket.LOWVOL_DEFENSIVES: "top-quartile low-volatility — empty until T2",
     }.get(bucket, "")
+
+
+_TONE_VAR: dict[str, str] = {
+    "success": "var(--success)",
+    "accent": "var(--accent)",
+    "muted": "var(--text-muted)",
+    "danger": "var(--danger)",
+}
+
+
+def _standout_chip_html(candidate: dict[str, Any]) -> str:
+    """Colour-coded GRADE chip next to the score (mockup row chip, e.g. 'STRONG').
+
+    Derives an evidence-standing word from the name's strongest present factor:
+    Exceptional/Strong → STRONG (green), Flat → MODERATE (blue), all Weak → WEAK
+    (red). DATA-GAP-only names → neutral dash. Descriptive, never a forecast."""
+    best_pct: float | None = None
+    for fd in candidate.get("factor_scores", []):
+        if not isinstance(fd, dict):
+            continue
+        rv, rp = fd.get("value"), fd.get("percentile")
+        if rv is None or rp is None:
+            continue
+        fv, fp = float(rv), float(rp)
+        if fv == 0.0 and fp == 0.0:  # DATA-GAP / no coverage
+            continue
+        if best_pct is None or fp > best_pct:
+            best_pct = fp
+    if best_pct is None:
+        return '<span style="font-size:10px;color:var(--text-muted);">&mdash;</span>'
+    band = band_for_percentile(best_pct)
+    if band in (Band.EXCEPTIONAL, Band.STRONG):
+        grade, color = "STRONG", _TONE_VAR["success"]
+    elif band == Band.FLAT:
+        grade, color = "MODERATE", _TONE_VAR["accent"]
+    else:
+        grade, color = "WEAK", _TONE_VAR["danger"]
+    return (
+        f'<span style="font-size:10px;font-weight:700;letter-spacing:.03em;'
+        f"color:{color};border:1px solid {color};border-radius:11px;"
+        f'padding:1px 8px;white-space:nowrap;">{grade}</span>'
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +208,7 @@ def build_header_html(screen: dict[str, Any], reports_dir: str = "data/reports")
 
     # Tile 1: Showing
     tile_showing = render_tile(
-        label="Showing",
+        label=tooltip("Showing"),
         number=str(shown),
         tone="muted",
         sub=f"of {cleared} that cleared",
@@ -173,7 +216,7 @@ def build_header_html(screen: dict[str, Any], reports_dir: str = "data/reports")
 
     # Tile 2: As of (with "not a forecast" framing)
     tile_as_of = render_tile(
-        label="As of",
+        label=tooltip("As of"),
         number=as_of_display,
         tone="muted",
         sub="current evidence, not a forecast",
@@ -186,7 +229,7 @@ def build_header_html(screen: dict[str, Any], reports_dir: str = "data/reports")
             _factor_names.add(fs.get("name", ""))
     _factor_count = len(_factor_names) if _factor_names else 4
     tile_factors = render_tile(
-        label="Factors",
+        label=tooltip("Factors"),
         number=str(_factor_count),
         tone="muted",
         sub="momentum · analyst spread · quality · value",
@@ -195,7 +238,7 @@ def build_header_html(screen: dict[str, Any], reports_dir: str = "data/reports")
     # Tile 4: Trust — IC gate verdict (honest)
     ic_label_display = ic_verdict.capitalize() if ic_verdict else "Inconclusive"
     tile_trust = render_tile(
-        label="Trust the signal",
+        label=tooltip("Trust the signal"),
         number=ic_label_display,
         stamp=ic_verdict,
         tone=ic_tone,
@@ -350,9 +393,11 @@ def _build_candidate_row_html(
 
     plain = _html.escape(plain_read(bands))
 
-    # Render factor rows — 4 live + lowvol as DATA-GAP
+    # Render factor rows in canonical order (quality, value, revision, lowvol,
+    # momentum — momentum last, no proven edge). lowvol is DATA-GAP until wired
+    # live; once the screen carries it, it renders from data automatically.
     factor_rows_html = ""
-    for fname in _LIVE_FACTORS:
+    for fname in _ALL_FACTORS:
         fd = factor_by_name.get(fname)
         value: float | None = None
         percentile: float | None = None
@@ -366,9 +411,6 @@ def _build_candidate_row_html(
                     value = fv
                     percentile = fp
         factor_rows_html += render_factor_row(fname, value=value, percentile=percentile)
-
-    # Low-vol is always DATA-GAP in Track 1 (no live data)
-    factor_rows_html += render_factor_row("lowvol", value=None, percentile=None)
 
     # Also-in badge (repeat indicator)
     also_html = ""
@@ -496,6 +538,7 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
             f"<span style=\"font-family:'Fraunces',serif;font-style:italic;"
             f'font-size:11px;color:var(--text-muted);font-weight:400;">'
             f"{sub}</span>"
+            f"{tooltip('Reason bucket')}"
             f"</div>"
         )
 
@@ -550,6 +593,7 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
                 f'<b style="color:var(--text-muted);">{rank_i}</b>'
                 f"<b style=\"font-family:'DM Sans',sans-serif;\">{safe_ticker}</b>"
                 f'<span style="color:var(--text-secondary);">{why_text}</span>'
+                f"{_standout_chip_html(c)}"
                 f"<span style=\"font-family:'JetBrains Mono',monospace;"
                 f'color:var(--text-secondary);">{composite:.2f}</span>'
                 f'<span style="color:var(--text-muted);font-size:10px;">&#9654;</span>'
@@ -605,12 +649,13 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
 
         summary_html = (
             f'<summary style="display:grid;'
-            f"grid-template-columns:22px 56px 1fr auto 16px;"
+            f"grid-template-columns:22px 56px 1fr auto auto 16px;"
             f"gap:10px;align-items:center;font-size:12px;"
             f'padding:9px 13px;cursor:pointer;list-style:none;">'
             f'<b style="color:var(--text-muted);">{rank_i}</b>'
             f"<b style=\"font-family:'DM Sans',sans-serif;\">{safe_ticker}</b>"
             f'<span style="color:var(--text-secondary);">{why_text}</span>'
+            f"{_standout_chip_html(c)}"
             f"<span style=\"font-family:'JetBrains Mono',monospace;"
             f'color:var(--text-secondary);">{composite:.2f}</span>'
             f'<span style="color:var(--text-muted);font-size:10px;">&#9654;</span>'
@@ -923,19 +968,27 @@ def _render_history_and_upload(reports_dir: str) -> None:
     Screen-history table now lives on the Trust tab (see build_zone3_html link);
     this section keeps only the "check your own list" upload.
     """
+    # (The mono section header is rendered by render() — no duplicate here.)
     st.markdown(
-        '<div class="ri-sec" style="margin-top:1.4rem">Check your own list</div>'
-        '<div class="ri-conclusion" style="margin-bottom:.8rem">'
-        "Paste tickers or upload a CSV &mdash; each name gets an evidence grade "
-        "and a fit check against your book. Capped at 25 names per run "
-        "(live data fetch per name).</div>",
+        '<div style="font-size:12px;color:var(--text-secondary);'
+        "font-family:'Fraunces',serif;font-style:italic;margin:2px 0 10px;\">"
+        "Paste tickers or drop a CSV &mdash; each name gets the same 5-factor "
+        "evidence card and a fit check against your book. Capped at 25 per run."
+        "</div>",
         unsafe_allow_html=True,
     )
-    text = st.text_area(
-        "Tickers", placeholder="NVDA, AAPL, KO", label_visibility="collapsed"
-    )
-    uploaded = st.file_uploader("or upload CSV", type=["csv"])
-    if st.button("Run the check", type="primary"):
+    col_in, col_btn = st.columns([4, 1])
+    with col_in:
+        text = st.text_area(
+            "Tickers",
+            placeholder="NVDA, AAPL, KO",
+            label_visibility="collapsed",
+            height=68,
+        )
+    with col_btn:
+        run = st.button("Run the check", type="primary", use_container_width=True)
+    uploaded = st.file_uploader("or upload a CSV instead", type=["csv"])
+    if run:
         from application.batch_fit_use_case import (
             MAX_TICKERS,
             batch_fit,

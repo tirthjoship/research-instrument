@@ -573,3 +573,62 @@ def test_rank_view_opens_top_hero():
     assert html.count("<details open") == 1
     # #1 by composite is the hero
     assert html.index("SPG") < html.index("APA")
+
+
+def test_tiles_carry_tooltip_clouds():
+    from adapters.visualization.tabs.research_candidates import build_header_html
+
+    screen = {
+        "as_of": "2026-06-14",
+        "universe_size": 512,
+        "diagnostics": {"scanned": 512, "cleared": 304},
+        "candidates": [
+            {
+                "ticker": "SPG",
+                "composite": 1.3,
+                "factor_scores": [
+                    {"name": "quality", "value": 2.0, "percentile": 0.95}
+                ],
+            }
+        ],
+    }
+    html = build_header_html(screen, reports_dir="data/reports")
+    # consistent project tooltip component on the tiles (.ri-ttip), not a bespoke cloud
+    assert html.count("ri-ttip") >= 4
+
+
+def test_standout_chip_grade_words():
+    from adapters.visualization.tabs.research_candidates import _standout_chip_html
+
+    strong = {"factor_scores": [{"name": "quality", "value": 2.8, "percentile": 0.95}]}
+    weak = {"factor_scores": [{"name": "value", "value": -1.5, "percentile": 0.10}]}
+    gap = {"factor_scores": [{"name": "lowvol", "value": None, "percentile": None}]}
+    assert "STRONG" in _standout_chip_html(strong)
+    assert "WEAK" in _standout_chip_html(weak)
+    assert "STRONG" not in _standout_chip_html(gap)  # DATA-GAP → neutral dash
+
+
+def test_card_factor_order_momentum_last():
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {
+        "ticker": "SPG",
+        "composite": 1.3,
+        "why": "x",
+        "factor_scores": [
+            {"name": "quality", "value": 2.0, "percentile": 0.95},
+            {"name": "value", "value": 1.0, "percentile": 0.87},
+            {"name": "revision", "value": 0.5, "percentile": 0.7},
+            {"name": "momentum", "value": 0.1, "percentile": 0.55},
+        ],
+    }
+    html = _build_candidate_row_html(rank=1, candidate=c)
+    # canonical display order (render_factor_row labels): Quality, Value,
+    # Analyst spread (revision), Low-vol, Momentum — momentum LAST.
+    iq = html.index(">Quality")
+    iv = html.index(">Value")
+    il = html.index(">Low-vol")
+    im = html.index(">Momentum")
+    assert iq < iv < il < im, "factor display order must end with Momentum"
