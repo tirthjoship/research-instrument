@@ -351,7 +351,12 @@ def _needs_review_cards(
 
 
 def _render_one_holding(ticker: str, h: dict[str, Any], summarizer: object) -> None:
-    """Render one holding row: collapsed row + expander with expanded card."""
+    """Render one holding row: collapsed row + expander with expanded card.
+
+    This is the inner implementation.  Production callers must use
+    ``_render_one_holding_fragment`` (the ``st.fragment``-wrapped version) so
+    that each row gets an isolated render cycle in Streamlit (spec §7).
+    """
     card = _fetch_card(ticker)
     verdict = Verdict(str(h["verdict"]))
     unrealized = h.get("unrealized_pct")
@@ -424,12 +429,13 @@ def _render_needs_review_html(holdings: list[dict[str, Any]]) -> str:
 
 
 def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
-    """Progressive render: progress bar + per-holding render + lazy case.
+    """Progressive render: progress bar + per-holding fragment render + lazy case.
 
-    _render_one_holding_fragment provides per-row isolation when running in a
-    real Streamlit session (st.fragment). In bare-mode / CI the fragment
-    silently no-ops, so we call _render_one_holding directly — both paths
-    produce the same output; isolation is a production UX optimisation only.
+    Each holding row is rendered via ``_render_one_holding_fragment`` which is
+    wrapped with ``st.fragment`` in a live Streamlit session, providing per-row
+    render isolation (spec §7).  In bare-mode / CI the ``_fragment`` fallback is
+    a no-op decorator, so ``_render_one_holding_fragment`` is identical to
+    ``_render_one_holding`` — tests capture ``st.markdown`` output unchanged.
     """
     cards = _needs_review_cards(holdings)
     if not cards:
@@ -438,7 +444,7 @@ def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
     bar = st.progress(0.0, text=f"Fetching 0 / {len(cards)} holdings…")
     summarizer = select_case_summarizer()
     for i, (ticker, h) in enumerate(cards, 1):
-        _render_one_holding(ticker, h, summarizer)
+        _render_one_holding_fragment(ticker, h, summarizer)
         bar.progress(i / len(cards), text=f"Fetching {i} / {len(cards)} holdings…")
     bar.empty()
 
