@@ -16,7 +16,10 @@ from adapters.visualization.components.styles import inject_global_css  # noqa: 
 inject_global_css()
 
 st.markdown(
-    "<h1 style=\"margin-bottom:2px;font-family:'Fraunces',serif;font-weight:600;\">Multi-Modal Stock Recommender</h1>",
+    "<h1 class='ri-app-title' style=\"font-family:'Fraunces',Georgia,serif !important;"
+    "font-weight:600 !important;font-size:32px !important;letter-spacing:-0.01em !important;"
+    'color:#14181F !important;margin-bottom:4px !important;">'
+    "Multi-Modal Stock Recommender</h1>",
     unsafe_allow_html=True,
 )
 
