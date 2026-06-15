@@ -81,6 +81,9 @@ class _FakeSt:
     def segmented_control(self, *a: object, **k: object) -> str:
         return "By reason"
 
+    def spinner(self, *a: object, **k: object) -> "_FakeCol":
+        return _FakeCol()
+
     def progress(self, *a: object, **k: object) -> "_FakeSt":
         return self
 
@@ -442,6 +445,9 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
 
         def segmented_control(self, *a: object, **k: object) -> str:
             return "By reason"
+
+        def spinner(self, *a: object, **k: object) -> "_FakeCol":
+            return _FakeCol()
 
         def progress(self, *a: object, **k: object) -> "FakeSt":
             return self
