@@ -16,7 +16,7 @@ from adapters.visualization.components.styles import inject_global_css  # noqa: 
 inject_global_css()
 
 st.markdown(
-    "<h1 style=\"margin-bottom:2px;font-family:'DM Sans',sans-serif;\">Multi-Modal Stock Recommender</h1>",
+    "<h1 style=\"margin-bottom:2px;font-family:'Fraunces',serif;font-weight:600;\">Multi-Modal Stock Recommender</h1>",
     unsafe_allow_html=True,
 )
 
