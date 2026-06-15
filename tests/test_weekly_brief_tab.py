@@ -201,6 +201,62 @@ def test_render_missing_macro_skips_gauge(tmp_path) -> None:  # type: ignore[no-
 # ---------------------------------------------------------------------------
 
 
+def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    import json
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-14",
+                "regime": "RISK_ON",
+                "abstained": False,
+                "holdings": [
+                    {
+                        "ticker": "YUMC",
+                        "verdict": "TRIM",
+                        "unrealized_pct": 22.7,
+                        "trend_state": "broken",
+                        "why": "pulled back below trend",
+                    }
+                ],
+                "macro": {
+                    "systematic_share": 0.628,
+                    "net_beta_by_factor": {"SPY": 1.42},
+                },
+            }
+        )
+    )
+    # render must not raise; capture markdown
+    from unittest.mock import patch  # noqa: PLC0415
+
+    import streamlit as st  # noqa: PLC0415
+
+    captured = []
+    with (
+        patch.object(
+            st, "markdown", side_effect=lambda c, **k: captured.append(str(c))
+        ),
+        patch.object(st, "download_button"),
+        patch.object(st, "caption"),
+        patch.object(st, "expander"),
+        patch.object(st, "divider"),
+        patch.object(st, "columns"),
+    ):
+        wb.render(
+            path=str(p),
+            adherence_path=str(tmp_path / "a.jsonl"),
+            reports_dir=str(tmp_path),
+        )
+    html = "\n".join(captured)
+    assert "Net beta" in html and html.count("1.42") >= 1
+    assert "ri-ledger" not in html  # ledger DELETED
+    assert "VERDICT DISTRIBUTION" not in html  # distribution DELETED
+    assert "YUMC" in html  # needs-review row present
+
+
 def test_needs_review_rows_render_collapsed(tmp_path) -> None:  # type: ignore[no-untyped-def]
     from adapters.visualization.tabs import weekly_brief as wb
 
@@ -404,9 +460,9 @@ def test_rendered_home_triage_strip_present(tmp_path) -> None:  # type: ignore[n
 def test_rendered_home_screen_tile_no_false_abstained_emh(
     tmp_path,  # type: ignore[no-untyped-def]
 ) -> None:
-    """With cleared=70/scanned=512 in diagnostics, rendered Home must NOT contain
-    the false phrase '512 ... ABSTAINED' or '=EMH' on the screen tile, and MUST
-    contain '70' (the real cleared count)."""
+    """Home book strip must NOT contain '=EMH' or false ABSTAINED phrasing.
+    The screen tile shows len(candidates) from the screen JSON, not diagnostics.
+    (Diagnostics-based tile tests are on _screen_tile_content directly.)"""
     p = tmp_path / "brief_summary.json"
     p.write_text(
         json.dumps(
@@ -459,27 +515,24 @@ def test_rendered_home_screen_tile_no_false_abstained_emh(
 
     all_html = "\n".join(collected_html)
 
-    # '70' must appear (real cleared count)
-    assert (
-        "70" in all_html
-    ), "Screen tile must show real cleared count '70' in rendered Home"
-    # The false "512 ... ABSTAINED" claim must not appear
-    import re
+    # Book strip Screen tile shows len(candidates)=1, no ABSTAINED/=EMH
+    import re  # noqa: PLC0415
 
-    # check that "abstained" does not appear next to "512" (case-insensitive)
     matches = re.findall(
         r"512[^<]{0,40}abstained|abstained[^<]{0,40}512", all_html, re.IGNORECASE
     )
     assert (
         not matches
     ), f"False '512...ABSTAINED' claim found in rendered Home: {matches}"
+    assert "=emh" not in all_html.lower(), "=EMH must not appear in rendered Home"
 
 
-def test_rendered_home_return_prediction_tiles_present(
+def test_rendered_home_honesty_line_references_falsified(
     tmp_path,  # type: ignore[no-untyped-def]
 ) -> None:
-    """Return-prediction falsification tiles (47.4%, 0.004, FALSIFIED) must remain
-    in the rendered Home — these are real tested findings, not the screener bug."""
+    """The Home honesty line (replacing the removed VALIDATION FINDINGS tiles)
+    must reference 'FALSIFIED' so the key finding remains visible.
+    Full tiles now live on Trust tab."""
     p = tmp_path / "brief_summary.json"
     p.write_text(
         json.dumps(
@@ -488,21 +541,6 @@ def test_rendered_home_return_prediction_tiles_present(
                 "regime": "RISK_ON",
                 "abstained": True,
                 "holdings": [],
-            }
-        )
-    )
-
-    # Supply a phase3b_validation_*.json so the directional accuracy tile
-    # renders from real data (the Rank-IC tile always falls back to ADR-044 = 0.004)
-    import json as _json  # noqa: PLC0415
-
-    phase3b_file = tmp_path / "phase3b_validation_20260613.json"
-    phase3b_file.write_text(
-        _json.dumps(
-            {
-                "ablation_results": [
-                    {"variant": "technical_only", "directional_accuracy": 0.474}
-                ]
             }
         )
     )
@@ -529,11 +567,12 @@ def test_rendered_home_return_prediction_tiles_present(
 
     all_html = "\n".join(collected_html)
 
-    # The Rank-IC falsification tile must always be present (uses ADR-044 fallback)
+    # Honesty line on Home must still reference FALSIFIED (not via the tile — via the line)
     assert (
         "falsified" in all_html.lower()
-    ), "Rank-IC FALSIFIED stamp must remain in rendered Home"
-    # '0.004' comes from the ADR-044 hardcoded fallback when no real run exists
+    ), "Home honesty line must reference FALSIFIED — full tiles are on Trust tab"
+    # Validation tiles (0.004, VERDICT DISTRIBUTION) must NOT be in the new Home
     assert (
-        "0.004" in all_html
-    ), "Rank-IC value '0.004' must remain in rendered Home (return-prediction falsification)"
+        "VERDICT DISTRIBUTION" not in all_html
+    ), "Verdict dist block must be deleted from Home"
+    assert "ri-ledger" not in all_html, "Evidence ledger must be deleted from Home"
