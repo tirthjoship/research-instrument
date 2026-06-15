@@ -55,3 +55,20 @@ _PREDICATES: dict[Bucket, Callable[[Mapping[str, float]], bool]] = {
 
 def qualifies(bucket: Bucket, percentiles: Mapping[str, float]) -> bool:
     return bool(_PREDICATES[bucket](percentiles))
+
+
+PRIORITY: tuple[Bucket, ...] = (
+    Bucket.ALL_ROUNDER,
+    Bucket.MOMENTUM_LEADERS,
+    Bucket.QUALITY_FAIR_PRICE,
+    Bucket.VALUE_CATALYST,
+    Bucket.QUALITY_COMPOUNDERS,
+    Bucket.LOWVOL_DEFENSIVES,
+)
+
+
+def primary_bucket(percentiles: Mapping[str, float]) -> Bucket | None:
+    for bucket in PRIORITY:
+        if qualifies(bucket, percentiles):
+            return bucket
+    return None
