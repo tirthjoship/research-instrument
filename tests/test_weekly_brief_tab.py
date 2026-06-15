@@ -201,6 +201,14 @@ def test_render_missing_macro_skips_gauge(tmp_path) -> None:  # type: ignore[no-
 # ---------------------------------------------------------------------------
 
 
+def test_book_health_bar_flags_above_60() -> None:
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_book_health_html(systematic_share=0.628)
+    assert "63%" in html and "macro-leaning" in html.lower()
+    assert "60%" in html  # the flag reference
+
+
 def test_book_strip_single_net_beta(tmp_path) -> None:  # type: ignore[no-untyped-def]
     from adapters.visualization.tabs import weekly_brief as wb
 
