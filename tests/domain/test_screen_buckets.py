@@ -1,8 +1,10 @@
 from domain.screen_buckets import (
+    MAX_PER_BUCKET,
     PRIORITY,
     TOP_QUARTILE,
     Bucket,
     BucketInput,
+    assign_buckets,
     primary_bucket,
     qualifies,
 )
@@ -84,3 +86,48 @@ def test_primary_bucket_none_when_unqualified():
         "lowvol": 0.1,
     }
     assert primary_bucket(weak) is None
+
+
+def _mk(t, p, c):
+    return BucketInput(ticker=t, percentiles=p, composite=c)
+
+
+def test_assign_groups_and_ranks_and_allows_repeats():
+    cands = [
+        _mk("SPG", SPG, 1.31),
+        _mk("KLAC", KLAC, 1.08),
+        _mk("KO", KO, 1.05),
+    ]
+    out = assign_buckets(cands)
+    # SPG repeats across several buckets (repeats allowed)
+    fair = [c.ticker for c in out[Bucket.QUALITY_FAIR_PRICE]]
+    assert "SPG" in fair
+    allr = [c.ticker for c in out[Bucket.ALL_ROUNDER]]
+    assert "SPG" in allr
+    # KLAC (quality 0.95, value weak) is a compounder, not fair-price
+    comp = [c.ticker for c in out[Bucket.QUALITY_COMPOUNDERS]]
+    assert "KLAC" in comp and "KLAC" not in fair
+    # KO is a low-vol defensive
+    defv = [c.ticker for c in out[Bucket.LOWVOL_DEFENSIVES]]
+    assert "KO" in defv
+
+
+def test_assign_ranks_by_composite_desc():
+    a = _mk("AAA", SPG, 0.5)
+    b = _mk("BBB", SPG, 1.5)
+    out = assign_buckets([a, b])
+    fair = [c.ticker for c in out[Bucket.QUALITY_FAIR_PRICE]]
+    assert fair == ["BBB", "AAA"]  # higher composite first
+
+
+def test_assign_caps_at_five_per_bucket():
+    cands = [_mk(f"T{i}", SPG, float(i)) for i in range(8)]
+    out = assign_buckets(cands)
+    assert len(out[Bucket.QUALITY_FAIR_PRICE]) == MAX_PER_BUCKET == 5
+
+
+def test_assign_empty_bucket_present_with_empty_list():
+    # no momentum-leader qualifiers in this set
+    out = assign_buckets([_mk("SPG", SPG, 1.31)])
+    assert Bucket.MOMENTUM_LEADERS in out
+    assert out[Bucket.MOMENTUM_LEADERS] == []

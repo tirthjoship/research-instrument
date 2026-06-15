@@ -72,3 +72,20 @@ def primary_bucket(percentiles: Mapping[str, float]) -> Bucket | None:
         if qualifies(bucket, percentiles):
             return bucket
     return None
+
+
+MAX_PER_BUCKET = 5
+
+
+def assign_buckets(
+    candidates: list[BucketInput],
+) -> dict[Bucket, list[BucketInput]]:
+    """Group candidates into every bucket they qualify for (repeats allowed),
+    ranked by composite desc (ticker asc tie-break), capped at MAX_PER_BUCKET.
+    Every bucket key is always present (empty list if none qualify)."""
+    out: dict[Bucket, list[BucketInput]] = {b: [] for b in PRIORITY}
+    for bucket in PRIORITY:
+        members = [c for c in candidates if qualifies(bucket, c.percentiles)]
+        members.sort(key=lambda c: (-c.composite, c.ticker))
+        out[bucket] = members[:MAX_PER_BUCKET]
+    return out
