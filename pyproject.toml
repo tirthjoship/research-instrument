@@ -99,7 +99,10 @@ module = "application.cli"
 disallow_untyped_decorators = false
 
 [[tool.mypy.overrides]]
-module = "adapters.visualization.price_cache"
+module = [
+    "adapters.visualization.price_cache",
+    "adapters.data.earnings_history_adapter",
+]
 disallow_untyped_decorators = false
 warn_return_any = false
 

@@ -63,6 +63,12 @@ def _fetch_earnings_history_impl(ticker: str) -> EarningsHistory | None:
     return parse_earnings_frame(df)
 
 
-def fetch_earnings_history(ticker: str) -> EarningsHistory | None:
-    """Streamlit-cached wrapper added in S5; for now a thin pass-through."""
-    return _fetch_earnings_history_impl(ticker)
+def fetch_earnings_history(ticker: str) -> "EarningsHistory | None":
+    """Streamlit-cached wrapper around _fetch_earnings_history_impl (S5)."""
+    import streamlit as st  # lazy import, CI-safe (matches price_cache.py)
+
+    @st.cache_data(ttl=3600, show_spinner=False)
+    def _cached(t: str) -> "EarningsHistory | None":
+        return _fetch_earnings_history_impl(t)
+
+    return _cached(ticker)
