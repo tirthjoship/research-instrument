@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 
 import streamlit as st
@@ -18,7 +16,6 @@ from adapters.visualization.components.onboarding import render_landing_door_htm
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import (
-    load_ablation_results,
     load_brief_summary,
     load_latest_screen,
     load_weekly_brief,
@@ -41,23 +38,7 @@ _SUMMARY_PATH = "data/personal/brief_summary.json"
 _BRIEF_MD_PATH = "data/personal/weekly_brief.md"
 _ADHERENCE_PATH = "data/personal/adherence_log.jsonl"
 _REPORTS_DIR = "data/reports"
-_GRADE_ORDER = ["REDUCE", "TRIM", "REVIEW", "HOLD", "ADD_OK"]
 _SCREEN_COVERAGE_FLOOR = 0.5  # mirrors research_candidates.py
-_GRADE_COLOR = {
-    "REDUCE": "#DC2626",
-    "TRIM": "#EA580C",
-    "REVIEW": "#CA8A04",
-    "HOLD": "#64748B",
-    "ADD_OK": "#16A34A",
-}
-
-
-# Rank-IC primary result: mean IC = 0.004 over 496 dates (1m/21d horizon).
-# Source: data/reports/divergence_ic_1m_*.json — ADR-044 divergence-ic-verdict
-# (KILL; bootstrap CI spans zero). A degenerate run (n_dates == 0) is ignored, and
-# we fall back to the ADR-recorded value, so the tile always reflects the real
-# falsification finding rather than an empty regeneration.
-_RANK_IC_FALSIFIED = "0.004"  # ADR-044: mean IC = 0.0040 over 496 dates, KILL
 
 
 def _render_onboarding_html(has_book: bool) -> str:
@@ -65,52 +46,6 @@ def _render_onboarding_html(has_book: bool) -> str:
     if has_book:
         return ""
     return render_landing_door_html(local=is_local_runtime())
-
-
-def _load_rank_ic(reports_dir: str) -> str:
-    """Mean rank-IC from the primary divergence-IC run (ADR-044).
-
-    Reads the real artifact (``divergence_ic_1m_*.json``, n_dates > 0) and formats
-    its mean IC. Falls back to the ADR-recorded value when no genuine run is present;
-    never reports a degenerate empty run.
-    """
-    for path in sorted(Path(reports_dir).glob("divergence_ic_1m_*.json"), reverse=True):
-        try:
-            data = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
-            continue
-        if data.get("n_dates", 0) and data.get("mean_ic") is not None:
-            return f"{data['mean_ic']:.3f}"
-    return _RANK_IC_FALSIFIED
-
-
-def _load_directional_accuracy(reports_dir: str) -> str:
-    """Load baseline (technical_only) directional accuracy. Returns formatted % or DATA_GAP."""
-    rows = load_ablation_results(reports_dir)
-    if not rows:
-        return "—"
-    # Use the technical_only (baseline) variant — most conservative honest number
-    for row in rows:
-        if row.get("variant") == "technical_only":
-            val = row.get("directional_accuracy")
-            if val is not None:
-                return f"{val * 100:.1f}%"
-    # Fallback: use first row if no technical_only found
-    val = rows[0].get("directional_accuracy")
-    if val is not None:
-        return f"{val * 100:.1f}%"
-    return "—"
-
-
-def _verdict_pill(grade: str) -> str:
-    tone_map = {
-        "REDUCE": "danger",
-        "TRIM": "warning",
-        "REVIEW": "warning",
-        "HOLD": "neutral",
-        "ADD_OK": "success",
-    }
-    return status_pill_html(tone_map.get(grade, "neutral"), grade)
 
 
 def _parse_screen_diagnostics(
