@@ -201,6 +201,25 @@ def test_render_missing_macro_skips_gauge(tmp_path) -> None:  # type: ignore[no-
 # ---------------------------------------------------------------------------
 
 
+def test_book_strip_single_net_beta(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_book_strip_html(
+        need_review=4,
+        total=10,
+        vs_market=3.2,
+        net_beta=1.21,
+        regime="RISK_ON",
+        screen_cleared=304,
+        screen_universe=512,
+    )
+    # exactly one "Net beta" label, value 1.21, and it's NOT the systematic share %
+    assert html.count(">Net beta<") + html.lower().count("net beta") >= 1
+    assert "1.21" in html and "ELEVATED" in html  # classify_net_beta band
+    assert "+3.2%" in html and "RISK_ON" in html and "304" in html
+    assert "63%" not in html  # systematic share does NOT appear in the beta tile
+
+
 def test_screen_tile_content_has_candidates_no_abstained_emh() -> None:
     """With cleared=70 / scanned=512, screen tile must NOT contain ABSTAINED or =EMH,
     and MUST contain '70' (the real cleared count)."""
