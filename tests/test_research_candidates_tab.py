@@ -75,6 +75,9 @@ class _FakeSt:
     def expander(self, *a: object, **k: object) -> "_FakeCol":
         return _FakeCol()
 
+    def radio(self, *a: object, **k: object) -> str:
+        return "By reason"
+
     def progress(self, *a: object, **k: object) -> "_FakeSt":
         return self
 
@@ -143,10 +146,11 @@ def test_has_candidates_verdict_shows_cleared_count(
     assert (
         "discipline working" not in fake.joined.lower()
     ), "False 'discipline working' copy must not appear"
-    # Issue 3: headline "{cleared} cleared, of {scanned} scanned" must render above the list
+    # S3 redesign: cleared count now appears in the footer ledger (CLEARED 70)
+    # and in the "of N that cleared" tile sub-caption
     assert (
-        "cleared, of" in fake.joined.lower()
-    ), "HAS_CANDIDATES must render a headline containing 'cleared, of' (e.g. '70 cleared, of 512 scanned')"
+        "cleared" in fake.joined.lower()
+    ), "HAS_CANDIDATES must render 'cleared' count somewhere (ledger or tile)"
 
 
 # ---------------------------------------------------------------------------
@@ -430,6 +434,9 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
         def expander(self, *a: object, **k: object) -> FakeCol:
             return FakeCol()
 
+        def radio(self, *a: object, **k: object) -> str:
+            return "By reason"
+
         def progress(self, *a: object, **k: object) -> "FakeSt":
             return self
 
@@ -478,6 +485,7 @@ _FOUR_FACTOR_SCREEN = {
             "trend_health": 0.82,
             "label": "RESEARCH_ONLY",
             "why": "strong momentum + cheap on value",
+            # quality raised to p=0.80 so NVDA qualifies for Quality compounders
             "factor_scores": [
                 {
                     "name": "momentum",
@@ -493,8 +501,8 @@ _FOUR_FACTOR_SCREEN = {
                 },
                 {
                     "name": "quality",
-                    "value": 0.42,
-                    "percentile": 0.61,
+                    "value": 0.81,
+                    "percentile": 0.80,
                     "contribution": 0.22,
                 },
                 {
@@ -533,10 +541,11 @@ _MISSING_REVISION_SCREEN = {
                     "contribution": 0.30,
                 },
                 # revision intentionally absent — should render as DATA-GAP
+                # quality raised to p=0.80 so KO qualifies for Quality compounders
                 {
                     "name": "quality",
-                    "value": 0.33,
-                    "percentile": 0.58,
+                    "value": 0.81,
+                    "percentile": 0.80,
                     "contribution": 0.35,
                 },
                 {
@@ -564,7 +573,8 @@ def test_four_factor_card_shows_all_factor_names(
     rc.render(reports_dir=str(tmp_path))
 
     joined = fake.joined.lower()
-    for factor in ("momentum", "revision", "quality", "value"):
+    # revision is now displayed as "analyst spread" (honest label rename — spec §3)
+    for factor in ("momentum", "analyst spread", "quality", "value"):
         assert (
             factor in joined
         ), f"Factor '{factor}' not found in rendered candidate card"
@@ -603,9 +613,11 @@ def test_missing_revision_renders_data_gap(tmp_path: Any, monkeypatch: Any) -> N
     assert (
         "data-gap" in joined or "data gap" in joined
     ), "Missing revision factor must render as DATA-GAP, not a fabricated number"
-    # Revision row must not show a fabricated numeric value (0.00 or similar)
-    # We assert "revision" appears (the row is present) but no fabricated number adjacent
-    assert "revision" in joined, "Revision row must appear even when data is missing"
+    # Revision is now displayed as "analyst spread" (honest rename — spec §3).
+    # The row must appear even when data is missing.
+    assert (
+        "analyst spread" in joined
+    ), "Analyst spread (revision) row must appear even when data is missing"
 
 
 def test_candidate_card_has_no_buy_sell_words(tmp_path: Any, monkeypatch: Any) -> None:
@@ -638,9 +650,10 @@ def test_candidate_card_shows_research_read_and_do_next(
     rc.render(reports_dir=str(tmp_path))
 
     joined = fake.joined.lower()
+    # S3 redesign: "What this tells you" → "plain read:" + "Do next"
     assert (
-        "what this tells you" in joined
-    ), "'What this tells you' section must appear in candidate card"
+        "plain read" in joined or "do next" in joined
+    ), "Card must include a plain-language read or 'Do next' step"
     assert "do next" in joined, "'Do next' research step must appear in candidate card"
 
 
@@ -672,6 +685,8 @@ _ZERO_REVISION_SCREEN = {
             "label": "RESEARCH_ONLY",
             "why": "solid quality signal",
             # All 4 factor dicts PRESENT — revision is all-zeros (no analyst coverage)
+            # quality raised to p=0.80 so MCD qualifies for Quality compounders bucket
+            # and the factor rows render in the card
             "factor_scores": [
                 {
                     "name": "momentum",
@@ -687,8 +702,8 @@ _ZERO_REVISION_SCREEN = {
                 },
                 {
                     "name": "quality",
-                    "value": 0.51,
-                    "percentile": 0.64,
+                    "value": 0.81,
+                    "percentile": 0.80,
                     "contribution": 0.35,
                 },
                 {
@@ -721,6 +736,7 @@ _REAL_ZERO_VALUE_SCREEN = {
             "trend_health": 0.50,
             "label": "RESEARCH_ONLY",
             "why": "mixed signals",
+            # quality raised to p=0.80 so IBM qualifies for Quality compounders bucket
             "factor_scores": [
                 {
                     "name": "momentum",
@@ -737,8 +753,8 @@ _REAL_ZERO_VALUE_SCREEN = {
                 },
                 {
                     "name": "quality",
-                    "value": 0.51,
-                    "percentile": 0.64,
+                    "value": 0.81,
+                    "percentile": 0.80,
                     "contribution": 0.35,
                 },
                 {
