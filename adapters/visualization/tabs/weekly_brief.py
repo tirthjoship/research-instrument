@@ -8,6 +8,7 @@ from typing import Any
 
 import streamlit as st
 
+from adapters.visualization.components.decision_card import render_collapsed_row
 from adapters.visualization.components.formatters import status_pill_html
 from adapters.visualization.components.ledger import render_ledger
 from adapters.visualization.components.proof_tile import render_tile
@@ -20,6 +21,9 @@ from adapters.visualization.data_loader import (
     load_weekly_brief,
     staleness_days,
 )
+from application.evidence_card import EvidenceCard
+from domain.discipline import Verdict
+from domain.evidence_rag import DIMENSIONS, RagColor, RagSignal
 from domain.risk_rubric import classify_net_beta, classify_systematic_share
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
 
@@ -279,6 +283,50 @@ def _render_book_health_html(systematic_share: float) -> str:
         f'{tooltip("Systematic share", "Book health — systematic share")}</div>'
         f'<div style="font-size:13px;margin-top:3px"><b>{pct}% {band.lower()}</b> &middot; {flag} &mdash; '
         f"adding another same-direction name won't diversify.</div></div></div>"
+    )
+
+
+def _home_evidence_card(ticker: str) -> EvidenceCard:
+    """Minimal GAP card for S4 (squares light up once S5 wires per-holding fetch)."""
+    sigs = tuple(
+        RagSignal(d, RagColor.GAP, "DATA-GAP: loads on open") for d in DIMENSIONS
+    )
+    return EvidenceCard(ticker=ticker, signals=sigs, sparkline=())
+
+
+def _render_needs_review_html(holdings: list[dict[str, Any]]) -> str:
+    rows = []
+    for h in holdings:
+        if h.get("verdict") not in _NEEDS_REVIEW:
+            continue
+        ticker = str(h.get("ticker", "?"))
+        card = _home_evidence_card(ticker)
+        unrealized = h.get("unrealized_pct")
+        rows.append(
+            render_collapsed_row(
+                card,
+                verdict=Verdict(str(h["verdict"])),
+                name=ticker,
+                unrealized_pct=float(unrealized) if unrealized is not None else None,
+                oneliner=str(h.get("why", "")),
+            )
+        )
+    if not rows:
+        return (
+            '<div class="ws-card" style="padding:12px 16px;color:#1F9254">'
+            "Nothing needs review this week — all positions within discipline.</div>"
+        )
+    return f'<div class="ws-card" style="padding:0">{"".join(rows)}</div>'
+
+
+def _render_honesty_line_html() -> str:
+    return (
+        '<div style="margin-top:12px;font-size:12px;color:#5b7178;background:#fff;'
+        'border:1px dashed #dde7e9;border-radius:10px;padding:9px 13px">'
+        "<b>Why doubt us:</b> our return forecasts test = a coin flip, and the ranking signal is "
+        "FALSIFIED. We show evidence, never forecasts. "
+        '<a href="#" style="color:#0F6E80;font-weight:600;text-decoration:none">'
+        "See the proof → Trust</a></div>"
     )
 
 
