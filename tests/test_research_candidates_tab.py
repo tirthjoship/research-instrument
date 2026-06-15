@@ -78,6 +78,9 @@ class _FakeSt:
     def radio(self, *a: object, **k: object) -> str:
         return "By reason"
 
+    def segmented_control(self, *a: object, **k: object) -> str:
+        return "By reason"
+
     def progress(self, *a: object, **k: object) -> "_FakeSt":
         return self
 
@@ -435,6 +438,9 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
             return FakeCol()
 
         def radio(self, *a: object, **k: object) -> str:
+            return "By reason"
+
+        def segmented_control(self, *a: object, **k: object) -> str:
             return "By reason"
 
         def progress(self, *a: object, **k: object) -> "FakeSt":
