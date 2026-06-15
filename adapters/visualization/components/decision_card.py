@@ -154,8 +154,8 @@ def render_expanded_card(
         f'<div style="background:#e6f1f3;border:1px solid #cfe6ec;border-radius:8px;padding:11px 13px;'
         f'font-size:13.5px;line-height:1.55;margin-bottom:13px"><b style="color:#0a5260">What this means:</b> {_html.escape(means)}</div>'
         f'<div style="display:flex;gap:8px;margin-bottom:13px;font-size:12px">'
-        f'<div style="flex:1;background:#f4f8f9;border-radius:7px;padding:7px 9px">Price<br><b>{price if price else "—"}</b></div>'
-        f'<div style="flex:1;background:#f4f8f9;border-radius:7px;padding:7px 9px">Your cost<br><b>{cost if cost else "—"}</b></div>'
+        f'<div style="flex:1;background:#f4f8f9;border-radius:7px;padding:7px 9px">Price<br><b>{"—" if price is None else f"${price:,.2f}"}</b></div>'
+        f'<div style="flex:1;background:#f4f8f9;border-radius:7px;padding:7px 9px">Your cost<br><b>{"—" if cost is None else f"${cost:,.2f}"}</b></div>'
         f'<div style="flex:1;background:#eafaf3;border-radius:7px;padding:7px 9px">Unrealized<br><b>{pct}</b></div>'
         f'<div style="flex:2;background:#f4f8f9;border-radius:7px;padding:7px 9px">7/30/90/180d<br><b>{ret}</b></div></div>'
         f"{_case_html(case)}"
