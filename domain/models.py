@@ -508,11 +508,11 @@ class BookMacroExposure:
     systematic_share_adj: float = 0.0
     """Systematic share adjusted for estimation uncertainty."""
     systematic_share_ci: tuple[float, float] = (0.0, 0.0)
-    """95 % confidence interval (low, high) for systematic_share."""
+    """90 % bootstrap interval (low, high) for systematic share."""
     beta_ci_by_factor: dict[str, tuple[float, float]] = field(default_factory=dict)
-    """95 % confidence intervals (low, high) for net beta, keyed by factor."""
+    """90 % bootstrap intervals (low, high) for net beta, keyed by factor."""
     suppressed_factors: tuple[str, ...] = ()
-    """Factors dropped from the model due to high multicollinearity (VIF gate)."""
+    """Factors whose beta CI straddles zero — not shown as a real exposure."""
     downside_beta: float = 0.0
     """Beta estimated on down-market periods only (proxy for tail sensitivity)."""
     risk_contribution: dict[str, float] = field(default_factory=dict)
