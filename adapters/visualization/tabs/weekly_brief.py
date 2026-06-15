@@ -499,15 +499,17 @@ def _render_honesty_line_html() -> str:
 
 
 def _handle_onboarding() -> None:
-    """Render landing door + button handlers — ALWAYS, regardless of book state (FIX A).
+    """Render landing door + 3-button action row — ALWAYS (FIX A: persistent).
 
-    The door is now persistent so the user can always reach Upload / Add-manually
-    even when a book is already in session or a brief_summary.json exists.
-
-    Buttons:
-    - Explore sample book → loads 10-stock demo book into session
-    - Upload holdings CSV → file_uploader (only when is_local_runtime())
-    - Add manually → placeholder (future work)
+    Layout:
+    - Banner (render_landing_door_html) — heading + copy only, no action buttons.
+    - 3-column button row (equal width):
+        col1: "▸ Explore sample book" → loads sample book immediately.
+        col2: "↓ Upload holdings CSV" (local only) → toggles _show_csv_upload.
+        col3: "+ Add manually" → toggles _show_manual_form.
+    - Below the row (full width): file_uploader appears when _show_csv_upload is
+      True AND is_local_runtime(). This avoids the garbled cramped dropzone.
+    - Below: manual-entry form when _show_manual_form is True.
 
     Returns nothing — caller always proceeds to render Front-Desk afterwards.
     """
@@ -515,47 +517,58 @@ def _handle_onboarding() -> None:
     door_html = _render_onboarding_html(has_book=has_book)
     st.markdown(door_html, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([2, 2, 2])
+    # ── 3-button action row ───────────────────────────────────────────────────
+    col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
-        if st.button("Explore sample book (10 stocks)", key="ob_sample"):
+        if st.button(
+            "▸ Explore sample book (10 stocks)", key="ob_sample", type="primary"
+        ):
             st.session_state["book"] = load_sample_book()
             st.rerun()
 
-    if is_local_runtime():
-        with col2:
-            uploaded = st.file_uploader(
-                "Upload holdings CSV",
-                type=["csv"],
-                key="ob_csv",
-                label_visibility="collapsed",
-            )
-            if uploaded is not None:
-                try:
-                    content = uploaded.read().decode("utf-8")
-                    import tempfile  # noqa: PLC0415
-
-                    with tempfile.NamedTemporaryFile(
-                        mode="w", suffix=".csv", delete=False
-                    ) as tmp:
-                        tmp.write(content)
-                        tmp_path = tmp.name
-                    holdings = read_holdings(tmp_path)
-                    if not holdings:
-                        st.error(
-                            "No valid holdings found. Check columns: "
-                            "symbol, quantity, book value (cad), exchange, account type."
-                        )
-                    else:
-                        st.session_state["book"] = holdings
-                        st.rerun()
-                except Exception as exc:  # noqa: BLE001
-                    st.error(f"Could not parse holdings CSV: {exc}")
+    with col2:
+        if is_local_runtime():
+            if st.button("↓ Upload holdings CSV", key="ob_csv_toggle"):
+                st.session_state["_show_csv_upload"] = not st.session_state.get(
+                    "_show_csv_upload", False
+                )
 
     with col3:
         if st.button("+ Add manually", key="ob_manual"):
             st.session_state["_show_manual_form"] = not st.session_state.get(
                 "_show_manual_form", False
             )
+
+    # ── Full-width CSV uploader — revealed on toggle (outside narrow columns) ─
+    if st.session_state.get("_show_csv_upload", False) and is_local_runtime():
+        uploaded = st.file_uploader(
+            "Drop a CSV with columns: symbol, quantity, book value (cad), exchange, account type",
+            type=["csv"],
+            key="ob_csv",
+            label_visibility="visible",
+        )
+        if uploaded is not None:
+            try:
+                content = uploaded.read().decode("utf-8")
+                import tempfile  # noqa: PLC0415
+
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".csv", delete=False
+                ) as tmp:
+                    tmp.write(content)
+                    tmp_path = tmp.name
+                holdings = read_holdings(tmp_path)
+                if not holdings:
+                    st.error(
+                        "No valid holdings found. Check columns: "
+                        "symbol, quantity, book value (cad), exchange, account type."
+                    )
+                else:
+                    st.session_state["book"] = holdings
+                    st.session_state["_show_csv_upload"] = False
+                    st.rerun()
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"Could not parse holdings CSV: {exc}")
 
     # Manual-entry form — toggled by the button above
     if st.session_state.get("_show_manual_form", False):

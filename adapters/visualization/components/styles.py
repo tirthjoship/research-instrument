@@ -804,58 +804,58 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .db.ghost{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);}
 .db.ghost:hover{background:rgba(255,255,255,.22);transform:translateY(-1px);}
 
-/* ===== Onboarding action widgets — petrol on-brand (globally improves all buttons) ===== */
-/* Primary button (first in onboarding col1) — petrol fill, white text */
-div.stButton > button[kind="primary"],
-div.stButton > button:first-child:not([kind="secondary"]) {
+/* ===== Onboarding action widgets — petrol on-brand ===== */
+/* All action buttons — full-width, minimum height, IBM Plex Sans */
+div.stButton > button {
+    width: 100% !important;
+    min-height: 46px !important;
+    border-radius: 10px !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+    transition: opacity .15s, transform .12s, background .15s !important;
+}
+/* Primary button — petrol fill, white text */
+div.stButton > button[kind="primary"] {
     background-color: #0F6E80 !important;
     border: none !important;
     color: #FFFFFF !important;
-    font-family: 'IBM Plex Sans', sans-serif !important;
-    font-weight: 600 !important;
-    font-size: 13.5px !important;
-    border-radius: 10px !important;
-    padding: 9px 18px !important;
     box-shadow: 0 2px 8px rgba(15,110,128,.28) !important;
-    transition: opacity .15s, transform .12s !important;
 }
-div.stButton > button[kind="primary"]:hover,
-div.stButton > button:first-child:not([kind="secondary"]):hover {
-    opacity: .92 !important;
+div.stButton > button[kind="primary"]:hover {
+    background-color: #0a4a57 !important;
+    opacity: .95 !important;
     transform: translateY(-1px) !important;
+    box-shadow: 0 4px 14px rgba(15,110,128,.35) !important;
 }
-/* Secondary / ghost buttons — outlined, petrol text */
+/* Secondary button — white bg, petrol border + text */
 div.stButton > button[kind="secondary"] {
-    background: transparent !important;
+    background: #FFFFFF !important;
     border: 1.5px solid #0F6E80 !important;
     color: #0F6E80 !important;
-    font-family: 'IBM Plex Sans', sans-serif !important;
-    font-weight: 600 !important;
-    font-size: 13.5px !important;
-    border-radius: 10px !important;
-    padding: 9px 18px !important;
-    transition: background .15s, transform .12s !important;
 }
 div.stButton > button[kind="secondary"]:hover {
     background: rgba(15,110,128,.07) !important;
     transform: translateY(-1px) !important;
 }
-/* File uploader — compact, on-brand */
+/* File uploader — full-width, dashed petrol border, light tint */
 div[data-testid="stFileUploader"] {
     border: 1.5px dashed rgba(15,110,128,.45) !important;
     border-radius: 10px !important;
-    padding: 6px 10px !important;
+    padding: 8px 12px !important;
     background: rgba(15,110,128,.04) !important;
+    width: 100% !important;
 }
 section[data-testid="stFileUploaderDropzone"] {
     background: transparent !important;
     border: none !important;
-    padding: 4px 0 !important;
+    padding: 6px 0 !important;
 }
-div[data-testid="stFileUploader"] small,
+/* Hide noisy file-size hint; keep the Browse button */
+[data-testid="stFileUploaderDropzoneInstructions"] small { display: none !important; }
 div[data-testid="stFileUploader"] span {
     font-family: 'IBM Plex Sans', sans-serif !important;
-    font-size: 12px !important;
+    font-size: 12.5px !important;
     color: #0F6E80 !important;
 }
 </style>
