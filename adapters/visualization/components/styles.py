@@ -781,6 +781,15 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .dc-cols{display:flex;} .dc-cols>div{flex:1;padding:11px 13px;} .dc-cols>div:first-child{border-right:1px solid var(--ri-hair);}
 .dc-ch{font-family:'IBM Plex Mono';font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:6px;}
 .dc-learn{border:1.5px solid var(--ri-teal);border-radius:10px;padding:12px;background:#f7fdfe;margin-bottom:13px;}
+
+/* ===== Landing Door (S6 onboarding) ===== */
+.door{background:linear-gradient(135deg,#0F6E80 0%,#0a4a57 100%);border-radius:18px;padding:28px 30px;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(15,110,128,.22);}
+.door h2{color:#fff;}
+.db{display:inline-flex;align-items:center;justify-content:center;padding:9px 18px;border-radius:10px;font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s,transform .12s;}
+.db.primary{background:#fff;color:#0F6E80;}
+.db.primary:hover{opacity:.92;transform:translateY(-1px);}
+.db.ghost{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);}
+.db.ghost:hover{background:rgba(255,255,255,.22);transform:translateY(-1px);}
 </style>
 """
 

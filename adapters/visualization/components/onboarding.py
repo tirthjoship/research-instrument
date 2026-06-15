@@ -39,6 +39,41 @@ def render_onboarding_html() -> str:
     )
 
 
+def render_landing_door_html(local: bool) -> str:
+    """Return HTML for the landing door (Home tab — no book loaded yet).
+
+    When ``local`` is True (is_local_runtime() returned True), the privacy promise
+    and CSV upload button are shown.  When False (hosted or unknown), they are
+    hidden and an honest notice is shown instead.  This is the privacy gate.
+    """
+    if local:
+        privacy = (
+            '<p style="margin:0 0 16px;font-size:12.5px;color:rgba(255,255,255,.82)">'
+            "See the instrument on a sample book, or load your own. "
+            '<b style="color:#fff">Everything stays on your machine</b>'
+            " — never uploaded.</p>"
+        )
+        csv_btn = '<button class="db ghost">&#x2193; Upload holdings CSV</button>'
+    else:
+        privacy = (
+            '<p style="margin:0 0 16px;font-size:12.5px;color:rgba(255,255,255,.82)">'
+            "See the instrument on a sample book. Holdings upload is disabled — "
+            "this build isn't running local-only.</p>"
+        )
+        csv_btn = ""
+    return (
+        '<div class="door">'
+        '<h2 style="font-family:Fraunces,serif;font-weight:700;font-size:19px;margin:0 0 3px">'
+        "Load a book to begin</h2>"
+        f"{privacy}"
+        '<div style="display:flex;gap:10px;flex-wrap:wrap">'
+        '<button class="db primary">&#x25b8; Explore sample book (10 stocks)</button>'
+        f"{csv_btn}"
+        '<button class="db ghost">+ Add manually</button>'
+        "</div></div>"
+    )
+
+
 def should_show_onboarding(
     has_scan_results: bool,
     has_trades: bool,
