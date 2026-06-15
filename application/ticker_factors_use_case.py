@@ -12,10 +12,22 @@ Given a ticker and a persisted screen, returns 5 factor score dicts
 
 Design: fetch_fn is an injected Callable[str, dict[str, float|None]] so tests
 can supply a fake without touching any live adapter.
+
+live_factor_fetch_fn() builds a real fetch callable using the same adapters
+as the evidence_screen_use_case (YFinanceAdapter). For off-universe tickers
+pasted into Zone ②, it computes:
+  - momentum   via domain.trend_rules.momentum_12_1 on monthly closes
+  - lowvol     via -domain.trend_rules.trailing_volatility on daily closes
+               (inverted: calmer = higher z; DATA-GAP when < 61 closes)
+  - revision   via domain.factor_scores.revision_momentum on analyst targets
+  - quality    from yfinance return_on_equity / profit_margins
+  - value      as 1/trailing_pe (DATA-GAP when trailing_pe is None/non-positive)
+All None → DATA-GAP; no values are fabricated. PIT-safe (as_of = now()).
 """
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Callable
 
 _ALL_FACTORS: tuple[str, ...] = ("momentum", "revision", "quality", "value", "lowvol")
@@ -118,3 +130,102 @@ def ticker_factor_scores(
                 }
             )
     return live_result
+
+
+# ---------------------------------------------------------------------------
+# Live fetch factory — mirrors _PriceAdapter / _AnalystAdapter / _FundamentalsAdapter
+# in application/cli.py _build_evidence_screen, but at module level so Zone ②
+# can call it without importing the full CLI context.
+# ---------------------------------------------------------------------------
+
+
+def live_factor_fetch_fn() -> Callable[[str], dict[str, float | None]]:
+    """Return a callable fetch(ticker) -> dict[factor, raw_z | None].
+
+    Raw sub-scores mirror the screen's computation:
+      - momentum  : domain.trend_rules.momentum_12_1(monthly_closes)
+      - lowvol    : -domain.trend_rules.trailing_volatility(daily_closes)
+                    (inverted so calmer → higher; None when < 61 daily closes)
+      - revision  : domain.factor_scores.revision_momentum(estimate_series)
+      - quality   : return_on_equity or profit_margins from yfinance
+      - value     : 1/trailing_pe (None when missing or non-positive)
+
+    Any missing input produces None (DATA-GAP) — never fabricated.
+    PIT-safe: uses datetime.now(UTC) as as_of for all fetches.
+
+    The returned callable is safe to inject into ticker_factor_scores as fetch_fn.
+    """
+    from pathlib import Path
+
+    from adapters.data.yfinance_adapter import YFinanceAdapter
+    from domain.factor_scores import revision_momentum
+    from domain.trend_rules import momentum_12_1, trailing_volatility
+
+    # Use a temporary cache dir (or no-cache) — same pattern as CLI's adapter init
+    _adapter = YFinanceAdapter(cache_dir=Path("data/cache"), use_cache=False)
+
+    def _fetch(ticker: str) -> dict[str, float | None]:
+        now = datetime.now(timezone.utc)
+        two_years_ago = now.replace(year=now.year - 2)
+
+        # --- momentum (12-1 month) via monthly closes ---
+        mom: float | None = None
+        try:
+            signals = _adapter.get_signals(ticker, now, start_date=two_years_ago)
+            if signals:
+                by_month: dict[str, float] = {}
+                for s in signals:
+                    key = f"{s.timestamp.year}-{s.timestamp.month:02d}"
+                    by_month[key] = s.price
+                monthly_closes = [by_month[k] for k in sorted(by_month)]
+                mom = momentum_12_1(monthly_closes)
+        except Exception:
+            mom = None
+
+        # --- lowvol (inverted trailing volatility) via daily closes ---
+        lowvol: float | None = None
+        try:
+            daily_signals = _adapter.get_signals(ticker, now, start_date=two_years_ago)
+            if daily_signals:
+                daily_closes = [s.price for s in daily_signals]
+                vol = trailing_volatility(daily_closes)
+                lowvol = -vol if vol is not None else None
+        except Exception:
+            lowvol = None
+
+        # --- revision (analyst target-price spread) ---
+        rev: float | None = None
+        try:
+            data = _adapter.get_analyst_data(ticker, now)
+            if data is not None:
+                targets = [
+                    v
+                    for k, v in data.items()
+                    if "target" in k and isinstance(v, (int, float))
+                ]
+                rev = revision_momentum(targets if targets else None)
+        except Exception:
+            rev = None
+
+        # --- quality & value from fundamentals ---
+        quality: float | None = None
+        value: float | None = None
+        try:
+            info = _adapter.get_ticker_info(ticker)
+            q = info.get("return_on_equity") or info.get("profit_margins")
+            quality = float(q) if q is not None else None
+            pe = info.get("trailing_pe")
+            value = (1.0 / float(pe)) if pe and float(pe) > 0 else None
+        except Exception:
+            quality = None
+            value = None
+
+        return {
+            "momentum": mom,
+            "revision": rev,
+            "quality": quality,
+            "value": value,
+            "lowvol": lowvol,
+        }
+
+    return _fetch

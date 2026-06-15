@@ -1067,6 +1067,7 @@ def _render_history_and_upload(reports_dir: str) -> None:
                     fit_fn=default_fit_fn,
                     progress=_update_progress,
                     screen=load_latest_screen(reports_dir),
+                    live_fetch=True,
                 )
                 bar.empty()
                 st.session_state[key] = rows
