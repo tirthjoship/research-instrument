@@ -12,13 +12,12 @@ from collections.abc import Sequence
 
 
 def adjusted_r2(r2: float, n: int, p: int) -> float:
-    """Adjusted R²: penalizes the p factors. Returns raw r2 if not adjustable."""
+    """Adjusted R²: penalizes the p factors. Floors at 0 (share-of-variance).
+    Returns raw r2 if not adjustable (n - p - 1 <= 0)."""
     denom = n - p - 1
     if denom <= 0:
         return r2
-    if r2 == 0.0:
-        return 0.0
-    return 1.0 - (1.0 - r2) * (n - 1) / denom
+    return max(0.0, 1.0 - (1.0 - r2) * (n - 1) / denom)
 
 
 def effective_number_of_bets(eigenvalues: Sequence[float]) -> float:
