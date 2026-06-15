@@ -101,21 +101,26 @@ def _bucket_sub(bucket: Any) -> str:
     }.get(bucket, "")
 
 
-_TONE_VAR: dict[str, str] = {
-    "success": "var(--success)",
-    "accent": "var(--accent)",
-    "muted": "var(--text-muted)",
-    "danger": "var(--danger)",
+# Grade → filled-pill background + text colour (matches mockup .band pills /
+# factor_row band badges). Hex bg is consistent with the factor-row component.
+_GRADE_PILL: dict[str, str] = {
+    "STRONG": "background:#DCFCE7;color:var(--success)",
+    "MODERATE": "background:#DBEAFE;color:var(--accent)",
+    "WEAK": "background:#FEE2E2;color:var(--danger)",
+}
+
+# Friendly factor names for the plain row summary.
+_FRIENDLY: dict[str, str] = {
+    "quality": "quality",
+    "value": "value",
+    "revision": "analyst signal",
+    "lowvol": "low-vol",
 }
 
 
-def _standout_chip_html(candidate: dict[str, Any]) -> str:
-    """Colour-coded GRADE chip next to the score (mockup row chip, e.g. 'STRONG').
-
-    Derives an evidence-standing word from the name's strongest present factor:
-    Exceptional/Strong → STRONG (green), Flat → MODERATE (blue), all Weak → WEAK
-    (red). DATA-GAP-only names → neutral dash. Descriptive, never a forecast."""
-    best_pct: float | None = None
+def _candidate_bands(candidate: dict[str, Any]) -> dict[str, Band]:
+    """Map each present factor (non-None, not all-zero) to its plain-language band."""
+    bands: dict[str, Band] = {}
     for fd in candidate.get("factor_scores", []):
         if not isinstance(fd, dict):
             continue
@@ -125,21 +130,57 @@ def _standout_chip_html(candidate: dict[str, Any]) -> str:
         fv, fp = float(rv), float(rp)
         if fv == 0.0 and fp == 0.0:  # DATA-GAP / no coverage
             continue
-        if best_pct is None or fp > best_pct:
-            best_pct = fp
-    if best_pct is None:
+        bands[str(fd.get("name", ""))] = band_for_percentile(fp)
+    return bands
+
+
+def _row_summary(candidate: dict[str, Any]) -> str:
+    """Plain-language one-liner next to the ticker (mockup: 'Quality, value &
+    analyst signal strong; momentum flat') — derived from bands, never the raw why."""
+    bands = _candidate_bands(candidate)
+    strong = [
+        _FRIENDLY[k]
+        for k in ("quality", "value", "revision", "lowvol")
+        if bands.get(k) in (Band.EXCEPTIONAL, Band.STRONG)
+    ]
+    m = bands.get("momentum")
+    mom = (
+        "momentum strong"
+        if m in (Band.EXCEPTIONAL, Band.STRONG)
+        else ("momentum weak" if m == Band.WEAK else "momentum flat")
+    )
+    if not strong:
+        return f"No standout factor; {mom}"
+    head = (
+        strong[0] if len(strong) == 1 else ", ".join(strong[:-1]) + " & " + strong[-1]
+    )
+    head = head[0].upper() + head[1:]
+    return f"{head} strong; {mom}"
+
+
+def _standout_chip_html(candidate: dict[str, Any]) -> str:
+    """Colour-coded GRADE pill next to the score (mockup row chip, e.g. 'STRONG').
+
+    Derives an evidence-standing word from the name's strongest present factor:
+    Exceptional/Strong → STRONG (green), Flat → MODERATE (blue), all Weak → WEAK
+    (red). DATA-GAP-only names → neutral dash. Descriptive, never a forecast."""
+    bands = _candidate_bands(candidate)
+    if not bands:
         return '<span style="font-size:10px;color:var(--text-muted);">&mdash;</span>'
-    band = band_for_percentile(best_pct)
-    if band in (Band.EXCEPTIONAL, Band.STRONG):
-        grade, color = "STRONG", _TONE_VAR["success"]
-    elif band == Band.FLAT:
-        grade, color = "MODERATE", _TONE_VAR["accent"]
+    best = max(
+        bands.values(),
+        key=lambda b: (b == Band.EXCEPTIONAL, b == Band.STRONG, b == Band.FLAT),
+    )
+    if best in (Band.EXCEPTIONAL, Band.STRONG):
+        grade = "STRONG"
+    elif best == Band.FLAT:
+        grade = "MODERATE"
     else:
-        grade, color = "WEAK", _TONE_VAR["danger"]
+        grade = "WEAK"
     return (
         f'<span style="font-size:10px;font-weight:700;letter-spacing:.03em;'
-        f"color:{color};border:1px solid {color};border-radius:11px;"
-        f'padding:1px 8px;white-space:nowrap;">{grade}</span>'
+        f"{_GRADE_PILL[grade]};border-radius:11px;padding:2px 9px;"
+        f'white-space:nowrap;">{grade}</span>'
     )
 
 
@@ -586,7 +627,7 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
 
             # Row wrapper using HTML details/summary for collapsible behaviour
             safe_ticker = _html.escape(ticker)
-            why_text = _html.escape(str(c.get("why", "")))
+            why_text = _html.escape(_row_summary(c))
             summary_html = (
                 f'<summary style="display:grid;'
                 f"grid-template-columns:22px 56px 1fr auto auto 16px;"
@@ -644,7 +685,7 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
     for rank_i, c in enumerate(sorted_candidates, start=1):
         ticker = c.get("ticker", "?")
         composite = float(c.get("composite", 0.0))
-        why_text = _html.escape(str(c.get("why", "")))
+        why_text = _html.escape(_row_summary(c))
         safe_ticker = _html.escape(ticker)
 
         body = _build_candidate_row_html(rank=rank_i, candidate=c)
@@ -1079,16 +1120,15 @@ def render(reports_dir: str = "data/reports") -> None:
             "Open the **Stock Analysis** tab — type any ticker for a full evidence read."
         )
     else:
-        # View toggle
+        # View toggle — segmented pill control (matches the mockup .seg toggle)
         view = resolve_view_mode({str(k): v for k, v in st.session_state.items()})
-        selected = st.radio(
+        selected = st.segmented_control(
             "View",
             options=["By reason", "Rank only"],
-            index=0 if view == "reason" else 1,
-            horizontal=True,
+            default="By reason" if view == "reason" else "Rank only",
             label_visibility="collapsed",
         )
-        new_view = "reason" if selected == "By reason" else "rank"
+        new_view = "reason" if selected != "Rank only" else "rank"
         st.session_state["screener_view"] = new_view
 
         # Main body (reason or rank view)
