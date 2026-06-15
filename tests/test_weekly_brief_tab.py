@@ -201,6 +201,17 @@ def test_render_missing_macro_skips_gauge(tmp_path) -> None:  # type: ignore[no-
 # ---------------------------------------------------------------------------
 
 
+def test_weekly_brief_no_forbidden_words() -> None:
+    import inspect
+
+    from adapters.visualization.tabs import weekly_brief
+    from domain.fit import FORBIDDEN_WORDS
+
+    src = inspect.getsource(weekly_brief).lower()
+    for w in FORBIDDEN_WORDS:
+        assert w not in src, f"forbidden word {w!r} in weekly_brief.py"
+
+
 def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-def]
     import json
 
