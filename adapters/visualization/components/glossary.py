@@ -199,6 +199,74 @@ GLOSSARY: dict[str, str] = {
         "long-run trend filter (SMA-200). Below-trend names are excluded from "
         "the scored pool — they pass the data gate but not the trend gate."
     ),
+    # ── Risk tab redesign terms (Task 10) ─────────────────────────────────────
+    "Effective bets": (
+        "How many truly independent bets your book behaves like, after "
+        "accounting for holdings that move together (Meucci ENB). Lower = "
+        "fewer genuinely separate risks — a concentration signal."
+    ),
+    "Adjusted R²": (
+        "The share of your book's moves explained by the market factors, "
+        "adjusted down for the number of factors used so the fit isn't "
+        "flattered by simply counting more factors."
+    ),
+    "Bootstrap band": (
+        "A range showing how much an estimate would wobble if the sample "
+        "days were resampled. A wider band means less statistical certainty "
+        "— the true value could land anywhere inside it."
+    ),
+    "Downside beta": (
+        "Beta measured only on market-DOWN days (semi-beta, Ang-Chen-Xing). "
+        "It describes how the book tends to move when the market falls — "
+        "which can differ from its behaviour on up days."
+    ),
+    "Risk contribution": (
+        "Each holding's share of the book's total variance (Euler "
+        "decomposition), summing to 100%. Can differ a great deal from its "
+        "dollar weight — a small volatile name can own more risk than a "
+        "large calm one."
+    ),
+    "VIF": (
+        "Variance Inflation Factor. Measures how much two factors overlap. "
+        "VIF > 5 means those factors move so together they act as one shared "
+        "influence — their individual net-beta figures cannot be read as "
+        "fully independent."
+    ),
+    "Diversification ratio": (
+        "Weighted-average holding volatility divided by the book's volatility "
+        "(Choueifaty). Higher = more offsetting movement among holdings; "
+        "1.0 = no diversification benefit at all."
+    ),
+    "HHI": (
+        "Herfindahl-Hirschman Index — a standard concentration score applied "
+        "here to sector weights. Higher = more of the book clustered in "
+        "fewer sectors."
+    ),
+    "GICS sector": (
+        "The Global Industry Classification Standard used to group holdings "
+        "by the part of the economy they operate in. Used here to show where "
+        "the book clusters by industry."
+    ),
+    "Drift": (
+        "How much a factor exposure has shifted over recent weeks versus its "
+        "longer-run level. A rising line crossing a defined threshold is a "
+        "prompt to confirm the change was intentional."
+    ),
+    "Risk line": (
+        "A pre-set threshold you defined; crossing it surfaces an amber flag "
+        "as a prompt to look here and confirm the reading is intentional. "
+        "A descriptive dial, not a validated edge."
+    ),
+    "Coverage": (
+        "The share of the book (by holding count) that had enough price "
+        "history to measure. Holdings outside coverage are honestly excluded, "
+        "not assumed to have zero exposure."
+    ),
+    "Concentration": (
+        "How much of the book's risk sits in a few holdings, sectors, or "
+        "factors rather than spread across many. Measured here as systematic "
+        "share and HHI — a description of structure, not a verdict."
+    ),
     # ── S3 Screener redesign terms ─────────────────────────────────────────────
     "Evidence score": (
         "Equal-weight average of the factor z-scores. Higher = more factors look "
