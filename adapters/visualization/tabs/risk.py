@@ -215,14 +215,16 @@ _FLAG_MEANING = {
 
 
 def render(path: str = "data/personal/brief_summary.json") -> None:
-    st.subheader("Portfolio Risk — Macro-Beta Scrubber")
     st.markdown(
-        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
-        "Where your book's risk actually comes from, in plain English."
-        "</div>",
+        '<h1 class="ri-h1" style="font-size:1.9rem;margin-bottom:.25rem">'
+        "Portfolio Risk</h1>"
+        '<p class="ri-sub" style="margin-bottom:.2rem">'
+        "Macro-beta scrubber — where your book’s risk actually comes from.</p>"
+        "<p style=\"font-family:'IBM Plex Mono',monospace;font-size:.68rem;"
+        'letter-spacing:.1em;color:var(--ri-muted);margin-bottom:1rem">'
+        "HEURISTIC SURFACING DIALS &nbsp;&middot;&nbsp; NOT VALIDATED EDGES &nbsp;&middot;&nbsp; ADR-052</p>",
         unsafe_allow_html=True,
     )
-    st.caption("Heuristic surfacing dials, not validated edges (ADR-052).")
 
     summary = load_brief_summary(path)
     macro = (summary or {}).get("macro")
@@ -241,6 +243,7 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
     spy_beta = betas.get("SPY")
     beta_str = f"{spy_beta:+.2f}" if spy_beta is not None else "n/a"
     st.markdown(
+        '<div class="ri-sec">Vitals</div>'
         '<div class="ri-metric-row">'
         f'<div class="ri-metric"><div class="ri-metric-lab">'
         f"{tooltip('Net beta', 'Net market beta (SPY)')}</div>"
@@ -254,8 +257,6 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
         "</div>",
         unsafe_allow_html=True,
     )
-
-    st.divider()
 
     # ── Band strips: where-do-I-stand distance ramp (ADDITIVE — prepended above charts)
     if spy_beta is not None:
@@ -335,7 +336,10 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
     # Flag cards
     flags = macro.get("flags", [])
     if flags:
-        st.markdown("**Risk flags**")
+        st.markdown(
+            '<div class="ri-sec" style="margin-top:1rem">Risk flags</div>',
+            unsafe_allow_html=True,
+        )
         for flag in flags:
             meaning, action = _FLAG_MEANING.get(
                 flag,
@@ -348,6 +352,10 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
                 details=f"{meaning} — {action}",
             )
 
-    st.caption(
-        f"Coverage: {macro.get('coverage_holdings', '?')}/{macro.get('total_holdings', '?')} holdings."
+    st.markdown(
+        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:.68rem;"
+        f'color:var(--ri-muted);letter-spacing:.08em;margin-top:.8rem">'
+        f"COVERAGE: {macro.get('coverage_holdings', '?')} / "
+        f"{macro.get('total_holdings', '?')} holdings</div>",
+        unsafe_allow_html=True,
     )
