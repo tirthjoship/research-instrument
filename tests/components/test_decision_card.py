@@ -93,3 +93,44 @@ def test_decision_card_no_forbidden_words() -> None:
     src = inspect.getsource(dc).lower()
     for w in FORBIDDEN_WORDS:
         assert w not in src, f"forbidden word {w!r} in decision_card.py"
+
+
+# ── FIX 1: price/cost formatted to 2 decimal places ─────────────────────────
+
+
+def test_expanded_card_price_formatted_to_2dp() -> None:
+    """render_expanded_card must show price as $XX.XX (2 decimal places)."""
+    html = render_expanded_card(
+        _card(),
+        case=None,
+        verdict=Verdict.TRIM,
+        name="Yum China",
+        unrealized_pct=22.7,
+        means="A name dipped — protect gains or give it room?",
+        price=44.633,
+        cost=36.378,
+        returns=(4.1, -4.3, -14.8, -6.9),
+        reliability="0 of 231 TRIM calls scored",
+    )
+    assert "$44.63" in html, "expected '$44.63' in card HTML, got raw float instead"
+    assert "$36.38" in html, "expected '$36.38' in card HTML, got raw float instead"
+    assert "44.633" not in html, "raw unformatted price leaked into HTML"
+    assert "36.378" not in html, "raw unformatted cost leaked into HTML"
+
+
+def test_expanded_card_price_none_shows_dash() -> None:
+    """When price or cost is None the card must show '—' not crash."""
+    html = render_expanded_card(
+        _card(),
+        case=None,
+        verdict=Verdict.HOLD,
+        name="Yum China",
+        unrealized_pct=None,
+        means="Stay put.",
+        price=None,
+        cost=None,
+        returns=(),
+        reliability="n/a",
+    )
+    # Both price and cost should show the em-dash placeholder
+    assert html.count("—") >= 2
