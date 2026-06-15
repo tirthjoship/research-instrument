@@ -112,3 +112,50 @@ def test_batch_fit_invokes_progress_per_ticker():
         progress=lambda frac, t: calls.append((round(frac, 3), t)),
     )
     assert calls == [(0.5, "NVDA"), (1.0, "AAPL")]
+
+
+def test_batch_fit_populates_factor_scores_from_screen():
+    """batch_fit with a screen kwarg attaches factor_scores to each row."""
+    from application.batch_fit_use_case import batch_fit
+    from domain.fit import FitVerdict
+
+    _fake_screen = {
+        "candidates": [
+            {
+                "ticker": "KO",
+                "composite": 0.8,
+                "factor_scores": [
+                    {"name": "momentum", "value": 0.3, "percentile": 0.65},
+                    {"name": "revision", "value": 0.7, "percentile": 0.80},
+                    {"name": "quality", "value": 1.2, "percentile": 0.90},
+                    {"name": "value", "value": 0.5, "percentile": 0.72},
+                    {"name": "lowvol", "value": None, "percentile": None},
+                ],
+            }
+        ]
+    }
+
+    def fit_fn(t: str) -> FitVerdict:
+        return FitVerdict(
+            ticker=t, evidence_grade="MODERATE", fit_flags=(), summary=f"{t} ok."
+        )
+
+    rows = batch_fit(["KO"], fit_fn=fit_fn, screen=_fake_screen)
+    assert len(rows) == 1
+    assert len(rows[0].factor_scores) == 5
+    names = {f["name"] for f in rows[0].factor_scores}
+    assert names >= {"momentum", "quality", "value"}
+
+
+def test_batch_fit_factor_scores_empty_when_no_screen():
+    """Without a screen, factor_scores defaults to empty tuple."""
+    from application.batch_fit_use_case import batch_fit
+    from domain.fit import FitVerdict
+
+    def fit_fn(t: str) -> FitVerdict:
+        return FitVerdict(
+            ticker=t, evidence_grade="MODERATE", fit_flags=(), summary=f"{t} ok."
+        )
+
+    rows = batch_fit(["KO"], fit_fn=fit_fn)
+    assert rows[0].factor_scores == ()
