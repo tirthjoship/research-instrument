@@ -116,22 +116,57 @@ def test_relative_strength_none_when_insufficient():
     assert relative_strength([1.0], [1.0], 5) is None
 
 
-def test_trailing_volatility_constant_series_is_zero():
+# ── Step 2: trailing_volatility — daily closes, annualised, >=60 minimum ──────
+
+
+def test_trailing_volatility_constant_daily_series_is_zero():
     from domain.trend_rules import trailing_volatility
 
-    # flat prices → zero returns → zero vol
-    assert trailing_volatility([100.0] * 14) == 0.0
+    # 61 flat daily closes → zero daily returns → zero annualised vol
+    assert trailing_volatility([100.0] * 61) == 0.0
 
 
-def test_trailing_volatility_more_volatile_is_larger():
+def test_trailing_volatility_daily_calmer_less_than_wilder():
     from domain.trend_rules import trailing_volatility
 
-    calm = [100, 101, 100, 101, 100, 101, 100, 101, 100, 101, 100, 101, 100, 101]
-    wild = [100, 130, 90, 140, 80, 150, 70, 160, 60, 170, 50, 180, 40, 190]
-    assert trailing_volatility(wild) > trailing_volatility(calm)
+    # Build 61 daily closes: calm ≈ ±1% daily, wild ≈ ±5% daily
+    calm = [100.0 * (1.01 if i % 2 == 0 else 0.99) ** (i // 2 + 1) for i in range(61)]
+    wild = [100.0 * (1.05 if i % 2 == 0 else 0.95) ** (i // 2 + 1) for i in range(61)]
+    v_calm = trailing_volatility(calm)
+    v_wild = trailing_volatility(wild)
+    assert v_calm is not None and v_wild is not None
+    assert v_wild > v_calm
 
 
 def test_trailing_volatility_insufficient_history_returns_none():
     from domain.trend_rules import trailing_volatility
 
+    # 14 is old monthly threshold; new minimum is 60 daily closes
+    assert trailing_volatility([100.0] * 59) is None
     assert trailing_volatility([100.0, 101.0]) is None
+
+
+def test_trailing_volatility_sufficient_history_not_none():
+    from domain.trend_rules import trailing_volatility
+
+    # Exactly 60 daily closes is the minimum (61 closes → 60 returns)
+    assert trailing_volatility([100.0] * 61) is not None
+
+
+def test_trailing_volatility_annualised():
+    """Daily vol × sqrt(252) — check rough magnitude for ~1% daily moves."""
+    import math
+
+    from domain.trend_rules import trailing_volatility
+
+    # Alternating +1% / -1% daily → daily return stdev ≈ 0.01 → annualised ≈ 0.01*sqrt(252)
+    closes = []
+    p = 100.0
+    for i in range(61):
+        p = p * (1.01 if i % 2 == 0 else 1.0 / 1.01)
+        closes.append(p)
+    v = trailing_volatility(closes)
+    assert v is not None
+    # Should be close to 0.01 * sqrt(252) ≈ 0.1587 (within 20% for alternating series)
+    expected_approx = 0.01 * math.sqrt(252)
+    assert 0.5 * expected_approx < v < 2.0 * expected_approx

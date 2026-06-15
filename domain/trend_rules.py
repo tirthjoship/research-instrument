@@ -105,18 +105,30 @@ def top_fraction_threshold(values: list[float], fraction: float) -> float | None
     return sorted(clean, reverse=True)[k - 1]
 
 
-def trailing_volatility(monthly_closes: list[float]) -> float | None:
-    """Std-dev of trailing monthly simple returns. Needs >=13 closes (12 returns).
-    Returns the raw volatility (>=0); the screen inverts + z-scores it cross-sectionally.
+def trailing_volatility(daily_closes: list[float]) -> float | None:
+    """Annualised population stdev of daily simple returns from daily close prices.
+
+    Requires at least 61 daily closes (→ 60 daily returns) for a sane estimate.
+    Returns raw annualised volatility (>=0); the screen inverts + z-scores it
+    cross-sectionally so calmer stocks rank higher.
+
+    Args:
+        daily_closes: Ascending daily close prices. Must all be positive.
+
+    Returns:
+        Annualised volatility (float >=0), or None when history is insufficient
+        or any close is non-positive.
     """
-    if len(monthly_closes) < 13:
+    _MIN_CLOSES = 61  # 60 returns minimum
+    if len(daily_closes) < _MIN_CLOSES:
         return None
     rets: list[float] = []
-    for prev, cur in zip(monthly_closes[-13:-1], monthly_closes[-12:]):
+    for prev, cur in zip(daily_closes[:-1], daily_closes[1:]):
         if prev <= 0:
             return None
         rets.append(cur / prev - 1.0)
     n = len(rets)
-    mean = sum(rets) / n
-    var = sum((r - mean) ** 2 for r in rets) / n
-    return math.sqrt(var)
+    mu = sum(rets) / n
+    var = sum((r - mu) ** 2 for r in rets) / n
+    daily_vol = math.sqrt(var)
+    return daily_vol * math.sqrt(252)
