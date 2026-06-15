@@ -94,8 +94,65 @@ def test_header_has_factors_tile() -> None:
 
     html = rc.build_header_html(_FAKE_SCREEN)
     assert "Factors" in html
-    # Shows 4 (live factors count), not 5
+    # _FAKE_SCREEN has 4 distinct factor names → shows 4
     assert "4" in html
+
+
+# ── Step 6: dynamic factor count ──────────────────────────────────────────────
+
+_FIVE_FACTOR_SCREEN: dict = {
+    "as_of": "2026-06-14",
+    "universe_size": 100,
+    "abstained": False,
+    "diagnostics": {"scanned": 100, "had_history": 90, "above_trend": 60, "cleared": 2},
+    "candidates": [
+        {
+            "ticker": "AA",
+            "composite": 1.0,
+            "why": "test",
+            "label": "RESEARCH_ONLY",
+            "factor_scores": [
+                {"name": "momentum", "value": 0.5, "percentile": 0.7},
+                {"name": "revision", "value": 0.3, "percentile": 0.6},
+                {"name": "quality", "value": 0.8, "percentile": 0.8},
+                {"name": "value", "value": 0.4, "percentile": 0.65},
+                {"name": "lowvol", "value": 0.2, "percentile": 0.55},
+            ],
+        },
+    ],
+}
+
+
+def test_header_factors_tile_dynamic_four() -> None:
+    """build_header_html shows the actual distinct factor count (4) from the screen."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_header_html(_FAKE_SCREEN)
+    # _FAKE_SCREEN candidates have 4 distinct factor names → ledger shows FACTORS <b>4</b>
+    assert "<b>4</b>" in html
+
+
+def test_header_factors_tile_dynamic_five() -> None:
+    """build_header_html shows 5 for a 5-factor screen (future regen after lowvol wired)."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_header_html(_FIVE_FACTOR_SCREEN)
+    assert "Factors" in html
+    # 5-factor screen must show 5 in both tile and ledger
+    assert "<b>5</b>" in html
+
+
+def test_header_ledger_factors_count_dynamic() -> None:
+    """The FACTORS ledger entry must also reflect the actual factor count."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html4 = rc.build_header_html(_FAKE_SCREEN)
+    html5 = rc.build_header_html(_FIVE_FACTOR_SCREEN)
+    # Both should contain FACTORS in the ledger
+    assert "FACTORS" in html4 and "FACTORS" in html5
+    # 4-factor screen ledger shows 4; 5-factor shows 5
+    assert "FACTORS <b>4</b>" in html4
+    assert "FACTORS <b>5</b>" in html5
 
 
 def test_header_has_trust_tile() -> None:
