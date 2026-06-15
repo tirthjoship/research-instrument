@@ -22,11 +22,14 @@ class RiskStatsAnalyzer:
         self._seed = seed
         self._iters = bootstrap_iters
 
-    def covariance_eigenvalues(self, returns_matrix: _Array) -> list[float]:
+    def covariance_eigenvalues(
+        self, returns_matrix: Sequence[Sequence[float]] | _Array
+    ) -> list[float]:
         """Eigenvalues (variance of principal portfolios), descending. Rows=days, cols=holdings."""
-        if returns_matrix.ndim != 2 or returns_matrix.shape[1] == 0:
+        m = np.asarray(returns_matrix, dtype=float)
+        if m.ndim != 2 or m.shape[1] == 0:
             return []
-        cov = np.cov(returns_matrix, rowvar=False)
+        cov = np.cov(m, rowvar=False)
         cov = np.atleast_2d(cov)
         eigs = np.linalg.eigvalsh(cov)
         return [float(e) for e in sorted((max(e, 0.0) for e in eigs), reverse=True)]
@@ -123,7 +126,7 @@ class RiskStatsAnalyzer:
 
     def principal_loadings(
         self,
-        returns_matrix: _Array,
+        returns_matrix: Sequence[Sequence[float]] | _Array,
         tickers: list[str],
         k: int = 3,
     ) -> list[list[str]]:
@@ -133,11 +136,12 @@ class RiskStatsAnalyzer:
         Uses eigenvectors only (eigenvalue sign is irrelevant for |loading| ranking),
         unlike covariance_eigenvalues which clamps eigenvalues to remove numerical noise.
         """
-        if returns_matrix.ndim != 2 or returns_matrix.shape[1] == 0:
+        m = np.asarray(returns_matrix, dtype=float)
+        if m.ndim != 2 or m.shape[1] == 0:
             return []
-        if returns_matrix.shape[1] != len(tickers):
+        if m.shape[1] != len(tickers):
             return []
-        cov = np.atleast_2d(np.cov(returns_matrix, rowvar=False))
+        cov = np.atleast_2d(np.cov(m, rowvar=False))
         vals, vecs = np.linalg.eigh(cov)
         order = list(reversed(range(len(vals))))[:k]
         out: list[list[str]] = []
@@ -148,3 +152,55 @@ class RiskStatsAnalyzer:
             ]
             out.append(top)
         return out
+
+    def risk_contribution_terms(
+        self,
+        returns_matrix: Sequence[Sequence[float]] | _Array,
+        weights: Sequence[float],
+    ) -> tuple[list[float], float]:
+        """Euler risk-decomposition terms from the holdings covariance.
+
+        Returns (marginal, portfolio_var) where marginal[i] = (Σ w)_i and
+        portfolio_var = wᵀ Σ w. Degenerate matrix / length mismatch → ([], 0.0).
+        """
+        m = np.asarray(returns_matrix, dtype=float)
+        if m.ndim != 2 or m.shape[1] == 0 or m.shape[1] != len(weights):
+            return ([], 0.0)
+        cov = np.atleast_2d(np.cov(m, rowvar=False))
+        w = np.asarray(weights, dtype=float)
+        sigma_w = cov @ w
+        port_var = float(w @ cov @ w)
+        return ([float(x) for x in sigma_w], port_var)
+
+    def factor_vif_r2(
+        self, factor_returns: Mapping[str, Sequence[float]]
+    ) -> dict[str, float]:
+        """Per-factor R² from regressing that factor on all OTHER factors (OLS,
+        de-meaned, via least squares). Feeds domain vif_from_r2. <2 factors → {f: 0.0}.
+        """
+        factors = list(factor_returns)
+        if len(factors) < 2:
+            return {f: 0.0 for f in factors}
+        arrays = [np.asarray(factor_returns[f], dtype=float) for f in factors]
+        n = len(arrays[0])
+        # Guard length mismatch across factor series
+        if any(len(a) != n for a in arrays):
+            return {f: 0.0 for f in factors}
+        # De-mean each factor
+        demeaned = [a - a.mean() for a in arrays]
+        result: dict[str, float] = {}
+        for j, target in enumerate(factors):
+            y = demeaned[j]
+            # Build X from all OTHER factors
+            other_cols = [demeaned[i] for i in range(len(factors)) if i != j]
+            X = np.column_stack(other_cols)
+            coef, *_ = np.linalg.lstsq(X, y, rcond=None)
+            pred = X @ coef
+            ss_tot = float(np.sum(y**2))
+            r2 = (
+                0.0
+                if ss_tot == 0
+                else max(min(1.0 - float(np.sum((y - pred) ** 2)) / ss_tot, 1.0), 0.0)
+            )
+            result[target] = r2
+        return result

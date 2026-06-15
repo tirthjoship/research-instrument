@@ -127,3 +127,51 @@ def test_downside_beta_no_down_days_abstains():
     a = RiskStatsAnalyzer(seed=15)
     result = a.downside_beta(y.tolist(), spy.tolist())
     assert result == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Task 8a: new methods
+# ---------------------------------------------------------------------------
+
+
+def test_risk_contribution_terms_sum_to_var():
+    rng = np.random.default_rng(7)
+    X = rng.normal(size=(300, 3))
+    a = RiskStatsAnalyzer(seed=7)
+    w = [0.5, 0.3, 0.2]
+    marginal, port_var = a.risk_contribution_terms(X.tolist(), w)
+    assert len(marginal) == 3 and port_var > 0
+    # Σ w_i * marginal_i == port_var (Euler identity)
+    assert abs(sum(wi * mi for wi, mi in zip(w, marginal)) - port_var) < 1e-9
+
+
+def test_risk_contribution_terms_length_mismatch():
+    a = RiskStatsAnalyzer(seed=7)
+    assert a.risk_contribution_terms([[0.1, 0.2]], [0.5]) == ([], 0.0)
+
+
+def test_factor_vif_r2_collinear_high():
+    rng = np.random.default_rng(8)
+    base = rng.normal(size=300)
+    F = {
+        "A": base.tolist(),
+        "B": (base + 0.001 * rng.normal(size=300)).tolist(),
+        "C": rng.normal(size=300).tolist(),
+    }
+    a = RiskStatsAnalyzer(seed=8)
+    r2 = a.factor_vif_r2(F)
+    assert r2["A"] > 0.95  # A explained by B (collinear)
+    assert r2["C"] < 0.5  # C independent
+
+
+def test_factor_vif_r2_single_factor_zero():
+    a = RiskStatsAnalyzer(seed=8)
+    assert a.factor_vif_r2({"SPY": [0.1, 0.2, 0.3]}) == {"SPY": 0.0}
+
+
+def test_covariance_eigenvalues_accepts_plain_list():
+    a = RiskStatsAnalyzer(seed=0)
+    eigs = a.covariance_eigenvalues(
+        [[0.1, 0.2], [0.2, 0.1], [0.15, 0.18], [0.05, 0.22]]
+    )
+    assert eigs and list(eigs) == sorted(eigs, reverse=True)
