@@ -783,13 +783,69 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .dc-learn{border:1.5px solid var(--ri-teal);border-radius:10px;padding:12px;background:#f7fdfe;margin-bottom:13px;}
 
 /* ===== Landing Door (S6 onboarding) ===== */
-.door{background:linear-gradient(135deg,#0F6E80 0%,#0a4a57 100%);border-radius:18px;padding:28px 30px;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(15,110,128,.22);}
+.door{background:linear-gradient(135deg,#0F6E80 0%,#0a4a57 100%);border-radius:18px;padding:28px 30px;margin-bottom:1rem;box-shadow:0 4px 24px rgba(15,110,128,.22);}
 .door h2{color:#fff;}
+/* .db classes kept for backward compat but dead buttons removed from HTML */
 .db{display:inline-flex;align-items:center;justify-content:center;padding:9px 18px;border-radius:10px;font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s,transform .12s;}
 .db.primary{background:#fff;color:#0F6E80;}
 .db.primary:hover{opacity:.92;transform:translateY(-1px);}
 .db.ghost{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);}
 .db.ghost:hover{background:rgba(255,255,255,.22);transform:translateY(-1px);}
+
+/* ===== Onboarding action widgets — petrol on-brand (globally improves all buttons) ===== */
+/* Primary button (first in onboarding col1) — petrol fill, white text */
+div.stButton > button[kind="primary"],
+div.stButton > button:first-child:not([kind="secondary"]) {
+    background-color: #0F6E80 !important;
+    border: none !important;
+    color: #FFFFFF !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+    border-radius: 10px !important;
+    padding: 9px 18px !important;
+    box-shadow: 0 2px 8px rgba(15,110,128,.28) !important;
+    transition: opacity .15s, transform .12s !important;
+}
+div.stButton > button[kind="primary"]:hover,
+div.stButton > button:first-child:not([kind="secondary"]):hover {
+    opacity: .92 !important;
+    transform: translateY(-1px) !important;
+}
+/* Secondary / ghost buttons — outlined, petrol text */
+div.stButton > button[kind="secondary"] {
+    background: transparent !important;
+    border: 1.5px solid #0F6E80 !important;
+    color: #0F6E80 !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+    border-radius: 10px !important;
+    padding: 9px 18px !important;
+    transition: background .15s, transform .12s !important;
+}
+div.stButton > button[kind="secondary"]:hover {
+    background: rgba(15,110,128,.07) !important;
+    transform: translateY(-1px) !important;
+}
+/* File uploader — compact, on-brand */
+div[data-testid="stFileUploader"] {
+    border: 1.5px dashed rgba(15,110,128,.45) !important;
+    border-radius: 10px !important;
+    padding: 6px 10px !important;
+    background: rgba(15,110,128,.04) !important;
+}
+section[data-testid="stFileUploaderDropzone"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
+}
+div[data-testid="stFileUploader"] small,
+div[data-testid="stFileUploader"] span {
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    font-size: 12px !important;
+    color: #0F6E80 !important;
+}
 </style>
 """
 
