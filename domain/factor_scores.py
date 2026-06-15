@@ -37,9 +37,19 @@ def revision_momentum(estimate_series: list[float] | None) -> float | None:
 
 
 def composite_score(sub_scores: dict[str, float | None]) -> float:
-    """Equal-weight mean over the 4 factor keys. None = flagged-neutral (0.0)."""
+    """Equal-weight mean over PRESENT (non-None) factor keys.
+
+    Divides by the count of factors that are actually present, so a missing
+    factor leaves the composite unchanged (no dilution bias).
+    If all factors are None, returns 0.0.
+    """
     total = 0.0
+    n_present = 0
     for k in FACTOR_KEYS:
         v = sub_scores.get(k)
-        total += 0.0 if v is None else v
-    return total / len(FACTOR_KEYS)
+        if v is not None:
+            total += v
+            n_present += 1
+    if n_present == 0:
+        return 0.0
+    return total / n_present
