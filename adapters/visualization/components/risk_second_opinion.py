@@ -1,0 +1,114 @@
+"""Render the attributed Google-AI second-opinion panel for the Risk tab.
+
+HONESTY + PRIVACY RAILS:
+  - Returns "" (empty string) when is_local_runtime() is False — nothing reaches
+    the HTML off-local.
+  - Returns "" when result is None.
+  - All rendered text is ATTRIBUTED · RESEARCH ONLY — never a verdict or trade call.
+  - FORBIDDEN_WORDS are never emitted here.
+
+CSS classes used are from Task 10 (styles.py): risk-ai, risk-aihd, risk-at,
+risk-ab, risk-aibody, risk-aiq, risk-aipt, risk-n, risk-aifoot, risk-gdot
+(.gb/.gr/.gy/.gg).
+"""
+
+from __future__ import annotations
+
+import html as _html
+
+from application.runtime_guard import is_local_runtime
+from domain.case_models import CaseResult
+
+# Module-level alias makes is_local_runtime monkeypatchable in tests without
+# patching the whole runtime_guard module.
+is_local_runtime = is_local_runtime  # noqa: PLW0127 — intentional re-bind
+
+
+def render_risk_second_opinion(result: CaseResult | None) -> str:
+    """Render the Google-AI second-opinion panel as HTML.
+
+    Returns "" when:
+      - is_local_runtime() is False (privacy fail-safe)
+      - result is None
+
+    Args:
+        result: CaseResult to render; pass None to get empty string.
+
+    Returns:
+        HTML string (non-empty only when local and result is not None).
+    """
+    if not is_local_runtime():
+        return ""
+    if result is None:
+        return ""
+
+    if result.data_gap:
+        return (
+            '<div class="risk-ai">'
+            '<div class="risk-aifoot">'
+            "&#128269; Google AI second opinion unavailable — data gap or service unreachable."
+            "</div>"
+            "</div>"
+        )
+
+    # Build numbered in_favor + to_watch point items
+    points: list[str] = []
+    idx = 1
+    for pt in result.in_favor:
+        points.append(
+            f'<div class="risk-aipt">'
+            f'<span class="risk-n">{idx}</span>'
+            f"<div>{_html.escape(pt.text)}"
+            f'<span style="font-size:9px;color:var(--risk-faint);margin-left:4px;">'
+            f"[{_html.escape(pt.source_tag)}]</span></div>"
+            f"</div>"
+        )
+        idx += 1
+    for pt in result.to_watch:
+        points.append(
+            f'<div class="risk-aipt">'
+            f'<span class="risk-n">{idx}</span>'
+            f"<div>{_html.escape(pt.text)}"
+            f'<span style="font-size:9px;color:var(--risk-faint);margin-left:4px;">'
+            f"[{_html.escape(pt.source_tag)}]</span></div>"
+            f"</div>"
+        )
+        idx += 1
+
+    points_html = (
+        "".join(points)
+        if points
+        else (
+            '<div class="risk-aipt">'
+            '<span class="risk-n">&#8212;</span>'
+            "<div>No additional blind spots identified.</div>"
+            "</div>"
+        )
+    )
+
+    return (
+        '<div class="risk-ai">'
+        # Header: Google dots + title + ATTRIBUTED badge
+        '<div class="risk-aihd">'
+        '<span class="risk-gdot">'
+        '<i class="gb"></i><i class="gr"></i><i class="gy"></i><i class="gg"></i>'
+        "</span>"
+        '<span class="risk-at">What might this risk read be missing?</span>'
+        '<span class="risk-ab">ATTRIBUTED · RESEARCH ONLY</span>'
+        "</div>"
+        # Body
+        '<div class="risk-aibody">'
+        '<div class="risk-aiq">'
+        "Google AI was asked to find blind spots in the dials above — "
+        "it does not set the verdict"
+        "</div>" + points_html + "</div>"
+        # Footer / attribution
+        '<div class="risk-aifoot">'
+        "<b>This is a third-party second opinion, shown as Google AI’s — "
+        "not adopted as the dashboard’s view.</b> "
+        "It can be wrong, cites no trade, and never overrides the deterministic dials. "
+        "Runs only on your machine; throttled &amp; cached. "
+        "If Google AI is unreachable, this panel is simply hidden."
+        "</div>"
+        "</div>"
+    )
