@@ -1,3 +1,6 @@
+from hypothesis import given
+from hypothesis import strategies as st
+
 from domain.screen_buckets import (
     MAX_PER_BUCKET,
     PRIORITY,
@@ -131,3 +134,27 @@ def test_assign_empty_bucket_present_with_empty_list():
     out = assign_buckets([_mk("SPG", SPG, 1.31)])
     assert Bucket.MOMENTUM_LEADERS in out
     assert out[Bucket.MOMENTUM_LEADERS] == []
+
+
+_pct = st.floats(min_value=0.0, max_value=1.0)
+_profile = st.fixed_dictionaries(
+    {f: _pct for f in ("quality", "value", "revision", "momentum", "lowvol")}
+)
+_cand = st.builds(
+    BucketInput,
+    ticker=st.text(min_size=1, max_size=5, alphabet="ABCDEFGHIJ"),
+    percentiles=_profile,
+    composite=st.floats(min_value=-3, max_value=3, allow_nan=False),
+)
+
+
+@given(cands=st.lists(_cand, max_size=30))
+def test_assign_deterministic_and_total(cands):
+    a = assign_buckets(list(cands))
+    b = assign_buckets(list(cands))
+    # all 6 buckets always present
+    assert set(a.keys()) == set(PRIORITY)
+    # deterministic: same input → identical ticker ordering per bucket
+    for bucket in PRIORITY:
+        assert [c.ticker for c in a[bucket]] == [c.ticker for c in b[bucket]]
+        assert len(a[bucket]) <= MAX_PER_BUCKET
