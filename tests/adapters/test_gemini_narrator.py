@@ -30,3 +30,25 @@ def test_adapter_without_key_falls_back_to_gap(monkeypatch):
     adapter = GeminiNarratorAdapter()
     res = adapter.summarize_case(CaseContext("X", facts=("Valuation: cheap",), news=()))
     assert res.data_gap is True  # no key → honest gap, never fabricated
+
+
+# EXEMPTION NOTE: We do NOT source-scan gemini_narrator.py for forbidden words.
+# That file's _PROMPT literally negates them ("Do NOT use buy, sell, predict, …").
+# A naive inspect.getsource scan would falsely flag those negations.
+# Instead, we assert on the rendered OUTPUT of TemplateCaseSummarizer here.
+def test_template_case_output_has_no_forbidden_words():
+    from application.case_builder import TemplateCaseSummarizer, build_case_context
+    from domain.evidence_rag import RagColor, RagSignal
+    from domain.fit import FORBIDDEN_WORDS
+
+    ctx = build_case_context(
+        "YUMC",
+        (RagSignal("Valuation", RagColor.GREEN, "PEG 0.9 cheap"),),
+        [],
+    )
+    res = TemplateCaseSummarizer().summarize_case(ctx)
+    rendered = " ".join(p.text for p in res.in_favor + res.to_watch).lower()
+    for w in FORBIDDEN_WORDS:
+        assert (
+            w not in rendered
+        ), f"Forbidden word '{w}' found in rendered case output: {rendered!r}"
