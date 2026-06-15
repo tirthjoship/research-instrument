@@ -199,6 +199,31 @@ GLOSSARY: dict[str, str] = {
         "long-run trend filter (SMA-200). Below-trend names are excluded from "
         "the scored pool — they pass the data gate but not the trend gate."
     ),
+    # ── S3 Screener redesign terms ─────────────────────────────────────────────
+    "Evidence score": (
+        "Equal-weight average of the factor z-scores. Higher = more factors look "
+        "strong now. A ranking aid, not a predicted return."
+    ),
+    "Percentile": (
+        "Where a name ranks among this week's trend-eligible cohort. p95 = stronger "
+        "than 95% of them — not vs its sector, not vs the full universe."
+    ),
+    "Low-vol factor": (
+        "How little the price swings (trailing volatility). Higher score = steadier, "
+        "smaller drawdowns historically. Descriptive, not a forecast."
+    ),
+    "Analyst spread": (
+        "Width of today's analyst price-target range (high vs low). A dispersion "
+        "signal, not estimate-revision over time."
+    ),
+    "Trend gate": (
+        "A loose filter that keeps only names above their 200-day average. Most "
+        "survivors aren't special — the ranking is the selective part."
+    ),
+    "Reason bucket": (
+        "A plain-English grouping (e.g. cheap & high-quality) derived from a name's "
+        "strongest factors, so you see the kind of opportunity before the name."
+    ),
 }
 
 
