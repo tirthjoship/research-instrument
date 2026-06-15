@@ -23,7 +23,7 @@ def winsorize(values: list[float], p: float = 0.05) -> list[float]:
     return [min(max(v, lo), hi) for v in values]
 
 
-FACTOR_KEYS = ("momentum", "revision", "quality", "value")
+FACTOR_KEYS = ("momentum", "revision", "quality", "value", "lowvol")
 
 
 def revision_momentum(estimate_series: list[float] | None) -> float | None:

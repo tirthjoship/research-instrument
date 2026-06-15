@@ -79,3 +79,29 @@ def test_composite_adding_none_factor_leaves_composite_unchanged():
     assert (
         abs(c_2 - c_same) < 1e-9
     ), f"Adding a None factor changed composite from {c_2} to {c_same}"
+
+
+# ── Step 2: FACTOR_KEYS includes lowvol; 5-factor composite ───────────────────
+
+
+def test_factor_keys_includes_lowvol():
+    assert "lowvol" in FACTOR_KEYS
+
+
+def test_factor_keys_has_five_factors():
+    assert len(FACTOR_KEYS) == 5
+
+
+def test_composite_five_present_factors_is_plain_mean():
+    # All 5 present: mean of 1+2+3+4+5 = 3.0
+    subs = {k: float(i + 1) for i, k in enumerate(FACTOR_KEYS)}
+    expected = sum(subs.values()) / len(subs)
+    assert abs(composite_score(subs) - expected) < 1e-9
+
+
+def test_composite_lowvol_none_averages_over_four():
+    # 4 present (lowvol=None): mean of 1+2+3+4 = 2.5
+    subs = {k: float(i + 1) for i, k in enumerate(FACTOR_KEYS)}
+    subs["lowvol"] = None
+    expected = (1.0 + 2.0 + 3.0 + 4.0) / 4
+    assert abs(composite_score(subs) - expected) < 1e-9

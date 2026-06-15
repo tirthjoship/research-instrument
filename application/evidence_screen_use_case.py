@@ -112,6 +112,9 @@ class EvidenceScreenUseCase:
         zrev = self._z([r[2] for r in raw])
         zqual = self._z([r[3].get("quality") for r in raw])
         zval = self._z([r[3].get("value") for r in raw])
+        # lowvol: DATA-GAP for all tickers until Step 3 wires daily closes.
+        # The _z() of all-None returns all-None (correct; no fake data).
+        zlowvol: list[float | None] = self._z([None for _ in raw])
 
         cands: list[ScreenCandidate] = []
         present_fractions: list[float] = []
@@ -123,6 +126,7 @@ class EvidenceScreenUseCase:
             "revision": zrev,
             "quality": zqual,
             "value": zval,
+            "lowvol": zlowvol,
         }
         # For each factor, compute rank of each value among present values (0-indexed)
         factor_percentiles: dict[str, list[float]] = {}
@@ -146,6 +150,7 @@ class EvidenceScreenUseCase:
                 "revision": zrev[i],
                 "quality": zqual[i],
                 "value": zval[i],
+                "lowvol": zlowvol[i],  # DATA-GAP until Step 3 wires daily closes
             }
             present = sum(1 for k in FACTOR_KEYS if subs[k] is not None)
             present_fractions.append(present / len(FACTOR_KEYS))
