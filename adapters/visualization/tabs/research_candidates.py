@@ -179,10 +179,15 @@ def build_header_html(screen: dict[str, Any], reports_dir: str = "data/reports")
         sub="current evidence, not a forecast",
     )
 
-    # Tile 3: Factors — 4 live, not 5 (lowvol deferred)
+    # Tile 3: Factors — dynamic count from the loaded screen's factor_scores
+    _factor_names: set[str] = set()
+    for cand in candidates:
+        for fs in cand.get("factor_scores", []) if isinstance(cand, dict) else []:
+            _factor_names.add(fs.get("name", ""))
+    _factor_count = len(_factor_names) if _factor_names else 4
     tile_factors = render_tile(
         label="Factors",
-        number="4",
+        number=str(_factor_count),
         tone="muted",
         sub="momentum · analyst spread · quality · value",
     )
@@ -214,7 +219,7 @@ def build_header_html(screen: dict[str, Any], reports_dir: str = "data/reports")
         f"<span>UNIVERSE <b>{scanned}</b></span>"
         f"<span>CLEARED <b>{cleared}</b></span>"
         f"<span>SHOWN <b>{shown}</b></span>"
-        f"<span>FACTORS <b>4</b></span>"
+        f"<span>FACTORS <b>{_factor_count}</b></span>"
         f"<span>AS OF <b>{_html.escape(as_of_raw)}</b></span>"
         f"<span>IC GATE <b>{_html.escape(ic_verdict)}</b></span>"
         f"<span>RESEARCH_ONLY</span>"
