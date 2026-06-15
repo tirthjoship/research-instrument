@@ -22,11 +22,7 @@ from adapters.visualization.components.factor_row import render_factor_row
 from adapters.visualization.components.funnel import render_funnel
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
-from adapters.visualization.data_loader import (
-    load_latest_screen,
-    load_screen_history,
-    staleness_days,
-)
+from adapters.visualization.data_loader import load_latest_screen, staleness_days
 from domain.factor_bands import Band, band_for_percentile, plain_read
 from domain.screen_buckets import PRIORITY, BucketInput, assign_buckets, primary_bucket
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
@@ -695,24 +691,11 @@ def build_zone3_html() -> str:
 
 
 def _render_history_and_upload(reports_dir: str) -> None:
-    """Render Zone ② check-your-own-list upload section."""
-    hist = load_screen_history(reports_dir)
-    if hist:
-        st.markdown(
-            '<div class="ri-sec" style="margin-top:1.4rem">Screen history</div>',
-            unsafe_allow_html=True,
-        )
-        hist_rows = [
-            {
-                "Date": h["as_of"],
-                "Universe": h["universe_size"],
-                "Passed": h["n_candidates"],
-                "Abstained": h["abstained"],
-            }
-            for h in hist
-        ]
-        st.dataframe(hist_rows, hide_index=True)
+    """Render Zone ② check-your-own-list upload section.
 
+    Screen-history table now lives on the Trust tab (see build_zone3_html link);
+    this section keeps only the "check your own list" upload.
+    """
     st.markdown(
         '<div class="ri-sec" style="margin-top:1.4rem">Check your own list</div>'
         '<div class="ri-conclusion" style="margin-bottom:.8rem">'
