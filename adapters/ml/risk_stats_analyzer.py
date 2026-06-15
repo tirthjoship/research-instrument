@@ -12,6 +12,10 @@ from sklearn.linear_model import Ridge
 
 _Array = NDArray[Any]
 
+# Named thresholds — mirror macro_beta_analyzer._MIN_POINTS convention.
+_MIN_POINTS = 20  # below this, bootstrap results are noise; abstain to zeros
+_MIN_DOWN_DAYS = 10  # minimum negative-SPY days needed for a stable downside beta
+
 
 class RiskStatsAnalyzer:
     def __init__(self, seed: int = 0, bootstrap_iters: int = 500) -> None:
@@ -54,11 +58,13 @@ class RiskStatsAnalyzer:
     ) -> tuple[float, float]:
         rng = np.random.default_rng(self._seed)
         y_arr = np.asarray(y, float)
+        n = len(y_arr)
+        if any(len(factor_returns[f]) != n for f in factor_returns):
+            return (0.0, 0.0)
         X = np.column_stack(
             [np.asarray(factor_returns[f], float) for f in factor_returns]
         )
-        n = len(y_arr)
-        if n < 20:
+        if n < _MIN_POINTS:
             return (0.0, 0.0)
         vals = []
         for _ in range(self._iters):
@@ -77,9 +83,11 @@ class RiskStatsAnalyzer:
         rng = np.random.default_rng(self._seed + 1)
         factors = list(factor_returns)
         y_arr = np.asarray(y, float)
-        X = np.column_stack([np.asarray(factor_returns[f], float) for f in factors])
         n = len(y_arr)
-        if n < 20:
+        if any(len(factor_returns[f]) != n for f in factors):
+            return {f: (0.0, 0.0) for f in factors}
+        X = np.column_stack([np.asarray(factor_returns[f], float) for f in factors])
+        if n < _MIN_POINTS:
             return {f: (0.0, 0.0) for f in factors}
         draws = np.empty((self._iters, len(factors)))
         for b in range(self._iters):
@@ -102,8 +110,10 @@ class RiskStatsAnalyzer:
     ) -> float:
         y_arr = np.asarray(y, float)
         spy_arr = np.asarray(spy, float)
+        if len(y_arr) != len(spy_arr):
+            return 0.0
         mask = spy_arr < 0.0
-        if mask.sum() < 10:
+        if mask.sum() < _MIN_DOWN_DAYS:
             return 0.0
         yd, sd = y_arr[mask], spy_arr[mask]
         var = float(np.var(sd))
@@ -118,8 +128,14 @@ class RiskStatsAnalyzer:
         k: int = 3,
     ) -> list[list[str]]:
         """For the top-k principal components, the tickers with the largest |loading|.
-        Used to label the ENB 'bets'. Returns [] if matrix degenerate."""
+        Used to label the ENB 'bets'. Returns [] if matrix degenerate.
+
+        Uses eigenvectors only (eigenvalue sign is irrelevant for |loading| ranking),
+        unlike covariance_eigenvalues which clamps eigenvalues to remove numerical noise.
+        """
         if returns_matrix.ndim != 2 or returns_matrix.shape[1] == 0:
+            return []
+        if returns_matrix.shape[1] != len(tickers):
             return []
         cov = np.atleast_2d(np.cov(returns_matrix, rowvar=False))
         vals, vecs = np.linalg.eigh(cov)
