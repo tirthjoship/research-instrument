@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from application.evaluation import TransactionCostModel
@@ -42,7 +43,9 @@ class ScreenBacktestUseCase:
 
     def run(
         self,
-        panels: list[dict[str, tuple[float, float]]],
+        panels: Sequence[
+            Mapping[str, tuple[float, float] | tuple[float, float, float | None]]
+        ],
         market_returns: list[float] | None = None,
     ) -> ScreenVerdict:
         """Compute per-date IC and return a gate verdict.
