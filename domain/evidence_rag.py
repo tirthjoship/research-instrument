@@ -71,3 +71,34 @@ def classify_valuation(
     if rich and not cheap:
         return RagSignal("Valuation", RagColor.RED, detail)
     return RagSignal("Valuation", RagColor.AMBER, detail)
+
+
+def classify_financials(
+    fcf_positive: bool | None,
+    debt_to_equity: float | None,
+    margins_stable: bool | None,
+) -> RagSignal:
+    if fcf_positive is None and debt_to_equity is None and margins_stable is None:
+        return RagSignal("Financials", RagColor.GAP, "DATA-GAP: no financials")
+    fcf_txt = (
+        "FCF positive"
+        if fcf_positive
+        else ("FCF negative" if fcf_positive is False else "FCF —")
+    )
+    debt_txt = (
+        "debt —"
+        if debt_to_equity is None
+        else ("debt high" if debt_to_equity >= 150 else "debt moderate")
+    )
+    margin_txt = (
+        "margins stable"
+        if margins_stable
+        else ("margins —" if margins_stable is None else "margins soft")
+    )
+    detail = f"{fcf_txt} · {debt_txt} · {margin_txt}"
+    levered = debt_to_equity is not None and debt_to_equity >= 150
+    if fcf_positive and not levered:
+        return RagSignal("Financials", RagColor.GREEN, detail)
+    if fcf_positive is False or levered:
+        return RagSignal("Financials", RagColor.RED, detail)
+    return RagSignal("Financials", RagColor.AMBER, detail)

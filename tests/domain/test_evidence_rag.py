@@ -5,6 +5,7 @@ from domain.evidence_rag import (
     DIMENSIONS,
     RagColor,
     RagSignal,
+    classify_financials,
     classify_technicals,
     classify_valuation,
 )
@@ -76,4 +77,36 @@ def test_valuation_mid_is_amber():
 def test_valuation_missing_is_gap():
     assert (
         classify_valuation(peg=None, pe=None, sector_pctile=None).color is RagColor.GAP
+    )
+
+
+def test_financials_healthy_is_green():
+    sig = classify_financials(
+        fcf_positive=True, debt_to_equity=45.0, margins_stable=True
+    )
+    assert sig.color is RagColor.GREEN
+    assert "FCF positive" in sig.detail
+
+
+def test_financials_levered_or_burning_is_red():
+    assert (
+        classify_financials(
+            fcf_positive=False, debt_to_equity=40.0, margins_stable=True
+        ).color
+        is RagColor.RED
+    )
+    assert (
+        classify_financials(
+            fcf_positive=True, debt_to_equity=210.0, margins_stable=True
+        ).color
+        is RagColor.RED
+    )
+
+
+def test_financials_missing_is_gap():
+    assert (
+        classify_financials(
+            fcf_positive=None, debt_to_equity=None, margins_stable=None
+        ).color
+        is RagColor.GAP
     )
