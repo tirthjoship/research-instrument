@@ -839,3 +839,91 @@ def test_zero_value_nonzero_pct_revision_is_not_a_gap(
         "Revision with value==0.0 but percentile==0.5 is a real mid-pack factor — "
         f"must render p50, not DATA-GAP. Got: {joined!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Task 3: maybe_render_gemini — privacy guard and lazy call
+# ---------------------------------------------------------------------------
+
+
+def test_gemini_skipped_when_not_local(monkeypatch: Any) -> None:
+    """When is_local_runtime() is False, maybe_render_gemini returns empty or local note."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: False)
+    html = rc.maybe_render_gemini("SPG", facts={}, news=[])
+    assert html == "" or "local" in html.lower()
+
+
+def test_gemini_skipped_when_not_local_no_gemini_call(monkeypatch: Any) -> None:
+    """When is_local_runtime() is False, GeminiNarratorAdapter.summarize_case is NOT called."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    called: list[str] = []
+
+    class _SpyAdapter:
+        def summarize_case(self, ctx: object) -> object:
+            called.append("called")
+            from domain.case_models import CaseResult
+
+            return CaseResult((), (), True)
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: False)
+    monkeypatch.setattr(rc, "_gemini_adapter", _SpyAdapter())
+    rc.maybe_render_gemini("SPG", facts={}, news=[])
+    assert (
+        called == []
+    ), "summarize_case must NOT be called when not local (privacy guard)"
+
+
+def test_gemini_returns_html_when_local(monkeypatch: Any) -> None:
+    """When is_local_runtime() is True, maybe_render_gemini returns the .gai HTML block."""
+    from adapters.visualization.tabs import research_candidates as rc
+    from domain.case_models import CasePoint, CaseResult
+
+    class _StubAdapter:
+        def summarize_case(self, ctx: object) -> CaseResult:
+            return CaseResult(
+                in_favor=(CasePoint("occupancy recovering", "reported"),),
+                to_watch=(),
+                data_gap=False,
+            )
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    monkeypatch.setattr(rc, "_gemini_adapter", _StubAdapter())
+    # Clear session state cache
+    import streamlit as st
+
+    st.session_state.pop("_gai_SPG", None)
+    html = rc.maybe_render_gemini("SPG", facts={"occupancy": "recovering"}, news=[])
+    assert "Google-AI read" in html
+    assert "never an input" in html.lower()
+
+
+def test_gemini_cached_in_session_state(monkeypatch: Any) -> None:
+    """Second call for the same ticker uses session_state cache — adapter not called again."""
+    from adapters.visualization.tabs import research_candidates as rc
+    from domain.case_models import CasePoint, CaseResult
+
+    call_count: list[int] = [0]
+
+    class _CountingAdapter:
+        def summarize_case(self, ctx: object) -> CaseResult:
+            call_count[0] += 1
+            return CaseResult(
+                in_favor=(CasePoint("strong margins", "reported"),),
+                to_watch=(),
+                data_gap=False,
+            )
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    monkeypatch.setattr(rc, "_gemini_adapter", _CountingAdapter())
+    import streamlit as st
+
+    st.session_state.pop("_gai_MSFT", None)
+
+    rc.maybe_render_gemini("MSFT", facts={"revenue": "up"}, news=[])
+    rc.maybe_render_gemini("MSFT", facts={"revenue": "up"}, news=[])
+    assert (
+        call_count[0] == 1
+    ), "summarize_case must only be called once (cached after first call)"

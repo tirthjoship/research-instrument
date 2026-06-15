@@ -18,14 +18,24 @@ from typing import Any
 
 import streamlit as st
 
+from adapters.ml.gemini_narrator import GeminiNarratorAdapter
 from adapters.visualization.components.factor_row import render_factor_row
 from adapters.visualization.components.funnel import render_funnel
+from adapters.visualization.components.gemini_read import (
+    build_case_context,
+    render_gemini_read,
+)
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import load_latest_screen, staleness_days
+from application.runtime_guard import is_local_runtime
 from domain.factor_bands import Band, band_for_percentile, plain_read
 from domain.screen_buckets import PRIORITY, BucketInput, assign_buckets, primary_bucket
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
+
+# Module-level adapter instance — monkeypatchable in tests.
+# Constructed lazily: API key comes from env at first call; no network on import.
+_gemini_adapter: GeminiNarratorAdapter = GeminiNarratorAdapter()
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +48,42 @@ _ALL_FACTORS: tuple[str, ...] = ("momentum", "revision", "quality", "value", "lo
 
 # Bucket signature subtitles matching the mockup .bktsub
 _BUCKET_SUBS: dict[Any, str] = {}
+
+# Session-state key prefix for cached Gemini reads
+_GAI_CACHE_PREFIX = "_gai_"
+
+
+def maybe_render_gemini(
+    ticker: str,
+    facts: dict[str, str],
+    news: list[dict[str, str]],
+) -> str:
+    """Return the .gai attributed HTML block for ticker, or "" when unavailable.
+
+    PRIVACY FAIL-SAFE: when is_local_runtime() is False, returns "" immediately.
+    No Gemini call is made, and no facts/news leave this process.
+
+    LAZY / CACHED: the result is stored in st.session_state under "_gai_{ticker}".
+    Subsequent calls for the same ticker return the cached HTML instantly.
+
+    NOTE: facts and news come from already-fetched data in the expanded card body.
+    If the caller has no live per-ticker fetch wired, pass empty dicts/lists —
+    this produces data_gap=True (honest gap, never faked). A live per-ticker
+    facts/news fetch is a follow-up task.
+    """
+    if not is_local_runtime():
+        return ""
+
+    cache_key = f"{_GAI_CACHE_PREFIX}{ticker}"
+    if cache_key in st.session_state:
+        cached: str = str(st.session_state[cache_key])
+        return cached
+
+    ctx = build_case_context(ticker=ticker, facts=facts, news=news)
+    result = _gemini_adapter.summarize_case(ctx)
+    html = render_gemini_read(result)
+    st.session_state[cache_key] = html
+    return html
 
 
 def _bucket_sub(bucket: Any) -> str:
