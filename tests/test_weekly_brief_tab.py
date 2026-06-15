@@ -611,3 +611,72 @@ def test_home_cards_loader_returns_one_per_needs_review(monkeypatch: object) -> 
     monkeypatch.setattr(wb, "_fetch_card", lambda t: EvidenceCard(t, (), ()))  # type: ignore[attr-defined]
     cards = wb._needs_review_cards(holds)  # type: ignore[attr-defined]
     assert [t for t, _ in cards] == ["YUMC"]  # only the TRIM row
+
+
+# ---------------------------------------------------------------------------
+# Fix 2: analyst key mapping — _fetch_card must remap yfinance keys so the
+# Analysts square lights up (not GAP) when coverage is present.
+# ---------------------------------------------------------------------------
+
+
+def test_fetch_card_analyst_key_mapping_lights_analysts_square() -> None:
+    """_fetch_card must remap numberOfAnalystOpinions → analyst_count so
+    build_analyst_panel builds a non-GAP panel when coverage is present."""
+    from unittest.mock import patch  # noqa: PLC0415
+
+    from adapters.visualization.tabs import weekly_brief as wb
+    from domain.evidence_rag import RagColor
+
+    raw_info = {
+        "numberOfAnalystOpinions": 18,
+        "recommendationMean": 2.1,
+        "targetMeanPrice": 320.0,
+        "targetHighPrice": 380.0,
+        "targetLowPrice": 260.0,
+        "currentPrice": 295.0,
+        "trailingPE": 24.0,
+        "pegRatio": 1.5,
+        "freeCashflow": 5_000_000_000,
+        "debtToEquity": 45.0,
+    }
+
+    with (
+        patch(
+            "adapters.visualization.price_cache.fetch_ticker_info",
+            return_value=raw_info,
+        ),
+        patch(
+            "adapters.visualization.price_cache.fetch_prices",
+            return_value={"MSFT": {"price": 295.0, "change_pct": 0.5}},
+        ),
+        patch(
+            "adapters.data.earnings_history_adapter.fetch_earnings_history",
+            return_value=None,
+        ),
+        patch(
+            "adapters.visualization.price_cache._fetch_ticker_info_impl",
+            return_value=raw_info,
+        ),
+        patch(
+            "adapters.visualization.price_cache._batch_fetch_prices_impl",
+            return_value={"MSFT": {"price": 295.0, "change_pct": 0.5}},
+        ),
+    ):
+        # Patch at the lazy-import level by patching streamlit's cache_data to
+        # be a pass-through so the cached wrappers call the (also patched) impls.
+        import streamlit as st  # noqa: PLC0415
+
+        with patch.object(
+            st,
+            "cache_data",
+            side_effect=lambda *a, **kw: (lambda f: f),
+        ):
+            card = wb._fetch_card("MSFT")  # type: ignore[attr-defined]
+
+    # Find the Analysts signal in the card
+    analysts_sig = next((s for s in card.signals if s.dimension == "Analysts"), None)
+    assert analysts_sig is not None, "Analysts signal missing from card"
+    assert analysts_sig.color != RagColor.GAP, (
+        f"Analysts square must NOT be GAP when numberOfAnalystOpinions=18, "
+        f"got color={analysts_sig.color}"
+    )

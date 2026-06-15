@@ -321,7 +321,13 @@ def _fetch_card(ticker: str) -> EvidenceCard:
         info["peg_ratio"] = raw.get("pegRatio")
         info["free_cashflow"] = raw.get("freeCashflow")
         info["debt_to_equity"] = raw.get("debtToEquity")
-        panel = build_analyst_panel(raw, "")
+        # Remap yfinance raw keys → build_analyst_panel's expected keys (mirror stock_analyzer)
+        panel_info: dict[str, Any] = dict(raw)
+        panel_info["analyst_count"] = raw.get("numberOfAnalystOpinions", 0)
+        panel_info["analyst_recommendation_mean"] = raw.get("recommendationMean")
+        # target keys are already camelCase and match build_analyst_panel directly:
+        # targetMeanPrice, targetHighPrice, targetLowPrice — no remap needed
+        panel = build_analyst_panel(panel_info, "")
         # fetch_prices returns {"price", "change_pct"} — no closes/atr/ma200/vs_spy
         prices: dict[str, Any] = {
             "closes": [],  # DATA-GAP: batch price fetch returns no history
