@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from enum import Enum
 
 TOP_QUARTILE = 0.75
 
@@ -13,3 +14,44 @@ class BucketInput:
     ticker: str
     percentiles: Mapping[str, float]
     composite: float
+
+
+def _top(p: Mapping[str, float], factor: str) -> bool:
+    return p.get(factor, 0.0) >= TOP_QUARTILE
+
+
+def _count_top(p: Mapping[str, float]) -> int:
+    return sum(
+        _top(p, f) for f in ("quality", "value", "revision", "momentum", "lowvol")
+    )
+
+
+class Bucket(Enum):
+    ALL_ROUNDER = ("🌟", "All-rounder")
+    MOMENTUM_LEADERS = ("🚀", "Momentum leaders")
+    QUALITY_FAIR_PRICE = ("💎", "Quality at a fair price")
+    VALUE_CATALYST = ("📈", "Value with a catalyst")
+    QUALITY_COMPOUNDERS = ("⭐", "Quality compounders")
+    LOWVOL_DEFENSIVES = ("🛡️", "Low-vol defensives")
+
+    @property
+    def emoji(self) -> str:
+        return self.value[0]
+
+    @property
+    def label(self) -> str:
+        return self.value[1]
+
+
+_PREDICATES: dict[Bucket, Callable[[Mapping[str, float]], bool]] = {
+    Bucket.ALL_ROUNDER: lambda p: _count_top(p) >= 3,
+    Bucket.MOMENTUM_LEADERS: lambda p: _top(p, "momentum") and _top(p, "revision"),
+    Bucket.QUALITY_FAIR_PRICE: lambda p: _top(p, "quality") and _top(p, "value"),
+    Bucket.VALUE_CATALYST: lambda p: _top(p, "value") and _top(p, "revision"),
+    Bucket.QUALITY_COMPOUNDERS: lambda p: _top(p, "quality"),
+    Bucket.LOWVOL_DEFENSIVES: lambda p: _top(p, "lowvol"),
+}
+
+
+def qualifies(bucket: Bucket, percentiles: Mapping[str, float]) -> bool:
+    return bool(_PREDICATES[bucket](percentiles))
