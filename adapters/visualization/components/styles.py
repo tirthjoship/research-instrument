@@ -762,6 +762,25 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .port-drill{font-size:.78rem;color:var(--ri-muted);margin-top:.35rem;}
 .port-drill a{color:var(--ri-teal);text-decoration:none;}
 .port-drill a:hover{text-decoration:underline;}
+
+/* ---- decision card (S3) ---- */
+.dc-row{display:flex;align-items:center;gap:13px;padding:13px 16px;border-top:1px solid var(--ri-hair);cursor:pointer;}
+.dc-row:first-child{border-top:0;}
+.dc-tk b{font-size:14.5px;} .dc-tk span{display:block;font-size:10px;color:var(--ri-muted);}
+.dc-sq{width:15px;height:15px;border-radius:4px;position:relative;display:inline-block;}
+.dc-sq.r{background:var(--ri-crimson);} .dc-sq.a{background:var(--ri-amber);} .dc-sq.g{background:var(--ri-green);}
+.dc-sq.gap{background:repeating-linear-gradient(45deg,#e7edee,#e7edee 3px,#fafcfc 3px,#fafcfc 6px);border:1px solid var(--ri-line);}
+.dc-sq .dc-tip{visibility:hidden;opacity:0;position:absolute;bottom:150%;left:50%;transform:translateX(-50%);width:172px;background:var(--ri-ink);color:#fff;font-size:10.5px;line-height:1.45;padding:7px 9px;border-radius:7px;z-index:30;box-shadow:0 10px 26px -8px rgba(0,0,0,.4);text-align:left;}
+.dc-sq:hover .dc-tip{visibility:visible;opacity:1;}
+.dc-spark{width:80px;height:28px;}
+.dc-sk{background:linear-gradient(90deg,#eef3f4 8%,#dceaec 22%,#eef3f4 36%);background-size:200% 100%;animation:dc-shimmer 1.25s linear infinite;border-radius:5px;display:inline-block;}
+@keyframes dc-shimmer{0%{background-position:160% 0;}100%{background-position:-60% 0;}}
+.dc-case{border:1px solid var(--ri-line);border-radius:9px;overflow:hidden;margin-bottom:13px;}
+.dc-case-hd{display:flex;justify-content:space-between;align-items:center;background:var(--ri-hair);padding:9px 12px;font-weight:700;font-size:12.5px;}
+.dc-case-badge{font-family:'IBM Plex Mono';font-size:9px;font-weight:600;color:var(--ri-muted);background:#e3ebec;padding:2px 8px;border-radius:9px;}
+.dc-cols{display:flex;} .dc-cols>div{flex:1;padding:11px 13px;} .dc-cols>div:first-child{border-right:1px solid var(--ri-hair);}
+.dc-ch{font-family:'IBM Plex Mono';font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:6px;}
+.dc-learn{border:1.5px solid var(--ri-teal);border-radius:10px;padding:12px;background:#f7fdfe;margin-bottom:13px;}
 </style>
 """
 
