@@ -10,7 +10,7 @@ import html as _html
 from typing import Any
 
 from application.evidence_card import EvidenceCard
-from domain.discipline import Verdict
+from domain.discipline import Verdict, verdict_rubric_lines
 from domain.evidence_rag import RagColor, RagSignal  # noqa: F401
 
 _RAG_CLASS = {
@@ -99,6 +99,44 @@ def _rag_table_html(card: EvidenceCard) -> str:
     )
 
 
+def _rubric_html(current: Verdict) -> str:
+    """Build a compact rubric block listing all 5 verdicts + their trigger conditions.
+
+    The current verdict's row is highlighted (bold) so the user can see which rule fired.
+    The rubric considers trend + ATR + disposition + volatility + relative strength +
+    trailing-stop + market context — not only the 200-day.
+    """
+    rows: list[str] = []
+    for label, text in verdict_rubric_lines():
+        is_current = label == current.value
+        row_style = (
+            "background:#e6f1f3;border-left:3px solid #0F6E80;padding:5px 8px;border-radius:4px;"
+            if is_current
+            else "padding:5px 8px;"
+        )
+        label_style = (
+            "font-weight:800;min-width:68px;display:inline-block"
+            if is_current
+            else "font-weight:600;min-width:68px;display:inline-block;color:var(--ri-muted)"
+        )
+        rows.append(
+            f'<div style="{row_style}font-size:11.5px;margin-bottom:2px">'
+            f'<span style="{label_style}">{_html.escape(label)}</span>'
+            f'<span style="{"" if is_current else "color:var(--ri-muted)"}">{_html.escape(text)}</span>'
+            f"</div>"
+        )
+    return (
+        '<div style="margin-top:10px;border-top:1px dashed #cfe6ec;padding-top:8px">'
+        "<div style=\"font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.1em;"
+        'text-transform:uppercase;color:var(--ri-muted);margin-bottom:5px">'
+        "How this verdict was decided</div>"
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--ri-muted);margin-top:5px">'
+        "Considers: trend (ATR vs 200-day) · trailing stop · disposition · volatility · relative strength · market context</div>"
+        "</div>"
+    )
+
+
 def _case_html(case: Any | None) -> str:
     hd = (
         '<div class="dc-case-hd"><span>The case — Google AI, from cited sources</span>'
@@ -170,7 +208,8 @@ def render_expanded_card(
         f'<p style="margin:0;font-size:12px;line-height:1.5">Today it\'s the <b>trend-break rule (v1)</b>; it improves by '
         f"<b>experiment</b> and is adopted only when it beats v1.</p>"
         f'<div style="font-size:11px;color:var(--ri-muted);margin-top:7px;border-top:1px dashed #cfe6ec;padding-top:6px">'
-        f"<b>Reliability:</b> {_html.escape(reliability)}. From outcomes, never the AI case.</div></div>"
+        f"<b>Reliability:</b> {_html.escape(reliability)}. From outcomes, never the AI case.</div>"
+        f"{_rubric_html(verdict)}</div>"
         f'<div style="font-size:10px;color:var(--ri-muted);border-top:1px dashed var(--ri-line);padding-top:7px">'
         f"Research only · attributed evidence + your rule's measured history · not a trade signal.</div>"
         "</div>"
