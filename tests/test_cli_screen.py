@@ -193,6 +193,51 @@ def test_screen_candidates_json_contains_abstained(
     assert "abstained" in data, "JSON must contain 'abstained' field"
 
 
+def test_screen_candidates_json_preserves_diagnostics(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The funnel diagnostics computed by the use case must survive into the JSON.
+
+    Regression: the CLI rebuilds the ScreenResult to apply the verdict-driven
+    label and previously dropped `diagnostics`, so the report always wrote
+    `diagnostics: null` and the Screener funnel / Home tile fell back to empty
+    states even on a healthy HAS_CANDIDATES run.
+    """
+    from dataclasses import replace
+
+    from application import evidence_screen_use_case as esc_module
+    from domain.screen_diagnostics import ScreenDiagnostics
+
+    diags = ScreenDiagnostics(
+        scanned=512, had_history=400, above_trend=304, cleared=304
+    )
+    fake_result = replace(_make_screen_result(), diagnostics=diags)
+
+    class FakeUseCase:
+        def run(self, universe: list[str], as_of: str, top_n: int = 10) -> ScreenResult:
+            return fake_result
+
+        def surface_calls(self, result: object, **kw: object) -> list[object]:
+            return []
+
+    monkeypatch.setattr(esc_module, "EvidenceScreenUseCase", lambda **kw: FakeUseCase())  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    res = runner.invoke(
+        cli, ["screen-candidates", "--top", "10", "--report-dir", str(tmp_path)]
+    )
+    assert res.exit_code == 0, res.output
+    report_files = list(tmp_path.glob("screen_*.json"))  # type: ignore[union-attr]
+    assert report_files
+    data = json.loads(report_files[0].read_text())
+    assert data["diagnostics"] == {
+        "scanned": 512,
+        "had_history": 400,
+        "above_trend": 304,
+        "cleared": 304,
+    }, f"diagnostics dropped in serialization: got {data['diagnostics']!r}"
+
+
 # ---------------------------------------------------------------------------
 # Task 7b: backtest-screen  (point-in-time panel builder, rewired CLI)
 # ---------------------------------------------------------------------------

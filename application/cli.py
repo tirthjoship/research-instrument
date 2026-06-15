@@ -2621,16 +2621,10 @@ def screen_candidates(top: int, report_dir: str) -> None:
     labeled_candidates = tuple(
         replace(c, label=verdict_label) for c in result.candidates
     )
-    from domain.screen_models import ScreenResult
-
-    result = ScreenResult(
-        as_of=result.as_of,
-        candidates=labeled_candidates,
-        universe_size=result.universe_size,
-        regime=result.regime,
-        scorecard_ref=result.scorecard_ref,
-        abstained=result.abstained,
-    )
+    # Use replace() so ALL fields (incl. diagnostics) carry through — a full
+    # reconstruction silently dropped `diagnostics`, writing `diagnostics: null`
+    # and starving the Screener funnel / Home tile of their rich states.
+    result = replace(result, candidates=labeled_candidates)
 
     # --- surface ONLY the top-N candidates as SurfacedCalls for forward-tracking ---
     store = deps["store"]
