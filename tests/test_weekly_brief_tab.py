@@ -645,7 +645,8 @@ def test_home_shows_door_when_no_book(monkeypatch: object) -> None:  # type: ign
 
     monkeypatch.setattr(wb, "is_local_runtime", lambda: True)  # type: ignore[attr-defined]
     html = wb._render_onboarding_html(has_book=False)  # type: ignore[attr-defined]
-    assert "Load a book to begin" in html and "Explore sample book" in html
+    # "Explore sample book" is now a real st.button, not in the HTML banner
+    assert "Load a book to begin" in html
 
 
 def test_home_door_always_present_even_with_book(monkeypatch: object) -> None:
@@ -660,7 +661,7 @@ def test_home_door_always_present_even_with_book(monkeypatch: object) -> None:
     monkeypatch.setattr(wb, "is_local_runtime", lambda: True)  # type: ignore[attr-defined]
     html = wb._render_onboarding_html(has_book=True)  # type: ignore[attr-defined]
     assert "Load a book to begin" in html, "Door must render even when book is loaded"
-    assert "Explore sample book" in html
+    # "Explore sample book" is now a real st.button — not in the HTML banner string
 
 
 def test_home_render_shows_door_and_book_vitals_together(tmp_path: object) -> None:  # type: ignore[no-untyped-def]
