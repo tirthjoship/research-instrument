@@ -20,7 +20,7 @@ from adapters.visualization.data_loader import (
     load_weekly_brief,
     staleness_days,
 )
-from domain.risk_rubric import classify_net_beta
+from domain.risk_rubric import classify_net_beta, classify_systematic_share
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
 
 _SUMMARY_PATH = "data/personal/brief_summary.json"
@@ -251,6 +251,34 @@ def _render_book_strip_html(
         f"{regime_badge}</div>"
         f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">'
         f"{t_review}{t_vm}{t_nb}{t_scr}</div></div>"
+    )
+
+
+def _render_book_health_html(systematic_share: float) -> str:
+    pct = round(systematic_share * 100)
+    band = classify_systematic_share(systematic_share).value  # e.g. "Macro-leaning"
+    flag = (
+        '<span style="color:#C9810E">&#x2691; above the 60% flag</span>'
+        if systematic_share >= 0.60
+        else ""
+    )
+    ring = (
+        f'<div style="width:54px;height:54px;border-radius:50%;flex-shrink:0;'
+        f"background:conic-gradient(#0F6E80 {pct}%, #eef2f3 0);display:flex;"
+        f'align-items:center;justify-content:center">'
+        f'<div style="width:40px;height:40px;border-radius:50%;background:#fff;display:flex;'
+        f"align-items:center;justify-content:center;font-family:Fraunces,serif;"
+        f'font-weight:800;font-size:13px">{pct}%</div></div>'
+    )
+    return (
+        f'<div style="display:flex;align-items:center;gap:14px;background:#fff;'
+        f'border:1px solid #dde7e9;border-radius:12px;padding:12px 15px;margin-top:12px">'
+        f"{ring}"
+        f"<div><div style=\"font-family:'IBM Plex Mono';font-size:10px;"
+        f'text-transform:uppercase;color:#94a8ad">'
+        f'{tooltip("Systematic share", "Book health — systematic share")}</div>'
+        f'<div style="font-size:13px;margin-top:3px"><b>{pct}% {band.lower()}</b> &middot; {flag} &mdash; '
+        f"adding another same-direction name won't diversify.</div></div></div>"
     )
 
 
