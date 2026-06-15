@@ -1,4 +1,11 @@
-from domain.screen_buckets import TOP_QUARTILE, Bucket, BucketInput, qualifies
+from domain.screen_buckets import (
+    PRIORITY,
+    TOP_QUARTILE,
+    Bucket,
+    BucketInput,
+    primary_bucket,
+    qualifies,
+)
 
 
 def test_bucketinput_holds_percentiles():
@@ -56,3 +63,24 @@ def test_qualifies_momentum_leaders_needs_both():
 def test_qualifies_lowvol_and_compounders():
     assert qualifies(Bucket.LOWVOL_DEFENSIVES, KO) is True  # lowvol 0.93
     assert qualifies(Bucket.QUALITY_COMPOUNDERS, KLAC) is True  # quality 0.95
+
+
+def test_priority_order_constant():
+    assert PRIORITY[0] == Bucket.ALL_ROUNDER
+    assert PRIORITY[-1] == Bucket.LOWVOL_DEFENSIVES
+
+
+def test_primary_bucket_picks_highest_priority():
+    # SPG qualifies for ALL_ROUNDER, QUALITY_FAIR_PRICE, VALUE_CATALYST, etc.
+    assert primary_bucket(SPG) == Bucket.ALL_ROUNDER
+
+
+def test_primary_bucket_none_when_unqualified():
+    weak = {
+        "quality": 0.1,
+        "value": 0.1,
+        "revision": 0.1,
+        "momentum": 0.1,
+        "lowvol": 0.1,
+    }
+    assert primary_bucket(weak) is None
