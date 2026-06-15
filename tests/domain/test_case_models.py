@@ -1,6 +1,18 @@
 from domain.case_models import CasePoint, CaseResult
 
 
+def test_case_summarizer_port_is_runtime_checkable():
+    from domain.case_models import CaseContext
+    from domain.case_models import CaseResult as _CaseResult
+    from domain.ports import CaseSummarizerPort
+
+    class _Fake:
+        def summarize_case(self, ctx: CaseContext) -> _CaseResult:
+            return _CaseResult((), (), True)
+
+    assert isinstance(_Fake(), CaseSummarizerPort)
+
+
 def test_case_result_holds_both_sides_and_gap_flag():
     favor = (CasePoint(text="Beat EPS 3 of 4 quarters", source_tag="reported"),)
     watch = (CasePoint(text="Below 200-day trend", source_tag="technical"),)
