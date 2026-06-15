@@ -966,13 +966,26 @@ def _snake_info(raw: dict[str, Any]) -> dict[str, Any]:
     return {_MAP.get(k, k): v for k, v in raw.items()}
 
 
-def _render_decision_lead_html(result: Any, verdict_value: str) -> str:
+def select_case_summarizer() -> object:
+    """Proxy to application.card_loading.select_case_summarizer (patchable in tests)."""
+    from application.card_loading import select_case_summarizer as _sel
+
+    return _sel()
+
+
+def _render_decision_lead_html(
+    result: Any, verdict_value: str, *, with_case: bool = False
+) -> str:
     """Pure function: build and return the v9 decision-card HTML for a ticker result.
 
     Testable without Streamlit. Uses getattr with defaults for optional fields
     (price_series, atr, ma200, vs_spy_pct) that may not exist on AnalysisResult.
+
+    When with_case=True, fetches the lazy cited case via the summarizer and renders it
+    in the expanded card (S5). Default False for backward compat.
     """
     from adapters.data.earnings_history_adapter import fetch_earnings_history
+    from adapters.visualization.card_fetch import get_case_on_expand
     from adapters.visualization.components.decision_card import render_expanded_card
     from application.analyst_panel import build_analyst_panel
     from application.evidence_card import build_evidence_card
@@ -1002,10 +1015,23 @@ def _render_decision_lead_html(result: Any, verdict_value: str) -> str:
         peers=peers,
     )
 
+    # S5: fetch lazy cited case when requested (expanded=True → always fetch here)
+    case = None
+    if with_case:
+        result_case = get_case_on_expand(
+            result.ticker,
+            card,
+            news=[],
+            expanded=True,
+            summarizer=select_case_summarizer(),
+        )
+        # data_gap → pass None so _case_html renders honest placeholder
+        case = None if (result_case is None or result_case.data_gap) else result_case
+
     verdict = Verdict(verdict_value)
     return render_expanded_card(
         card,
-        case=None,
+        case=case,
         verdict=verdict,
         name=result.company_name,
         unrealized_pct=None,
@@ -1024,6 +1050,6 @@ def _render_decision_lead(result: Any) -> None:
     """Render the v9 decision-card lead via st.markdown. Calls _render_decision_lead_html."""
     verdict_value = getattr(result, "verdict", "REVIEW")
     st.markdown(
-        _render_decision_lead_html(result, verdict_value),
+        _render_decision_lead_html(result, verdict_value, with_case=True),
         unsafe_allow_html=True,
     )
