@@ -22,3 +22,16 @@ def band_for_percentile(percentile: float) -> Band:
         return Band.FLAT
     return Band.WEAK
     # No clamping needed: the >= ladder is total — any float resolves to exactly one band.
+
+
+_TONE = {
+    Band.EXCEPTIONAL: "success",
+    Band.STRONG: "accent",
+    Band.FLAT: "muted",
+    Band.WEAK: "danger",
+}
+
+
+def band_tone_key(band: Band) -> str:
+    """Semantic colour key (UI maps to a styles.py var; domain holds no hex)."""
+    return _TONE[band]

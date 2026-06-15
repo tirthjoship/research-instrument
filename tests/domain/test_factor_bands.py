@@ -2,7 +2,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from domain.factor_bands import Band, band_for_percentile
+from domain.factor_bands import Band, band_for_percentile, band_tone_key
 
 
 @pytest.mark.parametrize(
@@ -38,3 +38,10 @@ def test_band_monotonic(a, b):
 def test_band_clamps_out_of_range(p):
     # values <0 or >1 (e.g. float noise) must still return a valid Band, never raise
     assert band_for_percentile(p) in Band
+
+
+def test_band_tone_key():
+    assert band_tone_key(Band.EXCEPTIONAL) == "success"
+    assert band_tone_key(Band.STRONG) == "accent"
+    assert band_tone_key(Band.FLAT) == "muted"
+    assert band_tone_key(Band.WEAK) == "danger"
