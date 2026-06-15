@@ -1,9 +1,12 @@
 # tests/domain/test_evidence_rag.py
 import dataclasses
+import inspect
 
 from hypothesis import given
 from hypothesis import strategies as st
 
+import application.evidence_card as _card
+import domain.evidence_rag as _rag
 from domain.evidence_rag import (
     DIMENSIONS,
     RagColor,
@@ -14,6 +17,7 @@ from domain.evidence_rag import (
     classify_technicals,
     classify_valuation,
 )
+from domain.fit import FORBIDDEN_WORDS
 
 
 def test_dimensions_fixed_order():
@@ -209,3 +213,10 @@ def test_technicals_monotone_buckets(atr: float) -> None:
         assert c is RagColor.RED
     else:
         assert c is RagColor.AMBER
+
+
+def test_no_forbidden_words_in_evidence_sources() -> None:
+    for mod in (_rag, _card):
+        src = inspect.getsource(mod).lower()
+        for w in FORBIDDEN_WORDS:
+            assert w not in src, f"forbidden word {w!r} in {mod.__name__}"
