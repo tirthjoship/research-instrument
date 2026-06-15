@@ -238,12 +238,45 @@ class MacroBetaUseCase:
 
         factor_move_std = {f: _std(fb[f][-self._headline :]) for f in factors}
 
-        # Windowed series (mirror what book_head fit used)
-        yb_w = yb[-self._headline :]
-        fb_w = {f: v[-self._headline :] for f, v in fb.items()}
-        n_used = len(yb_w)
+        stats = self._compute_v8_stats(
+            holding_rets=holding_rets,
+            weights=weights,
+            yb=yb,
+            fb=fb,
+            book_head=book_head,
+            factors=factors,
+            as_of=as_of,
+            holdings=holdings,
+        )
 
-        # --- v8 risk stats (descriptive; numpy behind self._risk) ---
+        return aggregate_macro_exposure(
+            as_of=as_of.date().isoformat(),
+            factors=factors,
+            per_holding=per_holding,
+            systematic_share=book_head[1],
+            factor_move_std=factor_move_std,
+            book_drift_by_factor=book_drift_by_factor,
+            beta_headline_by_factor=book_head[0],
+            total_holdings=len(holdings),
+            coverage_value_frac=(covered_value / total_value) if total_value else 0.0,
+            thresholds=self._thresholds,
+            **stats,
+        )
+
+    def _compute_v8_stats(
+        self,
+        *,
+        holding_rets: dict[str, list[tuple[datetime, float]]],
+        weights: dict[str, float],
+        yb: list[float],
+        fb: dict[str, list[float]],
+        book_head: tuple[dict[str, float], float],
+        factors: tuple[str, ...],
+        as_of: datetime,
+        holdings: list[Any],
+    ) -> dict[str, Any]:
+        """Compute the descriptive v8 risk stats. Returns a dict of the new
+        BookMacroExposure fields (all neutral defaults when deps/data are absent)."""
         enb = 0.0
         pc_variance: tuple[float, ...] = ()
         pc_labels: tuple[str, ...] = ()
@@ -261,6 +294,10 @@ class MacroBetaUseCase:
         sector_gaps: tuple[str, ...] = ()
         holdings_meta: tuple[dict[str, object], ...] = ()
         sys_share_history: tuple[tuple[str, float], ...] = ()
+
+        yb_w = yb[-self._headline :]
+        fb_w = {f: v[-self._headline :] for f, v in fb.items()}
+        n_used = len(yb_w)
 
         tickers_ordered, rows = aligned_return_matrix(holding_rets)
         weights_vec = [weights[t] for t in tickers_ordered]
@@ -316,35 +353,25 @@ class MacroBetaUseCase:
                 (as_of.date().isoformat(), min(max(book_head[1], 0.0), 1.0)),
             )
 
-        return aggregate_macro_exposure(
-            as_of=as_of.date().isoformat(),
-            factors=factors,
-            per_holding=per_holding,
-            systematic_share=book_head[1],
-            factor_move_std=factor_move_std,
-            book_drift_by_factor=book_drift_by_factor,
-            beta_headline_by_factor=book_head[0],
-            total_holdings=len(holdings),
-            coverage_value_frac=(covered_value / total_value) if total_value else 0.0,
-            thresholds=self._thresholds,
-            enb=enb,
-            pc_variance=pc_variance,
-            pc_labels=pc_labels,
-            pc_labels_data_gap=pc_labels_data_gap,
-            systematic_share_adj=systematic_share_adj,
-            systematic_share_ci=systematic_share_ci,
-            beta_ci_by_factor=beta_ci_by_factor,
-            suppressed_factors=suppressed_factors,
-            downside_beta=downside_beta,
-            risk_contribution=risk_contribution,
-            vif_by_factor=vif_by_factor,
-            diversification_ratio=diversification_ratio,
-            sector_weights=sector_weights,
-            sector_hhi=sector_hhi,
-            sector_gaps=sector_gaps,
-            holdings_meta=holdings_meta,
-            sys_share_history=sys_share_history,
-        )
+        return {
+            "enb": enb,
+            "pc_variance": pc_variance,
+            "pc_labels": pc_labels,
+            "pc_labels_data_gap": pc_labels_data_gap,
+            "systematic_share_adj": systematic_share_adj,
+            "systematic_share_ci": systematic_share_ci,
+            "beta_ci_by_factor": beta_ci_by_factor,
+            "suppressed_factors": suppressed_factors,
+            "downside_beta": downside_beta,
+            "risk_contribution": risk_contribution,
+            "vif_by_factor": vif_by_factor,
+            "diversification_ratio": diversification_ratio,
+            "sector_weights": sector_weights,
+            "sector_hhi": sector_hhi,
+            "sector_gaps": sector_gaps,
+            "holdings_meta": holdings_meta,
+            "sys_share_history": sys_share_history,
+        }
 
     def _fit(
         self,

@@ -322,3 +322,35 @@ def test_execute_does_not_write_history_to_disk():
 
     # File must still be empty (no write happened)
     assert os.path.getsize(tmp_path) == 0, "execute() must not write history to disk"
+
+
+def test_pc_labels_all_unknown_falls_back_to_bet_n():
+    from application.macro_beta_use_case import _label_principal_components
+
+    labels, data_gap = _label_principal_components(
+        [["AAA", "BBB"]], lambda t: "Unknown"
+    )
+    assert labels == ("Bet 1",)
+    assert data_gap is True
+
+
+def test_pc_labels_two_pcs_mixed_dominance():
+    from application.macro_beta_use_case import _label_principal_components
+
+    def sect(t):
+        return {
+            "A": "Energy",
+            "B": "Energy",
+            "C": "Energy",
+            "D": "Energy",
+            "E": "Health Care",
+            "F": "Unknown",
+        }[t]
+
+    labels, data_gap = _label_principal_components(
+        [["A", "B", "C"], ["D", "E", "F"]], sect
+    )
+    # PC1: 3/3 Energy → "Energy"; PC2: among named {D:Energy, E:Health Care} = 1/2 = 50% < 60% → Bet 2
+    assert labels[0] == "Energy"
+    assert labels[1] == "Bet 2"
+    assert data_gap is True
