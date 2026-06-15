@@ -2,7 +2,34 @@
 
 from __future__ import annotations
 
-import streamlit as st
+import os as _os
+from pathlib import Path as _Path
+
+
+def _load_dotenv() -> None:
+    """Minimal .env loader (no python-dotenv dependency) so keys like
+    GEMINI_API_KEY in the project-root .env reach the app. Never overrides a
+    var already set in the real environment; fails silent on any error."""
+    try:
+        env_path = _Path(__file__).resolve().parents[2] / ".env"
+        if not env_path.exists():
+            return
+        for raw in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.strip()
+            val = val.strip().strip('"').strip("'")
+            if key and key not in _os.environ:
+                _os.environ[key] = val
+    except Exception:  # noqa: BLE001 — env loading must never crash the app
+        pass
+
+
+_load_dotenv()
+
+import streamlit as st  # noqa: E402
 
 st.set_page_config(
     page_title="Stock Intelligence",
