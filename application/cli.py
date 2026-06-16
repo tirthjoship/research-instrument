@@ -39,6 +39,9 @@ from config.loader import load_market_config
 from domain.exceptions import SourceThrottledError
 from domain.models import WeeklyReport
 
+# Path for weekly systematic-share history (gitignored — data/personal/).
+MACRO_HISTORY_PATH = "data/personal/macro_history.jsonl"
+
 
 def _build_dependencies(market: str, use_cache: bool = False) -> dict[str, Any]:
     """Wire adapters to ports — composition root."""
@@ -2988,10 +2991,13 @@ def _build_weekly_brief(
 
     forward = ForwardTrackingUseCase(store, market_data)
 
+    from adapters.data.sector_provider import SectorProvider
     from adapters.ml.macro_beta_analyzer import RidgeMacroBetaEstimator
+    from adapters.ml.risk_stats_analyzer import RiskStatsAnalyzer
     from application.macro_beta_use_case import MacroBetaUseCase
 
     macro_cfg = deps.get("config", {}).get("macro_beta", {})
+    risk_stats_cfg = deps.get("config", {}).get("risk_stats", {})
     macro_uc = MacroBetaUseCase(
         price_provider=lambda t, s, e: load_price_series(t, s, e),
         estimator=RidgeMacroBetaEstimator(alpha=macro_cfg.get("ridge_alpha", 0.2)),
@@ -3008,6 +3014,12 @@ def _build_weekly_brief(
             ),
             "drift_threshold": macro_cfg.get("drift_threshold", 0.50),
         },
+        risk_analyzer=RiskStatsAnalyzer(
+            seed=int(risk_stats_cfg.get("seed", 7)),
+            bootstrap_iters=int(risk_stats_cfg.get("bootstrap_iters", 500)),
+        ),
+        sector_provider=SectorProvider(),
+        history_path=MACRO_HISTORY_PATH,
     )
 
     def _macro_fn(hlds: "list[Any]", as_of: datetime) -> "Any":
@@ -3108,6 +3120,34 @@ def _prefetch_cited_cases(brief: "Any", as_of: datetime) -> None:
     click.echo(f"cite-cases: cache written → {CITED_CASES_PATH}")
 
 
+def _risk_macro_facts(macro: Any) -> list[str]:
+    """Build 4-6 plain descriptive fact strings from a BookMacroExposure for the
+    risk second-opinion prefetch (spec §9).
+
+    MUST be free of FORBIDDEN_WORDS (buy/sell/winner/conviction/predict/alpha/
+    outperform) — these facts feed the template fallback verbatim.  All lines are
+    purely descriptive; no trade call, no verdict language.
+    """
+    betas: dict[str, float] = getattr(macro, "net_beta_by_factor", {}) or {}
+    spy_beta = betas.get("SPY", 0.0)
+    sys_share: float = getattr(macro, "systematic_share", 0.0)
+    enb: float = getattr(macro, "enb", 0.0)
+    dominant: str | None = getattr(macro, "dominant_factor", None)
+    sector_hhi: float = getattr(macro, "sector_hhi", 0.0)
+
+    facts: list[str] = [
+        f"systematic share {sys_share:.0%}",
+        f"net SPY beta {spy_beta:.2f}",
+    ]
+    if enb > 0:
+        facts.append(f"effective number of bets {enb:.1f}")
+    if dominant:
+        facts.append(f"dominant factor {dominant}")
+    if sector_hhi > 0:
+        facts.append(f"sector HHI {sector_hhi:.2f}")
+    return facts
+
+
 @cli.command("weekly-brief")
 @click.option("--market", default="us", show_default=True, help="Market config")
 @click.option(
@@ -3169,9 +3209,23 @@ def weekly_brief(
     import json
 
     from application.brief_summary import brief_to_summary_dict
+    from application.macro_history_store import append_systematic_share
 
     summary_path = out_path.with_name("brief_summary.json")
     summary_path.write_text(json.dumps(brief_to_summary_dict(brief), indent=2))
+
+    # Persist weekly systematic-share to drift history (gitignored data/personal/).
+    if brief.macro is not None:
+        append_systematic_share(
+            MACRO_HISTORY_PATH, brief.macro.as_of, brief.macro.systematic_share
+        )
+
+        # Prefetch Google-AI risk second-opinion into cache (spec §9 — cache-first, no
+        # live calls at render time).  Fail-safe: build_risk_second_opinion swallows all
+        # errors and never raises, so weekly-brief never crashes on this.
+        from application.risk_second_opinion import build_risk_second_opinion
+
+        build_risk_second_opinion(_risk_macro_facts(brief.macro), summarizer=None)
 
     click.echo(to_stdout_masked(brief))
     click.echo(f"\nFull brief (gitignored) written to: {out_path}")
