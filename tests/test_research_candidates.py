@@ -194,6 +194,20 @@ def test_legend_and_disclosure() -> None:
     assert "momentum" in dis.lower() and "no proven edge" in dis.lower()
 
 
+def test_legend_has_grade_section() -> None:
+    """Fix 2: legend must include Grade line with STRONG / MODERATE labels."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_legend_html()
+    assert "Grade" in html, "Legend must have a Grade section"
+    assert "STRONG" in html, "Legend Grade section must mention STRONG"
+    assert "MODERATE" in html, "Legend Grade section must mention MODERATE"
+    # Wording update: top-5% for Exceptional, 304 cohort reference
+    assert "5%" in html, "Legend Band line must say ~top 5%"
+    assert "304" in html, "Legend pNN line must reference the 304 trend-eligible cohort"
+    assert "Low-vol now live" in html, "Legend must say 'Low-vol now live' (5th factor)"
+
+
 # ---------------------------------------------------------------------------
 # Task 5: resolve_view_mode
 # ---------------------------------------------------------------------------
@@ -573,3 +587,160 @@ def test_rank_view_opens_top_hero():
     assert html.count("<details open") == 1
     # #1 by composite is the hero
     assert html.index("SPG") < html.index("APA")
+
+
+def test_tiles_carry_tooltip_clouds():
+    from adapters.visualization.tabs.research_candidates import build_header_html
+
+    screen = {
+        "as_of": "2026-06-14",
+        "universe_size": 512,
+        "diagnostics": {"scanned": 512, "cleared": 304},
+        "candidates": [
+            {
+                "ticker": "SPG",
+                "composite": 1.3,
+                "factor_scores": [
+                    {"name": "quality", "value": 2.0, "percentile": 0.95}
+                ],
+            }
+        ],
+    }
+    html = build_header_html(screen, reports_dir="data/reports")
+    # consistent project tooltip component on the tiles (.ri-ttip), not a bespoke cloud
+    assert html.count("ri-ttip") >= 4
+
+
+def test_standout_chip_grade_words():
+    from adapters.visualization.tabs.research_candidates import _standout_chip_html
+
+    strong = {"factor_scores": [{"name": "quality", "value": 2.8, "percentile": 0.95}]}
+    weak = {"factor_scores": [{"name": "value", "value": -1.5, "percentile": 0.10}]}
+    gap = {"factor_scores": [{"name": "lowvol", "value": None, "percentile": None}]}
+    assert "STRONG" in _standout_chip_html(strong)
+    assert "WEAK" in _standout_chip_html(weak)
+    assert "STRONG" not in _standout_chip_html(gap)  # DATA-GAP → neutral dash
+
+
+def test_fix3_sub_line_uses_company_name() -> None:
+    """Fix 3: sub-line shows company name from candidate dict when present."""
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {
+        "ticker": "SPG",
+        "name": "Simon Property Group",
+        "composite": 1.27,
+        "factor_scores": [
+            {"name": "quality", "value": 1.5, "percentile": 0.95},
+        ],
+    }
+    html = _build_candidate_row_html(rank=1, candidate=c)
+    assert "Simon Property Group" in html, "sub-line must show the company name"
+    assert "evidence 1.27" in html, "sub-line must show 'evidence {composite}'"
+
+
+def test_fix3_sub_line_falls_back_to_ticker() -> None:
+    """Fix 3: sub-line falls back to ticker when no company name key present."""
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {"ticker": "KO", "composite": 0.88, "factor_scores": []}
+    html = _build_candidate_row_html(rank=1, candidate=c)
+    assert "KO" in html
+    assert "evidence 0.88" in html
+
+
+def test_fix5_gai_placeholder_no_s6_in_zone1() -> None:
+    """Fix 5: Zone 1 gai placeholder must not contain 'S6' or 'arrives in'."""
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {"ticker": "SPG", "composite": 1.27, "factor_scores": []}
+    html = _build_candidate_row_html(rank=1, candidate=c)
+    assert "S6" not in html, "Zone 1 gai placeholder must not say 'S6'"
+    assert (
+        "arrives in" not in html.lower()
+    ), "Zone 1 gai placeholder must not say 'arrives in'"
+    assert "Stock Analysis" in html, "Zone 1 gai must reference 'Stock Analysis'"
+
+
+def test_fix5_gai_placeholder_no_s6_in_zone2() -> None:
+    """Fix 5: Zone 2 gai placeholder must not contain 'S6' or 'arrives in'."""
+    from adapters.visualization.tabs.research_candidates import _build_zone2_row_html
+    from application.batch_fit_use_case import BatchFitRow
+    from domain.fit import FitVerdict
+
+    verdict = FitVerdict(
+        ticker="NVDA",
+        evidence_grade="STRONG",
+        fit_flags=(),
+        summary="Strong on evidence.",
+    )
+    row = BatchFitRow(
+        ticker="NVDA",
+        verdict=verdict,
+        fetch_ok=True,
+        factor_scores=(
+            {"name": "quality", "value": 1.5, "percentile": 0.95, "source": "screen"},
+        ),
+    )
+    html = _build_zone2_row_html(row)
+    assert "S6" not in html, "Zone 2 gai placeholder must not say 'S6'"
+    assert (
+        "arrives in" not in html.lower()
+    ), "Zone 2 gai placeholder must not say 'arrives in'"
+    assert "Stock Analysis" in html, "Zone 2 gai must reference 'Stock Analysis'"
+
+
+def test_fix3_also_in_badge_renders_for_repeat() -> None:
+    """Fix 3: repeat candidates (appear in multiple buckets) show 'also in' badge."""
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {
+        "ticker": "SPG",
+        "composite": 1.27,
+        "factor_scores": [
+            {"name": "quality", "value": 1.5, "percentile": 0.95},
+            {"name": "value", "value": 0.8, "percentile": 0.87},
+        ],
+    }
+    html = _build_candidate_row_html(
+        rank=1,
+        candidate=c,
+        show_repeat_badge=True,
+        also_buckets=["🌟", "💰"],
+    )
+    assert "also" in html, "repeat badge must contain 'also'"
+    assert "🌟" in html or "💰" in html, "also-in bucket emojis must appear"
+
+
+def test_card_factor_order_momentum_last():
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {
+        "ticker": "SPG",
+        "composite": 1.3,
+        "why": "x",
+        "factor_scores": [
+            {"name": "quality", "value": 2.0, "percentile": 0.95},
+            {"name": "value", "value": 1.0, "percentile": 0.87},
+            {"name": "revision", "value": 0.5, "percentile": 0.7},
+            {"name": "momentum", "value": 0.1, "percentile": 0.55},
+        ],
+    }
+    html = _build_candidate_row_html(rank=1, candidate=c)
+    # canonical display order (render_factor_row labels): Quality, Value,
+    # Analyst spread (revision), Low-vol, Momentum — momentum LAST.
+    iq = html.index(">Quality")
+    iv = html.index(">Value")
+    il = html.index(">Low-vol")
+    im = html.index(">Momentum")
+    assert iq < iv < il < im, "factor display order must end with Momentum"

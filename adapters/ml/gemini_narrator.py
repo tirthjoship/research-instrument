@@ -10,7 +10,7 @@ import os
 
 from domain.case_models import CaseContext, CasePoint, CaseResult
 
-_MODEL = "gemini-2.0-flash"
+_MODEL = "gemini-flash-latest"
 _PROMPT = (
     "You summarise an investment research CASE from ONLY the facts and cited article titles given. "
     'Output STRICT JSON: {{"in_favor":[{{"text":..,"source":..}}],"to_watch":[{{"text":..,"source":..}}]}}. '

@@ -78,6 +78,15 @@ class _FakeSt:
     def radio(self, *a: object, **k: object) -> str:
         return "By reason"
 
+    def segmented_control(self, *a: object, **k: object) -> str:
+        return "By reason"
+
+    def spinner(self, *a: object, **k: object) -> "_FakeCol":
+        return _FakeCol()
+
+    def fragment(self, func: object = None, **k: object) -> object:
+        return func if callable(func) else (lambda f: f)
+
     def progress(self, *a: object, **k: object) -> "_FakeSt":
         return self
 
@@ -437,6 +446,15 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
         def radio(self, *a: object, **k: object) -> str:
             return "By reason"
 
+        def segmented_control(self, *a: object, **k: object) -> str:
+            return "By reason"
+
+        def spinner(self, *a: object, **k: object) -> "_FakeCol":
+            return _FakeCol()
+
+        def fragment(self, func: object = None, **k: object) -> object:
+            return func if callable(func) else (lambda f: f)
+
         def progress(self, *a: object, **k: object) -> "FakeSt":
             return self
 
@@ -454,9 +472,10 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
 
     joined = " ".join(captured_md)
     # Upload section must be reachable past the former early-return on abstention.
+    # (Header copy is now "Have your own names? Check them" in Home tokens.)
     assert (
-        "Check your own list" in joined
-    ), "'Check your own list' header not found — upload section was not reached on abstention week"
+        "Have your own names" in joined or "evidence card" in joined
+    ), "Zone 2 'check your own names' section was not reached on abstention week"
     # S7: the screen-history table was MOVED to the Trust tab; the screener now
     # shows only a link, not the in-tab DATAFRAME/'Screen history' heading.
     assert (
