@@ -84,6 +84,9 @@ class _FakeSt:
     def spinner(self, *a: object, **k: object) -> "_FakeCol":
         return _FakeCol()
 
+    def fragment(self, func: object = None, **k: object) -> object:
+        return func if callable(func) else (lambda f: f)
+
     def progress(self, *a: object, **k: object) -> "_FakeSt":
         return self
 
@@ -448,6 +451,9 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
 
         def spinner(self, *a: object, **k: object) -> "_FakeCol":
             return _FakeCol()
+
+        def fragment(self, func: object = None, **k: object) -> object:
+            return func if callable(func) else (lambda f: f)
 
         def progress(self, *a: object, **k: object) -> "FakeSt":
             return self

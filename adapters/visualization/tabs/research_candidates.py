@@ -210,11 +210,16 @@ def load_latest_ic_verdict(reports_dir: str = "data/reports") -> str:
 # ---------------------------------------------------------------------------
 
 
-def build_header_html(screen: dict[str, Any], reports_dir: str = "data/reports") -> str:
+def build_header_html(
+    screen: dict[str, Any],
+    reports_dir: str = "data/reports",
+    include_headline: bool = True,
+) -> str:
     """Return HTML for the Zone ① header: eyebrow, headline, subhead, 4 tiles, ledger.
 
+    When include_headline is False, only the tiles + ledger are returned (the
+    headline is rendered separately so the view toggle can sit beside it).
     Uses Home design tokens (Fraunces/DM Sans/IBM Plex Mono/JetBrains Mono).
-    All colours via CSS var() — no raw hex.
     """
     as_of_raw = screen.get("as_of", "?")
     candidates = screen.get("candidates", [])
@@ -310,8 +315,17 @@ def build_header_html(screen: dict[str, Any], reports_dir: str = "data/reports")
         f"</div>"
     )
 
-    # Eyebrow + headline + subhead
-    header_html = (
+    header_html = build_headline_html() if include_headline else ""
+    return header_html + tiles_html + ledger_html
+
+
+def build_headline_html() -> str:
+    """Eyebrow + Fraunces headline + italic subhead (no screen data needed).
+
+    Rendered in its own column so the view toggle can sit top-right beside it
+    (mockup header layout), with the 4 tiles + ledger full-width below.
+    """
+    return (
         "<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
         "letter-spacing:.18em;text-transform:uppercase;"
         'color:var(--text-muted);margin-bottom:4px;">Research candidates</div>'
@@ -322,8 +336,6 @@ def build_header_html(screen: dict[str, Any], reports_dir: str = "data/reports")
         'color:var(--text-secondary);margin-top:3px;margin-bottom:8px;">'
         "The strongest names on current evidence — a place to start, not a forecast.</div>"
     )
-
-    return header_html + tiles_html + ledger_html
 
 
 # ---------------------------------------------------------------------------
@@ -1118,11 +1130,38 @@ def render(reports_dir: str = "data/reports") -> None:
 
     candidates = screen.get("candidates", [])[:_TOP_N]
 
-    # Zone ① — Header + tiles + ledger
-    st.markdown(
-        build_header_html(screen, reports_dir=reports_dir),
-        unsafe_allow_html=True,
-    )
+    # Zone ① — Header: headline (left) + VIEW toggle (right, mockup layout),
+    # then the 4 tiles + ledger full-width below.
+    new_view = "reason"
+    if candidates:
+        col_l, col_r = st.columns([3, 1], vertical_alignment="bottom")
+        with col_l:
+            st.markdown(build_headline_html(), unsafe_allow_html=True)
+        with col_r:
+            st.markdown(
+                "<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
+                "letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);"
+                'text-align:right;margin-bottom:4px;">View</div>',
+                unsafe_allow_html=True,
+            )
+            view = resolve_view_mode({str(k): v for k, v in st.session_state.items()})
+            selected = st.segmented_control(
+                "View",
+                options=["By reason", "Rank only"],
+                default="By reason" if view == "reason" else "Rank only",
+                label_visibility="collapsed",
+            )
+            new_view = "reason" if selected != "Rank only" else "rank"
+            st.session_state["screener_view"] = new_view
+        st.markdown(
+            build_header_html(screen, reports_dir=reports_dir, include_headline=False),
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            build_header_html(screen, reports_dir=reports_dir),
+            unsafe_allow_html=True,
+        )
 
     # How-to-read legend (collapsible via st.expander)
     with st.expander("▸ How to read these ratings", expanded=False):
@@ -1143,19 +1182,8 @@ def render(reports_dir: str = "data/reports") -> None:
             "Open the **Stock Analysis** tab — type any ticker for a full evidence read."
         )
     else:
-        # View toggle — segmented pill control (matches the mockup .seg toggle)
-        view = resolve_view_mode({str(k): v for k, v in st.session_state.items()})
-        selected = st.segmented_control(
-            "View",
-            options=["By reason", "Rank only"],
-            default="By reason" if view == "reason" else "Rank only",
-            label_visibility="collapsed",
-        )
-        new_view = "reason" if selected != "Rank only" else "rank"
-        st.session_state["screener_view"] = new_view
-
-        # Main body (reason or rank view) — wrapped in a spinner so the tab shows
-        # progress instead of appearing blank while the (large) card HTML renders.
+        # Main body — spinner so the tab shows progress instead of blank while
+        # the (large) card HTML renders.
         with st.spinner("Loading this week's research shortlist…"):
             body_html = build_body_html(screen, view=new_view, reports_dir=reports_dir)
             st.markdown(body_html, unsafe_allow_html=True)
@@ -1170,7 +1198,14 @@ def render(reports_dir: str = "data/reports") -> None:
         "</div>",
         unsafe_allow_html=True,
     )
-    _render_history_and_upload(reports_dir)
+
+    # Wrap in a fragment so "Run the check" reruns ONLY this section (with its
+    # own progress bar), not the whole page.
+    @st.fragment  # type: ignore[misc]
+    def _zone2_fragment() -> None:
+        _render_history_and_upload(reports_dir)
+
+    _zone2_fragment()
 
     # Zone ③ — Track record link
     st.markdown(build_zone3_html(), unsafe_allow_html=True)
