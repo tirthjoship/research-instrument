@@ -147,6 +147,17 @@ header[data-testid="stHeader"] { display: none !important; }
     box-shadow: none !important;
     border-bottom: 2px solid #14181F !important;
 }
+/* The tab LABEL text lives in a nested <p> (stMarkdownContainer) whose default
+   Source Sans wins over the button's font — restyle the <p> itself to Fraunces. */
+.stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+    font-family: 'Fraunces', Georgia, serif !important;
+    font-weight: 500 !important;
+    font-size: 15px !important;
+    color: inherit !important;
+}
+.stTabs [data-baseweb="tab-list"] button[aria-selected="true"] [data-testid="stMarkdownContainer"] p {
+    font-weight: 600 !important;
+}
 .stTabs [data-baseweb="tab-list"] button:hover:not([aria-selected="true"]) {
     color: var(--text-primary) !important;
     background: transparent !important;
