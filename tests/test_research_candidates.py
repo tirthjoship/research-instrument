@@ -653,6 +653,49 @@ def test_fix3_sub_line_falls_back_to_ticker() -> None:
     assert "evidence 0.88" in html
 
 
+def test_fix5_gai_placeholder_no_s6_in_zone1() -> None:
+    """Fix 5: Zone 1 gai placeholder must not contain 'S6' or 'arrives in'."""
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {"ticker": "SPG", "composite": 1.27, "factor_scores": []}
+    html = _build_candidate_row_html(rank=1, candidate=c)
+    assert "S6" not in html, "Zone 1 gai placeholder must not say 'S6'"
+    assert (
+        "arrives in" not in html.lower()
+    ), "Zone 1 gai placeholder must not say 'arrives in'"
+    assert "Stock Analysis" in html, "Zone 1 gai must reference 'Stock Analysis'"
+
+
+def test_fix5_gai_placeholder_no_s6_in_zone2() -> None:
+    """Fix 5: Zone 2 gai placeholder must not contain 'S6' or 'arrives in'."""
+    from adapters.visualization.tabs.research_candidates import _build_zone2_row_html
+    from application.batch_fit_use_case import BatchFitRow
+    from domain.fit import FitVerdict
+
+    verdict = FitVerdict(
+        ticker="NVDA",
+        evidence_grade="STRONG",
+        fit_flags=(),
+        summary="Strong on evidence.",
+    )
+    row = BatchFitRow(
+        ticker="NVDA",
+        verdict=verdict,
+        fetch_ok=True,
+        factor_scores=(
+            {"name": "quality", "value": 1.5, "percentile": 0.95, "source": "screen"},
+        ),
+    )
+    html = _build_zone2_row_html(row)
+    assert "S6" not in html, "Zone 2 gai placeholder must not say 'S6'"
+    assert (
+        "arrives in" not in html.lower()
+    ), "Zone 2 gai placeholder must not say 'arrives in'"
+    assert "Stock Analysis" in html, "Zone 2 gai must reference 'Stock Analysis'"
+
+
 def test_fix3_also_in_badge_renders_for_repeat() -> None:
     """Fix 3: repeat candidates (appear in multiple buckets) show 'also in' badge."""
     from adapters.visualization.tabs.research_candidates import (
