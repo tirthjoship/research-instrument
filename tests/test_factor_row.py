@@ -82,3 +82,33 @@ def test_factor_row_data_gap_tooltip_badge() -> None:
     # DATA-GAP row still has label + tooltip trigger.
     assert "ri-ttip" in html
     assert "DATA-GAP" in html
+
+
+# ── Fix 4: momentum sparkline ────────────────────────────────────────────────
+
+
+def test_momentum_row_has_sparkline_svg() -> None:
+    """Fix 4: momentum row must contain an inline SVG sparkline (decorative motif)."""
+    from adapters.visualization.components.factor_row import render_factor_row
+
+    html = render_factor_row("momentum", value=0.8, percentile=0.75)
+    assert "<svg" in html, "momentum row must contain an SVG sparkline"
+    assert "polyline" in html, "sparkline must use a polyline element"
+
+
+def test_non_momentum_row_has_no_sparkline() -> None:
+    """Non-momentum factor rows must NOT render a sparkline."""
+    from adapters.visualization.components.factor_row import render_factor_row
+
+    for key in ("quality", "value", "revision", "lowvol"):
+        html = render_factor_row(key, value=1.0, percentile=0.85)
+        assert "<svg" not in html, f"{key} row must not contain an SVG sparkline"
+
+
+def test_momentum_data_gap_no_sparkline() -> None:
+    """DATA-GAP momentum row omits the sparkline (no band badge to prepend to)."""
+    from adapters.visualization.components.factor_row import render_factor_row
+
+    html = render_factor_row("momentum", value=None, percentile=None)
+    # DATA-GAP path has no band badge — sparkline is not prepended there.
+    assert "DATA-GAP" in html
