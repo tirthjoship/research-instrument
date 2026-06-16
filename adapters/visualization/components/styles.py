@@ -58,6 +58,17 @@ h1 {
     line-height: 1.0 !important;
     margin-bottom: 2px !important;
     margin-top: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+/* Streamlit wraps a raw <h1> in a heading container with its own top padding;
+   zero it so the title sits at the very top and the subtitle hugs it. */
+[data-testid="stHeadingWithActionElements"]:has(.ri-app-title) {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+[data-testid="stHeadingWithActionElements"]:has(.ri-app-title) [data-testid="stHeaderActionElements"] {
+    display: none !important;
 }
 /* App subtitle — Newsreader, tight under the title (matches approved mockup) */
 .ri-app-sub {
