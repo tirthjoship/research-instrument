@@ -116,6 +116,13 @@ module = [
 disallow_untyped_decorators = false
 warn_return_any = false
 
+# research_candidates needs `# type: ignore[misc]` on @st.fragment for the
+# per-file pre-commit mypy run, but full-tree `mypy --strict` resolves the
+# decorator and flags it unused — tolerate the (per-file-needed) ignore here.
+[[tool.mypy.overrides]]
+module = ["adapters.visualization.tabs.research_candidates"]
+warn_unused_ignores = false
+
 [[tool.mypy.overrides]]
 module = [
     "adapters.ml.feature_engineer",
