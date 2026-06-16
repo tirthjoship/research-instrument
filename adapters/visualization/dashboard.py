@@ -44,49 +44,82 @@ inject_global_css()
 
 # fmt: off
 _APP_TITLE_HTML = (
-    "<h1 class='ri-app-title' style=\"font-family:'Fraunces',Georgia,serif !important;font-weight:600 !important;font-size:32px !important;letter-spacing:-0.01em !important;color:#14181F !important;margin-bottom:2px !important;\">Multi-Modal Stock Recommender</h1>"  # noqa: E501
-    "<p style=\"font-family:'IBM Plex Sans',sans-serif;font-size:13px;color:#717885;margin:0 0 14px 0;letter-spacing:0.01em;\">Evidence-based equity research instrument &mdash; attribution, not forecast</p>"  # noqa: E501
+    "<div style=\"margin:0 0 2px 0;\">"
+    "<h1 class='ri-app-title' style=\"font-family:'Fraunces',Georgia,serif !important;font-weight:600 !important;font-size:30px !important;letter-spacing:-0.01em !important;color:#14181F !important;margin:0 0 2px 0 !important;line-height:1.1 !important;\">Multi-Modal Stock Recommender</h1>"  # noqa: E501
+    "<p class='ri-app-sub'>Evidence-based equity research instrument &mdash; attribution, not forecast</p>"  # noqa: E501
+    "</div>"
 )
 # fmt: on
 st.markdown(_APP_TITLE_HTML, unsafe_allow_html=True)
 
-tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(
-    [
-        "Home",
-        "Screener",
-        "Risk",
-        "My Portfolio",
-        "Stock Analysis",
-        "Trust",
-    ]
+TAB_LABELS = [
+    "Loading your book",
+    "Building this week's research shortlist",
+    "Computing portfolio risk",
+    "Loading your portfolio",
+    "Loading stock analysis",
+    "Loading the track record",
+]
+
+tabs = st.tabs(
+    ["Home", "Screener", "Risk", "My Portfolio", "Stock Analysis", "Trust"],
+    on_change="rerun",
 )
 
-with tab0:
-    from adapters.visualization.tabs.weekly_brief import render as render_brief
+from adapters.visualization.components.tab_loading import (  # noqa: E402
+    render_tab_loading,
+)
 
-    render_brief()
-with tab1:
-    from adapters.visualization.tabs.research_candidates import (
-        render as render_candidates,
-    )
+render_tab_loading(TAB_LABELS)
 
-    render_candidates()
-with tab2:
-    from adapters.visualization.tabs.risk import render as render_risk
 
-    render_risk()
-with tab3:
-    from adapters.visualization.tabs.positions import render as render_portfolio
+def _refresh_button(slot_key: str) -> None:
+    """Right-aligned per-tab refresh: clears cached fetches and reruns."""
+    _, right = st.columns([6, 1])
+    with right:
+        if st.button("↻ refresh", key=f"refresh_{slot_key}"):
+            st.cache_data.clear()
+            st.rerun()
 
-    render_portfolio()
-with tab4:
-    from adapters.visualization.tabs.stock_analysis import render as render_analysis
 
-    render_analysis()
-with tab5:
-    from adapters.visualization.tabs.trust import render as render_trust
+if tabs[0].open:
+    with tabs[0]:
+        from adapters.visualization.tabs.weekly_brief import render as render_brief
 
-    render_trust()
+        _refresh_button("home")
+        render_brief()
+if tabs[1].open:
+    with tabs[1]:
+        from adapters.visualization.tabs.research_candidates import (
+            render as render_candidates,
+        )
+
+        _refresh_button("screener")
+        render_candidates()
+if tabs[2].open:
+    with tabs[2]:
+        from adapters.visualization.tabs.risk import render as render_risk
+
+        _refresh_button("risk")
+        render_risk()
+if tabs[3].open:
+    with tabs[3]:
+        from adapters.visualization.tabs.positions import render as render_portfolio
+
+        _refresh_button("portfolio")
+        render_portfolio()
+if tabs[4].open:
+    with tabs[4]:
+        from adapters.visualization.tabs.stock_analysis import render as render_analysis
+
+        _refresh_button("analysis")
+        render_analysis()
+if tabs[5].open:
+    with tabs[5]:
+        from adapters.visualization.tabs.trust import render as render_trust
+
+        _refresh_button("trust")
+        render_trust()
 
 st.markdown(
     '<div class="ws-footer">Multi-Modal Stock Recommender · Hexagonal Architecture · Built by Tirth Joshi</div>',
