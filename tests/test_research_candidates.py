@@ -622,6 +622,61 @@ def test_standout_chip_grade_words():
     assert "STRONG" not in _standout_chip_html(gap)  # DATA-GAP → neutral dash
 
 
+def test_fix3_sub_line_uses_company_name() -> None:
+    """Fix 3: sub-line shows company name from candidate dict when present."""
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {
+        "ticker": "SPG",
+        "name": "Simon Property Group",
+        "composite": 1.27,
+        "factor_scores": [
+            {"name": "quality", "value": 1.5, "percentile": 0.95},
+        ],
+    }
+    html = _build_candidate_row_html(rank=1, candidate=c)
+    assert "Simon Property Group" in html, "sub-line must show the company name"
+    assert "evidence 1.27" in html, "sub-line must show 'evidence {composite}'"
+
+
+def test_fix3_sub_line_falls_back_to_ticker() -> None:
+    """Fix 3: sub-line falls back to ticker when no company name key present."""
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {"ticker": "KO", "composite": 0.88, "factor_scores": []}
+    html = _build_candidate_row_html(rank=1, candidate=c)
+    assert "KO" in html
+    assert "evidence 0.88" in html
+
+
+def test_fix3_also_in_badge_renders_for_repeat() -> None:
+    """Fix 3: repeat candidates (appear in multiple buckets) show 'also in' badge."""
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {
+        "ticker": "SPG",
+        "composite": 1.27,
+        "factor_scores": [
+            {"name": "quality", "value": 1.5, "percentile": 0.95},
+            {"name": "value", "value": 0.8, "percentile": 0.87},
+        ],
+    }
+    html = _build_candidate_row_html(
+        rank=1,
+        candidate=c,
+        show_repeat_badge=True,
+        also_buckets=["🌟", "💰"],
+    )
+    assert "also" in html, "repeat badge must contain 'also'"
+    assert "🌟" in html or "💰" in html, "also-in bucket emojis must appear"
+
+
 def test_card_factor_order_momentum_last():
     from adapters.visualization.tabs.research_candidates import (
         _build_candidate_row_html,
