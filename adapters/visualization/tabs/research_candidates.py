@@ -1047,7 +1047,10 @@ def _render_history_and_upload(reports_dir: str) -> None:
         )
     with col_btn:
         run = st.button("Run the check", type="primary", use_container_width=True)
-    uploaded = st.file_uploader("or upload a CSV instead", type=["csv"])
+    st.caption("or upload a CSV (≤25 names)")
+    uploaded = st.file_uploader(
+        "Upload CSV", type=["csv"], label_visibility="collapsed"
+    )
     if run:
         from application.batch_fit_use_case import (
             MAX_TICKERS,
