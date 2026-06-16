@@ -1028,7 +1028,7 @@ def _enb_section(macro: dict[str, Any]) -> str:
 
 
 def _sector_section(macro: dict[str, Any]) -> str:
-    """GICS sector weights + HHI + sector gaps tagged NOT A BUY CALL."""
+    """GICS sector weights + HHI + sector gaps tagged NOT A TRADE CALL."""
     sector_weights: dict[str, float] = macro.get("sector_weights") or {}
     sector_hhi = macro.get("sector_hhi")
     sector_gaps: list[str] = macro.get("sector_gaps") or []
