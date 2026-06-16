@@ -6,7 +6,7 @@ GLOBAL_CSS = """
 <style>
 /* ===== Fonts ===== */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 /* ===== CSS Variables ===== */
 :root {
@@ -52,12 +52,21 @@ h1 {
 .ri-app-title {
     font-family: 'Fraunces', Georgia, serif !important;
     font-weight: 600 !important;
-    font-size: 32px !important;
+    font-size: 30px !important;
     letter-spacing: -0.01em !important;
     color: #14181F !important;
     line-height: 1.1 !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 2px !important;
     margin-top: 0 !important;
+}
+/* App subtitle — Newsreader, tight under the title (matches approved mockup) */
+.ri-app-sub {
+    font-family: 'Newsreader', Georgia, serif !important;
+    font-weight: 400 !important;
+    font-size: 14px !important;
+    color: #717885 !important;
+    line-height: 1.3 !important;
+    margin: 0 0 18px 0 !important;
 }
 h2 {
     font-family: 'DM Sans', sans-serif !important;
@@ -109,10 +118,10 @@ header[data-testid="stHeader"] { display: none !important; }
     display: none !important;
 }
 .stTabs [data-baseweb="tab-list"] button {
-    font-family: 'DM Sans', sans-serif !important;
+    font-family: 'Newsreader', Georgia, serif !important;
     font-weight: 400 !important;
     font-size: 15px !important;
-    color: var(--text-secondary) !important;
+    color: #717885 !important;
     border: none !important;
     border-radius: 0 !important;
     background: transparent !important;
@@ -121,11 +130,11 @@ header[data-testid="stHeader"] { display: none !important; }
     transition: color 0.15s ease !important;
 }
 .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-    color: var(--text-primary) !important;
+    color: #14181F !important;
     font-weight: 500 !important;
     background: transparent !important;
     box-shadow: none !important;
-    border-bottom: 2px solid var(--text-primary) !important;
+    border-bottom: 2px solid #14181F !important;
 }
 .stTabs [data-baseweb="tab-list"] button:hover:not([aria-selected="true"]) {
     color: var(--text-primary) !important;
