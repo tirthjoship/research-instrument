@@ -1201,7 +1201,7 @@ def render(reports_dir: str = "data/reports") -> None:
 
     # Wrap in a fragment so "Run the check" reruns ONLY this section (with its
     # own progress bar), not the whole page.
-    @st.fragment  # type: ignore[misc]
+    @st.fragment
     def _zone2_fragment() -> None:
         _render_history_and_upload(reports_dir)
 

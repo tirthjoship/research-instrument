@@ -116,11 +116,13 @@ module = [
 disallow_untyped_decorators = false
 warn_return_any = false
 
-# research_candidates needs `# type: ignore[misc]` on @st.fragment for the
-# per-file pre-commit mypy run, but full-tree `mypy --strict` resolves the
-# decorator and flags it unused — tolerate the (per-file-needed) ignore here.
+# research_candidates uses @st.fragment; streamlit ships no type info for it, so
+# the decorator is untyped (env-dependent: typed locally where streamlit is
+# installed, untyped in the CI typecheck job where it is not). Allow the untyped
+# decorator + tolerate any resulting unused-ignore, so both envs agree.
 [[tool.mypy.overrides]]
 module = ["adapters.visualization.tabs.research_candidates"]
+disallow_untyped_decorators = false
 warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
