@@ -194,6 +194,20 @@ def test_legend_and_disclosure() -> None:
     assert "momentum" in dis.lower() and "no proven edge" in dis.lower()
 
 
+def test_legend_has_grade_section() -> None:
+    """Fix 2: legend must include Grade line with STRONG / MODERATE labels."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_legend_html()
+    assert "Grade" in html, "Legend must have a Grade section"
+    assert "STRONG" in html, "Legend Grade section must mention STRONG"
+    assert "MODERATE" in html, "Legend Grade section must mention MODERATE"
+    # Wording update: top-5% for Exceptional, 304 cohort reference
+    assert "5%" in html, "Legend Band line must say ~top 5%"
+    assert "304" in html, "Legend pNN line must reference the 304 trend-eligible cohort"
+    assert "Low-vol now live" in html, "Legend must say 'Low-vol now live' (5th factor)"
+
+
 # ---------------------------------------------------------------------------
 # Task 5: resolve_view_mode
 # ---------------------------------------------------------------------------

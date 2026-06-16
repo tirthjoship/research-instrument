@@ -334,7 +334,7 @@ def build_header_html(screen: dict[str, Any], reports_dir: str = "data/reports")
 def build_legend_html() -> str:
     """Return HTML for the 'How to read these ratings' expandable legend.
 
-    Matches mockup #lg .legend content: bands + p-notation + Evidence score.
+    Matches mockup #lg .legend content: bands + p-notation + Evidence score + Grade.
     """
     return (
         '<div style="background:var(--bg-secondary);border:1px solid var(--border);'
@@ -343,19 +343,26 @@ def build_legend_html() -> str:
         "Each name scored on the factors, each a z-score vs this week&#39;s trend-eligible cohort:<br>"
         "&bull; <b>Band</b>: "
         '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
-        'background:#DCFCE7;color:var(--success);">Exceptional</span> ~top 10% &nbsp;'
+        'background:#DCFCE7;color:var(--success);">Exceptional</span> ~top&nbsp;5% &nbsp;'
         '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
-        'background:#DBEAFE;color:var(--accent);">Strong</span> ~top quartile &nbsp;'
+        'background:#DBEAFE;color:var(--accent);">Strong</span> ~top&nbsp;quartile &nbsp;'
         '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
         'background:#F1F5F9;color:var(--text-secondary);">Flat</span> middle &nbsp;'
         '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
         'background:#FEE2E2;color:var(--danger);">Weak</span> bottom.<br>'
         "&bull; <b style=\"font-family:'JetBrains Mono',monospace;\">pNN</b> = percentile: "
-        "p95 beats 95% of the cohort (not sector, not full universe).<br>"
+        "p95 beats 95% of the 304 (not sector, not all 512).<br>"
         "&bull; <b>Evidence score</b> = equal-weight average of the z-scores. "
         "A ranking aid, not a return forecast.<br>"
+        "&bull; <b>Grade</b> (check-your-own-list): "
+        '<span style="font-weight:700;font-size:10px;padding:2px 7px;border-radius:11px;'
+        'background:#DCFCE7;color:var(--success);">STRONG</span> &ge;80% &nbsp;'
+        '<span style="font-weight:700;font-size:10px;padding:2px 7px;border-radius:11px;'
+        'background:#DBEAFE;color:var(--accent);">MODERATE</span> 50&ndash;80% &nbsp;'
+        '<span style="font-weight:700;font-size:10px;padding:2px 7px;border-radius:11px;'
+        'background:#FEE2E2;color:var(--danger);">WEAK</span> below half.<br>'
         "&bull; Track-1 factors: Quality &middot; Value &middot; Analyst spread &middot; Momentum. "
-        "Low-vol arrives in Track 2."
+        "Low-vol now live (5th factor)."
         "</div>"
     )
 
