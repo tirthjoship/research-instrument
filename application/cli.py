@@ -3120,6 +3120,34 @@ def _prefetch_cited_cases(brief: "Any", as_of: datetime) -> None:
     click.echo(f"cite-cases: cache written → {CITED_CASES_PATH}")
 
 
+def _risk_macro_facts(macro: Any) -> list[str]:
+    """Build 4-6 plain descriptive fact strings from a BookMacroExposure for the
+    risk second-opinion prefetch (spec §9).
+
+    MUST be free of FORBIDDEN_WORDS (buy/sell/winner/conviction/predict/alpha/
+    outperform) — these facts feed the template fallback verbatim.  All lines are
+    purely descriptive; no trade call, no verdict language.
+    """
+    betas: dict[str, float] = getattr(macro, "net_beta_by_factor", {}) or {}
+    spy_beta = betas.get("SPY", 0.0)
+    sys_share: float = getattr(macro, "systematic_share", 0.0)
+    enb: float = getattr(macro, "enb", 0.0)
+    dominant: str | None = getattr(macro, "dominant_factor", None)
+    sector_hhi: float = getattr(macro, "sector_hhi", 0.0)
+
+    facts: list[str] = [
+        f"systematic share {sys_share:.0%}",
+        f"net SPY beta {spy_beta:.2f}",
+    ]
+    if enb > 0:
+        facts.append(f"effective number of bets {enb:.1f}")
+    if dominant:
+        facts.append(f"dominant factor {dominant}")
+    if sector_hhi > 0:
+        facts.append(f"sector HHI {sector_hhi:.2f}")
+    return facts
+
+
 @cli.command("weekly-brief")
 @click.option("--market", default="us", show_default=True, help="Market config")
 @click.option(
@@ -3191,6 +3219,13 @@ def weekly_brief(
         append_systematic_share(
             MACRO_HISTORY_PATH, brief.macro.as_of, brief.macro.systematic_share
         )
+
+        # Prefetch Google-AI risk second-opinion into cache (spec §9 — cache-first, no
+        # live calls at render time).  Fail-safe: build_risk_second_opinion swallows all
+        # errors and never raises, so weekly-brief never crashes on this.
+        from application.risk_second_opinion import build_risk_second_opinion
+
+        build_risk_second_opinion(_risk_macro_facts(brief.macro), summarizer=None)
 
     click.echo(to_stdout_masked(brief))
     click.echo(f"\nFull brief (gitignored) written to: {out_path}")

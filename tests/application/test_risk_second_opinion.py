@@ -234,3 +234,39 @@ def test_no_real_cache_file_written_by_tests(tmp_path: pytest.TempPathFactory) -
     assert (
         existed_before == existed_after
     ), "use_cache=False must not touch the real cache file"
+
+
+# ---------------------------------------------------------------------------
+# load_cached_risk_second_opinion tests
+# ---------------------------------------------------------------------------
+
+
+def test_load_cached_risk_second_opinion_hits_cache() -> None:
+    """load_cached_risk_second_opinion returns the value from load_cached_case."""
+    from application import risk_second_opinion as mod
+
+    with patch.object(mod, "load_cached_case", return_value=_GOOD_RESULT) as mock_load:
+        result = mod.load_cached_risk_second_opinion()
+
+    assert result is _GOOD_RESULT
+    mock_load.assert_called_once_with(mod._CITED_CASES_PATH, mod._CACHE_KEY)
+
+
+def test_load_cached_risk_second_opinion_missing_returns_none() -> None:
+    """load_cached_risk_second_opinion returns None when cache returns None."""
+    from application import risk_second_opinion as mod
+
+    with patch.object(mod, "load_cached_case", return_value=None):
+        result = mod.load_cached_risk_second_opinion()
+
+    assert result is None
+
+
+def test_load_cached_risk_second_opinion_exception_returns_none() -> None:
+    """load_cached_risk_second_opinion swallows exceptions and returns None."""
+    from application import risk_second_opinion as mod
+
+    with patch.object(mod, "load_cached_case", side_effect=OSError("disk error")):
+        result = mod.load_cached_risk_second_opinion()
+
+    assert result is None
