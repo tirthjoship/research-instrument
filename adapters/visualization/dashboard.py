@@ -62,7 +62,6 @@ TAB_LABELS = [
 tabs = st.tabs(
     ["Home", "Screener", "Risk", "My Portfolio", "Stock Analysis", "Trust"],
     on_change="rerun",
-    key="main_tabs",
 )
 
 from adapters.visualization.components.tab_loading import (  # noqa: E402

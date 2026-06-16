@@ -96,32 +96,40 @@ header[data-testid="stHeader"] { display: none !important; }
 
 /* ===== Tab Styling ===== */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 4px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    padding: 4px;
+    gap: 26px;
+    background: transparent;
     border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    padding: 0;
+}
+/* Neutralise baseweb's sliding highlight/border bar so only our flat underline shows */
+.stTabs [data-baseweb="tab-highlight"],
+.stTabs [data-baseweb="tab-border"] {
+    display: none !important;
 }
 .stTabs [data-baseweb="tab-list"] button {
     font-family: 'DM Sans', sans-serif !important;
-    font-weight: 500 !important;
-    font-size: 14px !important;
+    font-weight: 400 !important;
+    font-size: 15px !important;
     color: var(--text-secondary) !important;
-    border-radius: var(--radius-sm) !important;
     border: none !important;
+    border-radius: 0 !important;
     background: transparent !important;
-    padding: 8px 16px !important;
-    transition: color 0.15s ease, background 0.15s ease !important;
+    box-shadow: none !important;
+    padding: 10px 2px !important;
+    transition: color 0.15s ease !important;
 }
 .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-    color: var(--accent) !important;
-    background: var(--bg-primary) !important;
-    box-shadow: var(--shadow-sm) !important;
-    border-bottom: 2px solid var(--accent) !important;
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-bottom: 2px solid var(--text-primary) !important;
 }
 .stTabs [data-baseweb="tab-list"] button:hover:not([aria-selected="true"]) {
     color: var(--text-primary) !important;
-    background: rgba(37,99,235,0.05) !important;
+    background: transparent !important;
 }
 
 /* ===== ws-card — Primary Card Component ===== */
