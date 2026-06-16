@@ -679,7 +679,7 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
             row_html = (
                 f'<details{open_attr} style="background:var(--bg-primary);'
                 f"border:1px solid {border_color};border-radius:10px;"
-                f"margin-bottom:7px;overflow:hidden;"
+                f"margin-bottom:7px;overflow:hidden;content-visibility:auto;contain-intrinsic-size:0 64px;"
                 f'box-shadow:{shadow};">'
                 f"{summary_html}"
                 f'<div style="padding:2px 14px 13px;'
@@ -740,7 +740,7 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
         row_html = (
             f'<details{open_attr} style="background:var(--bg-primary);'
             f"border:1px solid {border_color};border-radius:10px;"
-            f"margin-bottom:7px;overflow:hidden;"
+            f"margin-bottom:7px;overflow:hidden;content-visibility:auto;contain-intrinsic-size:0 64px;"
             f'box-shadow:{shadow};">'
             f"{summary_html}"
             f'<div style="padding:2px 14px 13px;'
@@ -994,7 +994,7 @@ def _build_zone2_row_html(row: Any) -> str:
     return (
         f'<details style="background:var(--bg-primary);'
         f"border:1px solid var(--border);border-radius:10px;"
-        f"margin-bottom:7px;overflow:hidden;"
+        f"margin-bottom:7px;overflow:hidden;content-visibility:auto;contain-intrinsic-size:0 64px;"
         f'box-shadow:var(--shadow-sm);">'
         f"{summary_html}"
         f'<div style="padding:2px 14px 13px;'
