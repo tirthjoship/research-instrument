@@ -377,3 +377,28 @@ def test_risk_tab_measured_vs_subtext_always_present() -> None:
     for macro in [_MACRO_V8, _MACRO_NO_FLAGS, _THIN_MACRO]:
         html = risk._compose(macro)
         assert "MEASURED VS" in html, "MEASURED VS must always appear in status banner"
+
+
+def test_risk_tab_escapes_holding_name() -> None:
+    """HTML-special chars in holding name/ticker must be escaped, not injected raw."""
+    from adapters.visualization.tabs import risk
+
+    macro = {
+        **_MACRO_V8,
+        "holdings_meta": [
+            {
+                "ticker": "X&Y",
+                "name": "A<script>alert(1)</script>",
+                "sector": "Tech",
+                "weight": 0.5,
+            },
+        ],
+        "risk_contribution": {"X&Y": 1.0},
+    }
+    html = risk._compose(macro)
+    # Raw tag must not survive
+    assert "<script>" not in html, "Raw <script> tag must be escaped, not injected"
+    # Escaped form must be present
+    assert (
+        "&lt;script&gt;" in html or "A&lt;" in html
+    ), "Escaped form of the holding name (&lt;script&gt; or A&lt;) must appear in output"
