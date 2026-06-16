@@ -23,6 +23,14 @@
 | `adapters/visualization/dashboard.py` | Lazy tab wiring + `TAB_LABELS` + `render_tab_loading` + per-tab `↻ refresh` | **Modify** |
 | `docs/adr/ADR-058-lazy-tab-rendering-and-cross-tab-loading.md` | Architecture decision record | **Create** |
 
+**Unchanged — must NOT be altered (validated against the mockup + real app):** the header keeps its
+existing fonts — app title "Multi-Modal Stock Recommender" in **Fraunces** (32px/600), the statement below
+it ("Evidence-based equity research instrument — attribution, not forecast") in **IBM Plex Sans**
+(13px/#717885), and the tab labels in **DM Sans** (14px/500). This plan touches only the loading overlay,
+tab execution, and the refresh control — it must not change `dashboard.py`'s `ri-app-title`/subtitle
+markup or the `.stTabs ... button` font in `components/styles.py`. The overlay deliberately uses the same
+family as the surrounding chrome: **DM Sans** for the label/hint, **IBM Plex Mono** for the timer.
+
 **Pre-flight:** confirm working tree is on `feat/dashboard-legibility-redesign` and clean of unrelated changes; the prior single-tab overlay edits (uncommitted `tab_loading.py`, `test_tab_loading.py`, `dashboard.py` wiring) are superseded by this plan and will be overwritten by Tasks 1–4. Run `git checkout data/reports/` before any `make check` (tracked-JSON trailing-newline drift; STATUS caveat).
 
 ---
