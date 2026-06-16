@@ -71,7 +71,19 @@ def test_summary_dict_has_flags_grouped_and_dates():
 
 
 def test_summary_dict_abstention_flag():
+    # abstained must come from the WeeklyBrief.abstained flag (sourced from
+    # ScreenResult.abstained), NOT recomputed from len(candidates).
     b = _brief()
-    b = WeeklyBrief(**{**b.__dict__, "candidates": ()})
+    # Explicitly set abstained=True; candidates being empty is orthogonal.
+    b = WeeklyBrief(**{**b.__dict__, "candidates": (), "abstained": True})
     d = brief_to_summary_dict(b)
     assert d["abstained"] is True
+
+
+def test_summary_dict_abstained_false_when_empty_candidates_but_not_abstained():
+    """Regression: zero candidates with abstained=False must return False.
+    The old len(candidates)==0 logic would return True here — that was the bug."""
+    b = _brief()
+    b = WeeklyBrief(**{**b.__dict__, "candidates": (), "abstained": False})
+    d = brief_to_summary_dict(b)
+    assert d["abstained"] is False

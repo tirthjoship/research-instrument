@@ -18,7 +18,7 @@ def brief_to_summary_dict(brief: WeeklyBrief) -> dict[str, Any]:
         "as_of": brief.as_of,
         "regime": str(getattr(brief.regime, "value", brief.regime)),
         "screen_label": brief.screen_label.value,
-        "abstained": len(brief.candidates) == 0,
+        "abstained": brief.abstained,
         "candidates": [
             {
                 "ticker": c.ticker,

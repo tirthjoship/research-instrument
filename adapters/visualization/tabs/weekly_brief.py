@@ -2,91 +2,189 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 
 import streamlit as st
 
+from adapters.visualization.card_fetch import get_case_on_expand
+from adapters.visualization.components.decision_card import (
+    render_collapsed_row,
+    render_expanded_card,
+)
 from adapters.visualization.components.formatters import status_pill_html
-from adapters.visualization.components.ledger import render_ledger
+from adapters.visualization.components.onboarding import render_landing_door_html
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import (
-    load_ablation_results,
-    load_adherence_log,
     load_brief_summary,
     load_latest_screen,
     load_weekly_brief,
     staleness_days,
 )
+from application.card_loading import select_case_summarizer
+from application.evidence_card import EvidenceCard
+from application.holdings_reader import make_manual_holding, read_holdings
+from application.runtime_guard import is_local_runtime
+from application.sample_book import load_sample_book
+from domain.discipline import Verdict
+from domain.evidence_rag import DIMENSIONS, RagColor, RagSignal
+from domain.risk_rubric import classify_net_beta, classify_systematic_share
+from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
+
+# st.fragment fallback: no-op decorator if the Streamlit version doesn't have it.
+_fragment = getattr(st, "fragment", lambda f: f)
 
 _SUMMARY_PATH = "data/personal/brief_summary.json"
 _BRIEF_MD_PATH = "data/personal/weekly_brief.md"
 _ADHERENCE_PATH = "data/personal/adherence_log.jsonl"
 _REPORTS_DIR = "data/reports"
-_GRADE_ORDER = ["REDUCE", "TRIM", "REVIEW", "HOLD", "ADD_OK"]
-_GRADE_COLOR = {
-    "REDUCE": "#DC2626",
-    "TRIM": "#EA580C",
-    "REVIEW": "#CA8A04",
-    "HOLD": "#64748B",
-    "ADD_OK": "#16A34A",
-}
+_SCREEN_COVERAGE_FLOOR = 0.5  # mirrors research_candidates.py
+
+_WINDOW_DAYS = (7, 30, 90, 180, 252)
 
 
-# Rank-IC primary result: mean IC = 0.004 over 496 dates (1m/21d horizon).
-# Source: data/reports/divergence_ic_1m_*.json — ADR-044 divergence-ic-verdict
-# (KILL; bootstrap CI spans zero). A degenerate run (n_dates == 0) is ignored, and
-# we fall back to the ADR-recorded value, so the tile always reflects the real
-# falsification finding rather than an empty regeneration.
-_RANK_IC_FALSIFIED = "0.004"  # ADR-044: mean IC = 0.0040 over 496 dates, KILL
+# ---------------------------------------------------------------------------
+# FIX B — pure helpers for price / cost / windowed returns
+# ---------------------------------------------------------------------------
 
 
-def _load_rank_ic(reports_dir: str) -> str:
-    """Mean rank-IC from the primary divergence-IC run (ADR-044).
+def implied_cost(price: float | None, unrealized_pct: float | None) -> float | None:
+    """Back-calculate cost basis from price and unrealized %.
 
-    Reads the real artifact (``divergence_ic_1m_*.json``, n_dates > 0) and formats
-    its mean IC. Falls back to the ADR-recorded value when no genuine run is present;
-    never reports a degenerate empty run.
+    Formula: cost = price / (1 + unrealized_pct / 100)
+
+    Returns None when either input is None so the card shows "—" honestly.
+
+    Examples:
+        implied_cost(44.63, 22.7) → ~36.37
+        implied_cost(100.0, 0.0) → 100.0
+        implied_cost(None, 22.7) → None
+        implied_cost(100.0, None) → None
     """
-    for path in sorted(Path(reports_dir).glob("divergence_ic_1m_*.json"), reverse=True):
-        try:
-            data = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
-            continue
-        if data.get("n_dates", 0) and data.get("mean_ic") is not None:
-            return f"{data['mean_ic']:.3f}"
-    return _RANK_IC_FALSIFIED
+    if price is None or unrealized_pct is None:
+        return None
+    divisor = 1.0 + unrealized_pct / 100.0
+    if divisor == 0.0:
+        return None
+    return price / divisor
 
 
-def _load_directional_accuracy(reports_dir: str) -> str:
-    """Load baseline (technical_only) directional accuracy. Returns formatted % or DATA_GAP."""
-    rows = load_ablation_results(reports_dir)
-    if not rows:
-        return "—"
-    # Use the technical_only (baseline) variant — most conservative honest number
-    for row in rows:
-        if row.get("variant") == "technical_only":
-            val = row.get("directional_accuracy")
-            if val is not None:
-                return f"{val * 100:.1f}%"
-    # Fallback: use first row if no technical_only found
-    val = rows[0].get("directional_accuracy")
-    if val is not None:
-        return f"{val * 100:.1f}%"
-    return "—"
+def window_returns(
+    closes: list[float],
+    windows: tuple[int, ...] = _WINDOW_DAYS,
+) -> tuple[float, ...]:
+    """Compute % change for each look-back window from a list of daily closes.
+
+    For each window W in ``windows``, returns ``(closes[-1] / closes[-1-W] - 1) * 100``
+    when there are enough data points (at least W+1 closes), otherwise skips that window.
+
+    Returns a tuple of available returns (may be shorter than ``windows``).
+    Empty closes → empty tuple.
+
+    Examples:
+        window_returns([], (7, 30)) → ()
+        window_returns(closes_200, (7, 30, 90, 180)) → 4-tuple of floats
+    """
+    if not closes:
+        return ()
+    last = closes[-1]
+    results: list[float] = []
+    for w in windows:
+        if len(closes) >= w + 1:
+            base = closes[-1 - w]
+            if base != 0.0:
+                results.append((last / base - 1.0) * 100.0)
+    return tuple(results)
 
 
-def _verdict_pill(grade: str) -> str:
-    tone_map = {
-        "REDUCE": "danger",
-        "TRIM": "warning",
-        "REVIEW": "warning",
-        "HOLD": "neutral",
-        "ADD_OK": "success",
-    }
-    return status_pill_html(tone_map.get(grade, "neutral"), grade)
+def _render_onboarding_html(
+    has_book: bool,
+) -> str:  # noqa: ARG001 — has_book kept for API compat
+    """Return landing-door HTML — ALWAYS rendered so the user can always reach
+    Upload/Add-manually even when a book is already loaded (FIX A).
+
+    The ``has_book`` parameter is retained for call-site compatibility and may be
+    used in the future to adjust copy (e.g. "Switch book" vs "Load a book").
+    """
+    return render_landing_door_html(local=is_local_runtime())
+
+
+def _parse_screen_diagnostics(
+    screen: dict[str, Any] | None
+) -> ScreenDiagnostics | None:
+    """Parse ScreenDiagnostics from a screen JSON dict.
+
+    Mirrors the same defensive parsing used in research_candidates.py.
+    Returns None when diagnostics are absent or malformed.
+    """
+    if screen is None:
+        return None
+    raw_diag = screen.get("diagnostics")
+    if not isinstance(raw_diag, dict):
+        return None
+    try:
+        return ScreenDiagnostics(
+            scanned=int(raw_diag["scanned"]),
+            had_history=int(raw_diag["had_history"]),
+            above_trend=int(raw_diag["above_trend"]),
+            cleared=int(raw_diag["cleared"]),
+        )
+    except (KeyError, ValueError, TypeError):
+        return None
+
+
+def _screen_tile_content(
+    screen: dict[str, Any] | None,
+) -> tuple[str, str | None, str, str]:
+    """Derive honest (number, stamp, tone, sub) for the screen evidence tile.
+
+    Rules:
+    - HAS_CANDIDATES  → "{cleared} cleared / {scanned}" · no stamp · muted
+    - UNDER_POWERED   → "screen under-powered" · no stamp · muted
+    - EARNED_ABSTENTION → "{scanned} scanned / 0 cleared" · no stamp · muted
+    - No diagnostics (old JSON) → "screen: re-run" · no stamp · muted
+    - No screen file → "—" · no stamp · muted
+
+    The =EMH / ABSTAINED stamp is NEVER applied here — it belongs only on the
+    return-model falsification tiles (directional accuracy, Rank-IC).
+    """
+    if screen is None:
+        return "—", None, "muted", "No screen file found (DATA GAP)."
+
+    diag = _parse_screen_diagnostics(screen)
+
+    if diag is None:
+        # Old cached JSON without diagnostics: neutral, no verdict claim
+        return (
+            "screen: re-run",
+            None,
+            "muted",
+            "Screen diagnostics unavailable — re-run screen-candidates for a full readout.",
+        )
+
+    verdict = classify_screen(diag, _SCREEN_COVERAGE_FLOOR)
+
+    if verdict == ScreenVerdict.HAS_CANDIDATES:
+        return (
+            f"{diag.cleared} cleared / {diag.scanned}",
+            None,
+            "muted",
+            f"{diag.cleared} name(s) cleared every gate this week.",
+        )
+    if verdict == ScreenVerdict.UNDER_POWERED:
+        return (
+            "screen under-powered",
+            None,
+            "muted",
+            f"Only {diag.had_history} of {diag.scanned} had usable price history.",
+        )
+    # EARNED_ABSTENTION: all names scored, none cleared the bar
+    return (
+        f"{diag.scanned} scanned / 0 cleared",
+        None,
+        "muted",
+        "All names scored — none cleared the evidence bar this week.",
+    )
 
 
 def _gauge(share: float) -> Any:
@@ -116,18 +214,422 @@ def _gauge(share: float) -> Any:
     return fig
 
 
+_NEEDS_REVIEW: set[str] = {"REDUCE", "TRIM", "REVIEW"}
+
+
+def _render_book_strip_html(
+    *,
+    need_review: int,
+    total: int,
+    vs_market: float | None,
+    net_beta: float | None,
+    regime: str,
+    screen_cleared: int,
+    screen_universe: int,
+) -> str:
+    t_review = render_tile(
+        label=tooltip("Need review"),
+        number=f"{need_review} / {total}",
+        tone="crimson" if need_review else "muted",
+        sub="holdings a rule fired on",
+    )
+    vm = "—" if vs_market is None else f"{vs_market:+.1f}%"
+    t_vm = render_tile(
+        label=tooltip("vs Market (1y)"), number=vm, tone="muted", sub="realized, vs SPY"
+    )
+    if net_beta is None:
+        t_nb = render_tile(
+            label=tooltip("Net beta"), number="—", tone="muted", sub="no macro data"
+        )
+    else:
+        band = classify_net_beta(net_beta).value
+        t_nb = render_tile(
+            label=tooltip("Net beta"),
+            number=f"{net_beta:.2f}",
+            stamp=band.upper(),
+            tone="muted",
+            sub=f"moves ~{net_beta:.2f}x the market",
+        )
+    t_scr = render_tile(
+        label=tooltip("Screen"),
+        number=str(screen_cleared),
+        tone="green" if screen_cleared else "muted",
+        sub=f"cleared of {screen_universe}",
+    )
+    regime_badge = (
+        f"<span style=\"font-family:'IBM Plex Mono';font-size:10px;text-transform:uppercase;"
+        f'color:#0F6E80;background:#e6f1f3;border-radius:6px;padding:2px 7px;margin-left:8px">'
+        f"{regime}</span>"
+    )
+    return (
+        f"<div>"
+        f'<div style="display:flex;align-items:center;margin-bottom:8px">'
+        f"<span style=\"font-family:'IBM Plex Mono';font-size:10px;text-transform:uppercase;color:#94a8ad\">Macro regime</span>"
+        f"{regime_badge}</div>"
+        f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">'
+        f"{t_review}{t_vm}{t_nb}{t_scr}</div></div>"
+    )
+
+
+def _render_book_health_html(systematic_share: float) -> str:
+    pct = round(systematic_share * 100)
+    band = classify_systematic_share(systematic_share).value  # e.g. "Macro-leaning"
+    flag = (
+        '<span style="color:#C9810E">&#x2691; above the 60% flag</span>'
+        if systematic_share >= 0.60
+        else ""
+    )
+    ring = (
+        f'<div style="width:54px;height:54px;border-radius:50%;flex-shrink:0;'
+        f"background:conic-gradient(#0F6E80 {pct}%, #eef2f3 0);display:flex;"
+        f'align-items:center;justify-content:center">'
+        f'<div style="width:40px;height:40px;border-radius:50%;background:#fff;display:flex;'
+        f"align-items:center;justify-content:center;font-family:Fraunces,serif;"
+        f'font-weight:800;font-size:13px">{pct}%</div></div>'
+    )
+    return (
+        f'<div style="display:flex;align-items:center;gap:14px;background:#fff;'
+        f'border:1px solid #dde7e9;border-radius:12px;padding:12px 15px;margin-top:12px">'
+        f"{ring}"
+        f"<div><div style=\"font-family:'IBM Plex Mono';font-size:10px;"
+        f'text-transform:uppercase;color:#94a8ad">'
+        f'{tooltip("Systematic share", "Book health — systematic share")}</div>'
+        f'<div style="font-size:13px;margin-top:3px"><b>{pct}% {band.lower()}</b> &middot; {flag} &mdash; '
+        f"adding another same-direction name won't diversify.</div></div></div>"
+    )
+
+
+def _home_evidence_card(ticker: str) -> EvidenceCard:
+    """Minimal GAP card for S4 (squares light up once S5 wires per-holding fetch)."""
+    sigs = tuple(
+        RagSignal(d, RagColor.GAP, "DATA-GAP: loads on open") for d in DIMENSIONS
+    )
+    return EvidenceCard(ticker=ticker, signals=sigs, sparkline=())
+
+
+def _fetch_card(ticker: str) -> EvidenceCard:
+    """Fetch a real EvidenceCard for a ticker via cached adapters (S5).
+
+    On any fetch failure (network, bare-mode CI) falls back to the GAP card
+    so the UI remains honest rather than crashing.
+    """
+    try:
+        from adapters.data.earnings_history_adapter import fetch_earnings_history
+        from adapters.visualization.price_cache import (
+            fetch_price_history,
+            fetch_prices,
+            fetch_ticker_info,
+        )
+        from application.analyst_panel import build_analyst_panel
+        from application.evidence_card import build_evidence_card
+
+        raw = fetch_ticker_info(ticker)
+        info = {k: v for k, v in raw.items()}
+        px = fetch_prices((ticker,)).get(ticker, {})
+        info["current_price"] = px.get("price")
+        # snake_case keys S1 expects
+        info["trailing_pe"] = raw.get("trailingPE")
+        info["peg_ratio"] = raw.get("pegRatio")
+        info["free_cashflow"] = raw.get("freeCashflow")
+        info["debt_to_equity"] = raw.get("debtToEquity")
+        # Remap yfinance raw keys → build_analyst_panel's expected keys (mirror stock_analyzer)
+        panel_info: dict[str, Any] = dict(raw)
+        panel_info["analyst_count"] = raw.get("numberOfAnalystOpinions", 0)
+        panel_info["analyst_recommendation_mean"] = raw.get("recommendationMean")
+        # target keys are already camelCase and match build_analyst_panel directly:
+        # targetMeanPrice, targetHighPrice, targetLowPrice — no remap needed
+        panel = build_analyst_panel(panel_info, "")
+        # Fetch 1-year price history for closes/ATR/MA200 (lights Technicals + sparkline)
+        hist = fetch_price_history(ticker) or {}
+        prices: dict[str, Any] = {
+            "closes": hist.get("closes", []),
+            "atr": hist.get("atr"),
+            "ma200": hist.get("ma200"),
+            "spy_1y": None,  # DATA-GAP: not tracked per holding on Home
+            "book_1y": None,  # DATA-GAP: not tracked per holding on Home
+        }
+        peers: list[float | None] = []  # DATA-GAP: peer data not fetched on Home
+        return build_evidence_card(
+            ticker,
+            info=info,
+            prices=prices,
+            panel=panel,
+            earnings=fetch_earnings_history(ticker),
+            peers=peers,
+        )
+    except Exception:  # noqa: BLE001 — network/CI failures → GAP card (honest)
+        return _home_evidence_card(ticker)
+
+
+def _needs_review_cards(
+    holdings: list[dict[str, Any]]
+) -> list[tuple[str, dict[str, Any]]]:
+    """Return (ticker, holding) pairs for holdings that need review."""
+    return [(h["ticker"], h) for h in holdings if h.get("verdict") in _NEEDS_REVIEW]
+
+
+def _render_one_holding(ticker: str, h: dict[str, Any], summarizer: object) -> None:
+    """Render one holding row: collapsed row + expander with expanded card.
+
+    This is the inner implementation.  Production callers must use
+    ``_render_one_holding_fragment`` (the ``st.fragment``-wrapped version) so
+    that each row gets an isolated render cycle in Streamlit (spec §7).
+
+    FIX B: wires real price (from fetch_prices), implied cost (back-calculated),
+    and windowed returns (from fetch_price_history closes) into the expanded card.
+    Where data is genuinely unavailable, passes None/() so the card shows "—"
+    honestly — never fabricates.
+    """
+    from adapters.visualization.price_cache import (  # noqa: PLC0415
+        fetch_price_history,
+        fetch_prices,
+    )
+
+    card = _fetch_card(ticker)
+    verdict = Verdict(str(h["verdict"]))
+    unrealized = h.get("unrealized_pct")
+    unrealized_f = float(unrealized) if unrealized is not None else None
+    oneliner = str(h.get("why", ""))
+
+    # ── FIX B: fetch real price + history ─────────────────────────────────────
+    price_data = fetch_prices((ticker,)).get(ticker, {})
+    live_price: float | None = price_data.get("price")
+
+    hist = fetch_price_history(ticker) or {}
+    closes: list[float] = hist.get("closes") or []
+
+    cost = implied_cost(live_price, unrealized_f)
+    rets = window_returns(closes)
+
+    st.markdown(
+        render_collapsed_row(
+            card,
+            verdict=verdict,
+            name=ticker,
+            unrealized_pct=unrealized_f,
+            oneliner=oneliner,
+        ),
+        unsafe_allow_html=True,
+    )
+    with st.expander(f"{ticker} — {verdict.value} (expand for full evidence)"):
+        # Inside expander body — fetch lazy case (always expanded=True here)
+        case = get_case_on_expand(
+            ticker, card, news=[], expanded=True, summarizer=summarizer
+        )
+        # data_gap: pass case=None so _case_html shows honest "loads on open" placeholder
+        case_to_render = None if (case is None or case.data_gap) else case
+        st.markdown(
+            render_expanded_card(
+                card,
+                case=case_to_render,
+                verdict=verdict,
+                name=ticker,
+                unrealized_pct=unrealized_f,
+                means=oneliner,
+                price=live_price,
+                cost=cost,
+                returns=rets,
+                reliability="measured forward; see Trust",
+            ),
+            unsafe_allow_html=True,
+        )
+
+
+# Fragment-wrapped version for production use (each row independent render cycle).
+# In bare mode (CI/tests), st.fragment silently no-ops — _render_needs_review calls
+# _render_one_holding directly so tests can capture the output.
+_render_one_holding_fragment: Any = _fragment(_render_one_holding)
+
+
+def _render_needs_review_html(holdings: list[dict[str, Any]]) -> str:
+    rows = []
+    for h in holdings:
+        if h.get("verdict") not in _NEEDS_REVIEW:
+            continue
+        ticker = str(h.get("ticker", "?"))
+        card = _home_evidence_card(ticker)
+        unrealized = h.get("unrealized_pct")
+        rows.append(
+            render_collapsed_row(
+                card,
+                verdict=Verdict(str(h["verdict"])),
+                name=ticker,
+                unrealized_pct=float(unrealized) if unrealized is not None else None,
+                oneliner=str(h.get("why", "")),
+            )
+        )
+    if not rows:
+        return (
+            '<div class="ws-card" style="padding:12px 16px;color:#1F9254">'
+            "Nothing needs review this week — all positions within discipline.</div>"
+        )
+    return f'<div class="ws-card" style="padding:0">{"".join(rows)}</div>'
+
+
+def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
+    """Progressive render: progress bar + per-holding fragment render + lazy case.
+
+    Each holding row is rendered via ``_render_one_holding_fragment`` which is
+    wrapped with ``st.fragment`` in a live Streamlit session, providing per-row
+    render isolation (spec §7).  In bare-mode / CI the ``_fragment`` fallback is
+    a no-op decorator, so ``_render_one_holding_fragment`` is identical to
+    ``_render_one_holding`` — tests capture ``st.markdown`` output unchanged.
+    """
+    cards = _needs_review_cards(holdings)
+    if not cards:
+        st.markdown(_render_needs_review_html([]), unsafe_allow_html=True)
+        return
+    bar = st.progress(0.0, text=f"Fetching 0 / {len(cards)} holdings…")
+    summarizer = select_case_summarizer()
+    for i, (ticker, h) in enumerate(cards, 1):
+        _render_one_holding_fragment(ticker, h, summarizer)
+        bar.progress(i / len(cards), text=f"Fetching {i} / {len(cards)} holdings…")
+    bar.empty()
+
+
+def _render_honesty_line_html() -> str:
+    return (
+        '<div style="margin-top:12px;font-size:12px;color:#5b7178;background:#fff;'
+        'border:1px dashed #dde7e9;border-radius:10px;padding:9px 13px">'
+        "<b>Why doubt us:</b> our return forecasts test = a coin flip, and the ranking signal is "
+        "FALSIFIED. We show evidence, never forecasts. "
+        '<a href="#" style="color:#0F6E80;font-weight:600;text-decoration:none">'
+        "See the proof → Trust</a></div>"
+    )
+
+
+def _handle_onboarding() -> None:
+    """Render landing door + 3-button action row — ALWAYS (FIX A: persistent).
+
+    Layout:
+    - Banner (render_landing_door_html) — heading + copy only, no action buttons.
+    - 3-column button row (equal width):
+        col1: "▸ Explore sample book" → loads sample book immediately.
+        col2: "↓ Upload holdings CSV" (local only) → toggles _show_csv_upload.
+        col3: "+ Add manually" → toggles _show_manual_form.
+    - Below the row (full width): file_uploader appears when _show_csv_upload is
+      True AND is_local_runtime(). This avoids the garbled cramped dropzone.
+    - Below: manual-entry form when _show_manual_form is True.
+
+    Returns nothing — caller always proceeds to render Front-Desk afterwards.
+    """
+    has_book = "book" in st.session_state
+    door_html = _render_onboarding_html(has_book=has_book)
+    st.markdown(door_html, unsafe_allow_html=True)
+
+    # ── 3-button action row ───────────────────────────────────────────────────
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button(
+            "▸ Explore sample book (10 stocks)", key="ob_sample", type="primary"
+        ):
+            st.session_state["book"] = load_sample_book()
+            st.rerun()
+
+    with col2:
+        if is_local_runtime():
+            if st.button("↓ Upload holdings CSV", key="ob_csv_toggle"):
+                st.session_state["_show_csv_upload"] = not st.session_state.get(
+                    "_show_csv_upload", False
+                )
+
+    with col3:
+        if st.button("+ Add manually", key="ob_manual"):
+            st.session_state["_show_manual_form"] = not st.session_state.get(
+                "_show_manual_form", False
+            )
+
+    # ── Full-width CSV uploader — revealed on toggle (outside narrow columns) ─
+    if st.session_state.get("_show_csv_upload", False) and is_local_runtime():
+        uploaded = st.file_uploader(
+            "Drop a CSV with columns: symbol, quantity, book value (cad), exchange, account type",
+            type=["csv"],
+            key="ob_csv",
+            label_visibility="visible",
+        )
+        if uploaded is not None:
+            try:
+                content = uploaded.read().decode("utf-8")
+                import tempfile  # noqa: PLC0415
+
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".csv", delete=False
+                ) as tmp:
+                    tmp.write(content)
+                    tmp_path = tmp.name
+                holdings = read_holdings(tmp_path)
+                if not holdings:
+                    st.error(
+                        "No valid holdings found. Check columns: "
+                        "symbol, quantity, book value (cad), exchange, account type."
+                    )
+                else:
+                    st.session_state["book"] = holdings
+                    st.session_state["_show_csv_upload"] = False
+                    st.rerun()
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"Could not parse holdings CSV: {exc}")
+
+    # Manual-entry form — toggled by the button above
+    if st.session_state.get("_show_manual_form", False):
+        with st.form("manual_holding_form", clear_on_submit=True):
+            st.markdown(
+                '<div class="ri-sec">Add holding manually</div>',
+                unsafe_allow_html=True,
+            )
+            f_ticker = st.text_input("Ticker symbol", placeholder="e.g. AAPL")
+            f_shares = st.number_input("Shares", min_value=0.0, step=1.0, value=1.0)
+            f_cost = st.number_input(
+                "Cost basis / book value", min_value=0.0, step=0.01, value=0.0
+            )
+            f_account = st.text_input(
+                "Account type", value="TFSA", placeholder="e.g. TFSA, RRSP, Non-reg"
+            )
+            submitted = st.form_submit_button("Add to book")
+            if submitted:
+                ticker_clean = f_ticker.strip().upper()
+                if not ticker_clean:
+                    st.error("Ticker symbol is required.")
+                else:
+                    holding = make_manual_holding(
+                        ticker=ticker_clean,
+                        shares=float(f_shares),
+                        cost_basis=float(f_cost),
+                        account_type=f_account.strip() or "TFSA",
+                    )
+                    existing: list[object] = list(st.session_state.get("book", []))
+                    existing.append(holding)
+                    st.session_state["book"] = existing
+                    st.session_state["_show_manual_form"] = False
+                    st.rerun()
+
+
 def render(
     path: str = _SUMMARY_PATH,
     adherence_path: str = _ADHERENCE_PATH,
     reports_dir: str = _REPORTS_DIR,
 ) -> None:
     summary = load_brief_summary(path)
-    if summary is None:
+
+    # ── Landing door — ALWAYS rendered (FIX A: persistent so CSV/manual stay
+    #    reachable even when a book/brief is loaded).  Button handlers set
+    #    st.session_state["book"] and call st.rerun() so the Front-Desk below
+    #    picks up the new book on the next cycle. ──────────────────────────────
+    _handle_onboarding()
+
+    # ── If no brief and no session book, nothing to show below the door ──────
+    if summary is None and "book" not in st.session_state:
         st.warning(
             "No structured brief found. Run "
             "`python -m application.cli weekly-brief` to generate it "
             "(stays on your machine)."
         )
+        return
+
+    if summary is None:
+        # Session book present (uploaded or sample) but no brief_summary.json.
+        # Defer to future sprint: for now show a neutral notice.
+        st.info("Book loaded from session. Run weekly-brief to see Front-Desk vitals.")
         return
 
     days = staleness_days(summary.get("as_of", ""))
@@ -138,12 +640,10 @@ def render(
         )
 
     holdings = summary.get("holdings", [])
-    attention = [h for h in holdings if h.get("verdict") in ("REDUCE", "TRIM")]
     macro = summary.get("macro") or {}
-    share = float(macro.get("systematic_share", 0.0))
+    sys_share = macro.get("systematic_share")
 
     # ── Hero headline (Research Instrument system) ──────────────────────────────
-    as_of = summary.get("as_of", "?")
     regime = summary.get("regime", "?")
     st.markdown(
         '<div class="ri-h1">A research instrument that knows when not to call it.</div>'
@@ -151,162 +651,33 @@ def render(
         unsafe_allow_html=True,
     )
 
-    # ── Evidence ledger strip ────────────────────────────────────────────────────
+    # ── Book strip: 4 vitals (ONE net-beta) ────────────────────────────────────
     screen = load_latest_screen(reports_dir)
-    universe_size = screen.get("universe_size", "?") if screen else "?"
-    candidates = screen.get("candidates", []) if screen else []
-    adherence_rows = load_adherence_log(adherence_path)
+    cleared = len(screen.get("candidates", [])) if screen else 0
+    universe = screen.get("universe_size", 0) if screen else 0
+    spy_beta = macro.get("net_beta_by_factor", {}).get("SPY")
+    net_beta_val: float | None = float(spy_beta) if spy_beta is not None else None
+    need = sum(1 for h in holdings if h.get("verdict") in _NEEDS_REVIEW)
+    vs_market = summary.get("vs_market_1y")
 
-    net_beta_str = "—"
-    if macro.get("systematic_share") is not None:
-        net_beta_str = f"{share:.0%}"
-
-    ledger_html = render_ledger(
-        [
-            (tooltip("Universe"), str(universe_size)),
-            ("CLEARED", str(len(candidates))),
-            (tooltip("Net beta"), net_beta_str),
-            ("HOLDINGS", str(len(holdings))),
-            ("AS OF", as_of),
-            ("REGIME", str(regime).upper()),
-            ("ADHERENCE LOG", str(len(adherence_rows)) + " records"),
-        ]
+    st.markdown('<div class="ri-sec">YOUR BOOK — TODAY</div>', unsafe_allow_html=True)
+    st.markdown(
+        _render_book_strip_html(
+            need_review=need,
+            total=len(holdings),
+            vs_market=vs_market,
+            net_beta=net_beta_val,
+            regime=str(regime),
+            screen_cleared=cleared,
+            screen_universe=universe,
+        ),
+        unsafe_allow_html=True,
     )
-    st.markdown(ledger_html, unsafe_allow_html=True)
+    if sys_share is not None:
+        st.markdown(_render_book_health_html(float(sys_share)), unsafe_allow_html=True)
+    st.markdown(_render_honesty_line_html(), unsafe_allow_html=True)
 
-    # ── Anti-KPI tiles — the three honest verdicts ──────────────────────────────
-    st.markdown('<div class="ri-sec">VALIDATION FINDINGS</div>', unsafe_allow_html=True)
-
-    # Tile 1: Universe → Cleared (abstention story)
-    if screen is not None:
-        tile1_number = f"{universe_size} → {len(candidates)}"
-        tile1_stamp: str | None = "ABSTAINED" if len(candidates) == 0 else None
-        tile1_tone = "amber" if len(candidates) == 0 else "muted"
-        tile1_sub = (
-            "No names cleared every gate this week — the screen declined to rank."
-            if len(candidates) == 0
-            else f"{len(candidates)} name(s) cleared the evidence gates."
-        )
-    else:
-        tile1_number = "—"
-        tile1_stamp = None
-        tile1_tone = "muted"
-        tile1_sub = "No screen file found (DATA GAP)."
-
-    # Tile 2: Directional accuracy
-    da_str = _load_directional_accuracy(reports_dir)
-    if da_str == "—":
-        tile2_number = "—"
-        tile2_stamp = None
-        tile2_tone = "muted"
-        tile2_sub = "Directional accuracy unavailable (DATA GAP)."
-    else:
-        tile2_number = da_str
-        tile2_stamp = "= EMH"
-        tile2_tone = "muted"
-        tile2_sub = "no edge over a coin flip on direction (technical-only baseline)"
-
-    # Tile 3: Rank-IC — sourced from divergence_ic_1m_*.json (real run) / ADR-044
-    rank_ic_str = _load_rank_ic(reports_dir)
-    tile3 = render_tile(
-        label=tooltip("Rank-IC"),
-        number=rank_ic_str,
-        stamp="FALSIFIED",
-        tone="crimson",
-        sub="the ranking signal knows ~nothing (ADR-044, 1m primary horizon)",
-    )
-
-    tile_cols = st.columns(3)
-    with tile_cols[0]:
-        st.markdown(
-            render_tile(
-                label=tooltip("Evidence screen"),
-                number=tile1_number,
-                stamp=tile1_stamp,
-                tone=tile1_tone,
-                sub=tile1_sub,
-            ),
-            unsafe_allow_html=True,
-        )
-    with tile_cols[1]:
-        st.markdown(
-            render_tile(
-                label=tooltip("Directional accuracy"),
-                number=tile2_number,
-                stamp=tile2_stamp,
-                tone=tile2_tone,
-                sub=tile2_sub,
-            ),
-            unsafe_allow_html=True,
-        )
-    with tile_cols[2]:
-        st.markdown(tile3, unsafe_allow_html=True)
-
-    # ── Book health gauge + systematic share ─────────────────────────────────────
-    if macro:
-        st.markdown('<div class="ri-sec">BOOK HEALTH</div>', unsafe_allow_html=True)
-        gauge_cols = st.columns([1, 3])
-        with gauge_cols[0]:
-            st.plotly_chart(_gauge(share), use_container_width=True)
-            st.caption(
-                f"{tooltip('Systematic share')} — flag at 60%", unsafe_allow_html=True
-            )
-
-    st.divider()
-
-    # ── Attention row: REDUCE / TRIM cards ──────────────────────────────────────
-    st.markdown('<div class="ri-sec">DISCIPLINE FLAGS</div>', unsafe_allow_html=True)
-    if attention:
-        top5 = attention[:5]
-        attn_cols = st.columns(len(top5))
-        for col, h in zip(attn_cols, top5):
-            verdict = h.get("verdict", "?")
-            css_class = "verdict-negative"
-            unrealized = h.get("unrealized_pct")
-            unrealized_str = f"{unrealized:.1f}%" if unrealized is not None else "?"
-            pill_html = _verdict_pill(verdict)
-            trend_state = h.get("trend_state", "?")
-            col.markdown(
-                f'<div class="ws-card {css_class}" style="padding:10px 12px;">'
-                f'<div style="font-weight:700;font-size:15px;">{h.get("ticker", "?")}</div>'
-                f'<div style="margin:4px 0;">{pill_html}</div>'
-                f'<div style="font-size:13px;color:#64748B;">{unrealized_str}</div>'
-                f'<div style="font-size:12px;color:#94A3B8;margin-top:4px;">'
-                f'{tooltip("Trend filter")}: {trend_state}</div>'
-                f'<div style="font-size:12px;color:#94A3B8;margin-top:2px;">{h.get("why", "")}</div>'
-                f"</div>",
-                unsafe_allow_html=True,
-            )
-    else:
-        st.markdown(
-            '<div class="ws-card" style="padding:12px 16px;color:#16A34A;">'
-            "Nothing needs attention this week — all positions within discipline."
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-    # ── Abstention notice ────────────────────────────────────────────────────────
-    st.markdown('<div class="ri-sec">RESEARCH SCREEN</div>', unsafe_allow_html=True)
-    if summary.get("abstained", True):
-        st.markdown(
-            '<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
-            f'<span style="font-weight:700;color:#64748B;">RESEARCH_ONLY</span> — '
-            f'{tooltip("Evidence screen")}: 0 names met the bar this week — '
-            f"the screen {tooltip('Abstention','abstained')} (no recommendation language)."
-            "</div>",
-            unsafe_allow_html=True,
-        )
-    else:
-        candidates_list = summary.get("candidates", [])
-        st.markdown(
-            '<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
-            f'<span style="font-weight:700;color:#16A34A;">CANDIDATES</span> — '
-            f"{len(candidates_list)} name(s) surfaced this week (RESEARCH_ONLY, not a recommendation)."
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-    # ── Concentration flags ──────────────────────────────────────────────────────
+    # ── Concentration flags (optional — keep if present) ─────────────────────
     concentration = summary.get("concentration", [])
     if concentration:
         st.markdown(
@@ -325,137 +696,19 @@ def render(
             )
         st.divider()
 
-    # ── Grade chip strip ─────────────────────────────────────────────────────────
-    grades_present = [
-        g for g in _GRADE_ORDER if any(h.get("verdict") == g for h in holdings)
-    ]
+    # ── Needs-review rows ────────────────────────────────────────────────────────
+    st.markdown(
+        '<div class="ri-sec">NEEDS REVIEW — A RULE FIRED, YOUR CALL</div>',
+        unsafe_allow_html=True,
+    )
+    _render_needs_review(holdings)
 
-    if grades_present:
-        st.markdown(
-            '<div class="ri-sec">VERDICT DISTRIBUTION</div>', unsafe_allow_html=True
+    steady = sum(1 for h in holdings if h.get("verdict") in ("HOLD", "ADD_OK"))
+    st.caption(f"Holding steady · {steady} — no rule fired, nothing to do")
+
+    # ── Footer: brief as download, not an inline dump ────────────────────────────
+    md = load_weekly_brief(path.replace("brief_summary.json", "weekly_brief.md"))
+    if md:
+        st.download_button(
+            "⬇ Download full weekly brief (.md)", md, file_name="weekly_brief.md"
         )
-        chip_cols = st.columns(len(grades_present))
-        for col, grade in zip(chip_cols, grades_present):
-            count = sum(1 for h in holdings if h.get("verdict") == grade)
-            color = _GRADE_COLOR[grade]
-            col.markdown(
-                f'<div class="ws-card" style="text-align:center;padding:10px 6px;">'
-                f'<span style="color:{color};font-weight:700;font-size:14px;">{grade}</span>'
-                f'<br><span style="font-size:20px;font-weight:700;">{count}</span>'
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-        # All attention items: REDUCE + TRIM dataframe
-        urgent_rows = [h for h in holdings if h.get("verdict") in ("REDUCE", "TRIM")]
-        if urgent_rows:
-            st.markdown("#### All attention items")
-            import pandas as pd
-
-            df_urgent = pd.DataFrame(
-                [
-                    {
-                        "Ticker": h.get("ticker", "?"),
-                        "Grade": h.get("verdict", "?"),
-                        "Unrealized %": (
-                            f"{h.get('unrealized_pct', 0):.1f}%"
-                            if h.get("unrealized_pct") is not None
-                            else "?"
-                        ),
-                        "Trend filter": h.get("trend_state", "?"),
-                        "Why": h.get("why", ""),
-                    }
-                    for h in urgent_rows
-                ]
-            )
-            st.dataframe(df_urgent, use_container_width=True, hide_index=True)
-
-        # Everything else: REVIEW / HOLD / ADD_OK collapsed
-        other_rows = [
-            h for h in holdings if h.get("verdict") in ("REVIEW", "HOLD", "ADD_OK")
-        ]
-        with st.expander("Everything else (REVIEW · HOLD · ADD_OK)"):
-            if other_rows:
-                import pandas as pd
-
-                df_other = pd.DataFrame(
-                    [
-                        {
-                            "Ticker": h.get("ticker", "?"),
-                            "Grade": h.get("verdict", "?"),
-                            "Unrealized %": (
-                                f"{h.get('unrealized_pct', 0):.1f}%"
-                                if h.get("unrealized_pct") is not None
-                                else "?"
-                            ),
-                            "Trend filter": h.get("trend_state", "?"),
-                            "Why": h.get("why", ""),
-                        }
-                        for h in other_rows
-                    ]
-                )
-                st.dataframe(df_other, use_container_width=True, hide_index=True)
-            else:
-                st.caption("No REVIEW / HOLD / ADD_OK positions this week.")
-
-        st.divider()
-    else:
-        st.info("No discipline flags this week.")
-        st.divider()
-
-    # ── Adherence tracker ─────────────────────────────────────────────────────────
-    with st.expander("Adherence tracker — tool said vs you did"):
-        st.caption(
-            "Tool-said vs you-did (resolved, 21d horizon). "
-            "Advisory only (L0), descriptive — no significance claims."
-        )
-        adherence = load_adherence_log(adherence_path)
-        if not adherence:
-            st.caption(
-                "No resolved adherence records yet. Run "
-                "`python -m application.cli adherence-report` after flags age 21 days "
-                "(records stay on your machine)."
-            )
-        else:
-            cols_header = st.columns([1, 2, 2, 2, 1, 2, 2])
-            for col, label in zip(
-                cols_header,
-                [
-                    "Flagged",
-                    "Ticker",
-                    "Verdict",
-                    "You did",
-                    "Cut",
-                    "Gap (CAD)",
-                    "Gap (bps)",
-                ],
-            ):
-                col.markdown(f"**{label}**")
-            for r in adherence[-12:]:
-                c1, c2, c3, c4, c5, c6, c7 = st.columns([1, 2, 2, 2, 1, 2, 2])
-                c1.caption(r.get("flag_date", "?"))
-                c2.markdown(r.get("ticker", "?"))
-                c3.markdown(
-                    _verdict_pill(r.get("verdict", "?")), unsafe_allow_html=True
-                )
-                label_val = r.get("label", "?")
-                done_pill = status_pill_html(
-                    "success" if label_val == "FOLLOWED" else "danger", label_val
-                )
-                c4.markdown(done_pill, unsafe_allow_html=True)
-                c5.caption(f"{r.get('actual_cut_fraction', 0) * 100:.0f}%")
-                gap_cad = r.get("gap_cad", 0)
-                c6.markdown(
-                    f'<span style="color:{"#16A34A" if gap_cad >= 0 else "#DC2626"};">'
-                    f"{gap_cad:+.0f}</span>",
-                    unsafe_allow_html=True,
-                )
-                c7.caption(f"{r.get('gap_bps', 0):+.1f}")
-            st.caption(
-                "Gap = counterfactual CAD difference if you had cut per the verdict "
-                "(f=0.5). Descriptive, underpowered by design."
-            )
-
-    with st.expander("Full markdown brief"):
-        md = load_weekly_brief(_BRIEF_MD_PATH)
-        st.markdown(md if md else "_No markdown brief found._")

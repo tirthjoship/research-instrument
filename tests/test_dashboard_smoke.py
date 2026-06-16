@@ -102,6 +102,28 @@ def test_styles_importable() -> None:
     assert "#1D4ED8" in GLOBAL_CSS
 
 
+def test_app_title_uses_fraunces_not_dm_sans() -> None:
+    """App title <h1> must use Fraunces (research-instrument hero font), not DM Sans."""
+    import inspect
+
+    import adapters.visualization.dashboard as dash_mod
+
+    src = inspect.getsource(dash_mod)
+    # The title h1 must reference Fraunces
+    assert "Fraunces" in src, "App title h1 must use Fraunces font"
+    # The title h1 must NOT have DM Sans in the inline style
+    # (DM Sans is still used in CSS for sub-elements, but not the title tag itself)
+    title_line = next(
+        line for line in src.splitlines() if "Multi-Modal Stock Recommender" in line
+    )
+    assert (
+        "DM Sans" not in title_line
+    ), f"App title must not reference DM Sans, found: {title_line!r}"
+    assert (
+        "Fraunces" in title_line
+    ), f"App title must reference Fraunces, found: {title_line!r}"
+
+
 def test_action_runner_importable() -> None:
     from adapters.visualization.action_runner import (
         run_add_holding,

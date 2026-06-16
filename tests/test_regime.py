@@ -53,5 +53,7 @@ def test_risk_on_favors_momentum_over_quality() -> None:
 
 
 def test_neutral_is_equal_weight() -> None:
+    # NEUTRAL is equal-weight across all 5 FACTOR_KEYS → 1/5 = 0.20 each
     w = screen_tilt(Regime.NEUTRAL)
-    assert all(abs(v - 0.25) < 1e-9 for v in w.values())
+    expected = 1.0 / len(FACTOR_KEYS)
+    assert all(abs(v - expected) < 1e-9 for v in w.values())
