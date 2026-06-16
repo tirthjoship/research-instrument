@@ -15,6 +15,7 @@ Section order (matches approved mockup risk-v8.html):
 
 from __future__ import annotations
 
+import html as _html
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -51,6 +52,7 @@ _PETROL = "#0F6E80"
 _PETROL_L = "#e6f1f3"
 _PETROL_D = "#0a5260"
 
+# TODO: remove legacy band-strip block once pre-existing tests migrate
 # ── Kept for backward-compat: band strips helpers (still used in render()) ─
 _NET_BETA_BAND_COLOURS: dict[NetBetaBand, str] = {
     NetBetaBand.HEDGED: "#475569",
@@ -706,7 +708,7 @@ def _factor_chart(macro: dict[str, Any]) -> str:
     if high_vif_factors:
         vif_note = (
             f'<p style="font-size:11px;color:{_MUT};margin:0 0 12px">'
-            f'&#9888; {", ".join(high_vif_factors)} are <b>collinear</b> '
+            f'&#9888; {", ".join(_html.escape(f) for f in high_vif_factors)} are <b>collinear</b> '
             f'({tooltip("VIF")}&nbsp;&gt;&nbsp;5) &#8212; '
             "read them as <b>one growth-market cluster</b>, not separate bets. "
             "The whiskers widen because of this overlap.</p>"
@@ -753,19 +755,12 @@ def _factor_chart(macro: dict[str, Any]) -> str:
             w_width = max(0.0, whi - wlo)
             whisk_html = f'<div class="risk-whisk" style="left:{w_left:.1f}%;width:{w_width:.1f}%"></div>'
 
-        # Label for dominant factor
+        # Label for dominant factor — exactly one label per factor, in priority order:
+        #   suppressed (CI straddles 0) → ≈0
+        #   short (negative beta, not suppressed) → SHORT
+        #   long and high-VIF → DOMINANT
+        #   otherwise → no label
         vif_val = vif.get(factor)
-        dom_label = ""
-        if (
-            not is_suppressed
-            and vif_val is not None
-            and (vif_val is None or (isinstance(vif_val, (int, float)) and vif_val > 5))
-        ):
-            dom_label = (
-                f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;"
-                f"font-weight:700;background:{_PETROL};color:#fff;"
-                'padding:1px 5px;border-radius:5px;letter-spacing:.05em">DOMINANT</span>'
-            )
         if is_suppressed:
             dom_label = (
                 "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;"
@@ -778,6 +773,14 @@ def _factor_chart(macro: dict[str, Any]) -> str:
                 f"font-weight:700;background:{_PETROL_L};color:{_PETROL_D};"
                 f'padding:1px 5px;border-radius:5px;border:1px solid #bfe0e6">SHORT</span>'
             )
+        elif vif_val is not None and isinstance(vif_val, (int, float)) and vif_val > 5:
+            dom_label = (
+                f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;"
+                f"font-weight:700;background:{_PETROL};color:#fff;"
+                'padding:1px 5px;border-radius:5px;letter-spacing:.05em">DOMINANT</span>'
+            )
+        else:
+            dom_label = ""
 
         row_class = "frow supp" if is_suppressed else "frow"
         name_color = _FAINT if is_suppressed else _INK
@@ -788,7 +791,7 @@ def _factor_chart(macro: dict[str, Any]) -> str:
             'gap:10px;align-items:center;font-size:11.5px;margin-bottom:9px">'
             f"<span style=\"font-family:'IBM Plex Mono',monospace;color:{name_color};"
             'display:flex;align-items:center;gap:6px">'
-            f"{factor}&nbsp;{dom_label}</span>"
+            f"{_html.escape(factor)}&nbsp;{dom_label}</span>"
             f'<div style="position:relative;height:14px;border-radius:4px;background:#f4f7f8">'
             '<div style="position:absolute;left:40%;top:-3px;bottom:-3px;width:1.5px;background:#b6c2c2"></div>'
             f'<div style="position:absolute;top:3px;height:8px;border-radius:3px;'
@@ -886,7 +889,7 @@ def _enb_section(macro: dict[str, Any]) -> str:
     def _bet_name(i: int) -> str:
         if pc_gap or i >= len(pc_labels):
             return f"Bet {i+1}"
-        return pc_labels[i]
+        return _html.escape(pc_labels[i])
 
     def _bet_desc(i: int) -> str:
         if pc_gap:
@@ -947,7 +950,7 @@ def _enb_section(macro: dict[str, Any]) -> str:
             'justify-content:center;margin-top:1px">&#8593;</span>'
             f"<div><b>Add exposure on an axis you're empty on.</b> "
             f"The book has zero weight in: "
-            f'{", ".join(sector_gaps)}. '
+            f'{", ".join(_html.escape(g) for g in sector_gaps)}. '
             "Adding any one loads a new principal portfolio &#8594; ENB rises. "
             f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;"
             "background:#eef1f4;color:var(--risk-mut);padding:1px 6px;border-radius:5px;"
@@ -1046,7 +1049,7 @@ def _sector_section(macro: dict[str, Any]) -> str:
         bar_pct = w / max_w * 100.0
         rows += (
             f'<div class="risk-wrow">'
-            f'<span class="risk-wn">{sector}</span>'
+            f'<span class="risk-wn">{_html.escape(sector)}</span>'
             f'<span class="risk-wt"><span class="risk-wf" style="width:{bar_pct:.0f}%"></span></span>'
             f'<span class="risk-wv">{w:.0%}</span>'
             "</div>"
@@ -1067,7 +1070,7 @@ def _sector_section(macro: dict[str, Any]) -> str:
 
     gap_note = ""
     if sector_gaps:
-        gaps_str = ", ".join(f"<b>0% {g}</b>" for g in sector_gaps)
+        gaps_str = ", ".join(f"<b>0% {_html.escape(g)}</b>" for g in sector_gaps)
         gap_note = (
             f'<div style="margin-top:12px;background:#f7fafb;border:1px solid {_LINE};'
             f"border-left:4px solid {_G1};border-radius:10px;padding:11px 13px;"
@@ -1141,8 +1144,8 @@ def _who_owns(macro: dict[str, Any]) -> str:
 
         rows += (
             f'<div class="risk-wrow">'
-            f'<span class="risk-wn">{ticker} '
-            f"<span style=\"color:{_FAINT};font-family:'IBM Plex Sans',sans-serif;font-size:9.5px\">{name}</span>"
+            f'<span class="risk-wn">{_html.escape(ticker)} '
+            f"<span style=\"color:{_FAINT};font-family:'IBM Plex Sans',sans-serif;font-size:9.5px\">{_html.escape(name)}</span>"
             "</span>"
             f'<span class="risk-wt"><span class="risk-wf" style="width:{bar_pct:.0f}%"></span></span>'
             f'<span class="risk-wv">{rc:.0%} of risk'
@@ -1244,9 +1247,9 @@ def _drift(macro: dict[str, Any]) -> str:
         f'<line x1="0" y1="{flag_y:.1f}" x2="160" y2="{flag_y:.1f}" '
         f'stroke="{_AMBER}" stroke-dasharray="3 3" stroke-width="1" opacity=".55"/>'
         f'<polyline points="{points}" fill="none" stroke="{trend_color}" stroke-width="2.4"/>'
-        f'<circle cx="{(n-1)*160/(n-1):.1f}" cy="{_y(last_val):.1f}" r="3.6" fill="{trend_color}"/>'
+        f'<circle cx="160" cy="{_y(last_val):.1f}" r="3.6" fill="{trend_color}"/>'
         f'<text x="2" y="52" font-family="IBM Plex Mono" font-size="7" fill="{_FAINT}">'
-        f"{dates[0]} {first_val:.0%}</text>"
+        f"{_html.escape(dates[0])} {first_val:.0%}</text>"
         f'<text x="90" y="52" font-family="IBM Plex Mono" font-size="7" fill="{trend_color}">'
         f"now {last_val:.0%}</text>"
         "</svg>"
@@ -1517,9 +1520,10 @@ def _band_strip_html(
 
 def _render_band_strips(net_beta: float, sys_share: float) -> None:
     """Backward-compat: render band strips via st.markdown (called from render())."""
-    _SHARE_FLAG = 0.60
+    # _SHARE_FLAG_PCT is the single module-level constant (60.0); convert to fraction here.
+    _share_flag = _SHARE_FLAG_PCT / 100.0
     beta_band = classify_net_beta(net_beta)
-    share_band = classify_systematic_share(sys_share, flag=_SHARE_FLAG)
+    share_band = classify_systematic_share(sys_share, flag=_share_flag)
     beta_pos = net_beta_position(net_beta)
     share_pos = sys_share * 100.0
 
@@ -1541,7 +1545,7 @@ def _render_band_strips(net_beta: float, sys_share: float) -> None:
         needle_pct=share_pos,
         pill_text=share_band.value,
         value_text=f"{sys_share:.0%} — {share_band.value}",
-        flag_pct=_SHARE_FLAG * 100.0,
+        flag_pct=_SHARE_FLAG_PCT,
     )
 
     st.markdown(
