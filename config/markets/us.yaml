@@ -93,6 +93,10 @@ gemini:
   # Override at runtime with GEMINI_MIN_INTERVAL_S env var (env wins).
   min_interval_seconds: 5.0
 
+risk_stats:
+  bootstrap_iters: 500
+  seed: 7
+
 sentiment:
   rss_feeds:
     reuters: "https://www.reutersagency.com/feed/?best-topics=business-finance"
