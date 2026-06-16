@@ -41,22 +41,25 @@ def classify_regime(spy_trend_health: float, vix_level: float) -> Regime:
 
 _TILTS: dict[Regime, dict[str, float]] = {
     Regime.RISK_ON: {
-        "momentum": 0.40,
-        "revision": 0.30,
+        "momentum": 0.35,
+        "revision": 0.25,
         "quality": 0.15,
         "value": 0.15,
+        "lowvol": 0.10,  # risk-on; low-vol less critical
     },
     Regime.NEUTRAL: {
-        "momentum": 0.25,
-        "revision": 0.25,
-        "quality": 0.25,
-        "value": 0.25,
+        "momentum": 0.20,
+        "revision": 0.20,
+        "quality": 0.20,
+        "value": 0.20,
+        "lowvol": 0.20,
     },
     Regime.RISK_OFF: {
-        "momentum": 0.15,
-        "revision": 0.15,
-        "quality": 0.40,
-        "value": 0.30,
+        "momentum": 0.10,
+        "revision": 0.10,
+        "quality": 0.35,
+        "value": 0.25,
+        "lowvol": 0.20,  # risk-off; calm stocks preferred
     },
 }
 

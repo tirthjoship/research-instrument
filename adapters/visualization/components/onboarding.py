@@ -39,6 +39,42 @@ def render_onboarding_html() -> str:
     )
 
 
+def render_landing_door_html(local: bool) -> str:
+    """Return HTML for the landing door (Home tab — no book loaded yet).
+
+    Renders the petrol banner with heading and privacy copy only.
+    The <button class="db ..."> elements have been removed — they were decorative
+    HTML that could not trigger Streamlit.  The real working widgets
+    (st.button / st.file_uploader) are rendered separately in _handle_onboarding().
+
+    When ``local`` is True (is_local_runtime() returned True), the privacy promise
+    and CSV upload affordance text are shown.  When False (hosted or unknown), they
+    are hidden and an honest notice is shown instead.  This is the privacy gate.
+    """
+    if local:
+        privacy = (
+            '<p style="margin:0;font-size:12.5px;color:rgba(255,255,255,.82);line-height:1.5">'
+            "Explore a sample book or load your own. "
+            '<b style="color:#fff">Everything stays on your machine</b>'
+            " — never uploaded.</p>"
+        )
+    else:
+        privacy = (
+            '<p style="margin:0;font-size:12.5px;color:rgba(255,255,255,.82);line-height:1.5">'
+            "Explore the sample book. Holdings upload is disabled — "
+            "this build isn't running local-only.</p>"
+        )
+    # Note: .door CSS has border-radius:18px 18px 0 0 (square bottom) so it connects
+    # flush to the .door-actions panel / Streamlit column row that follows immediately.
+    return (
+        '<div class="door">'
+        '<h2 style="font-family:Fraunces,serif;font-weight:700;font-size:18px;margin:0 0 6px">'
+        "Load a book to begin</h2>"
+        f"{privacy}"
+        "</div>"
+    )
+
+
 def should_show_onboarding(
     has_scan_results: bool,
     has_trades: bool,

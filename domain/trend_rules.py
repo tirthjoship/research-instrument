@@ -103,3 +103,32 @@ def top_fraction_threshold(values: list[float], fraction: float) -> float | None
         return None
     k = max(1, math.floor(len(clean) * fraction))
     return sorted(clean, reverse=True)[k - 1]
+
+
+def trailing_volatility(daily_closes: list[float]) -> float | None:
+    """Annualised population stdev of daily simple returns from daily close prices.
+
+    Requires at least 61 daily closes (→ 60 daily returns) for a sane estimate.
+    Returns raw annualised volatility (>=0); the screen inverts + z-scores it
+    cross-sectionally so calmer stocks rank higher.
+
+    Args:
+        daily_closes: Ascending daily close prices. Must all be positive.
+
+    Returns:
+        Annualised volatility (float >=0), or None when history is insufficient
+        or any close is non-positive.
+    """
+    _MIN_CLOSES = 61  # 60 returns minimum
+    if len(daily_closes) < _MIN_CLOSES:
+        return None
+    rets: list[float] = []
+    for prev, cur in zip(daily_closes[:-1], daily_closes[1:]):
+        if prev <= 0:
+            return None
+        rets.append(cur / prev - 1.0)
+    n = len(rets)
+    mu = sum(rets) / n
+    var = sum((r - mu) ** 2 for r in rets) / n
+    daily_vol = math.sqrt(var)
+    return daily_vol * math.sqrt(252)

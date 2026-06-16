@@ -224,6 +224,87 @@ def batch_fetch_prices(tickers: tuple[str, ...]) -> dict[str, dict[str, float]]:
     return fetch_prices(tickers)
 
 
+# ---------------------------------------------------------------------------
+# Price-history (closes / ATR / MA200) — impl + cached wrapper
+# ---------------------------------------------------------------------------
+
+_PRICE_HISTORY_TTL = 60 * 60  # 1 h — history moves slowly
+
+
+def parse_price_history(df: DataFrame | None) -> dict[str, Any] | None:
+    """Parse a yfinance history DataFrame into a prices dict (pure, no network).
+
+    Returns a dict with keys:
+      closes  - list[float]  : daily close prices (full 1-year window)
+      ma200   - float | None : mean of last 200 closes (or all if < 200)
+      atr     - float | None : 14-period average true range proxy
+      vs_spy  - None         : computed separately; placeholder here
+
+    Returns None when ``df`` is None or has no rows.
+    """
+    if df is None or df is None:
+        return None
+    if not hasattr(df, "__len__") or len(df) == 0:
+        return None
+    try:
+        close_col = df["Close"] if "Close" in df.columns else None
+        if close_col is None or close_col.dropna().empty:
+            return None
+        closes_series = close_col.dropna()
+        closes = [float(c) for c in closes_series]
+
+        ma200: float | None = (
+            float(sum(closes[-200:]) / len(closes[-200:])) if closes else None
+        )
+
+        # ATR proxy: use High-Low if available, else mean abs day-over-day diff
+        atr: float | None = None
+        if "High" in df.columns and "Low" in df.columns:
+            high_col = df["High"].dropna()
+            low_col = df["Low"].dropna()
+            aligned = high_col.align(low_col, join="inner")
+            hl_range = [
+                float(hi - lo)
+                for hi, lo in zip(aligned[0].iloc[-14:], aligned[1].iloc[-14:])
+            ]
+            if hl_range:
+                atr = sum(hl_range) / len(hl_range)
+        else:
+            # abs diff of last 14 daily closes
+            tail = closes[-15:]  # 14 diffs from 15 points
+            if len(tail) >= 2:
+                diffs = [abs(tail[i] - tail[i - 1]) for i in range(1, len(tail))]
+                atr = sum(diffs) / len(diffs) if diffs else None
+
+        return {"closes": closes, "ma200": ma200, "atr": atr, "vs_spy": None}
+    except Exception as exc:  # noqa: BLE001 — malformed df → None
+        logger.warning("parse_price_history failed: {}", exc)
+        return None
+
+
+def _fetch_price_history_impl(ticker: str) -> dict[str, Any] | None:
+    """Fetch 1-year daily history for *ticker* and parse it. Returns None on error."""
+    import yfinance as yf  # lazy import for CI safety
+
+    try:
+        df: DataFrame = yf.Ticker(ticker).history(period="2y")
+    except Exception as exc:  # noqa: BLE001 — network/parse failures → None
+        logger.warning("Price history fetch failed for {}: {}", ticker, exc)
+        return None
+    return parse_price_history(df)
+
+
+def fetch_price_history(ticker: str) -> dict[str, Any] | None:
+    """Streamlit-cached wrapper around _fetch_price_history_impl (mirrors fetch_ticker_info)."""
+    import streamlit as st  # lazy import, CI-safe
+
+    @st.cache_data(ttl=_PRICE_HISTORY_TTL, show_spinner=False)
+    def _cached(t: str) -> dict[str, Any] | None:
+        return _fetch_price_history_impl(t)
+
+    return _cached(ticker)
+
+
 def fetch_index_prices() -> dict[str, dict[str, float]]:
     """Streamlit-cached wrapper around _fetch_index_prices_impl."""
     import streamlit as st

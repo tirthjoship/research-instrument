@@ -167,6 +167,79 @@ GLOSSARY: dict[str, str] = {
         "Synonym for Snowflake — a radar chart summarising multiple factor "
         "scores in a single view."
     ),
+    # ── Triage strip (Task 8 / home hybrid) ──────────────────────────────────
+    "Need review": (
+        "Holdings whose discipline verdict is REDUCE or TRIM — signals that "
+        "a position size may need adjusting. These are review prompts, not "
+        "trade instructions."
+    ),
+    "vs Market (1y)": (
+        "How the book's total return compared to SPY over the trailing year. "
+        "Not pre-computed in the weekly brief — re-run the macro-beta report "
+        "for a live figure."
+    ),
+    "Regime": (
+        "The current broad market regime (e.g. RISK_ON / RISK_OFF / NEUTRAL) "
+        "as classified by the macro overlay. It provides context for discipline "
+        "decisions but does not alter the evidence grades."
+    ),
+    # ── Home Front-Desk strip (S4) ────────────────────────────────────────────
+    "Screen": (
+        "The systematic weekly pass over the universe that scores each stock "
+        "on present-day evidence. Shows how many names cleared every gate."
+    ),
+    # ── Screen diagnostics funnel (Task 5 / ADR-05x) ─────────────────────────
+    "Had history": (
+        "Of the universe scanned, these names had enough price history (at "
+        "least the minimum required trading days) to be scored. Names missing "
+        "sufficient history are excluded before scoring begins."
+    ),
+    "Above trend": (
+        "Of those with sufficient history, these names were trading above the "
+        "long-run trend filter (SMA-200). Below-trend names are excluded from "
+        "the scored pool — they pass the data gate but not the trend gate."
+    ),
+    # ── S3 Screener redesign terms ─────────────────────────────────────────────
+    "Evidence score": (
+        "Equal-weight average of the factor z-scores. Higher = more factors look "
+        "strong now. A ranking aid, not a return forecast."
+    ),
+    "Percentile": (
+        "Where a name ranks among this week's trend-eligible cohort. p95 = stronger "
+        "than 95% of them — not vs its sector, not vs the full universe."
+    ),
+    "Low-vol factor": (
+        "How little the price swings (trailing volatility). Higher score = steadier, "
+        "smaller drawdowns historically. Descriptive, not a forecast."
+    ),
+    "Analyst spread": (
+        "Width of today's analyst price-target range (high vs low). A dispersion "
+        "signal, not estimate-revision over time."
+    ),
+    "Trend gate": (
+        "A loose filter that keeps only names above their 200-day average. Most "
+        "survivors aren't special — the ranking is the selective part."
+    ),
+    "Reason bucket": (
+        "A plain-English grouping (e.g. cheap & high-quality) derived from a name's "
+        "strongest factors, so you see the kind of opportunity before the name."
+    ),
+    "Showing": (
+        "The top names from this week's screen — a research shortlist to start "
+        "digging into, not trade signals."
+    ),
+    "As of": (
+        "The screen's run date. Everything shown is current evidence as of this "
+        "date — never a projection of next week."
+    ),
+    "Factors": (
+        "How many evidence factors are scored per name this week (momentum, "
+        "analyst spread, quality, value, and — once live — low-volatility)."
+    ),
+    "Trust the signal": (
+        "Verdict from our pre-registered IC backtest gate. INCONCLUSIVE = no proven "
+        "forward edge yet, so the ranking stays descriptive evidence, not a forecast."
+    ),
 }
 
 
