@@ -41,15 +41,21 @@ _BAND_BG: dict[Band, str] = {
 
 
 def _glossary_tooltip(glossary_term: str) -> str:
-    """Inline .ri-ttip tooltip span using glossary definition, if available."""
+    """Inline .ri-ttip tooltip span — visible trigger is a small grey circle badge."""
     try:
         from adapters.visualization.components.glossary import GLOSSARY
 
         definition = GLOSSARY.get(glossary_term, "")
         if definition:
             safe_def = _html.escape(definition, quote=True)
+            # Circle badge: 13px, background #CBD5E1 (≈ var(--text-muted)), white "i".
             return (
-                f'<span class="ri-ttip" style="font-size:9px;margin-left:2px;">'
+                f'<span class="ri-ttip" style="'
+                f"display:inline-flex;align-items:center;justify-content:center;"
+                f"width:13px;height:13px;border-radius:50%;background:#CBD5E1;"
+                f"color:#fff;font-size:8px;font-weight:700;font-style:normal;"
+                f"margin-left:4px;vertical-align:middle;cursor:help;"
+                f'line-height:1;flex-shrink:0;">'
                 f"i"
                 f'<span class="ri-tip">{safe_def}</span>'
                 f"</span>"

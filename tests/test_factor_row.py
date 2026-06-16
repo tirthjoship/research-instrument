@@ -56,3 +56,29 @@ def test_render_factor_row_analyst_spread_display_label() -> None:
 
     html = render_factor_row("revision", value=0.9, percentile=0.88)
     assert "Analyst spread" in html
+
+
+# ── Fix 1: circle badge tooltip ───────────────────────────────────────────────
+
+
+def test_factor_row_tooltip_is_circle_badge() -> None:
+    """Glossary tooltip trigger must render as a grey circle badge, not a bare 'i'."""
+    from adapters.visualization.components.factor_row import render_factor_row
+
+    html = render_factor_row("quality", value=2.83, percentile=0.95)
+    # Circle badge: border-radius:50% and background:#CBD5E1 present on the trigger.
+    assert "border-radius:50%" in html, "circle badge must have border-radius:50%"
+    assert "#CBD5E1" in html, "circle badge must use #CBD5E1 muted background"
+    # The .ri-ttip + .ri-tip structure must be intact for hover cloud.
+    assert "ri-ttip" in html
+    assert "ri-tip" in html
+
+
+def test_factor_row_data_gap_tooltip_badge() -> None:
+    """DATA-GAP row should also render the glossary circle badge (if term exists)."""
+    from adapters.visualization.components.factor_row import render_factor_row
+
+    html = render_factor_row("quality", value=None, percentile=None)
+    # DATA-GAP row still has label + tooltip trigger.
+    assert "ri-ttip" in html
+    assert "DATA-GAP" in html
