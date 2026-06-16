@@ -44,8 +44,10 @@ inject_global_css()
 
 # fmt: off
 _APP_TITLE_HTML = (
-    "<h1 class='ri-app-title' style=\"font-family:'Fraunces',Georgia,serif !important;font-weight:600 !important;font-size:32px !important;letter-spacing:-0.01em !important;color:#14181F !important;margin-bottom:2px !important;\">Multi-Modal Stock Recommender</h1>"  # noqa: E501
-    "<p style=\"font-family:'IBM Plex Sans',sans-serif;font-size:13px;color:#717885;margin:0 0 14px 0;letter-spacing:0.01em;\">Evidence-based equity research instrument &mdash; attribution, not forecast</p>"  # noqa: E501
+    "<div style=\"margin:0 0 2px 0;\">"
+    "<h1 class='ri-app-title' style=\"font-family:'Fraunces',Georgia,serif !important;font-weight:600 !important;font-size:30px !important;letter-spacing:-0.01em !important;color:#14181F !important;margin:0 0 2px 0 !important;line-height:1.1 !important;\">Multi-Modal Stock Recommender</h1>"  # noqa: E501
+    "<p class='ri-app-sub'>Evidence-based equity research instrument &mdash; attribution, not forecast</p>"  # noqa: E501
+    "</div>"
 )
 # fmt: on
 st.markdown(_APP_TITLE_HTML, unsafe_allow_html=True)
