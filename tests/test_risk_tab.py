@@ -99,27 +99,56 @@ def _summary(tmp_path, macro):  # type: ignore[no-untyped-def]
 
 
 # ---------------------------------------------------------------------------
-# Original tests (kept intact, still pass)
+# Render smoke tests
 # ---------------------------------------------------------------------------
 
 
-def test_render_with_macro(tmp_path):  # type: ignore[no-untyped-def]
+def test_render_with_macro(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """render() must not raise and must emit v8 surface markers with a full macro."""
+    from unittest.mock import patch
+
+    import streamlit as st
+
+    rendered_html: list[str] = []
+
+    def capture_markdown(text: str, **kwargs: object) -> None:  # type: ignore[misc]
+        rendered_html.append(str(text))
+
     from adapters.visualization.tabs import risk
 
-    risk.render(
-        path=_summary(
-            tmp_path,
-            {
-                "net_beta_by_factor": {"SPY": 1.39, "TLT": -0.2},
-                "systematic_share": 0.63,
-                "idiosyncratic_share": 0.37,
-                "dominant_factor": "SPY",
-                "flags": ["SYSTEMATIC_DOMINANT"],
-                "coverage_holdings": 60,
-                "total_holdings": 66,
-            },
+    with (
+        patch.object(st, "markdown", side_effect=capture_markdown),
+        patch.object(st, "subheader"),
+        patch.object(st, "caption"),
+        patch.object(st, "divider"),
+        patch.object(st, "columns", return_value=[_NullCtx(), _NullCtx()]),
+        patch.object(st, "plotly_chart"),
+        patch.object(st, "warning"),
+    ):
+        risk.render(
+            path=_summary(
+                tmp_path,
+                {
+                    "net_beta_by_factor": {"SPY": 1.39, "TLT": -0.2},
+                    "systematic_share": 0.63,
+                    "idiosyncratic_share": 0.37,
+                    "dominant_factor": "SPY",
+                    "flags": ["SYSTEMATIC_DOMINANT"],
+                    "coverage_holdings": 60,
+                    "total_holdings": 66,
+                },
+            )
         )
-    )
+
+    all_html = "\n".join(rendered_html)
+    # v8 surface: status banner and vitals must be present
+    assert "MEASURED VS" in all_html, "v8 status banner 'MEASURED VS' must be present"
+    assert (
+        "Systematic share" in all_html
+    ), "v8 vitals 'Systematic share' must be present"
+    assert (
+        "book" in all_html.lower() and "stands" in all_html.lower()
+    ), "v8 'Where your book stands' header must be present (may be wrapped in em tags)"
 
 
 def test_render_without_macro_no_raise(tmp_path):  # type: ignore[no-untyped-def]
@@ -128,11 +157,8 @@ def test_render_without_macro_no_raise(tmp_path):  # type: ignore[no-untyped-def
     risk.render(path=_summary(tmp_path, None))
 
 
-def test_band_strips_render_elevated_and_macro_leaning(tmp_path, capsys):  # type: ignore[no-untyped-def]
-    """Band strips for net_beta=1.42 → Elevated, sys_share=0.628 → Macro-leaning.
-
-    Also asserts a pre-existing element still renders (additive, not replacing).
-    """
+def test_render_no_legacy_block(tmp_path) -> None:
+    """render() must NOT emit ri-metric-row (the removed legacy block)."""
     from unittest.mock import patch
 
     import streamlit as st
@@ -169,19 +195,91 @@ def test_band_strips_render_elevated_and_macro_leaning(tmp_path, capsys):  # typ
         )
 
     all_html = "\n".join(rendered_html)
+    assert (
+        "ri-metric-row" not in all_html
+    ), "Legacy 'ri-metric-row' must NOT appear — the backward-compat block was removed"
+    # v8 surface must still be present
+    assert (
+        "MEASURED VS" in all_html
+    ), "v8 status banner must still be present after removing legacy block"
 
-    # New band strips must be present
-    assert (
-        "Elevated" in all_html
-    ), f"Expected 'Elevated' in rendered output; got:\n{all_html[:2000]}"
-    assert (
-        "Macro-leaning" in all_html
-    ), f"Expected 'Macro-leaning' in rendered output; got:\n{all_html[:2000]}"
 
-    # Pre-existing element: the hero metric row is still rendered (additivity check)
+def test_render_ai_panel_surfaces_when_cache_and_local(tmp_path) -> None:
+    """With a cached CaseResult and is_local_runtime True, AI panel HTML must appear."""
+    from unittest.mock import patch
+
+    import streamlit as st
+
+    from domain.case_models import CasePoint, CaseResult
+
+    _CACHED = CaseResult(
+        in_favor=(
+            CasePoint(text="portfolio beta is elevated", source_tag="risk-model"),
+        ),
+        to_watch=(),
+        data_gap=False,
+    )
+
+    rendered_html: list[str] = []
+
+    def capture_markdown(text: str, **kwargs: object) -> None:  # type: ignore[misc]
+        rendered_html.append(str(text))
+
+    import adapters.visualization.components.risk_second_opinion as rso_comp
+    import application.risk_second_opinion as rso_app
+    from adapters.visualization.tabs import risk
+
+    with (
+        patch.object(st, "markdown", side_effect=capture_markdown),
+        patch.object(st, "subheader"),
+        patch.object(st, "caption"),
+        patch.object(st, "divider"),
+        patch.object(st, "columns", return_value=[_NullCtx(), _NullCtx()]),
+        patch.object(st, "plotly_chart"),
+        patch.object(st, "warning"),
+        patch.object(rso_comp, "is_local_runtime", return_value=True),
+        patch.object(rso_app, "load_cached_case", return_value=_CACHED),
+    ):
+        risk.render(path=_summary(tmp_path, _MACRO_V8))
+
+    all_html = "\n".join(rendered_html)
     assert (
-        "ri-metric-row" in all_html
-    ), "Expected pre-existing 'ri-metric-row' still present (additivity broken)"
+        "Google AI" in all_html or "RESEARCH" in all_html
+    ), "AI second-opinion panel HTML must appear when cache is populated and is_local_runtime=True"
+
+
+def test_render_ai_panel_absent_when_off_local(tmp_path) -> None:
+    """With is_local_runtime False (or cache empty), AI panel HTML must NOT appear."""
+    from unittest.mock import patch
+
+    import streamlit as st
+
+    rendered_html: list[str] = []
+
+    def capture_markdown(text: str, **kwargs: object) -> None:  # type: ignore[misc]
+        rendered_html.append(str(text))
+
+    import adapters.visualization.components.risk_second_opinion as rso_comp
+    import application.risk_second_opinion as rso_app
+    from adapters.visualization.tabs import risk
+
+    with (
+        patch.object(st, "markdown", side_effect=capture_markdown),
+        patch.object(st, "subheader"),
+        patch.object(st, "caption"),
+        patch.object(st, "divider"),
+        patch.object(st, "columns", return_value=[_NullCtx(), _NullCtx()]),
+        patch.object(st, "plotly_chart"),
+        patch.object(st, "warning"),
+        patch.object(rso_comp, "is_local_runtime", return_value=False),
+        patch.object(rso_app, "load_cached_case", return_value=None),
+    ):
+        risk.render(path=_summary(tmp_path, _MACRO_V8))
+
+    all_html = "\n".join(rendered_html)
+    assert (
+        "risk-ai" not in all_html
+    ), "AI panel CSS class 'risk-ai' must NOT appear when off-local or cache empty"
 
 
 class _NullCtx:

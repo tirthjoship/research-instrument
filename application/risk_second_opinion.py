@@ -58,6 +58,14 @@ class _SummarizerLike(Protocol):
     def summarize_case(self, ctx: CaseContext) -> CaseResult: ...
 
 
+def load_cached_risk_second_opinion() -> CaseResult | None:
+    """Load the prefetched risk second-opinion from cache (NO network). None if absent."""
+    try:
+        return load_cached_case(_CITED_CASES_PATH, _CACHE_KEY)
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def build_risk_second_opinion(
     macro_facts: list[str],
     summarizer: _SummarizerLike | None,
