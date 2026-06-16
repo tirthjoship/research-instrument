@@ -30,7 +30,7 @@ from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import load_latest_screen, staleness_days
 from application.runtime_guard import is_local_runtime
 from domain.factor_bands import Band, band_for_percentile, plain_read
-from domain.screen_buckets import PRIORITY, BucketInput, assign_buckets, primary_bucket
+from domain.screen_buckets import PRIORITY, BucketInput, assign_buckets
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
 
 # Module-level adapter instance — monkeypatchable in tests.
@@ -403,6 +403,21 @@ def resolve_view_mode(session: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _company_name(candidate: dict[str, Any]) -> str:
+    """Return a friendly display name for the candidate, falling back to ticker.
+
+    Checks common keys ('name', 'company', 'shortName', 'company_name') that may
+    be present in enriched screen data. Never fetches network — display-only.
+    """
+    for key in ("name", "company", "shortName", "company_name"):
+        raw = candidate.get(key)
+        if raw and isinstance(raw, str):
+            stripped: str = raw.strip()
+            if stripped:
+                return stripped
+    return str(candidate.get("ticker", "?") or "?")
+
+
 def _build_candidate_row_html(
     rank: int | str,
     candidate: dict[str, Any],
@@ -492,11 +507,12 @@ def _build_candidate_row_html(
         + " in Stock Analysis</b> for a full read."
     )
 
-    # Sub-line showing composite and any also-in buckets
+    # Sub-line: "CompanyName · evidence 1.22 [also-in badge]"
+    friendly_name = _html.escape(_company_name(candidate))
     sub_line = (
         f'<div style="font-size:11px;color:var(--text-muted);'
         f"margin:8px 0 7px;font-family:'Fraunces',serif;font-style:italic;\">"
-        f"{ticker} &middot; evidence {composite:.2f}{also_html}"
+        f"{friendly_name} &middot; evidence {composite:.2f}{also_html}"
         f"</div>"
     )
 
@@ -531,8 +547,6 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
     since we need custom CSS. The collapsible rows use a CSS details/summary
     pattern (no JS needed for basic open/close in HTML).
     """
-    from domain.screen_buckets import Bucket
-
     # Build BucketInput from candidates
     bucket_inputs: list[BucketInput] = []
     candidate_by_ticker: dict[str, dict[str, Any]] = {}
@@ -560,11 +574,6 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
         candidate_by_ticker[ticker] = c
 
     bucket_map = assign_buckets(bucket_inputs)
-
-    # Determine primary bucket for each ticker (for 'also' badges)
-    primary_map: dict[str, Bucket | None] = {
-        bi.ticker: primary_bucket(bi.percentiles) for bi in bucket_inputs
-    }
 
     parts: list[str] = []
     # The first member of the first non-empty bucket is the "hero" — open by
@@ -619,13 +628,12 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
                 if any(m.ticker == ticker for m in bucket_map[other_bucket]):
                     also_in.append(other_bucket.emoji)
 
-            # Is this a repeat (primary bucket is different)?
-            is_repeat = primary_map.get(ticker) != bucket
-
+            # Show the also-in badge whenever the ticker appears in any other bucket
+            # (regardless of which is "primary" — so the hero always shows it too).
             body = _build_candidate_row_html(
                 rank=rank_i,
                 candidate=c,
-                show_repeat_badge=is_repeat,
+                show_repeat_badge=bool(also_in),
                 also_buckets=also_in if also_in else None,
             )
 
