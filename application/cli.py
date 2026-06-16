@@ -2839,7 +2839,10 @@ def backtest_screen(
     # Run ScreenBacktestUseCase
     # ------------------------------------------------------------------
     uc = ScreenBacktestUseCase()
-    verdict = uc.run(panels, market_returns=benchmark_returns)
+    # run()'s IC gate consumes only (signal, forward_return); lowvol_z is a
+    # diagnostic carried in the 3-tuple panels for reporting, not an IC input.
+    ic_panels = [{t: (v[0], v[1]) for t, v in p.items()} for p in panels]
+    verdict = uc.run(ic_panels, market_returns=benchmark_returns)
 
     # ------------------------------------------------------------------
     # Write report JSON
