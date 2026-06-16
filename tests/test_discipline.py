@@ -123,3 +123,72 @@ def test_grade_review_when_trend_health_none():
     )
     assert v == Verdict.REVIEW
     assert abstained is True
+
+
+# ── FIX 3: verdict rubric ────────────────────────────────────────────────────
+
+
+def test_verdict_rubric_lines_returns_five_entries() -> None:
+    """verdict_rubric_lines() must return exactly 5 entries, one per Verdict."""
+    from domain.discipline import Verdict, verdict_rubric_lines
+
+    lines = verdict_rubric_lines()
+    assert len(lines) == 5, f"expected 5 rubric entries, got {len(lines)}"
+    # All 5 verdict values must be covered
+    covered = {label for label, _ in lines}
+    for v in Verdict:
+        assert v.value in covered, f"Verdict {v.value} missing from rubric"
+
+
+def test_verdict_rubric_lines_no_forbidden_words() -> None:
+    """Rubric text must not contain any forbidden words."""
+    from domain.discipline import verdict_rubric_lines
+    from domain.fit import FORBIDDEN_WORDS
+
+    lines = verdict_rubric_lines()
+    for label, text in lines:
+        combined = (label + " " + text).lower()
+        for w in FORBIDDEN_WORDS:
+            assert (
+                w not in combined
+            ), f"forbidden word {w!r} in rubric entry ({label!r})"
+
+
+def test_rubric_html_marks_current_verdict() -> None:
+    """_rubric_html(Verdict.TRIM) must contain all 5 verdict names and mark TRIM."""
+    from adapters.visualization.components.decision_card import _rubric_html
+    from domain.discipline import Verdict
+
+    html = _rubric_html(Verdict.TRIM)
+    for v in Verdict:
+        assert v.value in html, f"verdict {v.value} missing from rubric HTML"
+    # TRIM must be distinguished — bold or highlighted
+    assert "TRIM" in html
+
+
+def test_expanded_card_includes_rubric() -> None:
+    """render_expanded_card must include rubric content in its output."""
+    from adapters.visualization.components.decision_card import render_expanded_card
+    from application.evidence_card import EvidenceCard
+    from domain.discipline import Verdict
+    from domain.evidence_rag import RagColor, RagSignal
+
+    sigs = (RagSignal("Technicals", RagColor.GREEN, "above trend"),)
+    card = EvidenceCard(ticker="AAPL", signals=sigs, sparkline=())
+    html = render_expanded_card(
+        card,
+        case=None,
+        verdict=Verdict.REDUCE,
+        name="Apple",
+        unrealized_pct=-5.0,
+        means="Trend broken.",
+        price=150.0,
+        cost=180.0,
+        returns=(1.0, 2.0, 3.0, 4.0, 5.0),
+        reliability="n/a",
+    )
+    # The card must contain rubric copy — at minimum the rubric header and REDUCE marked
+    assert (
+        "How this verdict was decided" in html
+    ), "rubric header missing from expanded card"
+    assert "REDUCE" in html  # marked as current verdict in rubric

@@ -3,6 +3,7 @@
 from hypothesis import given
 from hypothesis import strategies as st
 
+from application.brief_summary import brief_to_summary_dict
 from domain.brief import (
     BuyCandidateLine,
     ConcentrationFlag,
@@ -333,3 +334,68 @@ def test_masked_research_only_no_buy_language(label: ScreenLabel) -> None:
     out = to_stdout_masked(_full_brief(label)).lower()
     if label == ScreenLabel.RESEARCH_ONLY:
         assert "buy candidates" not in out
+
+
+# ---------------------------------------------------------------------------
+# Task 3: abstained is a single source of truth — comes from ScreenResult,
+# NOT recomputed from len(candidates).
+# ---------------------------------------------------------------------------
+
+
+def _screen_result_not_abstained(label: ScreenLabel) -> ScreenResult:
+    """Screen result with candidates and abstained=False (the normal case)."""
+    return _screen_result(label)  # already sets abstained=False
+
+
+def _screen_result_empty_not_abstained(label: ScreenLabel) -> ScreenResult:
+    """Zero candidates but abstained=False — screen ran, found nothing passable,
+    but did NOT invoke the thin-coverage abstention gate.
+    This is the MEANINGFUL case the old len(candidates)==0 logic gets WRONG:
+    it would return True, but the correct answer is False."""
+    return ScreenResult("2026-06-08", (), 500, "NEUTRAL", None, abstained=False)
+
+
+def test_abstained_false_with_candidates() -> None:
+    """brief_to_summary_dict must return abstained=False when the source flag is False,
+    regardless of whether candidates are present."""
+    brief = assemble_brief(
+        as_of="2026-06-08",
+        regime=Regime.NEUTRAL,
+        tilt={"momentum": 0.25, "revision": 0.25, "quality": 0.25, "value": 0.25},
+        screen_result=_screen_result_not_abstained(ScreenLabel.RESEARCH_ONLY),
+        screen_label=ScreenLabel.RESEARCH_ONLY,
+        top_n=10,
+        positions=_positions(),
+        portfolio=_portfolio(),
+        held_tickers=set(),
+        cluster_overlaps={},
+        scorecard=_scorecard(),
+    )
+    # Candidates ARE present; source abstained is False.
+    assert len(brief.candidates) > 0
+    out = brief_to_summary_dict(brief)
+    assert out["abstained"] is False
+
+
+def test_abstained_false_with_zero_candidates_when_source_is_false() -> None:
+    """The key regression case: zero candidates but source abstained=False.
+    Old code: len(candidates)==0 → True  (WRONG).
+    Correct:  source flag False          → False."""
+    brief = assemble_brief(
+        as_of="2026-06-08",
+        regime=Regime.NEUTRAL,
+        tilt={"momentum": 0.25, "revision": 0.25, "quality": 0.25, "value": 0.25},
+        screen_result=_screen_result_empty_not_abstained(ScreenLabel.RESEARCH_ONLY),
+        screen_label=ScreenLabel.RESEARCH_ONLY,
+        top_n=10,
+        positions=_positions(),
+        portfolio=_portfolio(),
+        held_tickers=set(),
+        cluster_overlaps={},
+        scorecard=_scorecard(),
+    )
+    # Candidates are EMPTY but source abstained is False.
+    assert len(brief.candidates) == 0
+    out = brief_to_summary_dict(brief)
+    # Old len(candidates)==0 code returns True here — this is the bug.
+    assert out["abstained"] is False

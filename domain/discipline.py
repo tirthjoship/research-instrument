@@ -101,3 +101,40 @@ def grade_position(
     if trend_health < 0:
         return Verdict.HOLD, 0.4, False
     return Verdict.HOLD, 0.6, False
+
+
+def verdict_rubric_lines() -> list[tuple[str, str]]:
+    """Return plain-English rules for each Verdict, faithful to grade_position's decision tree.
+
+    Each entry is (verdict_value, trigger_description). Order matches grade_position's
+    branch priority: REVIEW → TRIM → REDUCE → ADD_OK → HOLD.
+
+    Thresholds are taken directly from grade_position constants:
+      _BROKEN_TREND_ATR = 2.0  (trend_health <= -2.0 fires REDUCE)
+      _STRONG_TREND_ATR = 1.5  (trend_health >= 1.5 and RS > 0 fires ADD_OK)
+    """
+    return [
+        (
+            Verdict.REVIEW.value,
+            "No clean read — trend data is missing, OR the name is weak but the whole "
+            "market is also weak, so the weakness cannot be attributed to the name.",
+        ),
+        (
+            Verdict.TRIM.value,
+            "An uptrending name has breached its trailing stop — consider locking some gains.",
+        ),
+        (
+            Verdict.REDUCE.value,
+            "Trend broken ≥2 ATR below the 200-day AND either the position is held at a "
+            "loss (disposition risk) or volatility is rising while the trend deteriorates.",
+        ),
+        (
+            Verdict.ADD_OK.value,
+            "Strong uptrend (≥1.5 ATR above the 200-day) AND the name is showing "
+            "positive relative strength vs the broader market.",
+        ),
+        (
+            Verdict.HOLD.value,
+            "None of the above rules fired — stay put and let the evidence develop.",
+        ),
+    ]

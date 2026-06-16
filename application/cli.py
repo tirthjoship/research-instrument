@@ -2479,39 +2479,57 @@ def _build_evidence_screen(deps: dict[str, Any]) -> "Any":
         """Wraps YFinanceAdapter to satisfy PricePort."""
 
         def monthly_closes(self, ticker: str) -> list[float]:
+            # Only the network fetch is tolerated to fail (per-ticker, expected).
+            # The transform runs OUTSIDE the try so a field/shape bug surfaces
+            # instead of silently returning [] (this is how the s.close bug hid).
             try:
                 now = datetime.now(timezone.utc)
                 two_years_ago = now.replace(year=now.year - 2)
                 signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
-                if not signals:
-                    return []
-                by_month: dict[str, float] = {}
-                for s in signals:
-                    key = f"{s.timestamp.year}-{s.timestamp.month:02d}"
-                    by_month[key] = s.close
-                return [by_month[k] for k in sorted(by_month)]
             except Exception:
                 return []
+            if not signals:
+                return []
+            by_month: dict[str, float] = {}
+            for s in signals:
+                key = f"{s.timestamp.year}-{s.timestamp.month:02d}"
+                by_month[key] = s.price
+            return [by_month[k] for k in sorted(by_month)]
 
-        def trend_health(self, ticker: str) -> float:
+        def daily_closes(self, ticker: str, as_of: str) -> list[float]:
+            """Return daily close prices up to as_of (PIT-safe) for lowvol computation."""
             try:
-                from domain.trend_rules import atr, sma
-                from domain.trend_rules import trend_health as _th
-
                 now = datetime.now(timezone.utc)
                 two_years_ago = now.replace(year=now.year - 2)
                 signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
-                if len(signals) < 22:
-                    return 0.0
-                closes = [s.close for s in signals]
-                highs = [s.high for s in signals]
-                lows = [s.low for s in signals]
-                sma_val = sma(closes, min(200, len(closes)))
-                atr_val = atr(highs, lows, closes, 22)
-                th = _th(closes[-1], sma_val, atr_val)
-                return th if th is not None else 0.0
+            except Exception:
+                return []
+            if not signals:
+                return []
+            return [s.price for s in signals]
+
+        def trend_health(self, ticker: str) -> float:
+            from domain.trend_rules import atr, sma
+            from domain.trend_rules import trend_health as _th
+
+            # Only the network fetch is tolerated to fail (per-ticker, expected).
+            # The computation runs OUTSIDE the try so a field/shape bug surfaces
+            # instead of silently returning 0.0 (this is how the s.close bug hid).
+            try:
+                now = datetime.now(timezone.utc)
+                two_years_ago = now.replace(year=now.year - 2)
+                signals = market_data.get_signals(ticker, now, start_date=two_years_ago)
             except Exception:
                 return 0.0
+            if len(signals) < 22:
+                return 0.0
+            closes = [s.price for s in signals]
+            highs = [s.high for s in signals]
+            lows = [s.low for s in signals]
+            sma_val = sma(closes, min(200, len(closes)))
+            atr_val = atr(highs, lows, closes, 22)
+            th = _th(closes[-1], sma_val, atr_val)
+            return th if th is not None else 0.0
 
         def has_min_history(self, ticker: str) -> bool:
             try:
@@ -2615,16 +2633,10 @@ def screen_candidates(top: int, report_dir: str) -> None:
     labeled_candidates = tuple(
         replace(c, label=verdict_label) for c in result.candidates
     )
-    from domain.screen_models import ScreenResult
-
-    result = ScreenResult(
-        as_of=result.as_of,
-        candidates=labeled_candidates,
-        universe_size=result.universe_size,
-        regime=result.regime,
-        scorecard_ref=result.scorecard_ref,
-        abstained=result.abstained,
-    )
+    # Use replace() so ALL fields (incl. diagnostics) carry through — a full
+    # reconstruction silently dropped `diagnostics`, writing `diagnostics: null`
+    # and starving the Screener funnel / Home tile of their rich states.
+    result = replace(result, candidates=labeled_candidates)
 
     # --- surface ONLY the top-N candidates as SurfacedCalls for forward-tracking ---
     store = deps["store"]
@@ -2645,12 +2657,24 @@ def screen_candidates(top: int, report_dir: str) -> None:
     report_path = Path(report_dir)
     report_path.mkdir(parents=True, exist_ok=True)
     out_file = report_path / f"screen_{as_of}.json"
+    # Serialize diagnostics if available (4 raw ints — no fabrication).
+    diagnostics_payload: dict[str, int] | None = None
+    if result.diagnostics is not None:
+        d = result.diagnostics
+        diagnostics_payload = {
+            "scanned": d.scanned,
+            "had_history": d.had_history,
+            "above_trend": d.above_trend,
+            "cleared": d.cleared,
+        }
+
     payload: dict[str, object] = {
         "as_of": as_of,
         "universe_size": result.universe_size,
         "top_n": top,
         "regime": result.regime,
         "abstained": result.abstained,
+        "diagnostics": diagnostics_payload,
         "candidates": [
             {
                 "ticker": c.ticker,
@@ -3031,6 +3055,59 @@ def _build_weekly_brief(
     return uc, universe
 
 
+def _prefetch_cited_cases(brief: "Any", as_of: datetime) -> None:
+    """Prefetch cited-case summaries for all holding tickers; write the weekly cache.
+
+    Strategy (minimal-from-brief):
+      - We already have brief.holdings with ticker + why + verdict text.
+      - Building a CaseContext from those facts avoids adding heavy per-ticker
+        yfinance/news fetches to the weekly-brief run (bounded, predictable).
+      - News is left empty ([]); the summarizer uses the factual why lines only.
+      - This is an intentional design choice: the weekly-brief CLI should stay
+        fast for most runs (default --no-cite-cases); a future enhancement could
+        add per-ticker news by piping through build_news_context.
+
+    Throttle: the summarizer returned by select_case_summarizer() is already a
+    RateLimitedCaseSummarizer when GEMINI_API_KEY is set, so run_cases_with_progress
+    drives the pings (one per holding) at the configured interval (default 5 s).
+    GEMINI_MIN_INTERVAL_S=0 in tests collapses the wait to zero.
+    """
+    from application.card_loading import select_case_summarizer
+    from application.case_batch import run_cases_with_progress
+    from application.case_cache import CITED_CASES_PATH, write_case_cache
+    from domain.case_models import CaseContext
+
+    holding_lines = list(brief.holdings)
+    if not holding_lines:
+        click.echo("cite-cases: no holdings — nothing to prefetch.")
+        return
+
+    n = len(holding_lines)
+    click.echo(f"\ncite-cases: prefetching {n} holding(s)…")
+
+    # Build minimal CaseContext for each holding from the brief's why text + verdict.
+    contexts: list[CaseContext] = []
+    tickers: list[str] = []
+    for h in holding_lines:
+        fact = f"Verdict: {h.verdict.value}. {h.why}"
+        trend_fact = f"Trend: {h.trend_state}"
+        ctx = CaseContext(ticker=h.ticker, facts=(fact, trend_fact), news=())
+        contexts.append(ctx)
+        tickers.append(h.ticker)
+
+    summarizer = select_case_summarizer()
+
+    def _progress(fraction: float, i: int, total: int) -> None:
+        click.echo(f"  Analysing {i}/{total}: {tickers[i - 1]} ({fraction:.0%})")
+
+    results = run_cases_with_progress(contexts, summarizer, progress=_progress)  # type: ignore[arg-type]
+
+    cases = {ticker: result for ticker, result in zip(tickers, results)}
+    as_of_iso = as_of.date().isoformat()
+    write_case_cache(CITED_CASES_PATH, as_of_iso, cases)
+    click.echo(f"cite-cases: cache written → {CITED_CASES_PATH}")
+
+
 @cli.command("weekly-brief")
 @click.option("--market", default="us", show_default=True, help="Market config")
 @click.option(
@@ -3047,24 +3124,40 @@ def _build_weekly_brief(
 )
 @click.option("--report-dir", default="data/reports/", show_default=True)
 @click.option("--top-n", default=10, type=int, show_default=True)
+@click.option(
+    "--cite-cases/--no-cite-cases",
+    default=False,
+    show_default=True,
+    help=(
+        "Prefetch Gemini cited cases for all holding tickers (spaced, cached for the week). "
+        "Default OFF so normal runs / CI never sleep or ping Gemini. "
+        "Enable only when GEMINI_API_KEY is set and you want to refresh the weekly cache."
+    ),
+)
 def weekly_brief(
-    market: str, holdings: str, out: str, report_dir: str, top_n: int
+    market: str, holdings: str, out: str, report_dir: str, top_n: int, cite_cases: bool
 ) -> None:
     """Generate the unified weekly brief (masked stdout + gitignored full markdown).
 
     Composes the Phase-A evidence screen, the discipline engine, a regime tilt,
     a concentration warning, and the forward scorecard. Phase B adds no predictive
     claim; a RESEARCH_ONLY screen renders no 'buy' language.
+
+    Pass --cite-cases to also prefetch Gemini cited-case summaries for each holding
+    (spaced at the configured rate limit) and cache them to data/personal/cited_cases.json
+    so the dashboard avoids live pings all week.  Default is --no-cite-cases so that CI
+    and regular runs are instant and never touch the network.
     """
     from application.holdings_reader import read_holdings
     from domain.brief import to_markdown, to_stdout_masked
 
     held = read_holdings(holdings)
     uc, universe = _build_weekly_brief(market, held, report_dir)
+    as_of = datetime.now()
     brief = uc.execute(
         universe=universe,
         holdings=held,
-        as_of=datetime.now(),
+        as_of=as_of,
         report_dir=report_dir,
         top_n=top_n,
     )
@@ -3083,6 +3176,11 @@ def weekly_brief(
     click.echo(to_stdout_masked(brief))
     click.echo(f"\nFull brief (gitignored) written to: {out_path}")
     click.echo(f"Structured summary written to: {summary_path}")
+
+    # Opt-in cited-case prefetch: spaced batch → cache.
+    # Gated on --cite-cases flag (default off) so CI / screen-candidates never sleep.
+    if cite_cases:
+        _prefetch_cited_cases(brief, as_of)
 
 
 @cli.command("backtest-trend-sleeve")

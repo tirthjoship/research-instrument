@@ -20,6 +20,7 @@ from domain.factor_scores import (
     zscore,
 )
 from domain.screen import abstain_if_thin, eligible, rank_universe
+from domain.screen_diagnostics import ScreenDiagnostics
 from domain.screen_models import FactorScore, ScreenCandidate, ScreenLabel, ScreenResult
 from domain.surfaced_call import (
     EvidenceItem,
@@ -27,10 +28,12 @@ from domain.surfaced_call import (
     SurfacedCall,
     make_call_id,
 )
+from domain.trend_rules import trailing_volatility
 
 
 class PricePort(Protocol):
     def monthly_closes(self, ticker: str) -> list[float]: ...
+    def daily_closes(self, ticker: str, as_of: str) -> list[float]: ...
     def trend_health(self, ticker: str) -> float: ...
     def has_min_history(self, ticker: str) -> bool: ...
 
@@ -73,16 +76,33 @@ class EvidenceScreenUseCase:
         top_n: int = 10,
     ) -> ScreenResult:
         # --- gather raw signals (ineligible tickers are filtered) ---
-        raw: list[tuple[str, float | None, float | None, dict[str, float], float]] = []
+        # Tuple: (ticker, mom, rev, qv, th, raw_neg_vol)
+        # raw_neg_vol = -trailing_volatility (inverted: calmer → higher) or None (DATA-GAP)
+        raw: list[
+            tuple[
+                str, float | None, float | None, dict[str, float], float, float | None
+            ]
+        ] = []
+        _scanned = len(universe)
+        _had_history = 0
+        _above_trend = 0
         for t in universe:
             th = self._price.trend_health(t)
             hist_ok = self._price.has_min_history(t)
+            if hist_ok:
+                _had_history += 1
+                if th > 0.0:
+                    _above_trend += 1
             if not eligible(th, hist_ok):
                 continue
             mom = trend_rules.momentum_12_1(self._price.monthly_closes(t))
             rev = revision_momentum(self._analyst.estimate_series(t))
             qv = self._fund.quality_value(t)
-            raw.append((t, mom, rev, qv, th))
+            # PIT-safe: daily_closes() must only include closes <= as_of
+            daily = self._price.daily_closes(t, as_of)
+            vol = trailing_volatility(daily)
+            raw_neg_vol: float | None = -vol if vol is not None else None
+            raw.append((t, mom, rev, qv, th, raw_neg_vol))
 
         if not raw:
             return ScreenResult(
@@ -91,6 +111,12 @@ class EvidenceScreenUseCase:
                 universe_size=len(universe),
                 regime="NEUTRAL",
                 scorecard_ref=None,
+                diagnostics=ScreenDiagnostics(
+                    scanned=_scanned,
+                    had_history=_had_history,
+                    above_trend=_above_trend,
+                    cleared=0,
+                ),
             )
 
         # --- cross-sectional z-scores (None-safe) ---
@@ -98,6 +124,8 @@ class EvidenceScreenUseCase:
         zrev = self._z([r[2] for r in raw])
         zqual = self._z([r[3].get("quality") for r in raw])
         zval = self._z([r[3].get("value") for r in raw])
+        # lowvol: -vol (inverted, calmer=higher); None = DATA-GAP (insufficient daily history)
+        zlowvol: list[float | None] = self._z([r[5] for r in raw])
 
         cands: list[ScreenCandidate] = []
         present_fractions: list[float] = []
@@ -109,6 +137,7 @@ class EvidenceScreenUseCase:
             "revision": zrev,
             "quality": zqual,
             "value": zval,
+            "lowvol": zlowvol,
         }
         # For each factor, compute rank of each value among present values (0-indexed)
         factor_percentiles: dict[str, list[float]] = {}
@@ -126,12 +155,13 @@ class EvidenceScreenUseCase:
                     per_item.append(rank / max(n_present - 1, 1))
             factor_percentiles[k] = per_item
 
-        for i, (t, _mom, _rev, _qv, th) in enumerate(raw):
+        for i, (t, _mom, _rev, _qv, th, _negvol) in enumerate(raw):
             subs: dict[str, float | None] = {
                 "momentum": zmom[i],
                 "revision": zrev[i],
                 "quality": zqual[i],
                 "value": zval[i],
+                "lowvol": zlowvol[i],  # DATA-GAP until Step 3 wires daily closes
             }
             present = sum(1 for k in FACTOR_KEYS if subs[k] is not None)
             present_fractions.append(present / len(FACTOR_KEYS))
@@ -173,6 +203,12 @@ class EvidenceScreenUseCase:
             regime="NEUTRAL",
             scorecard_ref=None,
             abstained=_thin,
+            diagnostics=ScreenDiagnostics(
+                scanned=_scanned,
+                had_history=_had_history,
+                above_trend=_above_trend,
+                cleared=len(ranked),
+            ),
         )
 
     def surface_calls(

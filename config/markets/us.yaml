@@ -88,6 +88,11 @@ evaluation:
     bull: 0.10
     bear: -0.10
 
+gemini:
+  # Minimum seconds between Gemini API calls. Free tier is ~14 rpm (~4.3 s min).
+  # Override at runtime with GEMINI_MIN_INTERVAL_S env var (env wins).
+  min_interval_seconds: 5.0
+
 sentiment:
   rss_feeds:
     reuters: "https://www.reutersagency.com/feed/?best-topics=business-finance"
