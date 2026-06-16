@@ -856,11 +856,33 @@ def _enb_section(macro: dict[str, Any]) -> str:
             "</div>"
         )
 
-    # Build PC variance bars (top 3 + residual)
+    # Degenerate-covariance guard: enb may be 0.0 with no pc_variance when the
+    # portfolio has too few history points for a meaningful decomposition.
+    # Treat this the same as the data-gap case rather than crashing on pc_variance[0].
+    if not pc_variance:
+        return (
+            f'<div class="ri-sec">How many real bets? {tooltip("Effective bets")}</div>'
+            '<div class="risk-enb">'
+            f'<div class="risk-enbnum">'
+            f'<div class="risk-big-n">{enb:.1f}</div>'
+            f'<div class="risk-of">of {total_h} names</div>'
+            '<div class="risk-lab">Effective bets</div>'
+            "</div>"
+            '<div class="risk-enbright">'
+            f'<p style="font-size:12.5px;color:#33474c">DATA-GAP: not enough price history to '
+            "decompose bets &#8212; run weekly-brief once more history is available. "
+            "The effective-bets count is shown but variance attribution requires more data.</p>"
+            "</div></div>"
+        )
+
+    # Build PC variance bars (top 3 + residual).
+    # The use case truncates pc_variance to the top-3 eigenvalue shares, so we
+    # compute the residual as the variance NOT captured by the shown components
+    # rather than summing the (always-empty) tail pc_variance[3:].
     top3 = (
         list(zip(pc_variance[:3], pc_labels[:3])) if pc_variance and pc_labels else []
     )
-    rest_variance = sum(pc_variance[3:]) if len(pc_variance) > 3 else 0.0
+    rest_variance = max(0.0, 1.0 - sum(pc_variance))
     max_pc = max(pc_variance[:3]) if pc_variance else 1.0
 
     pc_rows = ""
@@ -1012,8 +1034,12 @@ def _enb_section(macro: dict[str, Any]) -> str:
         f"<p>You hold {total_h} names, but the math says they behave like "
         f"<b>~{enb:.0f} independent bets</b>. The first principal portfolio "
         f"&#8212; essentially &#8220;{_bet_name(0)}&#8221; &#8212; "
-        f"alone carries <b>{pc_variance[0]:.0%}</b> of your variance if available. "
-        "This is the rigorous version of the concentration flag: not "
+        + (
+            f"alone carries <b>{pc_variance[0]:.0%}</b> of your variance. "
+            if pc_variance
+            else "variance attribution is not yet available. "
+        )
+        + "This is the rigorous version of the concentration flag: not "
         "&#8220;you own too many of one thing,&#8221; but "
         "<b>&#8220;you own one thing, many ways.&#8221;</b></p>"
         + pc_rows

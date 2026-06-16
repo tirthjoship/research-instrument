@@ -16,13 +16,14 @@ _MACRO_V8: dict = {
     "coverage_holdings": 58,
     "total_holdings": 66,
     # v8 risk-stats keys
+    # Realistic length-3 pc_variance (use case truncates to top-3 eigenvalue shares).
+    # sum=0.87 → honest residual = 0.13 (13%) via 1 - sum(pc_variance).
     "enb": 3.2,
-    "pc_variance": [0.64, 0.14, 0.09, 0.13],
+    "pc_variance": [0.64, 0.14, 0.09],
     "pc_labels": [
         "Big-tech market beta",
         "Long-duration growth",
         "Semis vs software",
-        "Residual",
     ],
     "pc_labels_data_gap": False,
     "systematic_share_ci": [0.66, 0.76],
@@ -76,7 +77,7 @@ _MACRO_NO_FLAGS = {**_MACRO_V8, "flags": []}
 _MACRO_ENB_GAP = {
     **_MACRO_V8,
     "pc_labels_data_gap": True,
-    "pc_labels": ["Bet 1", "Bet 2", "Bet 3", "Residual"],
+    "pc_labels": ["Bet 1", "Bet 2", "Bet 3"],
 }
 
 # Thin macro: only original keys, none of the v8 ones
@@ -402,3 +403,68 @@ def test_risk_tab_escapes_holding_name() -> None:
     assert (
         "&lt;script&gt;" in html or "A&lt;" in html
     ), "Escaped form of the holding name (&lt;script&gt; or A&lt;) must appear in output"
+
+
+def test_risk_tab_enb_present_but_empty_pc_variance_no_crash() -> None:
+    """Degenerate covariance: enb=0.0, pc_variance=[] — _compose must NOT raise IndexError.
+
+    Production scenario: use case returns enb=0.0 with pc_variance=() because the
+    covariance matrix is degenerate (too few history points).  The old code passed the
+    ``if enb is None`` guard and then crashed on ``pc_variance[0]``.  After the fix
+    _compose must return a string that contains the DATA-GAP / 'building history'
+    fallback text.
+    """
+    from adapters.visualization.tabs import risk
+
+    # Build a macro shaped like _MACRO_V8 but with the degenerate ENB state
+    degenerate_macro: dict = {
+        **_MACRO_V8,
+        "enb": 0.0,
+        "pc_variance": [],
+        "pc_labels": [],
+        "pc_labels_data_gap": True,
+    }
+    html = risk._compose(degenerate_macro)  # must NOT raise IndexError
+    assert isinstance(html, str) and len(html) > 100
+    # The section must communicate the data-gap state, not silently succeed with
+    # a broken numeric reference.
+    assert "DATA-GAP" in html or "building history" in html, (
+        "Degenerate ENB (enb=0.0, pc_variance=[]) must render DATA-GAP or 'building history', "
+        f"got: {html[:300]}"
+    )
+
+
+def test_risk_tab_enb_residual_is_honest() -> None:
+    """Residual variance bar must equal 1 - sum(pc_variance), not sum(pc_variance[3:]).
+
+    With a realistic length-3 pc_variance=[0.64, 0.14, 0.09] (sum=0.87) the residual
+    should be 0.13 (13%).  The old code used sum(pc_variance[3:]) which is always 0.0
+    when the use case returns ≤3 components — meaning NO residual row was ever rendered
+    in production.  After the fix, the residual row must appear and show 13%.
+    """
+    from adapters.visualization.tabs import risk
+
+    realistic_macro: dict = {
+        **_MACRO_V8,
+        "pc_variance": [0.64, 0.14, 0.09],  # length-3, sum=0.87 → residual=0.13
+        "pc_labels": [
+            "Big-tech market beta",
+            "Long-duration growth",
+            "Semis vs software",
+        ],
+        "pc_labels_data_gap": False,
+    }
+    html = risk._compose(realistic_macro)
+    # The residual row label contains "PC 4" — check it appears WITH "13%"
+    # (the PC bar row, not a sector bar which also has arbitrary percentages)
+    assert "PC 4" in html, (
+        "Residual bar row (PC 4–N) must be rendered when 1-sum(pc_variance)=0.13 > 0.005. "
+        "Old code used sum(pc_variance[3:]) which is always 0.0 for ≤3 components."
+    )
+    # Find the PC 4 row and verify it carries the honest 13% residual value
+    pc4_idx = html.find("PC 4")
+    pc4_segment = html[pc4_idx : pc4_idx + 200]
+    assert "13%" in pc4_segment, (
+        "Residual PC-4 row must display 13% (= 1 - 0.87). "
+        f"Got PC4 segment: {pc4_segment}"
+    )
