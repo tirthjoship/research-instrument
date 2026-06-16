@@ -940,16 +940,18 @@ def _build_zone2_row_html(row: Any) -> str:
         f"</div>"
     )
 
-    # Google-AI hook (S6 fills later)
+    # Google-AI hook — production pointer copy (same as Zone 1 shortlist cards)
     gai_id = f"gai-z2-{ticker.lower()}"
     gai_placeholder = (
         f'<div id="{gai_id}" class="gai" style="font-size:10.5px;'
-        f"color:var(--text-secondary);background:#F7F5FF;"
-        f"border:1px solid #E4DCFB;border-radius:8px;padding:7px 10px;"
-        f'margin:8px 0 6px;">'
-        f"&#128269; <b>Google-AI read</b> "
-        f'<span style="color:var(--text-muted);">(arrives in S6)</span>'
-        f"</div>"
+        "color:var(--text-secondary);background:#F7F5FF;"
+        "border:1px solid #E4DCFB;border-radius:8px;padding:7px 10px;"
+        'margin:8px 0 6px;">'
+        "&#128269; <b>Google-AI read</b> "
+        f'<span style="color:var(--text-muted);">&mdash; open <b>{ticker} in '
+        "Stock Analysis</b> for the full cited case. A companion to the evidence, "
+        "never an input to the score.</span>"
+        "</div>"
     )
 
     body_html = (
