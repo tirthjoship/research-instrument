@@ -69,3 +69,5 @@ environment.yml
 models/
 *.pkl
 *.joblib
+
+.superpowers/
