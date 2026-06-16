@@ -42,7 +42,7 @@ class ScreenBacktestUseCase:
 
     def run(
         self,
-        panels: list[dict[str, tuple[float, float]]],
+        panels: list[dict[str, tuple[float, float, float | None]]],
         market_returns: list[float] | None = None,
     ) -> ScreenVerdict:
         """Compute per-date IC and return a gate verdict.
