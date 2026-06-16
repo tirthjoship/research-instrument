@@ -47,6 +47,18 @@ h1 {
     color: var(--text-primary) !important;
     letter-spacing: -0.5px !important;
 }
+
+/* ===== App-level title — Fraunces display override (beats h1 DM Sans rule) ===== */
+.ri-app-title {
+    font-family: 'Fraunces', Georgia, serif !important;
+    font-weight: 600 !important;
+    font-size: 32px !important;
+    letter-spacing: -0.01em !important;
+    color: #14181F !important;
+    line-height: 1.1 !important;
+    margin-bottom: 4px !important;
+    margin-top: 0 !important;
+}
 h2 {
     font-family: 'DM Sans', sans-serif !important;
     font-size: 20px !important;
@@ -762,6 +774,137 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .port-drill{font-size:.78rem;color:var(--ri-muted);margin-top:.35rem;}
 .port-drill a{color:var(--ri-teal);text-decoration:none;}
 .port-drill a:hover{text-decoration:underline;}
+
+/* ---- decision card (S3) ---- */
+.dc-row{display:flex;align-items:center;gap:13px;padding:13px 16px;border-top:1px solid var(--ri-hair);cursor:pointer;}
+.dc-row:first-child{border-top:0;}
+.dc-tk b{font-size:14.5px;} .dc-tk span{display:block;font-size:10px;color:var(--ri-muted);}
+.dc-sq{width:15px;height:15px;border-radius:4px;position:relative;display:inline-block;}
+.dc-sq.r{background:var(--ri-crimson);} .dc-sq.a{background:var(--ri-amber);} .dc-sq.g{background:var(--ri-green);}
+.dc-sq.gap{background:repeating-linear-gradient(45deg,#e7edee,#e7edee 3px,#fafcfc 3px,#fafcfc 6px);border:1px solid var(--ri-line);}
+.dc-sq .dc-tip{visibility:hidden;opacity:0;position:absolute;bottom:150%;left:50%;transform:translateX(-50%);width:172px;background:var(--ri-ink);color:#fff;font-size:10.5px;line-height:1.45;padding:7px 9px;border-radius:7px;z-index:30;box-shadow:0 10px 26px -8px rgba(0,0,0,.4);text-align:left;}
+.dc-sq:hover .dc-tip{visibility:visible;opacity:1;}
+.dc-spark{width:80px;height:28px;}
+.dc-sk{background:linear-gradient(90deg,#eef3f4 8%,#dceaec 22%,#eef3f4 36%);background-size:200% 100%;animation:dc-shimmer 1.25s linear infinite;border-radius:5px;display:inline-block;}
+@keyframes dc-shimmer{0%{background-position:160% 0;}100%{background-position:-60% 0;}}
+.dc-case{border:1px solid var(--ri-line);border-radius:9px;overflow:hidden;margin-bottom:13px;}
+.dc-case-hd{display:flex;justify-content:space-between;align-items:center;background:var(--ri-hair);padding:9px 12px;font-weight:700;font-size:12.5px;}
+.dc-case-badge{font-family:'IBM Plex Mono';font-size:9px;font-weight:600;color:var(--ri-muted);background:#e3ebec;padding:2px 8px;border-radius:9px;}
+.dc-cols{display:flex;} .dc-cols>div{flex:1;padding:11px 13px;} .dc-cols>div:first-child{border-right:1px solid var(--ri-hair);}
+.dc-ch{font-family:'IBM Plex Mono';font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:6px;}
+.dc-learn{border:1.5px solid var(--ri-teal);border-radius:10px;padding:12px;background:#f7fdfe;margin-bottom:13px;}
+
+/* ===== Top-region vertical rhythm ===== */
+/* Breathing room between the app title and the tab bar */
+h1.ri-app-title, h1[class*="ri-app-title"] {
+    margin-bottom: 12px !important;
+}
+/* Give the tab bar a little breathing room below it before content starts */
+.stTabs [data-baseweb="tab-list"] {
+    margin-bottom: 4px !important;
+}
+/* Tab panel top-padding: first content sits 1.2rem below the tab strip */
+[role="tabpanel"] > div:first-child {
+    padding-top: 1.2rem !important;
+}
+/* Door banner: 0 top-margin; no bottom margin — .door-actions sits flush below it */
+.door {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+/* .door-actions panel provides the 1.25rem gap below the whole unit */
+.door-actions {
+    /* defined in Landing Door block above */
+}
+/* Onboarding button row: tighten the gap below it */
+.ob-row-spacer {
+    margin-bottom: 0.5rem;
+}
+
+/* ===== Landing Door (S6 onboarding) ===== */
+/* Banner: square bottom so it flows directly into the action panel below */
+.door{background:linear-gradient(135deg,#0F6E80 0%,#0a4a57 100%);border-radius:18px 18px 0 0;padding:22px 30px 18px;box-shadow:0 4px 24px rgba(15,110,128,.22);}
+.door h2{color:#fff;}
+/* Action panel: connects directly under the banner — no gap, matching width,
+   light petrol tint background so banner+buttons read as one cohesive block */
+.door-actions{background:#f0f7f8;border:1px solid #c8dfe3;border-top:none;border-radius:0 0 18px 18px;padding:16px 30px 20px;margin-bottom:1.25rem;box-shadow:0 4px 24px rgba(15,110,128,.12);}
+/* .db classes kept for backward compat but dead buttons removed from HTML */
+.db{display:inline-flex;align-items:center;justify-content:center;padding:9px 18px;border-radius:10px;font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s,transform .12s;}
+.db.primary{background:#fff;color:#0F6E80;}
+.db.primary:hover{opacity:.92;transform:translateY(-1px);}
+.db.ghost{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);}
+.db.ghost:hover{background:rgba(255,255,255,.22);transform:translateY(-1px);}
+
+/* ===== Door + action-panel cohesion (AREA 1) ===== */
+/* The .door-actions div is injected via st.markdown immediately before and after
+   the 3-column button row. Since Streamlit renders widgets as siblings (not children)
+   of inline HTML divs, we use a CSS rule to background-color the column group that
+   directly follows .door — targeting the stHorizontalBlock sibling. */
+.door + div > div[data-testid="stHorizontalBlock"],
+.door + div[data-testid="stHorizontalBlock"] {
+    background: #f0f7f8 !important;
+    border: 1px solid #c8dfe3 !important;
+    border-top: none !important;
+    border-radius: 0 0 18px 18px !important;
+    padding: 14px 18px 18px !important;
+    margin-bottom: 1.25rem !important;
+    box-shadow: 0 4px 16px rgba(15,110,128,.10) !important;
+}
+
+/* ===== Onboarding action widgets — petrol on-brand ===== */
+/* All action buttons — full-width, minimum height, IBM Plex Sans */
+div.stButton > button {
+    width: 100% !important;
+    min-height: 46px !important;
+    border-radius: 10px !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+    transition: opacity .15s, transform .12s, background .15s !important;
+}
+/* Primary button — petrol fill, white text */
+div.stButton > button[kind="primary"] {
+    background-color: #0F6E80 !important;
+    border: none !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(15,110,128,.28) !important;
+}
+div.stButton > button[kind="primary"]:hover {
+    background-color: #0a4a57 !important;
+    opacity: .95 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 14px rgba(15,110,128,.35) !important;
+}
+/* Secondary button — white bg, petrol border + text */
+div.stButton > button[kind="secondary"] {
+    background: #FFFFFF !important;
+    border: 1.5px solid #0F6E80 !important;
+    color: #0F6E80 !important;
+}
+div.stButton > button[kind="secondary"]:hover {
+    background: rgba(15,110,128,.07) !important;
+    transform: translateY(-1px) !important;
+}
+/* File uploader — full-width, dashed petrol border, light tint */
+div[data-testid="stFileUploader"] {
+    border: 1.5px dashed rgba(15,110,128,.45) !important;
+    border-radius: 10px !important;
+    padding: 8px 12px !important;
+    background: rgba(15,110,128,.04) !important;
+    width: 100% !important;
+}
+section[data-testid="stFileUploaderDropzone"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 6px 0 !important;
+}
+/* Hide noisy file-size hint; keep the Browse button */
+[data-testid="stFileUploaderDropzoneInstructions"] small { display: none !important; }
+div[data-testid="stFileUploader"] span {
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    font-size: 12.5px !important;
+    color: #0F6E80 !important;
+}
 </style>
 """
 

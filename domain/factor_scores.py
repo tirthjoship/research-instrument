@@ -23,11 +23,20 @@ def winsorize(values: list[float], p: float = 0.05) -> list[float]:
     return [min(max(v, lo), hi) for v in values]
 
 
-FACTOR_KEYS = ("momentum", "revision", "quality", "value")
+FACTOR_KEYS = ("momentum", "revision", "quality", "value", "lowvol")
 
 
 def revision_momentum(estimate_series: list[float] | None) -> float | None:
-    """Normalized drift of analyst EPS estimates (oldest..newest)."""
+    """Analyst target-price dispersion: (last - first) / abs(first).
+
+    HONESTY NOTE: this function is fed a target-price snapshot [low, mean, high]
+    as sourced by yfinance, NOT a temporal series of EPS estimate revisions.
+    It therefore measures analyst price-target SPREAD (dispersion), not temporal
+    estimate drift (revision momentum in the academic sense).  True point-in-time
+    EPS revision history is not sourceable from yfinance, so we use the target
+    spread as a proxy.  Callers and the glossary label this "Analyst spread".
+    Higher value = wider analyst disagreement about the target price.
+    """
     if estimate_series is None or len(estimate_series) < 2:
         return None
     first, last = estimate_series[0], estimate_series[-1]
@@ -37,9 +46,19 @@ def revision_momentum(estimate_series: list[float] | None) -> float | None:
 
 
 def composite_score(sub_scores: dict[str, float | None]) -> float:
-    """Equal-weight mean over the 4 factor keys. None = flagged-neutral (0.0)."""
+    """Equal-weight mean over PRESENT (non-None) factor keys.
+
+    Divides by the count of factors that are actually present, so a missing
+    factor leaves the composite unchanged (no dilution bias).
+    If all factors are None, returns 0.0.
+    """
     total = 0.0
+    n_present = 0
     for k in FACTOR_KEYS:
         v = sub_scores.get(k)
-        total += 0.0 if v is None else v
-    return total / len(FACTOR_KEYS)
+        if v is not None:
+            total += v
+            n_present += 1
+    if n_present == 0:
+        return 0.0
+    return total / n_present

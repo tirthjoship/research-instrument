@@ -1,47 +1,41 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-13
-**Branch:** **SHIPPED** — merged to `develop` (PR #53) and released to `main` (PR #54), both
-CI-green; `origin/main` ≡ `origin/develop`. **1628 → 1671 tests passing, 94% cov.**
-**Phase:** Research Instrument Redesign — **SHIPPED. Project back to maintenance.**
+**As of:** 2026-06-15 (evening)
+**Branch:** `feat/dashboard-legibility-redesign` (many commits, UNCOMMITTED prior-session work also present; NOT merged).
+**Phase:** **Screener (Research Candidates) tab redesign — UI shipped & iterated against the mockup; Gemini live; a few polish items + decisions open.**
 
-## Current State
+## How to run / verify
+- App: `streamlit run adapters/visualization/dashboard.py --server.port 8560 --server.headless true` → http://localhost:8560 → **Screener** tab (2nd tab; renders lazily — blank for a beat then fills).
+- Tests: `python -m pytest tests/ -q` → **2006 passing**. mypy strict clean (pre-commit gate). `git checkout data/reports/` before any verify (tests strip trailing newlines from 2 tracked JSONs — currently dirty, ignore).
+- Canonical mockup (drift reference): `.superpowers/brainstorm/screener-FINAL-v2.html` (serve via `python3 -m http.server 8570 --directory .superpowers/brainstorm` → open `/screener-FINAL-v2.html`).
+- **Non-default Streamlit tabs screenshot BLANK** via `scripts/screenshot_dashboard.py` (lazy tabs + JS click) — NOT a bug; verify a tab by rendering it solo (see memory `reference-streamlit-screenshot-lazy-tabs`).
 
-The flat v2 dashboard is rebuilt into a distinctive "Research Instrument" (white/petrol design
-system, Fraunces + IBM Plex) purely by presenting already-computed honest evidence better — **zero
-return predictions**. Executed the staged plan via subagent-driven development (Sonnet
-implementers, two independent **Opus** verification passes at the end).
+## ALSO on this branch — Home + Decision-Card redesign (parallel session, COMPLETE, see ADR-057)
+The branch carries a SECOND redesign built in a parallel session: the **Home "Front Desk" + v9 decision card**
+(Stock Analysis tab). Complete + Opus-verified per phase. See `docs/adr/ADR-057-home-decision-card-redesign.md`
++ spec/plans `docs/superpowers/{specs,plans}/2026-06-14-home-decision-card-redesign*` / `...-S1..S6`.
+Highlights: 5 fundamental RAG dims (`domain/evidence_rag.py`), v9 card (`components/decision_card.py`,
+collapsed↔expanded, 5/5 cited Google-AI case), Front-Desk Home (net-beta bug fixed, vs-Market 1y, book-health),
+Gemini cited-case + `RateLimitedCaseSummarizer` (5s buffer) + weekly cache, fail-safe `is_local_runtime()`
+privacy guard, money 2dp, 1y return window, multi-factor verdict rubric surfaced. **Open (Home):** verdict-logic
+extension decision (evidence-only vs fold-in fundamentals — memory `project-verdict-logic-extension-question`);
+wire `compute_vs_market_1y` into the brief; per-holding news for Home cited cases.
 
-Shipped:
-- **Design system** — tokens + fonts + base CSS (`components/styles.py`), shared Plotly template
-  (`apply_dossier_template`), hover-tooltip glossary (12 → 39 terms, vocab-guarded), signature
-  components: Evidence Ledger, anti-KPI proof-tile, abstention funnel.
-- **Home** — Fraunces hero, evidence ledger, 3 honest anti-KPI tiles (512→0 ABSTAINED · 47.4%
-  =EMH · Rank-IC 0.004 FALSIFIED, sourced from the real 496-date run), book-health gauge.
-- **Screener** — abstention funnel (UNIVERSE 512 → CLEARED 0, renders on empty weeks).
-- **Risk** — petrol dossier charts + big-number metric row + plain-English conclusion band.
-- **My Portfolio** — progressive disclosure (expanders) + drill-down (Yahoo link + Stock-Analysis
-  pre-fill).
-- **Trust** — anti-KPI hero + 7 Claim→Test→Result→Decision experiment cards.
-- **Stock Analysis** — attributed evidence dossier: E1 sector percentiles (pure
-  `domain/peer_relative.py`), E2 attributed analyst panel (`application/analyst_panel.py`), E3
-  news context (`application/news_context.py`), E5 fit verdict + falsification badge.
-- Durable CDP screenshotter (`scripts/screenshot_dashboard.py`); honest-state snapshot tests.
+## DONE this session (Screener — other parallel session, all committed on the branch)
+- **Spec + 7 plans:** `docs/superpowers/{specs,plans}/2026-06-14-screener-*`.
+- **Domain:** `factor_bands.py` (band/percentile→band/plain_read), `screen_buckets.py` (6 buckets, top-5, repeats), `trend_rules.trailing_volatility` (daily/log/annualized).
+- **S1 scoring landed:** `FACTOR_KEYS`→5 (added **lowvol**, inverted daily-vol, z-scored); composite denom = present-factor count; `revision_momentum` honestly = analyst-target dispersion (docstring + glossary; key still "revision", UI label "Analyst spread"); lowvol added to IC panel (code). **Live 5-factor screen regenerated:** `data/reports/screen_2026-06-15.json` (304 cands, all 5 factors 100% coverage). IC backtest NOT re-run (Trust tile still honest INCONCLUSIVE).
+- **UI (`adapters/visualization/tabs/research_candidates.py`):** 4 tiles + mono ledger (dynamic factor count=5) · how-to-read legend (Grade line, ~top5%, 304 cohort) · honest disclosure · **view toggle in header top-right** (`st.segmented_control`) · 6 reason buckets + honest-empty + hero #1 open/elevated · collapsible 5-factor cards (Quality·Value·Analyst spread·Low-vol·Momentum, momentum last) · filled STRONG/MOD/WEAK grade pills · plain row summary ("Quality, value & analyst signal strong; momentum flat") · company name + "also in 💎📈 · repeat = strength" · momentum **sparkline** · **grey-circle ⓘ** tooltips (factor_row + tiles + bucket headers) · `content-visibility:auto` for faster paint.
+- **Zone ② "check your own list":** full 5-factor card parity; in-universe names reuse the screen, **off-universe live-computed** (`application/ticker_factors_use_case.py`, `batch_fit(live_fetch=True)`); wrapped in **`st.fragment`** (Run-the-check reruns ONLY that section + progress bar); CSV uploader cleaned up.
+- **Gemini WORKS:** added `.env` loader (`dashboard.py`), installed `google-generativeai` (in pyproject `dashboard` extra), model `gemini-flash-latest` (2.0-flash was 429 quota-exhausted). Verified live: returns attributed ▲/▼ cited points. Currently surfaces on the **Stock Analysis tab (v9 card)**; the screener cards show a **pointer** to it (not inline).
 
-## Next Action
-
-Project returns to **maintenance**. The redesign is the sanctioned UX. No open implementation work.
+## Next Action (open items + decisions for the fresh session)
+1. **Inline Gemini on the screener hero card** — wire `maybe_render_gemini(ticker, facts, news)` into the hero's `gai` slot (real ▲green/▼red read), hero-only + cached per ticker (minimal quota). Needs a per-ticker news fetch (find the news adapter; facts can come from the bands). User wants this.
+2. **Gemini quota resilience** — model-fallback chain (flash-latest → alt model on 429) + optional 2nd key (`GEMINI_API_KEY_2`) the adapter rotates to. User asked.
+3. **Loading on tab-switch** — render() is 5ms; blank = Streamlit atomic tab-frame latency + 187KB paint (mitigated by content-visibility). A true in-page skeleton needs a session-state deferred-render (flashes once/first entry) — offered, user to decide. Streamlit's top-right "running" indicator is the native signal.
+4. **IC gate re-run** (`backtest-screen`) incl. lowvol → updates Trust tile honestly. Needs the methodology gate (ds-methodology-review already done the design pass).
 
 ## Caveats
-
-- **Honesty held under pressure:** FORBIDDEN_WORDS guard + RESEARCH_ONLY on every new surface;
-  third-party data is **attributed**, never adopted. Two verification slips were caught + fixed
-  mid-run (a "predict" in a Home hero / Stock-Analysis banner; a Rank-IC sourced from a degenerate
-  empty file). E4/DCF correctly deferred.
-- **Stock Analysis populated dossier** verified by `tests/test_dossier_render.py` (15 tests) +
-  a live `analyze_ticker` run, NOT a screenshot — Streamlit's controlled-input doesn't sync under
-  headless CDP automation. Empty state screenshotted. Run a ticker live to eyeball the populated layout.
-- `git checkout data/reports/` before any pre-commit/CI verify (tests strip trailing newlines from
-  2 tracked JSONs: `divergence_ic_21d.json`, `momentum_discipline.json`).
-- Standing watch (unchanged): ADR-048/051 discipline forward gate resolves ~mid-July 2026 (weekly
-  Saturday job); ~Dec 2026 behavior-gap review.
+- **Honesty invariants hold:** no FORBIDDEN_WORDS (note "predictive" contains "predict" — avoid), DATA-GAP never faked, "not a forecast" present, Gemini never feeds the score (attributed companion only).
+- `screen_2026-06-15.json` is **gitignored** (generated) — lives on disk; the app reads it. Regenerate via `python -m application.cli screen-candidates --top 15` (live yfinance, a few min).
+- `st.fragment` decorator needs `# type: ignore[misc]` for the pre-commit mypy gate (standalone `mypy --strict` flag flip-flops — keep the ignore).
