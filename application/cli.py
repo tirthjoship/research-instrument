@@ -2991,10 +2991,13 @@ def _build_weekly_brief(
 
     forward = ForwardTrackingUseCase(store, market_data)
 
+    from adapters.data.sector_provider import SectorProvider
     from adapters.ml.macro_beta_analyzer import RidgeMacroBetaEstimator
+    from adapters.ml.risk_stats_analyzer import RiskStatsAnalyzer
     from application.macro_beta_use_case import MacroBetaUseCase
 
     macro_cfg = deps.get("config", {}).get("macro_beta", {})
+    risk_stats_cfg = deps.get("config", {}).get("risk_stats", {})
     macro_uc = MacroBetaUseCase(
         price_provider=lambda t, s, e: load_price_series(t, s, e),
         estimator=RidgeMacroBetaEstimator(alpha=macro_cfg.get("ridge_alpha", 0.2)),
@@ -3011,6 +3014,12 @@ def _build_weekly_brief(
             ),
             "drift_threshold": macro_cfg.get("drift_threshold", 0.50),
         },
+        risk_analyzer=RiskStatsAnalyzer(
+            seed=int(risk_stats_cfg.get("seed", 7)),
+            bootstrap_iters=int(risk_stats_cfg.get("bootstrap_iters", 500)),
+        ),
+        sector_provider=SectorProvider(),
+        history_path=MACRO_HISTORY_PATH,
     )
 
     def _macro_fn(hlds: "list[Any]", as_of: datetime) -> "Any":
