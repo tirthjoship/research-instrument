@@ -292,6 +292,22 @@ GLOSSARY: dict[str, str] = {
         "A plain-English grouping (e.g. cheap & high-quality) derived from a name's "
         "strongest factors, so you see the kind of opportunity before the name."
     ),
+    "Showing": (
+        "The top names from this week's screen — a research shortlist to start "
+        "digging into, not trade signals."
+    ),
+    "As of": (
+        "The screen's run date. Everything shown is current evidence as of this "
+        "date — never a projection of next week."
+    ),
+    "Factors": (
+        "How many evidence factors are scored per name this week (momentum, "
+        "analyst spread, quality, value, and — once live — low-volatility)."
+    ),
+    "Trust the signal": (
+        "Verdict from our pre-registered IC backtest gate. INCONCLUSIVE = no proven "
+        "forward edge yet, so the ranking stays descriptive evidence, not a forecast."
+    ),
 }
 
 

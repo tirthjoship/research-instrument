@@ -6,7 +6,7 @@ GLOBAL_CSS = """
 <style>
 /* ===== Fonts ===== */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 /* ===== CSS Variables ===== */
 :root {
@@ -52,12 +52,32 @@ h1 {
 .ri-app-title {
     font-family: 'Fraunces', Georgia, serif !important;
     font-weight: 600 !important;
-    font-size: 32px !important;
+    font-size: 30px !important;
     letter-spacing: -0.01em !important;
     color: #14181F !important;
-    line-height: 1.1 !important;
-    margin-bottom: 4px !important;
+    line-height: 1.0 !important;
+    margin-bottom: 2px !important;
     margin-top: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+/* Streamlit wraps a raw <h1> in a heading container with its own top padding;
+   zero it so the title sits at the very top and the subtitle hugs it. */
+[data-testid="stHeadingWithActionElements"]:has(.ri-app-title) {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+[data-testid="stHeadingWithActionElements"]:has(.ri-app-title) [data-testid="stHeaderActionElements"] {
+    display: none !important;
+}
+/* App subtitle — Newsreader, tight under the title (matches approved mockup) */
+.ri-app-sub {
+    font-family: 'Newsreader', Georgia, serif !important;
+    font-weight: 400 !important;
+    font-size: 14px !important;
+    color: #717885 !important;
+    line-height: 1.3 !important;
+    margin: -12px 0 14px 0 !important;
 }
 h2 {
     font-family: 'DM Sans', sans-serif !important;
@@ -96,32 +116,51 @@ header[data-testid="stHeader"] { display: none !important; }
 
 /* ===== Tab Styling ===== */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 4px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    padding: 4px;
+    gap: 26px;
+    background: transparent;
     border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    padding: 0;
+}
+/* Neutralise baseweb's sliding highlight/border bar so only our flat underline shows */
+.stTabs [data-baseweb="tab-highlight"],
+.stTabs [data-baseweb="tab-border"] {
+    display: none !important;
 }
 .stTabs [data-baseweb="tab-list"] button {
-    font-family: 'DM Sans', sans-serif !important;
+    font-family: 'Fraunces', Georgia, serif !important;
     font-weight: 500 !important;
-    font-size: 14px !important;
-    color: var(--text-secondary) !important;
-    border-radius: var(--radius-sm) !important;
+    font-size: 15px !important;
+    color: #717885 !important;
     border: none !important;
+    border-radius: 0 !important;
     background: transparent !important;
-    padding: 8px 16px !important;
-    transition: color 0.15s ease, background 0.15s ease !important;
+    box-shadow: none !important;
+    padding: 10px 2px !important;
+    transition: color 0.15s ease !important;
 }
 .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-    color: var(--accent) !important;
-    background: var(--bg-primary) !important;
-    box-shadow: var(--shadow-sm) !important;
-    border-bottom: 2px solid var(--accent) !important;
+    color: #14181F !important;
+    font-weight: 600 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-bottom: 2px solid #14181F !important;
+}
+/* The tab LABEL text lives in a nested <p> (stMarkdownContainer) whose default
+   Source Sans wins over the button's font — restyle the <p> itself to Fraunces. */
+.stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+    font-family: 'Fraunces', Georgia, serif !important;
+    font-weight: 500 !important;
+    font-size: 15px !important;
+    color: inherit !important;
+}
+.stTabs [data-baseweb="tab-list"] button[aria-selected="true"] [data-testid="stMarkdownContainer"] p {
+    font-weight: 600 !important;
 }
 .stTabs [data-baseweb="tab-list"] button:hover:not([aria-selected="true"]) {
     color: var(--text-primary) !important;
-    background: rgba(37,99,235,0.05) !important;
+    background: transparent !important;
 }
 
 /* ===== ws-card — Primary Card Component ===== */
@@ -705,7 +744,7 @@ header[data-testid="stHeader"] { display: none !important; }
 }
 #MainMenu,header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"]{display:none!important;}
 html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px at 12% -8%,#FFF 0%,rgba(255,255,255,0) 55%),var(--ri-app)!important;}
-[data-testid="stMainBlockContainer"],.block-container{max-width:1180px!important;padding:2.2rem 2.4rem 3rem!important;font-family:'IBM Plex Sans',sans-serif;color:var(--ri-ink);}
+[data-testid="stMainBlockContainer"],.block-container{max-width:1180px!important;margin-left:auto!important;margin-right:auto!important;padding:0.5rem 1.9rem 3rem!important;font-family:'IBM Plex Sans',sans-serif;color:var(--ri-ink);}
 .ri-h1{font-family:'Fraunces',serif;font-weight:600;font-size:2.6rem;line-height:1.03;letter-spacing:-.015em;color:var(--ri-ink);}
 .ri-sub{font-family:'Fraunces',serif;font-style:italic;font-size:1.12rem;color:var(--ri-ink2);}
 .ri-sec{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:.8rem;margin:.4rem 0 1rem;}

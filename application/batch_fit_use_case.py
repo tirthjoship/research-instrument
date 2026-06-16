@@ -64,6 +64,8 @@ def batch_fit(
     fit_fn: Callable[[str], FitVerdict],
     progress: Callable[[float, str], None] | None = None,
     screen: dict[str, Any] | None = None,
+    live_fetch: bool = False,
+    fetch_fn: Callable[[str], dict[str, float | None]] | None = None,
 ) -> list[BatchFitRow]:
     """Run *fit_fn* per ticker; failures become UNKNOWN/DATA_GAP rows.
 
@@ -72,10 +74,31 @@ def batch_fit(
         fit_fn: Callable returning a FitVerdict for a single ticker.
         progress: Optional progress callback (fraction, ticker).
         screen: Optional persisted screen dict. When provided, factor_scores
-            are looked up (in-screen) or left empty (off-universe) via
-            ticker_factor_scores. When None, factor_scores stays empty.
+            are looked up (in-screen) or computed live (off-universe when
+            live_fetch=True) via ticker_factor_scores. When None, factor_scores
+            stays empty.
+        live_fetch: When True and screen is provided, off-universe tickers get
+            their factor_scores computed via live data (or the injected fetch_fn
+            if supplied). Default False preserves legacy DATA-GAP behaviour.
+        fetch_fn: Optional injectable fetch callable (ticker -> factor dict).
+            When live_fetch=True and fetch_fn is provided, this is used instead
+            of constructing the default live adapter. Intended for testing with
+            fake adapters. Ignored when live_fetch=False.
     """
-    from application.ticker_factors_use_case import ticker_factor_scores
+    from application.ticker_factors_use_case import (
+        live_factor_fetch_fn,
+        ticker_factor_scores,
+    )
+
+    # Resolve which fetch callable to pass to ticker_factor_scores
+    def _no_fetch(_ticker: str) -> dict[str, float | None]:
+        raise RuntimeError("No live fetch wired in batch_fit")
+
+    resolved_fetch_fn: Callable[[str], dict[str, float | None]]
+    if live_fetch:
+        resolved_fetch_fn = fetch_fn if fetch_fn is not None else live_factor_fetch_fn()
+    else:
+        resolved_fetch_fn = _no_fetch
 
     rows: list[BatchFitRow] = []
     n = len(tickers)
@@ -86,11 +109,9 @@ def batch_fit(
             verdict = fit_fn(t)
             fs: tuple[dict[str, Any], ...] = ()
             if screen is not None:
-                # no fetch_fn for off-universe — DATA-GAP fallback built in
-                def _no_fetch(_ticker: str) -> dict[str, float | None]:
-                    raise RuntimeError("No live fetch wired in batch_fit")
-
-                fs = tuple(ticker_factor_scores(t, screen=screen, fetch_fn=_no_fetch))
+                fs = tuple(
+                    ticker_factor_scores(t, screen=screen, fetch_fn=resolved_fetch_fn)
+                )
             rows.append(
                 BatchFitRow(ticker=t, verdict=verdict, fetch_ok=True, factor_scores=fs)
             )
