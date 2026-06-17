@@ -8,11 +8,33 @@ from __future__ import annotations
 
 import streamlit as st
 
-from adapters.visualization.card_fetch import fetch_card, implied_cost, window_returns
+from adapters.visualization.card_fetch import (
+    fetch_card,
+    get_case_on_expand,
+    implied_cost,
+    window_returns,
+)
 from adapters.visualization.components.decision_card import render_expanded_card
 from adapters.visualization.portfolio_view import PortfolioRow
 from adapters.visualization.price_cache import fetch_price_history, fetch_prices
+from application.card_loading import select_case_summarizer
 from domain.discipline import Verdict
+
+
+def resolve_case(ticker: str, card: object) -> object | None:
+    """Fetch the cited Google-AI case (cache-first, lazy) for a holding.
+
+    Mirrors Home's wiring (``select_case_summarizer`` + ``news=[]``): a weekly
+    cache hit returns with zero network; a miss makes one throttled Gemini call.
+    Any failure degrades to None (DATA-GAP) — never crash, never fabricate.
+    """
+    try:
+        summarizer = select_case_summarizer()
+        return get_case_on_expand(
+            ticker, card, news=[], expanded=True, summarizer=summarizer  # type: ignore[arg-type]
+        )
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def build_detail_header_html(row: PortfolioRow) -> str:
@@ -64,8 +86,8 @@ def render_inspect_detail(row: PortfolioRow) -> None:
             verdict = Verdict(row.verdict)
         except ValueError:
             verdict = Verdict.REVIEW
-        # get_case_on_expand requires card + news + summarizer — delegate to DATA-GAP
-        case = None
+        # Google-AI case: cache-first lazy fetch, DATA-GAP (None) on any failure
+        case = resolve_case(row.ticker, card)
         html = render_expanded_card(
             card,
             case=case,
@@ -84,3 +106,7 @@ def render_inspect_detail(row: PortfolioRow) -> None:
     if st.button(f"↗ Analyze {row.ticker}", key=f"analyze_inspect_{row.ticker}"):
         st.session_state["analyze_ticker"] = row.ticker
         st.info(f"{row.ticker} pre-filled — open the Stock Analysis tab.")
+    st.caption(
+        f"↗ {row.ticker} also appears in the Weekly Brief (Home tab) "
+        "when the discipline rule flags it."
+    )
