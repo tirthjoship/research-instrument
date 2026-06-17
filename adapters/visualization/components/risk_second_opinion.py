@@ -110,17 +110,14 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
         )
     )
 
-    # Re-run button: stubbed — a live st.button cannot live inside an HTML
-    # markdown string (Streamlit renders it as plain text, not a widget).
-    # The button is rendered as a styled <button> element with a title
-    # attribute that explains how to trigger a real re-run.
+    # Re-run instruction: a non-interactive label explaining how to refresh the
+    # cached result via the CLI. A live Gemini call at render time is out of scope
+    # (cache-first, spec §9). Rendered as a styled span so it reads as an
+    # instruction, not a broken disabled widget.
     rerun_btn = (
-        '<button class="risk-aibtn" title="'
-        "Re-run: execute \\'weekly-brief\\' with GEMINI_API_KEY set "
-        "(STOCKREC_LOCAL_ONLY=1). Live Gemini calls are not triggered at render time."
-        '" disabled>'
-        "&#8635; Re-run Google AI check"
-        "</button>"
+        '<span class="risk-aibtn">'
+        "&#8635; Re-run: <code>weekly-brief --gemini</code>"
+        "</span>"
     )
 
     return (

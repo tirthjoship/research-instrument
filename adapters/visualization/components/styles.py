@@ -1372,6 +1372,10 @@ div[data-testid="stFileUploader"] span {
 .risk-gdot .gr { background: #EA4335; }
 .risk-gdot .gy { background: #FBBC05; }
 .risk-gdot .gg { background: #34A853; }
+/* Re-run instruction label (non-interactive — live calls happen via weekly-brief CLI, not at render) */
+.risk-aibtn{display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--risk-petrol);border:1px solid var(--risk-line);border-radius:9px;padding:8px 13px;background:#fff;margin-top:4px}
+/* Section-tag label used in ri-sec headers */
+.ri-tg{color:var(--risk-petrol)}
 
 /* ── Drift flag card ── */
 .risk-drift {
@@ -1475,8 +1479,8 @@ div[data-testid="stFileUploader"] span {
 .csub{font-size:12px;color:var(--risk-mut);line-height:1.5;margin:0 0 9px}
 .ans{font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px}
 .ans b{color:var(--risk-ink)}
-/* donut: conic-gradient colours use --risk-amber (flagged share) and --risk-ok (within-line share) */
-.donut{width:118px;height:118px;border-radius:50%;background:conic-gradient(var(--risk-amber) 0 71%,var(--risk-ok) 71% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* donut: base is a neutral placeholder; inline style="background:conic-gradient(...)" from _teach() sets the real split */
+.donut{width:118px;height:118px;border-radius:50%;background:var(--risk-line);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .donut b{width:74px;height:74px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:800;font-size:18px}
 .donut b span{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;color:var(--risk-faint);letter-spacing:.05em}
 .split{display:flex;gap:16px;align-items:center}

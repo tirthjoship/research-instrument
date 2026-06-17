@@ -169,7 +169,11 @@ def test_render_section_heading_present(monkeypatch: pytest.MonkeyPatch) -> None
 
 
 def test_render_rerun_button_stub_present(monkeypatch: pytest.MonkeyPatch) -> None:
-    """When local + result valid, a re-run button stub must appear with informative title."""
+    """When local + result valid, a non-interactive re-run instruction must appear.
+
+    The control is a styled span (not a disabled button) so it reads as a CLI
+    instruction rather than a broken widget.  No live API call is wired at render time.
+    """
     import adapters.visualization.components.risk_second_opinion as mod
     from adapters.visualization.components.risk_second_opinion import (
         render_risk_second_opinion,
@@ -177,11 +181,11 @@ def test_render_rerun_button_stub_present(monkeypatch: pytest.MonkeyPatch) -> No
 
     monkeypatch.setattr(mod, "is_local_runtime", lambda: True)
     html = render_risk_second_opinion(result=_minimal_result())
-    # Button element must be present
-    assert "Re-run Google AI check" in html, "Re-run button text must appear"
-    # Must carry disabled attribute (stub — no live API call)
-    assert "disabled" in html, "Re-run button must be disabled (stub, no live API)"
-    # Title must mention weekly-brief or GEMINI_API_KEY so user knows how to trigger
+    # Non-interactive label must carry the .risk-aibtn class
+    assert "risk-aibtn" in html, "Re-run label must use .risk-aibtn class"
+    # Must NOT be a disabled button — the old broken pattern is gone
+    assert "<button" not in html, "Re-run control must not be a <button> element"
+    # Must mention weekly-brief so the user knows how to trigger a real re-run
     assert (
-        "weekly-brief" in html or "GEMINI_API_KEY" in html
-    ), "Re-run button title/caption must explain how to trigger a real re-run"
+        "weekly-brief" in html
+    ), "Re-run label must reference the weekly-brief CLI command"

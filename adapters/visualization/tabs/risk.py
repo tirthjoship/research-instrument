@@ -1214,7 +1214,7 @@ def _who_owns(macro: dict[str, Any]) -> str:
     max_rc = sorted_rc[0][1] if sorted_rc else 1.0
 
     rows = ""
-    for ticker, rc in sorted_rc:
+    for ticker, rc in sorted_rc[:5]:
         meta = meta_lookup.get(ticker, {})
         name = str(meta.get("name", ticker))
         bar_pct = rc / max_rc * 100.0
@@ -1418,14 +1418,24 @@ def _teach(macro: dict[str, Any]) -> str:  # noqa: C901
         )
 
     # ── Q3: what's driving it ─────────────────────────────────────────────────
-    # Build a concise factor summary from the live betas
-    factor_parts: list[str] = []
+    # Build a concise factor summary using human-readable labels from _FACTOR_DISPLAY_NAMES
+    long_labels: list[str] = []
+    short_labels: list[str] = []
     for fname, fval in betas.items():
         if fname == "SPY":
-            continue  # SPY is covered separately
+            continue  # SPY is covered separately as "market"
         if abs(fval) >= 0.1:
-            direction = "long" if fval > 0 else "short"
-            factor_parts.append(f"{direction} {fname.lower()}")
+            human = _FACTOR_DISPLAY_NAMES.get(fname, fname)
+            if fval > 0:
+                long_labels.append(human)
+            else:
+                short_labels.append(human)
+
+    factor_parts: list[str] = []
+    if long_labels:
+        factor_parts.append("long " + " & ".join(long_labels))
+    if short_labels:
+        factor_parts.append("short " + " & ".join(short_labels))
     factor_str = ", ".join(factor_parts) if factor_parts else "factor exposures present"
 
     # Sector tilt note
@@ -1436,12 +1446,11 @@ def _teach(macro: dict[str, Any]) -> str:  # noqa: C901
     sector_note = f"; {top_sector}-heavy" if top_sector else ""
 
     if dominant_factor:
-        _dom_sub = _FACTOR_DISPLAY_NAMES.get(dominant_factor, "")
-        dom_label = f"{dominant_factor} ({_dom_sub})" if _dom_sub else dominant_factor
+        dom_human = _FACTOR_DISPLAY_NAMES.get(dominant_factor, dominant_factor)
         q3_ans = (
             f'<p class="ans"><b>Long market{", " + factor_str if factor_parts else ""}'
             f"{sector_note}.</b> "
-            f"<b>{dom_label}</b> dwarfs everything.</p>"
+            f"<b>{dom_human}</b> dwarfs everything.</p>"
         )
     else:
         q3_ans = (
