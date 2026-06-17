@@ -659,6 +659,27 @@ def _evidence_bands(macro: dict[str, Any]) -> str:
     )
 
 
+# ---------------------------------------------------------------------------
+# Factor display-name map: ticker → (short subtitle for display under ticker)
+# Covers the 4 live factors; falls back to bare ticker for any unknown factor.
+# ---------------------------------------------------------------------------
+_FACTOR_DISPLAY_NAMES: dict[str, str] = {
+    "SPY": "Market",
+    "TLT": "Rates 10Y",
+    "UUP": "US Dollar",
+    "XLE": "Energy",
+    # common extended-universe proxies (for future expansion)
+    "IWM": "Small Caps",
+    "HYG": "Credit HYG",
+    "GLD": "Gold",
+    "USO": "Oil WTI",
+    "QQQ": "Nasdaq",
+    "IWD": "Value HML",
+    "MTUM": "Momentum",
+    "VLUE": "Value HML",
+}
+
+
 def _factor_chart(macro: dict[str, Any]) -> str:
     """Diverging petrol bars for configured factors with whiskers + VIF note."""
     betas: dict[str, float] = macro.get("net_beta_by_factor", {})
@@ -674,6 +695,7 @@ def _factor_chart(macro: dict[str, Any]) -> str:
     ci_by_factor: dict[str, list[float]] = macro.get("beta_ci_by_factor") or {}
     suppressed: list[str] = macro.get("suppressed_factors") or []
     vif: dict[str, Any] = macro.get("vif_by_factor") or {}
+    dominant_factor: str = macro.get("dominant_factor") or ""
 
     n_factors = len(betas)
 
@@ -741,9 +763,8 @@ def _factor_chart(macro: dict[str, Any]) -> str:
         # Label for dominant factor — exactly one label per factor, in priority order:
         #   suppressed (CI straddles 0) → ≈0
         #   short (negative beta, not suppressed) → SHORT
-        #   long and high-VIF → DOMINANT
+        #   dominant (factor == macro["dominant_factor"]) → DOMINANT
         #   otherwise → no label
-        vif_val = vif.get(factor)
         if is_suppressed:
             dom_label = (
                 "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;"
@@ -756,7 +777,7 @@ def _factor_chart(macro: dict[str, Any]) -> str:
                 f"font-weight:700;background:{_PETROL_L};color:{_PETROL_D};"
                 f'padding:1px 5px;border-radius:5px;border:1px solid #bfe0e6">SHORT</span>'
             )
-        elif vif_val is not None and isinstance(vif_val, (int, float)) and vif_val > 5:
+        elif dominant_factor and factor == dominant_factor:
             dom_label = (
                 f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;"
                 f"font-weight:700;background:{_PETROL};color:#fff;"
@@ -764,6 +785,15 @@ def _factor_chart(macro: dict[str, Any]) -> str:
             )
         else:
             dom_label = ""
+
+        # Factor display subtitle (e.g. "Market" for SPY)
+        subtitle = _FACTOR_DISPLAY_NAMES.get(factor, "")
+        subtitle_html = (
+            f'<span style="font-size:9.5px;font-weight:400;color:{_FAINT};margin-left:3px">'
+            f"{_html.escape(subtitle)}</span>"
+            if subtitle
+            else ""
+        )
 
         row_class = "frow supp" if is_suppressed else "frow"
         name_color = _FAINT if is_suppressed else _INK
@@ -773,8 +803,8 @@ def _factor_chart(macro: dict[str, Any]) -> str:
             f'<div class="{row_class}" style="display:grid;grid-template-columns:128px 1fr 50px;'
             'gap:10px;align-items:center;font-size:11.5px;margin-bottom:9px">'
             f"<span style=\"font-family:'IBM Plex Mono',monospace;color:{name_color};"
-            'display:flex;align-items:center;gap:6px">'
-            f"{_html.escape(factor)}&nbsp;{dom_label}</span>"
+            'display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+            f"{_html.escape(factor)}{subtitle_html}&nbsp;{dom_label}</span>"
             f'<div style="position:relative;height:14px;border-radius:4px;background:#f4f7f8">'
             '<div style="position:absolute;left:40%;top:-3px;bottom:-3px;width:1.5px;background:#b6c2c2"></div>'
             f'<div style="position:absolute;top:3px;height:8px;border-radius:3px;'
@@ -789,6 +819,47 @@ def _factor_chart(macro: dict[str, Any]) -> str:
 
     axis_lo = -round(domain, 1)
     axis_hi = round(domain, 1)
+
+    # --- READ summary line (dynamically generated from live macro) ---
+    long_factors = [f for f, v in betas.items() if v > 0.0 and f not in suppressed]
+    short_factors = [f for f, v in betas.items() if v < 0.0 and f not in suppressed]
+    suppressed_non_dominant = [f for f in suppressed if f != dominant_factor]
+
+    def _factor_label(f: str) -> str:
+        sub = _FACTOR_DISPLAY_NAMES.get(f, "")
+        return f"{f} ({sub})" if sub else f
+
+    dom_label_str = _factor_label(dominant_factor) if dominant_factor else ""
+
+    read_parts: list[str] = []
+    if long_factors:
+        long_names = ", ".join(_factor_label(f) for f in long_factors)
+        read_parts.append(f"long {long_names}")
+    if short_factors:
+        short_names = ", ".join(_factor_label(f) for f in short_factors)
+        read_parts.append(f"short {short_names}")
+    if suppressed_non_dominant:
+        supp_names = ", ".join(_factor_label(f) for f in suppressed_non_dominant)
+        read_parts.append(f"{supp_names} near zero (not distinguishable from no tie)")
+
+    read_body = "; ".join(read_parts) if read_parts else "no active factor exposures"
+
+    dom_note = ""
+    if dom_label_str:
+        dom_note = f" {_html.escape(dom_label_str)} dwarfs the rest &#8212; that&#8217;s why concentration is flagged."
+
+    read_html = f"<b>READ:</b> {_html.escape(read_body)}.{dom_note}"
+
+    # --- Combined .fnote block: READ + whisker footnote ---
+    fnote_html = (
+        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;color:{_FAINT};"
+        'margin-top:12px;border-top:1px dashed var(--risk-line);padding-top:9px;line-height:1.6">'
+        + read_html
+        + "<br>The thin whiskers are <b>90% confidence intervals</b>; greyed factors have "
+        "an interval that straddles zero &#8212; not distinguishable from &#8220;no tie&#8221;, "
+        "so we don&#8217;t pretend they&#8217;re real."
+        "</div>"
+    )
 
     return (
         f'<div class="ri-sec">What\'s driving it &middot; {n_factors} factors</div>'
@@ -810,14 +881,7 @@ def _factor_chart(macro: dict[str, Any]) -> str:
         f"<span>{axis_lo:.1f}</span>"
         f'<span style="position:relative;left:-12px">0 (no tie)</span>'
         f"<span>+{axis_hi:.1f}</span>"
-        "</div>"
-        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;color:{_FAINT};"
-        'margin-top:12px;border-top:1px dashed var(--risk-line);padding-top:9px;line-height:1.6">'
-        "The thin whiskers are <b>90% confidence intervals</b>; greyed factors have "
-        "an interval that straddles zero &#8212; not distinguishable from &#8220;no tie&#8221;, "
-        "so we don't pretend they're real."
-        "</div>"
-        "</div>"
+        "</div>" + fnote_html + "</div>"
     )
 
 
