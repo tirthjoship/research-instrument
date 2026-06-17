@@ -327,7 +327,7 @@ GLOSSARY: dict[str, str] = {
         "Trailing dividend income as a percent of price, from the data provider. "
         "Shown as a dash when the provider reports none."
     ),
-    "Alpha vs SPY": (
+    "Excess return vs SPY": (
         "Your portfolio's return minus the S&P 500's over the same window. "
         "Positive means you beat the benchmark; actual, not projected."
     ),

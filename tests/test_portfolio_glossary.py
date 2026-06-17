@@ -9,7 +9,7 @@ def test_portfolio_terms_present():
         "Treemap colour",
         "Beta",
         "Dividend yield",
-        "Alpha vs SPY",
+        "Excess return vs SPY",
     ):
         assert term in GLOSSARY, f"missing glossary term: {term}"
         assert len(GLOSSARY[term]) > 20

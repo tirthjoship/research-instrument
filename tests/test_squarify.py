@@ -28,3 +28,19 @@ def test_single_item_fills_container():
 
 def test_empty_returns_empty():
     assert squarify([], 0.0, 0.0, 10.0, 10.0) == []
+
+
+def test_zero_weight_entry_is_skipped():
+    rects = squarify([5.0, 0.0, 3.0], 0.0, 0.0, 100.0, 100.0)
+    assert len(rects) == 2  # zero-weight dropped
+    # original indices preserved: 0 → big tile, 2 → small tile
+    idxs = {r.index for r in rects}
+    assert idxs == {0, 2}
+
+
+def test_all_zeros_returns_empty():
+    assert squarify([0.0, 0.0], 0.0, 0.0, 100.0, 100.0) == []
+
+
+def test_single_zero_returns_empty():
+    assert squarify([0.0], 0.0, 0.0, 100.0, 100.0) == []

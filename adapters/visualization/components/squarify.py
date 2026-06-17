@@ -25,6 +25,15 @@ def squarify(values: list[float], x: float, y: float, w: float, h: float) -> lis
     if not values:
         return []
 
+    # Drop zero/negative values — degenerate tiles crash the algorithm
+    # (division by zero in worst() / lay() when remaining reaches 0).
+    # Track original indices so Rect.index maps back to the caller's list.
+    filtered = [(idx, v) for idx, v in enumerate(values) if v > 0]
+    if not filtered:
+        return []
+    orig_idx = [idx for idx, _ in filtered]
+    values = [v for _, v in filtered]
+
     out: list[Rect] = []
     rx, ry, rw, rh = x, y, w, h
     remaining = float(sum(values))
@@ -76,7 +85,7 @@ def squarify(values: list[float], x: float, y: float, w: float, h: float) -> lis
         cand = row + [values[i]]
         if not row or worst(cand) <= worst(row):
             row = cand
-            row_idx = row_idx + [i]
+            row_idx = row_idx + [orig_idx[i]]
             i += 1
         else:
             lay(row, row_idx)
