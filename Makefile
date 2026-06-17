@@ -7,6 +7,7 @@ test-fast:
 
 # Usage: make test-tab tab=risk  |  make test-tab tab=weekly_brief
 test-tab:
+	@[ -n "$(tab)" ] || { echo "Usage: make test-tab tab=<name>  (e.g. tab=risk)"; exit 1; }
 	pytest tests/ -q -n auto -m "tab_$(tab)" --tb=short
 
 test-domain:
