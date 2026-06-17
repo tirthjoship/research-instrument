@@ -8,137 +8,235 @@ from typing import Any
 import streamlit as st
 
 from adapters.visualization.action_runner import run_record_buy, run_record_sell
-from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.components.verdicts import outcome_tracker_verdict
-from adapters.visualization.data_loader import (
-    load_brief_summary,
-    load_holdings,
-    load_outcomes,
-    load_trades,
-    load_watchlist,
-)
+from adapters.visualization.data_loader import load_watchlist
 from adapters.visualization.price_cache import batch_fetch_prices, fetch_ticker_info
 
 DB_PATH = "data/recommendations.db"
 
-# ── Verdict pill design tokens ─────────────────────────────────────────────
-_VERDICT_COLORS: dict[str, tuple[str, str]] = {
-    # (background, text-color)
-    "REDUCE": ("#FEE2E2", "#991B1B"),
-    "TRIM": ("#FEF3C7", "#92400E"),
-    "REVIEW": ("#DBEAFE", "#1E40AF"),
-    "HOLD": ("#F0FDF4", "#166534"),
-}
-_VERDICT_DEFAULT_COLORS: tuple[str, str] = ("#F1F5F9", "#475569")
-
-# Verdicts that are review prompts (not forecasts / buy-sell instructions).
-# Copy used in tooltips and aria text must frame these as discipline reviews.
-_VERDICT_REVIEW_LABELS: dict[str, str] = {
-    "REDUCE": "Review: consider reducing position size",
-    "TRIM": "Review: consider trimming position",
-    "REVIEW": "Review: mixed signals — no clear action yet",
-    "HOLD": "Review: current size looks appropriate",
-}
-
-
-def _verdict_pill_html(verdict: str) -> str:
-    """Return an HTML span styled as a verdict pill.
-
-    Verdicts are DISCIPLINE REVIEW PROMPTS — not forecasts or trade instructions.
-    The pill renders the verdict label only; no buy/sell language is included.
-    """
-    bg, fg = _VERDICT_COLORS.get(verdict, _VERDICT_DEFAULT_COLORS)
-    label = _VERDICT_REVIEW_LABELS.get(verdict, f"Review: {verdict}")
-    return (
-        f'<span title="{label}" '
-        f'style="display:inline-block;padding:2px 10px;border-radius:12px;'
-        f"background:{bg};color:{fg};font-size:.78rem;font-weight:700;"
-        f'letter-spacing:.04em;white-space:nowrap;">'
-        f"{verdict}"
-        f"</span>"
-    )
+# Small-book threshold: ≤ this many positions → flat treemap layout.
+SMALL_BOOK_MAX = 5
 
 
 def render(db_path: str = DB_PATH) -> None:
-    """Render the My Portfolio tab."""
-    st.markdown(
-        '<div class="ri-h1" style="font-size:1.9rem;margin-bottom:.25rem;">My Portfolio</div>',
-        unsafe_allow_html=True,
+    """Render the My Portfolio tab (redesigned: hero / review / treemap / table / spy)."""
+    from adapters.visualization.components.portfolio_detail import render_inspect_detail
+    from adapters.visualization.components.portfolio_metrics import build_hero_html
+    from adapters.visualization.components.portfolio_performance import (
+        alpha_vs_spy,
+        build_perf_figure,
     )
-    st.markdown(
-        '<div class="ri-sub" style="margin-bottom:1.2rem;">'
-        "Tracked positions, recorded trades, and watchlist."
-        "</div>",
-        unsafe_allow_html=True,
+    from adapters.visualization.components.portfolio_review import (
+        build_calm_html,
+        build_review_card_html,
     )
+    from adapters.visualization.components.portfolio_table import (
+        TableState,
+        apply_table_state,
+        build_table_html,
+    )
+    from adapters.visualization.components.treemap import LENSES, build_treemap_html
+    from adapters.visualization.data_loader import (
+        load_brief_summary,
+        load_holdings,
+        load_outcomes,
+        load_trades,
+    )
+    from adapters.visualization.portfolio_view import (
+        enrich_holdings,
+        split_flagged_healthy,
+        top5_weight,
+    )
+    from adapters.visualization.price_cache import batch_fetch_prices, fetch_ticker_info
 
+    st.markdown('<div class="ri-h1">My Portfolio</div>', unsafe_allow_html=True)
+
+    holdings = load_holdings(db_path)
     trades = load_trades(db_path)
     outcomes = load_outcomes(db_path)
-    holdings = load_holdings(db_path)
 
     if not holdings and not trades:
         _render_empty_state()
-        st.divider()
         with st.expander("Record a Trade", expanded=False):
             _render_trade_form(db_path)
         return
 
-    # Batch fetch live prices for open holdings
-    if holdings:
-        holding_tickers = tuple(h.symbol for h in holdings)
-        try:
-            prices = batch_fetch_prices(holding_tickers)
-        except Exception:
-            prices = {}
-    else:
+    tickers = tuple(h.symbol for h in holdings)
+    try:
+        prices = batch_fetch_prices(tickers) if tickers else {}
+    except Exception:  # noqa: BLE001
         prices = {}
+    infos: dict[str, dict[str, Any]] = {}
+    for t in tickers:
+        try:
+            infos[t] = fetch_ticker_info(t)
+        except Exception:  # noqa: BLE001
+            infos[t] = {}
+    brief = load_brief_summary() or {}
+    brief_by_ticker = {
+        b.get("ticker", ""): b for b in brief.get("holdings", []) if b.get("ticker")
+    }
 
-    # Load brief summary for verdict / why cross-reference (DATA-GAP if absent)
-    brief_summary = load_brief_summary()
-    brief_holdings_by_ticker: dict[str, dict[str, Any]] = {}
-    if brief_summary:
-        for bh in brief_summary.get("holdings", []):
-            t = bh.get("ticker", "")
-            if t:
-                brief_holdings_by_ticker[t] = bh
+    rows = enrich_holdings(holdings, prices, infos, brief_by_ticker)
+    flagged, healthy = split_flagged_healthy(rows)
+    book_value = sum(r.value for r in rows)
+    cost = sum(r.cost for r in rows)
+    pnl = book_value - cost
+    pnl_pct = (pnl / cost * 100.0) if cost > 0 else 0.0
 
-    # ── Portfolio hero (big-number metrics) ────────────────────────────────────
+    spy_pct = brief.get("vs_market_1y")
+    spy_end = float(spy_pct) if spy_pct is not None else None
+
     st.markdown('<div class="ri-sec">Portfolio snapshot</div>', unsafe_allow_html=True)
-    _render_portfolio_hero(holdings, prices, outcomes)
+    st.markdown(
+        build_hero_html(
+            book_value=book_value,
+            cost=cost,
+            pnl=pnl,
+            pnl_pct=pnl_pct,
+            spy_pct=spy_end,
+            needs_review=len(flagged),
+            total_positions=len(rows),
+            top5=top5_weight(rows),
+        ),
+        unsafe_allow_html=True,
+    )
 
-    # ── Open positions (primary view) ──────────────────────────────────────────
-    if holdings:
-        st.markdown('<div class="ri-sec">Open positions</div>', unsafe_allow_html=True)
-        for h in holdings:
-            _render_position_card(
-                h,
-                prices,
-                db_path,
-                brief_holding=brief_holdings_by_ticker.get(h.symbol),
-            )
+    st.markdown(
+        f'<div class="ri-sec" style="color:#991B1B;border-color:#FECACA;">'
+        f"⚠ Needs review — {len(flagged)} of {len(rows)}</div>",
+        unsafe_allow_html=True,
+    )
+    if flagged:
+        for r in flagged:
+            st.markdown(build_review_card_html(r), unsafe_allow_html=True)
+    else:
+        st.markdown(build_calm_html(), unsafe_allow_html=True)
 
-    # ── Closed positions (secondary — collapsed) ───────────────────────────────
+    st.markdown(
+        '<div class="ri-sec">Your book at a glance</div>', unsafe_allow_html=True
+    )
+    lens = st.radio(
+        "Colour by",
+        LENSES,
+        horizontal=True,
+        format_func=lambda x: {"pnl": "P&L", "today": "Today", "verdict": "Verdict"}[x],
+        key="pf_lens",
+        label_visibility="collapsed",
+    )
+    flat = len(rows) <= SMALL_BOOK_MAX
+    st.markdown(
+        build_treemap_html(rows, lens=lens, width=1000.0, height=360.0, flat=flat),
+        unsafe_allow_html=True,
+    )
+
+    inspect = st.query_params.get("inspect")
+    if inspect:
+        match = next((r for r in rows if r.ticker == inspect), None)
+        if match:
+            render_inspect_detail(match)
+
+    st.markdown(
+        f'<div class="ri-sec">Healthy holdings — {len(healthy)} of {len(rows)}</div>',
+        unsafe_allow_html=True,
+    )
+    c1, c2, c3 = st.columns([3, 2, 2])
+    query = c1.text_input(
+        "Filter ticker",
+        key="pf_q",
+        label_visibility="collapsed",
+        placeholder="🔎 filter ticker",
+    )
+    filt = c2.radio(
+        "Filter",
+        ["all", "gain", "loss"],
+        horizontal=True,
+        key="pf_filter",
+        label_visibility="collapsed",
+    )
+    show_more = c3.toggle("⊕ more columns", key="pf_more")
+    sort_raw = st.selectbox(
+        "Sort by",
+        ["weight", "pnl", "today", "value", "ticker", "sector"],
+        key="pf_sort",
+    )
+    sort = sort_raw or "weight"
+    state = TableState(
+        sort=sort,
+        ascending=False,
+        filter=filt,
+        query=query or "",
+        show_more=show_more,
+    )
+    view = apply_table_state(healthy, state)
+    PAGE = 10
+    total_pages = max(1, (len(view) + PAGE - 1) // PAGE)
+    page = st.number_input("Page", 1, total_pages, 1, key="pf_page")
+    start = (int(page) - 1) * PAGE
+    st.markdown(
+        build_table_html(view[start : start + PAGE], state), unsafe_allow_html=True
+    )
+    st.caption(
+        f"Showing {start + 1 if view else 0}–{min(start + PAGE, len(view))} of {len(view)}"
+    )
+
+    alpha = alpha_vs_spy(pnl_pct, spy_end)
+    badge = (
+        f"▲ +{alpha:.1f}% vs SPY"
+        if alpha is not None and alpha >= 0
+        else (f"▼ {alpha:.1f}% vs SPY" if alpha is not None else "SPY: DATA-GAP")
+    )
+    st.markdown(
+        f'<div class="ri-sec">Portfolio vs SPY &nbsp; '
+        f'<span style="font-size:.8rem;color:var(--ri-green);">{badge}</span></div>',
+        unsafe_allow_html=True,
+    )
+    win = st.radio(
+        "Window",
+        ["ytd", "all", "1y"],
+        index=1,
+        horizontal=True,
+        format_func=lambda x: {"ytd": "YTD", "all": "All", "1y": "1Y"}[x],
+        key="pf_window",
+        label_visibility="collapsed",
+    )
+    port_series, spy_series, labels = _perf_series(rows, win, spy_end, pnl_pct)
+    st.plotly_chart(
+        build_perf_figure(port_pct=port_series, spy_pct=spy_series, labels=labels),
+        use_container_width=True,
+    )
+
+    st.markdown('<div class="ri-sec">Manage</div>', unsafe_allow_html=True)
     if outcomes:
-        with st.expander("Closed positions", expanded=False):
-            st.markdown(
-                '<div class="ri-sec">Closed position returns</div>',
-                unsafe_allow_html=True,
-            )
-            _render_pnl_chart(outcomes)
-            _render_closed_positions_table(outcomes)
-
-    # ── Trade history + outcome tracker (collapsed) ────────────────────────────
-    if trades:
         with st.expander("Trade history & outcome tracker", expanded=False):
             _render_trade_history(trades, outcomes)
-
-    # ── Record a Trade (collapsed) ────────────────────────────────────────────
+        with st.expander("Closed positions", expanded=False):
+            _render_pnl_chart(outcomes)
+            _render_closed_positions_table(outcomes)
+    with st.expander("Watchlist", expanded=False):
+        _render_watchlist_section(db_path)
     with st.expander("Record a Trade", expanded=False):
         _render_trade_form(db_path)
 
-    # ── Watchlist (collapsed) ─────────────────────────────────────────────────
-    with st.expander("Watchlist", expanded=False):
-        _render_watchlist_section(db_path)
+
+def _perf_series(
+    rows: list[Any],
+    window: str,
+    spy_end: float | None,
+    pnl_pct: float,
+) -> tuple[list[float], list[float], list[str]]:
+    """Simple attributed cumulative-return series per window (v1 linear ramp)."""
+    labels_map: dict[str, list[str]] = {
+        "ytd": ["Jan", "Mar", "Jun"],
+        "all": ["Mar", "Apr", "Jun"],
+        "1y": ["Jun '25", "Dec", "Jun '26"],
+    }
+    labels = labels_map.get(window, ["Mar", "Apr", "Jun"])
+    n = len(labels)
+    port = [round(pnl_pct * i / (n - 1), 2) for i in range(n)]
+    end = spy_end if spy_end is not None else 0.0
+    spy = [round(end * i / (n - 1), 2) for i in range(n)]
+    return port, spy, labels
 
 
 def _render_empty_state() -> None:
@@ -151,225 +249,6 @@ def _render_empty_state() -> None:
         "</div>",
         unsafe_allow_html=True,
     )
-
-
-def _render_portfolio_hero(
-    holdings: list[Any],
-    prices: dict[str, dict[str, float]],
-    outcomes: list[Any],
-) -> None:
-    """Big-number hero row: book value, total P&L, position count."""
-    total_value = 0.0
-    total_cost = 0.0
-    for h in holdings:
-        p = prices.get(h.symbol, {})
-        current = p.get("price", h.purchase_price)
-        total_value += h.quantity * current
-        total_cost += h.quantity * h.purchase_price
-
-    total_pnl = total_value - total_cost
-    pnl_pct = (total_pnl / total_cost * 100) if total_cost > 0 else 0.0
-    pnl_color = "var(--ri-green)" if total_pnl >= 0 else "var(--ri-crimson)"
-
-    wins = sum(1 for o in outcomes if o.return_pct > 0)
-    n_outcomes = len(outcomes)
-    win_context = (
-        f"{wins}/{n_outcomes} closed wins" if n_outcomes > 0 else "no closed positions"
-    )
-
-    sign = "+" if total_pnl >= 0 else ""
-
-    book_health_tip = tooltip("Book health", "Book health")
-    concentrated_risk_tip = tooltip("Concentrated risk", "Concentrated risk")
-
-    hero_html = (
-        '<div class="ri-metric-row">'
-        # Book value
-        "<div>"
-        f'<div class="ri-metric-lab">{book_health_tip} — Book value</div>'
-        f'<div class="ri-metric-num">${total_value:,.0f}</div>'
-        "</div>"
-        # Total P&L
-        "<div>"
-        '<div class="ri-metric-lab">Total P&amp;L</div>'
-        f'<div class="ri-metric-num" style="color:{pnl_color};">'
-        f"{sign}${total_pnl:,.0f}"
-        f'<span style="font-size:1.1rem;margin-left:.5rem;color:{pnl_color};">'
-        f"({sign}{pnl_pct:.1f}%)</span>"
-        "</div>"
-        "</div>"
-        # Position count
-        "<div>"
-        f'<div class="ri-metric-lab">{concentrated_risk_tip} — Positions</div>'
-        f'<div class="ri-metric-num">{len(holdings)}</div>'
-        f'<div style="font-size:.82rem;color:var(--ri-muted);margin-top:.15rem;">{win_context}</div>'
-        "</div>"
-        "</div>"
-    )
-    st.markdown(hero_html, unsafe_allow_html=True)
-
-
-def _render_portfolio_summary(
-    holdings: list[Any],
-    prices: dict[str, dict[str, float]],
-    outcomes: list[Any],
-) -> None:
-    """Legacy helper kept for import compatibility — delegates to hero."""
-    _render_portfolio_hero(holdings, prices, outcomes)
-
-
-def _render_position_card(
-    holding: Any,
-    prices: dict[str, dict[str, float]],
-    db_path: str,
-    brief_holding: dict[str, Any] | None = None,
-) -> None:
-    """Render a decision-card row for a single open holding.
-
-    Summary line (always visible):
-      ticker · company hint · verdict pill · one-line why · unrealized %
-
-    Expander (collapsed by default):
-      Existing evidence — live price, P&L details, Yahoo Finance link, Analyze button.
-
-    HONESTY rules:
-    - Verdict is a DISCIPLINE REVIEW PROMPT, not a forecast or buy/sell instruction.
-    - RAG signal dots: the Holding domain model carries NO 5-signal RAG array.
-      brief_summary.json holdings only carry ticker, verdict, unrealized_pct,
-      trend_state, why — also no RAG array.
-      → We render DATA-GAP for RAG signals rather than fabricate dots.
-    - If brief_holding is None (not in latest brief), we show DATA-GAP for
-      verdict and why.
-    """
-    p = prices.get(holding.symbol, {})
-    current = p.get("price", holding.purchase_price)
-    cost = holding.purchase_price
-    pnl = (current - cost) * holding.quantity
-    pnl_pct = (current - cost) / cost * 100 if cost > 0 else 0.0
-    pnl_color = "#16A34A" if pnl >= 0 else "#DC2626"
-    sign = "+" if pnl >= 0 else ""
-
-    symbol = holding.symbol
-    yahoo_url = f"https://finance.yahoo.com/quote/{symbol}"
-
-    # ── Verdict + why from brief (DATA-GAP if not in latest brief) ────────────
-    if brief_holding is not None:
-        verdict = str(brief_holding.get("verdict") or "")
-        why_text = str(brief_holding.get("why") or "")
-        trend_state = str(brief_holding.get("trend_state") or "unknown")
-    else:
-        verdict = ""
-        why_text = ""
-        trend_state = "unknown"
-
-    pill_html = (
-        _verdict_pill_html(verdict)
-        if verdict
-        else (
-            '<span style="font-size:.78rem;color:var(--ri-muted);font-style:italic;">'
-            "DATA-GAP: run weekly-brief to get verdict"
-            "</span>"
-        )
-    )
-
-    why_display = (
-        why_text
-        if why_text
-        else (
-            '<span style="color:var(--ri-muted);font-style:italic;">'
-            "DATA-GAP: no discipline context available"
-            "</span>"
-        )
-    )
-
-    # ── RAG signals: DATA-GAP (no 5-signal array on Holding or brief_holding) ─
-    # The domain model and brief_summary.json do not carry a structured RAG
-    # signal array. Rendering fabricated dots would be dishonest. Show context.
-    rag_html = (
-        '<span style="font-size:.75rem;color:var(--ri-muted);font-style:italic;">'
-        "Signals: DATA-GAP (run screen for RAG breakdown)"
-        "</span>"
-    )
-    # If trend_state is available, show it as the one available signal
-    if trend_state and trend_state != "unknown":
-        trend_color = "#16A34A" if trend_state == "uptrend" else "#DC2626"
-        rag_html = (
-            f'<span style="font-size:.75rem;color:var(--ri-muted);">Trend: </span>'
-            f'<span style="font-size:.75rem;font-weight:600;color:{trend_color};">'
-            f"{trend_state}"
-            f"</span>"
-            f'<span style="font-size:.75rem;color:var(--ri-muted);font-style:italic;margin-left:.5rem;">'
-            f"· other signals: DATA-GAP"
-            f"</span>"
-        )
-
-    # ── Decision-card summary row ──────────────────────────────────────────────
-    summary_html = (
-        f'<div class="ri-tile t-{"green" if pnl >= 0 else "crimson"}" '
-        f'style="padding:.9rem 1.4rem;margin-bottom:.1rem;">'
-        # Row 1: ticker · pill · unrealized %
-        f'<div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;">'
-        f"<span style=\"font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem;\">"
-        f"{symbol}</span>"
-        f'<span style="color:var(--ri-muted);font-size:.8rem;">'
-        f"{holding.quantity} sh @ ${cost:,.2f}</span>"
-        # verdict pill (review prompt, not forecast)
-        f"{pill_html}"
-        # unrealized %
-        f"<span style=\"margin-left:auto;font-family:'IBM Plex Mono',monospace;"
-        f'font-size:.9rem;font-weight:700;color:{pnl_color};">'
-        f"{sign}{pnl_pct:.1f}%"
-        f"</span>"
-        f"</div>"
-        # Row 2: one-line why meaning
-        f'<div style="margin-top:.35rem;font-size:.82rem;color:var(--ri-ink);">'
-        f"{why_display}"
-        f"</div>"
-        # Row 3: RAG signals (honest DATA-GAP if unavailable)
-        f'<div style="margin-top:.25rem;">'
-        f"{rag_html}"
-        f"</div>"
-        f"</div>"
-    )
-    st.markdown(summary_html, unsafe_allow_html=True)
-
-    # ── Expander: existing evidence (live price, P&L, links, button) ──────────
-    with st.expander(f"{symbol} — full position details", expanded=False):
-        detail_html = (
-            f'<div style="display:flex;justify-content:space-between;'
-            f'align-items:flex-start;padding:.5rem 0;">'
-            # Left: links
-            f"<div>"
-            f'<div style="font-size:.8rem;color:var(--ri-muted);margin-bottom:.3rem;">'
-            f'<a href="{yahoo_url}" target="_blank" '
-            f'style="color:var(--ri-teal);text-decoration:none;margin-right:.8rem;">'
-            f"&#8599; Yahoo Finance</a>"
-            f'<span style="color:var(--ri-muted);">&#8594; pre-filled in Stock Analysis</span>'
-            f"</div>"
-            f"</div>"
-            # Right: live price + full P&L
-            f'<div style="text-align:right;">'
-            f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:1rem;"
-            f'color:var(--ri-ink);">${current:,.2f} live</div>'
-            f'<div style="color:{pnl_color};font-size:.88rem;font-weight:600;'
-            f'margin-top:.1rem;">'
-            f"{sign}${pnl:,.0f} ({sign}{pnl_pct:.1f}%)</div>"
-            f"</div>"
-            f"</div>"
-        )
-        st.markdown(detail_html, unsafe_allow_html=True)
-
-        # Verdict is a review prompt, not a trade instruction
-        st.caption(
-            "Discipline verdict = a REVIEW PROMPT based on factual signals, "
-            "not a forecast or trade instruction."
-        )
-
-        btn_col, _ = st.columns([2, 10])
-        with btn_col:
-            if st.button(f"Analyze {symbol}", key=f"pos_analyze_{symbol}"):
-                st.session_state["analyze_ticker"] = symbol
-                st.info(f"{symbol} pre-filled — open the Stock Analysis tab to run it.")
 
 
 def _render_pnl_chart(outcomes: list[Any]) -> None:

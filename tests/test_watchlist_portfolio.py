@@ -35,12 +35,6 @@ def test_positions_render_importable() -> None:
     assert callable(render)
 
 
-def test_positions_portfolio_summary_importable() -> None:
-    from adapters.visualization.tabs.positions import _render_portfolio_summary
-
-    assert callable(_render_portfolio_summary)
-
-
 def test_positions_pnl_chart_importable() -> None:
     from adapters.visualization.tabs.positions import _render_pnl_chart
 
