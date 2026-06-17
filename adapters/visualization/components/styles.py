@@ -1457,6 +1457,37 @@ div[data-testid="stFileUploader"] span {
     font-size: 11px;
     letter-spacing: .06em;
 }
+
+/* ── Teach-me walkthrough (.teach family) — ported from risk-v8.html lines 100-104 ── */
+/* .teach border-left-color is NOT !important so R04/ENB can override it with style="border-left-color:var(--risk-amber)" */
+.teach{border:1px solid var(--risk-line);border-left:4px solid var(--risk-petrol);border-radius:13px;background:var(--risk-paper);overflow:hidden}
+.teach summary{list-style:none;cursor:pointer;padding:14px 17px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--risk-petrol);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.teach summary::-webkit-details-marker{display:none}
+.teach summary .h{font-family:'Fraunces',serif;font-weight:700;font-size:15px;text-transform:none;color:var(--risk-ink)}
+.teach[open] summary{border-bottom:1px solid var(--risk-line)}
+.tbody{padding:4px 17px 14px}
+.chap{padding:14px 0;border-bottom:1px solid #eef3f4}
+.chap:last-child{border-bottom:0}
+.cnum{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--risk-petrol);letter-spacing:.1em}
+.cq{font-family:'Fraunces',serif;font-weight:700;font-size:16px;margin:3px 0 4px}
+.csub{font-size:12px;color:var(--risk-mut);line-height:1.5;margin:0 0 9px}
+.ans{font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px}
+.ans b{color:var(--risk-ink)}
+/* donut: conic-gradient colours use --risk-amber (flagged share) and --risk-ok (within-line share) */
+.donut{width:118px;height:118px;border-radius:50%;background:conic-gradient(var(--risk-amber) 0 71%,var(--risk-ok) 71% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.donut b{width:74px;height:74px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:800;font-size:18px}
+.donut b span{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;color:var(--risk-faint);letter-spacing:.05em}
+.split{display:flex;gap:16px;align-items:center}
+.dleg{font-size:10.5px;color:var(--risk-mut);line-height:1.7}
+.sw2{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin-right:4px}
+/* .levers: sub-block inside .tbody; default border-left petrol, R04 overrides to amber inline */
+.levers{border-left:3px solid var(--risk-petrol);padding:10px 0 4px 14px;margin-top:8px}
+.lvh{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--risk-mut);margin-bottom:8px}
+/* .act / .act .ic: action rows inside .levers (icon badge + body text) */
+.act{display:flex;gap:11px;align-items:flex-start;font-size:13px;line-height:1.5;color:#33474c;margin-bottom:9px}
+.act:last-child{margin-bottom:0}
+.act .ic{flex-shrink:0;width:22px;height:22px;border-radius:6px;background:var(--risk-amber);color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.act b{color:var(--risk-ink)}
 </style>
 """
 
