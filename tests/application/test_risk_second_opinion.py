@@ -7,18 +7,48 @@ from unittest.mock import patch
 import pytest
 
 from domain.case_models import CasePoint, CaseResult
-from domain.fit import FORBIDDEN_WORDS
 
 
-def test_template_fallback_no_forbidden_words() -> None:
-    """Template fallback (no summarizer, no API key) must emit zero forbidden words."""
+def test_template_fallback_returns_data_gap() -> None:
+    """FIX A: template fallback (no API key → TemplateCaseSummarizer) must return
+    data_gap=True instead of echoing template points as 'Google AI' output.
+
+    The honesty guard in build_risk_second_opinion detects that the resolved
+    summarizer is a TemplateCaseSummarizer (_needs_intent returns False) and
+    short-circuits to data_gap rather than calling the template.
+    """
     from application.risk_second_opinion import build_risk_second_opinion
 
     res = build_risk_second_opinion(
         macro_facts=["systematic share 71%"], summarizer=None, use_cache=False
     )
-    text = " ".join(p.text for p in res.in_favor + res.to_watch).lower()
-    assert not any(w in text for w in FORBIDDEN_WORDS)
+    assert res.data_gap is True, (
+        "Template summarizer path must return data_gap=True — "
+        "template echoes must never be presented as Google AI output"
+    )
+    # No points should be populated when data_gap
+    assert len(res.in_favor) == 0
+    assert len(res.to_watch) == 0
+
+
+def test_template_summarizer_injected_returns_data_gap() -> None:
+    """FIX A: explicitly injecting a TemplateCaseSummarizer also returns data_gap=True.
+
+    Verifies the guard works for the injected-summarizer path (not just the
+    select_case_summarizer() auto-resolved path).
+    """
+    from application.case_builder import TemplateCaseSummarizer
+    from application.risk_second_opinion import build_risk_second_opinion
+
+    template = TemplateCaseSummarizer()
+    res = build_risk_second_opinion(
+        macro_facts=["net beta 1.18"],
+        summarizer=template,  # type: ignore[arg-type]
+        use_cache=False,
+    )
+    assert (
+        res.data_gap is True
+    ), "Injected TemplateCaseSummarizer must yield data_gap=True (FIX A)"
 
 
 def test_returns_case_result_type() -> None:

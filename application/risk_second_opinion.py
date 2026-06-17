@@ -102,13 +102,15 @@ def build_risk_second_opinion(
 
     try:
         resolved = _resolve_summarizer(summarizer)
+        # Honesty guard: if the resolved summarizer is the template (not a live
+        # Gemini-backed one), do NOT echo its output as "Google AI" — return a
+        # data_gap stub instead.  Only the live-Gemini path produces real points.
+        # data_gap results are NOT cached, so a no-key miss retries when a key
+        # appears (consistent with spec §9 cache rules above).
+        if not _needs_intent(resolved):
+            return CaseResult(in_favor=(), to_watch=(), data_gap=True)
         ctx = _build_context(macro_facts)
-        # Only inject risk intent lines when Gemini is the live summarizer.
-        # TemplateCaseSummarizer echoes every fact line as CasePoint.text, so
-        # passing instruction text would echo forbidden-adjacent words.
-        effective: _SummarizerLike = (
-            _RiskSummarizingWrapper(resolved) if _needs_intent(resolved) else resolved
-        )
+        effective: _SummarizerLike = _RiskSummarizingWrapper(resolved)
         result = effective.summarize_case(ctx)
     except Exception:  # noqa: BLE001 — fail-safe: never surface errors
         return CaseResult(in_favor=(), to_watch=(), data_gap=True)

@@ -254,9 +254,8 @@ GLOSSARY: dict[str, str] = {
         "prompt to confirm the change was intentional."
     ),
     "Risk line": (
-        "A pre-set threshold you defined; crossing it surfaces an amber flag "
-        "as a prompt to look here and confirm the reading is intentional. "
-        "A descriptive dial, not a validated edge."
+        "A fixed threshold checked every week (e.g. concentration over 60%). "
+        "Crossing one isn’t “bad” — it’s a prompt to confirm you meant it."
     ),
     "Coverage": (
         "The share of the book (by holding count) that had enough price "
@@ -267,6 +266,41 @@ GLOSSARY: dict[str, str] = {
         "How much of the book's risk sits in a few holdings, sectors, or "
         "factors rather than spread across many. Measured here as systematic "
         "share and HHI — a description of structure, not a verdict."
+    ),
+    # ── Fama-French + macro ETF factor terms (Task 16) ───────────────────────
+    "Size (SMB)": (
+        "Small-minus-big — small-cap stocks' return minus large-cap. "
+        "Positive beta = your book leans small-cap; negative = leans large-cap."
+    ),
+    "Value (HML)": (
+        "High-minus-low book-to-market — cheap “value” stocks minus expensive "
+        "“growth”. Positive = value tilt; negative = growth tilt."
+    ),
+    "Momentum (MOM)": (
+        "Recent higher-return names minus recent lower-return names (trailing ~12 months). "
+        "Positive = your book rides trends; negative = contrarian."
+    ),
+    "Profitability (RMW)": (
+        "Robust-minus-weak — profitable firms minus unprofitable. "
+        "Positive = quality tilt; negative = leans to low-profitability names."
+    ),
+    "Investment (CMA)": (
+        "Conservative-minus-aggressive — low-capex firms minus high-capex. "
+        "Positive = conservative-investment tilt."
+    ),
+    "Rates (TLT)": (
+        "Long-term US Treasuries (20yr). Captures sensitivity to interest-rate moves; "
+        "positive = moves with bonds."
+    ),
+    "US Dollar (UUP)": (
+        "US dollar index. Positive = your book moves with a strengthening dollar."
+    ),
+    "Energy (XLE)": (
+        "Energy-sector equities. Positive = moves with oil & energy names."
+    ),
+    "Market (SPY)": (
+        "The broad US equity market (S&P 500). For a stock book this is usually "
+        "the largest single exposure — most of the daily swing."
     ),
     # ── S3 Screener redesign terms ─────────────────────────────────────────────
     "Evidence score": (

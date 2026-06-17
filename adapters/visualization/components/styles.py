@@ -39,6 +39,7 @@ html, body, [class*="css"] {
     color: var(--text-primary);
     background-color: var(--bg-primary);
     -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
 }
 h1 {
     font-family: 'DM Sans', sans-serif !important;
@@ -745,7 +746,7 @@ header[data-testid="stHeader"] { display: none !important; }
 #MainMenu,header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"]{display:none!important;}
 html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px at 12% -8%,#FFF 0%,rgba(255,255,255,0) 55%),var(--ri-app)!important;}
 [data-testid="stMainBlockContainer"],.block-container{max-width:1180px!important;margin-left:auto!important;margin-right:auto!important;padding:0.5rem 1.9rem 3rem!important;font-family:'IBM Plex Sans',sans-serif;color:var(--ri-ink);}
-.ri-h1{font-family:'Fraunces',serif;font-weight:600;font-size:2.6rem;line-height:1.03;letter-spacing:-.015em;color:var(--ri-ink);}
+.ri-h1{font-family:'Fraunces',serif;font-weight:900;font-size:38px;line-height:1.04;letter-spacing:-.02em;color:var(--ri-ink);}.ri-h1 em{font-style:italic;font-weight:400;}
 .ri-sub{font-family:'Fraunces',serif;font-style:italic;font-size:1.12rem;color:var(--ri-ink2);}
 .ri-sec{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:.8rem;margin:.4rem 0 1rem;}
 .ri-sec::after{content:"";flex:1;height:1px;background:var(--ri-hair);}
@@ -753,6 +754,8 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .ri-tip{position:absolute;bottom:142%;left:50%;transform:translateX(-50%) translateY(5px);background:#1b2733;color:#eef3f6;font-family:'IBM Plex Sans';font-size:.76rem;line-height:1.45;padding:.65rem .8rem;border-radius:10px;width:240px;box-shadow:0 10px 30px rgba(15,30,45,.22);opacity:0;visibility:hidden;transition:.15s;z-index:60;text-align:left;}
 .ri-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1b2733;}
 .ri-ttip:hover .ri-tip{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+.ri-lens{transition:transform .15s;display:block;}
+.ri-lens:hover{transform:translateY(-2px);}
 
 /* ===== Research Instrument — Evidence Ledger ===== */
 .ri-ledger{display:flex;align-items:center;flex-wrap:wrap;border-top:1.5px solid var(--ri-ink);border-bottom:1px solid var(--ri-hair);font-family:'IBM Plex Mono',monospace;font-size:.78rem;letter-spacing:.04em;color:var(--ri-ink2);margin:.2rem 0 2rem;padding:.6rem 0;}
@@ -1257,7 +1260,7 @@ div[data-testid="stFileUploader"] span {
 /* ── Sector / weight bars ── */
 .risk-wrow {
     display: grid;
-    grid-template-columns: 140px 1fr 40px;
+    grid-template-columns: 140px 1fr 48px;
     align-items: center;
     gap: 10px;
     font-size: 12px;
@@ -1285,6 +1288,8 @@ div[data-testid="stFileUploader"] span {
     font-family: 'IBM Plex Mono', monospace;
     text-align: right;
     color: var(--risk-ink);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ── Google AI second-opinion panel ── */
@@ -1367,6 +1372,10 @@ div[data-testid="stFileUploader"] span {
 .risk-gdot .gr { background: #EA4335; }
 .risk-gdot .gy { background: #FBBC05; }
 .risk-gdot .gg { background: #34A853; }
+/* Re-run instruction label (non-interactive — live calls happen via weekly-brief CLI, not at render) */
+.risk-aibtn{display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--risk-petrol);border:1px solid var(--risk-line);border-radius:9px;padding:8px 13px;background:#fff;margin-top:4px}
+/* Section-tag label used in ri-sec headers */
+.ri-tg{color:var(--risk-petrol)}
 
 /* ── Drift flag card ── */
 .risk-drift {
@@ -1454,6 +1463,37 @@ div[data-testid="stFileUploader"] span {
     font-size: 11px;
     letter-spacing: .06em;
 }
+
+/* ── Teach-me walkthrough (.teach family) — ported from risk-v8.html lines 100-104 ── */
+/* .teach border-left-color is NOT !important so R04/ENB can override it with style="border-left-color:var(--risk-amber)" */
+.teach{border:1px solid var(--risk-line);border-left:4px solid var(--risk-petrol);border-radius:13px;background:var(--risk-paper);overflow:hidden}
+.teach summary{list-style:none;cursor:pointer;padding:14px 17px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--risk-petrol);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.teach summary::-webkit-details-marker{display:none}
+.teach summary .h{font-family:'Fraunces',serif;font-weight:700;font-size:15px;text-transform:none;color:var(--risk-ink)}
+.teach[open] summary{border-bottom:1px solid var(--risk-line)}
+.tbody{padding:4px 17px 14px}
+.chap{padding:14px 0;border-bottom:1px solid #eef3f4}
+.chap:last-child{border-bottom:0}
+.cnum{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--risk-petrol);letter-spacing:.1em}
+.cq{font-family:'Fraunces',serif;font-weight:700;font-size:16px;margin:3px 0 4px}
+.csub{font-size:12px;color:var(--risk-mut);line-height:1.5;margin:0 0 9px}
+.ans{font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px}
+.ans b{color:var(--risk-ink)}
+/* donut: base is a neutral placeholder; inline style="background:conic-gradient(...)" from _teach() sets the real split */
+.donut{width:118px;height:118px;border-radius:50%;background:var(--risk-line);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.donut b{width:74px;height:74px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:800;font-size:18px}
+.donut b span{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;color:var(--risk-faint);letter-spacing:.05em}
+.split{display:flex;gap:16px;align-items:center}
+.dleg{font-size:10.5px;color:var(--risk-mut);line-height:1.7}
+.sw2{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin-right:4px}
+/* .levers: sub-block inside .tbody; default border-left petrol, R04 overrides to amber inline */
+.levers{border-left:3px solid var(--risk-petrol);padding:10px 0 4px 14px;margin-top:8px}
+.lvh{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--risk-mut);margin-bottom:8px}
+/* .act / .act .ic: action rows inside .levers (icon badge + body text) */
+.act{display:flex;gap:11px;align-items:flex-start;font-size:13px;line-height:1.5;color:#33474c;margin-bottom:9px}
+.act:last-child{margin-bottom:0}
+.act .ic{flex-shrink:0;width:22px;height:22px;border-radius:6px;background:var(--risk-amber);color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.act b{color:var(--risk-ink)}
 
 /* ===== Portfolio Tab — Needs-Review Cards (Task 6) ===== */
 .pf-review{border:1px solid var(--ri-line);border-radius:10px;padding:12px 15px;margin-bottom:8px;transition:box-shadow .1s;}
