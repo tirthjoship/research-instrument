@@ -68,6 +68,17 @@ Built on `feat/risk-tab-fixes`. Final factor set: **`[SPY, SMB, HML, MOM, RMW, C
   SMB/HML/MOM/CMA/UUP/XLE **suppressed** (CI straddles zero). Max VIF ≈ 2.3 (HML/CMA) — none >5, so the cluster
   callout stays dormant honestly. This is the real decomposition the rejected collinear ETF proxies would have faked.
 
+## Follow-ups (2026-06-17)
+
+- **Done same session:** per-factor hover tooltips (glossary entries for SMB/HML/MOM/RMW/CMA + macro) and an ⓘ
+  on the net-beta tile; factor rows now **sorted by |β|** (real drivers first, suppressed ~0 sink — display only,
+  fixed universe); a **"beyond the market" tilts line** separating the expected SPY market core from the
+  distinctive tilts (so SPY-dominance reads as normal, not as the whole story).
+- **Open (user-approved, future measured effort):** expand the FIXED universe further with theory-justified
+  factors (credit/HYG, term spread, commodities) — same measured process, NOT dynamic/adaptive selection
+  (selecting factors post-hoc by significance = data-dredging; rejected). SPY structurally dominating a
+  long-only equity book is expected and correct, not a defect.
+
 ## Related
 
 - ADR-052 (Risk-tab v8 honesty rails), `project-risk-tab-fix-sprint` memory, `config/markets/us.yaml`.
