@@ -55,6 +55,41 @@ def test_unknown_cached_in_memory_no_refetch(tmp_path):
     ], "Fetcher must be called exactly once; in-memory cache holds Unknown"
 
 
+def test_yfinance_names_normalized_to_gics(tmp_path):
+    """yfinance's taxonomy is mapped to canonical GICS so gap-detection matches."""
+    cache = tmp_path / "m.json"
+    yf = {
+        "A": "Technology",
+        "B": "Consumer Cyclical",
+        "C": "Consumer Defensive",
+        "D": "Financial Services",
+        "E": "Healthcare",
+        "F": "Basic Materials",
+    }
+    p = SectorProvider(cache_path=str(cache), fetcher=lambda t: yf.get(t))
+    assert p.sector("A") == "Information Technology"
+    assert p.sector("B") == "Consumer Discretionary"
+    assert p.sector("C") == "Consumer Staples"
+    assert p.sector("D") == "Financials"
+    assert p.sector("E") == "Health Care"
+    assert p.sector("F") == "Materials"
+
+
+def test_already_gics_passes_through(tmp_path):
+    p = SectorProvider(cache_path=str(tmp_path / "m.json"), fetcher=lambda t: "Energy")
+    assert p.sector("X") == "Energy"  # already canonical → unchanged
+
+
+def test_stale_yfinance_cache_normalized_on_read(tmp_path):
+    """A cache written before normalization (yfinance names) is mapped on read."""
+    import json
+
+    cache = tmp_path / "m.json"
+    cache.write_text(json.dumps({"OLD": "Technology"}))
+    p = SectorProvider(cache_path=str(cache), fetcher=lambda t: None)
+    assert p.sector("OLD") == "Information Technology"
+
+
 def test_real_sector_still_persisted(tmp_path):
     """A successfully resolved sector must still be written to the disk cache."""
     cache = tmp_path / "sector_map.json"
