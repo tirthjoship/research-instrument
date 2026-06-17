@@ -61,13 +61,12 @@ Carried, non-negotiable:
 
 ---
 
-## 5. Data Additions  `[OPEN — to finalize]`
+## 5. Data Additions  `[LOCKED — approach; exact code at plan time]`
 
-Identified, details pending:
-- **`sector` per holding** — source `yfinance info["sector"]` (already fetched in watchlist via `fetch_ticker_info`), cached. Gates treemap grouping + table sector column + sector chips. *Open: domain model change vs adapter-side enrichment; cache strategy; fallback when sector missing.*
-- **Top-5 weight** (concentration metric) — computed from holdings + live prices. *Open: exact definition (top-5 %? add HHI?).*
-- **SPY return series** — from existing price fetch. *Open: time window + computation method (see §8).*
-- **Live RAG/case on expand** — same path as Home; lazy, only on expand (60-holding perf). *Open: confirm lazy-fetch behavior + caching.*
+- **`sector` per holding** — source `yfinance info["sector"]` (already fetched in watchlist via `fetch_ticker_info`), cached. Enrich **adapter-side** (do NOT pollute the pure `Holding` domain model — attach via a view/DTO in the visualization adapter or data_loader). Missing → "Unknown" (DATA-GAP).
+- **Top-5 weight** (concentration metric) — sum of the 5 largest holding weights by market value. (HHI considered, deferred — top-5 reads more intuitively for a non-expert.)
+- **SPY return series** — from existing price fetch; simple time-weighted per window (§8).
+- **Live RAG/case on expand** — reuse Home's `_fetch_card()`; **lazy, only on click**, cached per ticker (never fetch all 60 upfront).
 
 ---
 
@@ -132,15 +131,18 @@ Full-width "Portfolio vs SPY" — closes the CLAUDE.md-mandated benchmark gap.
 
 ---
 
-## 9. Empty / Small-Portfolio States  `[OPEN]`
+## 9. Empty / Small-Portfolio States  `[LOCKED]`
 
-*Open: behavior at 0 / 1–5 holdings — does sector treemap still make sense, does the review queue / table collapse, keep current empty-state card?*
+- **0 holdings:** hide hero/treemap/table/SPY; show empty card ("No positions yet — record your first trade") + Record-a-trade form. (Carries current behavior.)
+- **Holdings exist, none flagged:** "Needs review" renders a calm green ✓ "Nothing needs review" (all HOLD) — never an empty/broken section. Treemap/table/SPY render normally.
+- **Small book (≤ ~5 holdings):** treemap renders **flat (C1)** — sector grouping switches off below the threshold; tiles still sized/colored/hover/click via the same component. (Rejected C2 skip-treemap — extra code path, loses centerpiece consistency.)
+- **brief_summary.json missing a holding:** verdict/why = DATA-GAP (per §4).
 
 ---
 
-## 10. Admin Section  `[OPEN]`
+## 10. Admin Section  `[LOCKED]`
 
-Trade history, closed positions, watchlist, record-trade — carried from current tab. *Open: keep as-is or restyle to match new chrome.*
+Trade history & outcomes · Closed positions (P&L chart + table) · Watchlist · Record a trade — **carried from current `positions.py`**, kept as collapsed expanders at the bottom. Restyle to ri-chrome (section headers, pills, tokens); **no behavior change**. Watchlist keeps its live PE/PEG/mcap fetch.
 
 ---
 
@@ -158,3 +160,4 @@ Trade history, closed positions, watchlist, record-trade — carried from curren
 - 2026-06-17 — §6 + §6a locked: squarified custom treemap (Python-computed rects), size=weight / color=lens, capped ±25% bins, label-on-big + hover-small + overflow-clip, Unknown-sector fallback. 3-lens toggle (P&L/Today/Verdict), hover peek, click → shared `decision_card` detail panel (lazy live RAG). Rejected plotly + flexbox. Scenario dropdown was mock-only.
 - 2026-06-17 — §7 locked: healthy table = Lean default cols + "⊕ more columns" toggle (yield/beta/cost, DATA-GAP when absent). Sort/filter/search/page; row-click → shared detail panel (3rd entry point).
 - 2026-06-17 — §8 locked: Portfolio-vs-SPY = filled-area + SPY line + alpha callout + window toggle (YTD/All/1Y). Simple-return v1; money-weighted deferred. DATA-GAP before first buy.
+- 2026-06-17 — §5 locked (approach): sector via yfinance adapter-side enrichment (Unknown fallback), top-5 weight concentration, simple SPY series, lazy per-click RAG. §9 locked: 0-state / calm-no-flag / flat-treemap-small-book (C1). §10 locked: admin carried over, restyled, collapsed. **All sections locked — ready for full assembled mockup + spec sign-off.**
