@@ -6,7 +6,13 @@ from typing import Any
 
 import streamlit as st
 
-from adapters.visualization.card_fetch import get_case_on_expand
+from adapters.visualization.card_fetch import (
+    _home_evidence_card,
+    fetch_card,
+    get_case_on_expand,
+    implied_cost,
+    window_returns,
+)
 from adapters.visualization.components.decision_card import (
     render_collapsed_row,
     render_expanded_card,
@@ -22,12 +28,10 @@ from adapters.visualization.data_loader import (
     staleness_days,
 )
 from application.card_loading import select_case_summarizer
-from application.evidence_card import EvidenceCard
 from application.holdings_reader import make_manual_holding, read_holdings
 from application.runtime_guard import is_local_runtime
 from application.sample_book import load_sample_book
 from domain.discipline import Verdict
-from domain.evidence_rag import DIMENSIONS, RagColor, RagSignal
 from domain.risk_rubric import classify_net_beta, classify_systematic_share
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
 
@@ -39,62 +43,6 @@ _BRIEF_MD_PATH = "data/personal/weekly_brief.md"
 _ADHERENCE_PATH = "data/personal/adherence_log.jsonl"
 _REPORTS_DIR = "data/reports"
 _SCREEN_COVERAGE_FLOOR = 0.5  # mirrors research_candidates.py
-
-_WINDOW_DAYS = (7, 30, 90, 180, 252)
-
-
-# ---------------------------------------------------------------------------
-# FIX B — pure helpers for price / cost / windowed returns
-# ---------------------------------------------------------------------------
-
-
-def implied_cost(price: float | None, unrealized_pct: float | None) -> float | None:
-    """Back-calculate cost basis from price and unrealized %.
-
-    Formula: cost = price / (1 + unrealized_pct / 100)
-
-    Returns None when either input is None so the card shows "—" honestly.
-
-    Examples:
-        implied_cost(44.63, 22.7) → ~36.37
-        implied_cost(100.0, 0.0) → 100.0
-        implied_cost(None, 22.7) → None
-        implied_cost(100.0, None) → None
-    """
-    if price is None or unrealized_pct is None:
-        return None
-    divisor = 1.0 + unrealized_pct / 100.0
-    if divisor == 0.0:
-        return None
-    return price / divisor
-
-
-def window_returns(
-    closes: list[float],
-    windows: tuple[int, ...] = _WINDOW_DAYS,
-) -> tuple[float, ...]:
-    """Compute % change for each look-back window from a list of daily closes.
-
-    For each window W in ``windows``, returns ``(closes[-1] / closes[-1-W] - 1) * 100``
-    when there are enough data points (at least W+1 closes), otherwise skips that window.
-
-    Returns a tuple of available returns (may be shorter than ``windows``).
-    Empty closes → empty tuple.
-
-    Examples:
-        window_returns([], (7, 30)) → ()
-        window_returns(closes_200, (7, 30, 90, 180)) → 4-tuple of floats
-    """
-    if not closes:
-        return ()
-    last = closes[-1]
-    results: list[float] = []
-    for w in windows:
-        if len(closes) >= w + 1:
-            base = closes[-1 - w]
-            if base != 0.0:
-                results.append((last / base - 1.0) * 100.0)
-    return tuple(results)
 
 
 def _render_onboarding_html(
@@ -299,68 +247,6 @@ def _render_book_health_html(systematic_share: float) -> str:
     )
 
 
-def _home_evidence_card(ticker: str) -> EvidenceCard:
-    """Minimal GAP card for S4 (squares light up once S5 wires per-holding fetch)."""
-    sigs = tuple(
-        RagSignal(d, RagColor.GAP, "DATA-GAP: loads on open") for d in DIMENSIONS
-    )
-    return EvidenceCard(ticker=ticker, signals=sigs, sparkline=())
-
-
-def _fetch_card(ticker: str) -> EvidenceCard:
-    """Fetch a real EvidenceCard for a ticker via cached adapters (S5).
-
-    On any fetch failure (network, bare-mode CI) falls back to the GAP card
-    so the UI remains honest rather than crashing.
-    """
-    try:
-        from adapters.data.earnings_history_adapter import fetch_earnings_history
-        from adapters.visualization.price_cache import (
-            fetch_price_history,
-            fetch_prices,
-            fetch_ticker_info,
-        )
-        from application.analyst_panel import build_analyst_panel
-        from application.evidence_card import build_evidence_card
-
-        raw = fetch_ticker_info(ticker)
-        info = {k: v for k, v in raw.items()}
-        px = fetch_prices((ticker,)).get(ticker, {})
-        info["current_price"] = px.get("price")
-        # snake_case keys S1 expects
-        info["trailing_pe"] = raw.get("trailingPE")
-        info["peg_ratio"] = raw.get("pegRatio")
-        info["free_cashflow"] = raw.get("freeCashflow")
-        info["debt_to_equity"] = raw.get("debtToEquity")
-        # Remap yfinance raw keys → build_analyst_panel's expected keys (mirror stock_analyzer)
-        panel_info: dict[str, Any] = dict(raw)
-        panel_info["analyst_count"] = raw.get("numberOfAnalystOpinions", 0)
-        panel_info["analyst_recommendation_mean"] = raw.get("recommendationMean")
-        # target keys are already camelCase and match build_analyst_panel directly:
-        # targetMeanPrice, targetHighPrice, targetLowPrice — no remap needed
-        panel = build_analyst_panel(panel_info, "")
-        # Fetch 1-year price history for closes/ATR/MA200 (lights Technicals + sparkline)
-        hist = fetch_price_history(ticker) or {}
-        prices: dict[str, Any] = {
-            "closes": hist.get("closes", []),
-            "atr": hist.get("atr"),
-            "ma200": hist.get("ma200"),
-            "spy_1y": None,  # DATA-GAP: not tracked per holding on Home
-            "book_1y": None,  # DATA-GAP: not tracked per holding on Home
-        }
-        peers: list[float | None] = []  # DATA-GAP: peer data not fetched on Home
-        return build_evidence_card(
-            ticker,
-            info=info,
-            prices=prices,
-            panel=panel,
-            earnings=fetch_earnings_history(ticker),
-            peers=peers,
-        )
-    except Exception:  # noqa: BLE001 — network/CI failures → GAP card (honest)
-        return _home_evidence_card(ticker)
-
-
 def _needs_review_cards(
     holdings: list[dict[str, Any]]
 ) -> list[tuple[str, dict[str, Any]]]:
@@ -385,7 +271,7 @@ def _render_one_holding(ticker: str, h: dict[str, Any], summarizer: object) -> N
         fetch_prices,
     )
 
-    card = _fetch_card(ticker)
+    card = fetch_card(ticker)
     verdict = Verdict(str(h["verdict"]))
     unrealized = h.get("unrealized_pct")
     unrealized_f = float(unrealized) if unrealized is not None else None
