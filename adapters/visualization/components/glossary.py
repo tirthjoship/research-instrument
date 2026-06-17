@@ -253,9 +253,8 @@ GLOSSARY: dict[str, str] = {
         "prompt to confirm the change was intentional."
     ),
     "Risk line": (
-        "A pre-set threshold you defined; crossing it surfaces an amber flag "
-        "as a prompt to look here and confirm the reading is intentional. "
-        "A descriptive dial, not a validated edge."
+        "A fixed threshold checked every week (e.g. concentration over 60%). "
+        "Crossing one isn’t “bad” — it’s a prompt to confirm you meant it."
     ),
     "Coverage": (
         "The share of the book (by holding count) that had enough price "

@@ -28,22 +28,46 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
     """Render the Google-AI second-opinion panel as HTML.
 
     Returns "" when:
-      - is_local_runtime() is False (privacy fail-safe)
-      - result is None
+      - is_local_runtime() is False (privacy fail-safe — nothing reaches HTML off-local)
+      - result is None AND is_local_runtime() is False
+
+    When LOCAL and result is None (cache empty), returns a small honest data-gap
+    stub prompting the user to run weekly-brief with GEMINI_API_KEY.
 
     Args:
-        result: CaseResult to render; pass None to get empty string.
+        result: CaseResult to render; pass None for empty/stub output.
 
     Returns:
-        HTML string (non-empty only when local and result is not None).
+        HTML string.  Empty string only when off-local (never reveals anything
+        off-local regardless of result).
     """
     if not is_local_runtime():
+        # Privacy fail-safe: off-local → never emit anything.
         return ""
+
+    # LOCAL runtime below this point.
+
     if result is None:
-        return ""
+        # Cache empty — show honest data-gap stub (local only).
+        return (
+            '<div class="ri-sec">'
+            '<span class="ri-tg" style="color:var(--petrol)">Second opinion</span>'
+            " · Google AI"
+            "</div>"
+            '<div class="risk-ai">'
+            '<div class="risk-aifoot">'
+            "Run <code>weekly-brief</code> with <code>GEMINI_API_KEY</code> set "
+            "to populate the Google AI second opinion."
+            "</div>"
+            "</div>"
+        )
 
     if result.data_gap:
         return (
+            '<div class="ri-sec">'
+            '<span class="ri-tg" style="color:var(--petrol)">Second opinion</span>'
+            " · Google AI"
+            "</div>"
             '<div class="risk-ai">'
             '<div class="risk-aifoot">'
             "&#128269; Google AI second opinion unavailable — data gap or service unreachable."
@@ -86,7 +110,26 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
         )
     )
 
+    # Re-run button: stubbed — a live st.button cannot live inside an HTML
+    # markdown string (Streamlit renders it as plain text, not a widget).
+    # The button is rendered as a styled <button> element with a title
+    # attribute that explains how to trigger a real re-run.
+    rerun_btn = (
+        '<button class="risk-aibtn" title="'
+        "Re-run: execute \\'weekly-brief\\' with GEMINI_API_KEY set "
+        "(STOCKREC_LOCAL_ONLY=1). Live Gemini calls are not triggered at render time."
+        '" disabled>'
+        "&#8635; Re-run Google AI check"
+        "</button>"
+    )
+
     return (
+        # Section heading matching ri-sec style used by other Risk sections
+        '<div class="ri-sec">'
+        '<span class="ri-tg" style="color:var(--petrol)">Second opinion</span>'
+        " · Google AI"
+        "</div>"
+        # Card
         '<div class="risk-ai">'
         # Header: Google dots + title + ATTRIBUTED badge
         '<div class="risk-aihd">'
@@ -101,11 +144,11 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
         '<div class="risk-aiq">'
         "Google AI was asked to find blind spots in the dials above — "
         "it does not set the verdict"
-        "</div>" + points_html + "</div>"
+        "</div>" + points_html + rerun_btn + "</div>"
         # Footer / attribution
         '<div class="risk-aifoot">'
-        "<b>This is a third-party second opinion, shown as Google AI’s — "
-        "not adopted as the dashboard’s view.</b> "
+        "<b>This is a third-party second opinion, shown as Google AI's — "
+        "not adopted as the dashboard's view.</b> "
         "It can be wrong, cites no trade, and never overrides the deterministic dials. "
         "Runs only on your machine; throttled &amp; cached. "
         "If Google AI is unreachable, this panel is simply hidden."

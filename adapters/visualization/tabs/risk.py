@@ -85,7 +85,7 @@ def _header() -> str:
     return (
         '<div class="eyebrow" style="font-family:\'IBM Plex Mono\',monospace;'
         "font-size:11px;letter-spacing:.2em;text-transform:uppercase;"
-        f'color:{_PETROL};margin-bottom:8px">Portfolio Risk · v8 — full methodology</div>'
+        f'color:{_PETROL};margin-bottom:8px">Portfolio Risk · full methodology</div>'
         '<h1 class="ri-h1">Where your book <em>stands</em></h1>'
         '<p class="lede" style="font-size:14px;color:var(--risk-mut,#5b7178);'
         'max-width:560px;line-height:1.6">'
@@ -96,7 +96,7 @@ def _header() -> str:
         '<div class="adr" style="font-family:\'IBM Plex Mono\',monospace;'
         "font-size:10px;letter-spacing:.12em;"
         f'color:{_FAINT};text-transform:uppercase;margin:6px 0 16px">'
-        "heuristic surfacing dial, not a validated edge &nbsp;&middot;&nbsp; ADR-052</div>"
+        "heuristic surfacing dials &nbsp;&middot;&nbsp; not validated edges</div>"
     )
 
 
@@ -115,12 +115,31 @@ def _status_banner(flags: list[str]) -> str:
         css_class = "risk-status"
         icon = str(n)
         label = "Needs a look"
-        headline = f"{n} of your risk line{'s' if n != 1 else ''} are crossed"
-        # Describe the flags that fired without forbidden words
-        flag_desc = " and ".join(_flag_short(f) for f in flags[:3])
+        _tip = tooltip("Risk line", "ⓘ")
+        if n == 1:
+            headline = f"1 of your risk line {_tip} is crossed"
+        else:
+            headline = f"{n} of your risk lines {_tip} are crossed"
+        # Build dynamic flag list (no forbidden words)
+        _shorts = [_flag_short(f) for f in flags]
+        if n == 1:
+            _flag_copy = f"One defined line tripped: <b>{_shorts[0]}</b>. Confirm it is intentional."
+        elif n == 2:
+            _flag_copy = (
+                f"Two defined lines tripped: <b>{_shorts[0]}</b> and an"
+                f" <b>{_shorts[1]}</b>. Confirm both are intentional."
+            )
+        else:
+            _joined = (
+                ", ".join(f"<b>{s}</b>" for s in _shorts[:-1])
+                + f" and <b>{_shorts[-1]}</b>"
+            )
+            _flag_copy = (
+                f"{n} defined lines tripped: {_joined}. Confirm all are intentional."
+            )
         detail = (
             "Your risk <i>character</i> is your choice &#8212; nothing here is &#8220;good&#8221; or &#8220;bad&#8221;. "
-            f"Lines tripped: <b>{flag_desc}</b>. Confirm both are intentional."
+            + _flag_copy
         )
 
     return (
@@ -274,21 +293,21 @@ def _vitals(macro: dict[str, Any]) -> str:
 def _lens_nav() -> str:
     return (
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0">'
-        f'<a style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
+        f'<a href="#safe" class="ri-lens" style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
         f"border:1px solid {_LINE};border-radius:11px;padding:11px 13px;"
         f'border-left:4px solid {_G2}">'
         f"<div style=\"font-family:'Fraunces',serif;font-weight:800;font-size:15px\">Am I safe?</div>"
         f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:9.5px;"
         f'letter-spacing:.08em;text-transform:uppercase;color:{_MUT};margin-top:3px">'
         "The standing &darr;</div></a>"
-        f'<a style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
+        f'<a href="#do" class="ri-lens" style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
         f"border:1px solid {_LINE};border-radius:11px;padding:11px 13px;"
         f'border-left:4px solid {_AMBER}">'
         f"<div style=\"font-family:'Fraunces',serif;font-weight:800;font-size:15px\">What do I do?</div>"
         f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:9.5px;"
         f'letter-spacing:.08em;text-transform:uppercase;color:{_MUT};margin-top:3px">'
         "Dials + drill-downs &darr;</div></a>"
-        f'<a style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
+        f'<a href="#teach" class="ri-lens" style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
         f"border:1px solid {_LINE};border-radius:11px;padding:11px 13px;"
         f'border-left:4px solid {_PETROL}">'
         f"<div style=\"font-family:'Fraunces',serif;font-weight:800;font-size:15px\">Teach me</div>"
@@ -1390,11 +1409,16 @@ def _flags_footer(
 # ===========================================================================
 
 
-def _compose(macro: dict[str, Any] | None) -> str:
+def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
     """Compose the full Risk-tab HTML.
 
     Args:
-        macro: the macro dict from load_brief_summary(), or None.
+        macro:    the macro dict from load_brief_summary(), or None.
+        ai_html:  optional pre-rendered HTML for the Google-AI second-opinion
+                  panel.  When non-empty it is injected between the drift
+                  section and the teach section (matching mockup order).
+                  Ignored (not inserted) when empty / falsy — _compose stays
+                  fully testable without a live CaseResult.
 
     Returns:
         Complete HTML string (safe to pass to st.markdown(unsafe_allow_html=True)).
@@ -1425,8 +1449,11 @@ def _compose(macro: dict[str, Any] | None) -> str:
         _sector_section(macro),
         _who_owns(macro),
         _drift(macro),
-        # render_risk_second_opinion is called separately in render() since it
-        # needs a CaseResult object; _compose stays pure / testable without it.
+    ]
+    # Mockup order: _drift → [Second opinion · Google AI] → _teach → _flags_footer
+    if ai_html:
+        parts.append(ai_html)
+    parts += [
         _teach(),
         _flags_footer(
             flags,
@@ -1447,15 +1474,15 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
     summary = load_brief_summary(path)
     macro = (summary or {}).get("macro") if summary else None
 
-    # v8 pure-HTML compose
-    st.markdown(_compose(macro), unsafe_allow_html=True)
+    # Build AI second-opinion panel HTML BEFORE composing (spec §9 — no live
+    # Gemini at render time; cache-first load only).  ai_html is "" when
+    # off-local or cache empty — _compose ignores empty strings.
+    ai_html = ""
+    if macro is not None:
+        from application.risk_second_opinion import load_cached_risk_second_opinion
 
-    if macro is None:
-        return
+        ai_html = render_risk_second_opinion(load_cached_risk_second_opinion())
 
-    # Render AI second-opinion panel: cache-first load (spec §9 — no live Gemini at render time)
-    from application.risk_second_opinion import load_cached_risk_second_opinion
-
-    ai_html = render_risk_second_opinion(load_cached_risk_second_opinion())
-    if ai_html:
-        st.markdown(ai_html, unsafe_allow_html=True)
+    # Single st.markdown call — ensures mockup order:
+    #   _drift → Second opinion · Google AI → _teach → _flags_footer
+    st.markdown(_compose(macro, ai_html), unsafe_allow_html=True)

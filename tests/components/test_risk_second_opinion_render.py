@@ -103,12 +103,85 @@ def test_render_points_included(monkeypatch: pytest.MonkeyPatch) -> None:
         assert pt.text in html
 
 
-def test_render_none_result_when_local(monkeypatch: pytest.MonkeyPatch) -> None:
-    """result=None with local runtime returns empty string (no crash)."""
+def test_render_none_result_when_local_returns_stub(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """result=None with local runtime returns a small data-gap stub (not empty string).
+
+    R07 spec: when LOCAL but cache empty, show 'ri-sec' header + one-line card
+    prompting user to run weekly-brief with GEMINI_API_KEY.
+    """
     import adapters.visualization.components.risk_second_opinion as mod
     from adapters.visualization.components.risk_second_opinion import (
         render_risk_second_opinion,
     )
 
     monkeypatch.setattr(mod, "is_local_runtime", lambda: True)
-    assert render_risk_second_opinion(result=None) == ""
+    html = render_risk_second_opinion(result=None)
+    # Must be a non-empty stub, not blank
+    assert html != "", "Local + cache empty must return a stub, not empty string"
+    # Must contain the ri-sec section heading
+    assert "ri-sec" in html, "Data-gap stub must include the ri-sec section heading"
+    # Must contain prompt to run weekly-brief
+    assert (
+        "weekly-brief" in html.lower()
+        or "weekly_brief" in html.lower()
+        or "GEMINI_API_KEY" in html
+    )
+    # Must NOT contain forbidden words
+    assert not any(w in html.lower() for w in FORBIDDEN_WORDS)
+
+
+def test_render_none_result_when_off_local_returns_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """result=None with off-local runtime MUST return '' (privacy fail-safe)."""
+    import adapters.visualization.components.risk_second_opinion as mod
+    from adapters.visualization.components.risk_second_opinion import (
+        render_risk_second_opinion,
+    )
+
+    monkeypatch.setattr(mod, "is_local_runtime", lambda: False)
+    assert (
+        render_risk_second_opinion(result=None) == ""
+    ), "Off-local + None result must return '' — never reveal data-gap info off-local"
+
+
+def test_render_section_heading_present(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When local + result valid, ri-sec section heading must appear above the card."""
+    import adapters.visualization.components.risk_second_opinion as mod
+    from adapters.visualization.components.risk_second_opinion import (
+        render_risk_second_opinion,
+    )
+
+    monkeypatch.setattr(mod, "is_local_runtime", lambda: True)
+    html = render_risk_second_opinion(result=_minimal_result())
+    assert (
+        "ri-sec" in html
+    ), "ri-sec section heading must be present when result is valid"
+    # Heading must appear BEFORE the card div
+    assert html.index("ri-sec") < html.index(
+        "risk-ai"
+    ), "ri-sec heading must appear before the .risk-ai card div"
+    # Heading text must include 'Second opinion' and 'Google AI'
+    assert "Second opinion" in html
+    assert "Google AI" in html
+
+
+def test_render_rerun_button_stub_present(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When local + result valid, a re-run button stub must appear with informative title."""
+    import adapters.visualization.components.risk_second_opinion as mod
+    from adapters.visualization.components.risk_second_opinion import (
+        render_risk_second_opinion,
+    )
+
+    monkeypatch.setattr(mod, "is_local_runtime", lambda: True)
+    html = render_risk_second_opinion(result=_minimal_result())
+    # Button element must be present
+    assert "Re-run Google AI check" in html, "Re-run button text must appear"
+    # Must carry disabled attribute (stub — no live API call)
+    assert "disabled" in html, "Re-run button must be disabled (stub, no live API)"
+    # Title must mention weekly-brief or GEMINI_API_KEY so user knows how to trigger
+    assert (
+        "weekly-brief" in html or "GEMINI_API_KEY" in html
+    ), "Re-run button title/caption must explain how to trigger a real re-run"

@@ -39,6 +39,7 @@ html, body, [class*="css"] {
     color: var(--text-primary);
     background-color: var(--bg-primary);
     -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
 }
 h1 {
     font-family: 'DM Sans', sans-serif !important;
@@ -745,7 +746,7 @@ header[data-testid="stHeader"] { display: none !important; }
 #MainMenu,header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"]{display:none!important;}
 html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px at 12% -8%,#FFF 0%,rgba(255,255,255,0) 55%),var(--ri-app)!important;}
 [data-testid="stMainBlockContainer"],.block-container{max-width:1180px!important;margin-left:auto!important;margin-right:auto!important;padding:0.5rem 1.9rem 3rem!important;font-family:'IBM Plex Sans',sans-serif;color:var(--ri-ink);}
-.ri-h1{font-family:'Fraunces',serif;font-weight:600;font-size:2.6rem;line-height:1.03;letter-spacing:-.015em;color:var(--ri-ink);}
+.ri-h1{font-family:'Fraunces',serif;font-weight:900;font-size:38px;line-height:1.04;letter-spacing:-.02em;color:var(--ri-ink);}.ri-h1 em{font-style:italic;font-weight:400;}
 .ri-sub{font-family:'Fraunces',serif;font-style:italic;font-size:1.12rem;color:var(--ri-ink2);}
 .ri-sec{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:.8rem;margin:.4rem 0 1rem;}
 .ri-sec::after{content:"";flex:1;height:1px;background:var(--ri-hair);}
@@ -753,6 +754,8 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .ri-tip{position:absolute;bottom:142%;left:50%;transform:translateX(-50%) translateY(5px);background:#1b2733;color:#eef3f6;font-family:'IBM Plex Sans';font-size:.76rem;line-height:1.45;padding:.65rem .8rem;border-radius:10px;width:240px;box-shadow:0 10px 30px rgba(15,30,45,.22);opacity:0;visibility:hidden;transition:.15s;z-index:60;text-align:left;}
 .ri-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1b2733;}
 .ri-ttip:hover .ri-tip{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+.ri-lens{transition:transform .15s;display:block;}
+.ri-lens:hover{transform:translateY(-2px);}
 
 /* ===== Research Instrument — Evidence Ledger ===== */
 .ri-ledger{display:flex;align-items:center;flex-wrap:wrap;border-top:1.5px solid var(--ri-ink);border-bottom:1px solid var(--ri-hair);font-family:'IBM Plex Mono',monospace;font-size:.78rem;letter-spacing:.04em;color:var(--ri-ink2);margin:.2rem 0 2rem;padding:.6rem 0;}
