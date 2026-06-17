@@ -1,11 +1,20 @@
 # STATUS — multi-modal-stock-recommender
 
 **As of:** 2026-06-17
-**Branch:** `feat/risk-tab-fixes` (off `develop`) — 9 commits, **not yet PR'd**. `develop` is ahead of `main` (Risk v8 release still pending).
-**Phase:** **Risk-tab fix sprint R01–R08 COMPLETE** — built (Sonnet subagents), gate-green at every step, live-eyeballed. Plus ADR-059 (verdict-logic decision). Ready to PR `feat/risk-tab-fixes` → `develop`.
+**Branch:** `feat/risk-tab-fixes` (off `develop`) — ~13 commits, **not yet PR'd**. `develop` is ahead of `main` (Risk v8 release still pending).
+**Phase:** **Risk-tab R01–R08 + follow-up gap-fix pass COMPLETE** — gate-green at every step, live-eyeballed; R02 scroll now CDP-verified. Plus ADR-059 (verdict-logic) + ADR-060 (factor-expansion decision). Ready to PR → `develop`.
 
 ## NEXT ACTION (start here)
-**Open PR `feat/risk-tab-fixes` → `develop`**, let CI confirm, merge. THEN cut the long-pending `develop` → `main` release (whole 6-tab redesign + Risk v8 + these fixes). Before the main merge: do the two interactive checks below.
+**Open PR `feat/risk-tab-fixes` → `develop`**, let CI confirm, merge. THEN cut the long-pending `develop` → `main` release (whole 6-tab redesign + Risk v8 + these fixes). R07 populated panel still needs a Gemini cache to eyeball; everything else is verified.
+
+## Follow-up gap-fix pass (Cursor review, 2026-06-17)
+Validated Cursor's 6 findings against code: 5 warranted + fixed, 1 (9-factor) contested + handled via ADR-060.
+- **FIX1 / R02** — native anchors RERUN the app instead of scrolling (CDP-confirmed: target vanished). Added `lens_scroll.py` v2-component shim → intercepts `.ri-lens` click, preventDefault, scrollIntoView. **CDP-verified: Teach-me bean scrolls 0→4358px, no rerun.**
+- **FIX4** — `_who_owns` was rendering ALL ~60 rows; capped to top 5 (footer already said TOP 5).
+- **FIX5** — R08 Q3 now uses human factor labels grouped by direction (no lowercase ticker dump).
+- **FIX3** — R07 re-run is now a styled `.risk-aibtn` instruction, not a broken disabled button; `ri-tg` defined.
+- **FIX6** — `.donut` hardcoded 71% conic default neutralized.
+- **FIX2 / R03 9-factor — NOT done as Cursor proposed.** Cursor's long-only ETF proxies are ~80% collinear with SPY → betas lie. Decision (ADR-060): expand via authentic FF/AQR long-short factors as a dedicated leakage-aware build. Tab keeps the honest 4-factor count meanwhile.
 
 ## What shipped (this session)
 - **ADR-059** — verdict-logic extension DEFERRED: fundamentals stay attributed evidence (5 RAG squares), NOT folded into the verdict, until v1 clears its ADR-048 forward gate (currently 231 REDUCE flags logged, **0 resolvable** — 21-day horizon, earliest resolves ~July 2026). Locked constraint for any future extension: **asymmetric caution-only veto** (fundamentals may downgrade optimism / reinforce exits, never rescue a name from a REDUCE, never fabricate direction). Web-checked vs industry norms — foundations are mainstream.
@@ -19,15 +28,14 @@
   - R09 (refresh button removal) was already done — carried in.
 
 ## Verification
-- Full `make check` green after every item: **2119 passed, 93.54%**, mypy strict + ruff clean.
-- Live eyeball: solo render of Risk tab screenshotted + compared band-by-band to `docs/fix-targets/screenshots/` — R01/R02(render)/R03/R04/R05/R06/R08 all faithful to mockup.
+- Full `make check` green after every item: **2121 passed, 93.54%**, mypy strict + ruff clean.
+- Live eyeball: Risk tab screenshotted + compared band-by-band to `docs/fix-targets/screenshots/`. **R02 scroll CDP-verified** (bean → 4358px, no rerun). R01/R03/R04/R05/R06/R08 faithful to mockup.
 
-## Open items (need an interactive browser / real cache — could NOT auto-verify)
-- **R02 scroll behaviour** — anchors render; native smooth-scroll needs a click in a real browser to confirm (Streamlit main-doc anchors, no JS hack added).
-- **R07 populated panel** — only renders with `is_local_runtime()` true AND `cited_cases.json` holding a `risk_second_opinion` entry (needs `weekly-brief` run with `GEMINI_API_KEY`). It is correctly HIDDEN otherwise (privacy). Placement drift→teach is test-verified.
+## Open items
+- **R07 populated panel** — only renders with `is_local_runtime()` true AND `cited_cases.json` holding a `risk_second_opinion` entry (needs `weekly-brief` run with `GEMINI_API_KEY`). Correctly HIDDEN otherwise (privacy). Placement drift→teach test-verified.
 - **develop → main release** — the whole redesign, still pending user go.
 - **#57** fix/adherence-tz-naive-aware — unrelated, still open.
-- **Factor-universe expansion (9-factor, proper FF/AQR long-short)** — deferred from R03 to its OWN brief + ADR (config + pipeline + real-beta eyeball).
+- **Factor-universe expansion (ADR-060)** — authentic FF/AQR long-short factors, as a dedicated leakage-aware build (new data adapter — `pandas_datareader` NOT installed; point-in-time handling per CLAUDE.md #2; methodology review + ADR + weekly-brief + eyeball). NOT Cursor's collinear ETF proxies. Tab keeps honest 4-factor count until built.
 
 ## Gotchas (carry forward)
 - Non-default Streamlit tabs screenshot BLANK; eyeball via the full dashboard + `scripts/screenshot_dashboard.py --tab 2`, or a solo render harness. (The harness waits for 6 tab buttons — a tab-less solo trips it.)
