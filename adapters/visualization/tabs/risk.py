@@ -1354,65 +1354,164 @@ def _drift(macro: dict[str, Any]) -> str:
     )
 
 
-def _teach() -> str:
+def _teach(macro: dict[str, Any]) -> str:  # noqa: C901
+    """Plain-English walkthrough card — data-driven from live macro."""
+    # ── pull live values (degrade gracefully) ────────────────────────────────
+    betas: dict[str, float] = macro.get("net_beta_by_factor") or {}
+    spy_beta: float | None = betas.get("SPY")
+    sys_share_raw = macro.get("systematic_share")
+    idio_share_raw = macro.get("idiosyncratic_share")
+    flags: list[str] = macro.get("flags") or []
+    dominant_factor: str = macro.get("dominant_factor") or ""
+
+    # ── Q1: net beta answer ───────────────────────────────────────────────────
+    if spy_beta is None:
+        q1_ans = '<p class="ans">DATA-GAP: net beta not available &#8212; run weekly-brief to populate.</p>'
+    else:
+        band = classify_net_beta(spy_beta)
+        band_desc = band.value.lower()  # e.g. "market-like", "elevated"
+        q1_ans = (
+            f'<p class="ans"><b>{band_desc.capitalize()} market exposure '
+            f"({spy_beta:+.2f}&times;)</b>. "
+            "No defined line for size &#8212; so it&#8217;s grey.</p>"
+        )
+
+    # ── Q2: donut + verdict ───────────────────────────────────────────────────
+    _SYS_THRESHOLD = 0.60
+    if sys_share_raw is None or idio_share_raw is None:
+        q2_body = (
+            '<p class="csub">Systematic share: the fraction of variance from market-wide forces vs individual names.</p>'
+            '<p class="ans">DATA-GAP: systematic / idiosyncratic shares not available.</p>'
+        )
+    else:
+        sys_pct = int(round(float(sys_share_raw) * 100))
+        idio_pct = int(round(float(idio_share_raw) * 100))
+        flagged = float(sys_share_raw) >= _SYS_THRESHOLD
+        sys_colour = _AMBER if flagged else _OK
+        sys_label = "flagged bet" if flagged else "within line"
+        idio_label = "within line" if flagged else "spread out"
+        verdict_phrase = "One big bet" if flagged else "Spread out"
+        if flagged:
+            verdict_body = (
+                f"<b>{verdict_phrase}</b> &#8212; the amber slice crossed the 60% line."
+            )
+        else:
+            verdict_body = f"<b>{verdict_phrase}</b> &#8212; the stock-specific slice dominates (below the 60% line)."
+        donut_html = (
+            f'<div class="donut" style="background:conic-gradient({sys_colour} 0 {sys_pct}%,{_OK} {sys_pct}% 100%)">'
+            f"<b>{sys_pct}%<span>SYSTEMATIC</span></b>"
+            "</div>"
+        )
+        legend_html = (
+            '<div class="dleg">'
+            f'<span class="sw2" style="background:{sys_colour}"></span>'
+            f"Systematic ({sys_label}) {sys_pct}%<br>"
+            f'<span class="sw2" style="background:{_OK}"></span>'
+            f"Stock-specific ({idio_label}) {idio_pct}%"
+            "</div>"
+        )
+        q2_body = (
+            '<p class="csub">Systematic share: the fraction of variance from market-wide forces vs individual names.</p>'
+            f'<div class="split" style="margin-top:6px">'
+            f"{donut_html}"
+            f'<div style="flex:1">{legend_html}'
+            f'<p class="ans" style="margin-top:8px">{verdict_body}</p>'
+            "</div></div>"
+        )
+
+    # ── Q3: what's driving it ─────────────────────────────────────────────────
+    # Build a concise factor summary from the live betas
+    factor_parts: list[str] = []
+    for fname, fval in betas.items():
+        if fname == "SPY":
+            continue  # SPY is covered separately
+        if abs(fval) >= 0.1:
+            direction = "long" if fval > 0 else "short"
+            factor_parts.append(f"{direction} {fname.lower()}")
+    factor_str = ", ".join(factor_parts) if factor_parts else "factor exposures present"
+
+    # Sector tilt note
+    sector_weights: dict[str, float] = macro.get("sector_weights") or {}
+    top_sector = (
+        max(sector_weights, key=lambda k: sector_weights[k]) if sector_weights else None
+    )
+    sector_note = f"; {top_sector}-heavy" if top_sector else ""
+
+    if dominant_factor:
+        _dom_sub = _FACTOR_DISPLAY_NAMES.get(dominant_factor, "")
+        dom_label = f"{dominant_factor} ({_dom_sub})" if _dom_sub else dominant_factor
+        q3_ans = (
+            f'<p class="ans"><b>Long market{", " + factor_str if factor_parts else ""}'
+            f"{sector_note}.</b> "
+            f"<b>{dom_label}</b> dwarfs everything.</p>"
+        )
+    else:
+        q3_ans = (
+            f'<p class="ans"><b>Long market{", " + factor_str if factor_parts else ""}'
+            f"{sector_note}.</b> See the factor breakdowns above for the full picture.</p>"
+        )
+
+    # ── Q4: what to watch — dynamic from flags ────────────────────────────────
+    n_flags = len(flags)
+    if n_flags == 0:
+        q4_sub = "Descriptive dials &#8212; no defined lines tripped this week."
+        q4_body = (
+            '<p class="ans">Nothing flagged &#8212; the dials are informational. '
+            "Nothing here says to enter or exit positions.</p>"
+        )
+    else:
+        shorts = [_flag_short(f) for f in flags]
+        if n_flags == 1:
+            tripped = f"one line tripped: <b>{shorts[0]}</b>"
+        elif n_flags == 2:
+            tripped = f"two lines tripped: <b>{shorts[0]}</b> and <b>{shorts[1]}</b>"
+        else:
+            joined = (
+                ", ".join(f"<b>{s}</b>" for s in shorts[:-1])
+                + f" and <b>{shorts[-1]}</b>"
+            )
+            tripped = f"{n_flags} lines tripped: {joined}"
+        q4_sub = f"Descriptive dials &#8212; {tripped} this week."
+        # Build bold-phrase list for Q4 confirmation line
+        confirm_parts = [f"<b>{_flag_short(f)}</b>" for f in flags]
+        confirm_str = " and ".join(confirm_parts)
+        q4_body = (
+            f'<p class="ans">Confirm the {confirm_str} '
+            "are intentional. Nothing here says to enter or exit positions.</p>"
+        )
+
     return (
         '<div class="ri-sec" id="teach">'
         f'<span style="color:{_PETROL}">Teach me</span> &middot; The risk story</div>'
         '<details class="teach" open>'
-        '<summary style="list-style:none;cursor:pointer;padding:14px 17px;'
-        f"font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;"
-        f"text-transform:uppercase;color:{_PETROL};font-weight:600;"
-        'display:flex;justify-content:space-between;align-items:center">'
-        f"<span style=\"font-family:'Fraunces',serif;font-weight:700;font-size:15px;"
-        f'text-transform:none;color:{_INK}">Plain-English walkthrough</span>'
-        "<span>&#8722;</span></summary>"
-        '<div style="padding:4px 17px 14px">'
+        '<summary><span class="h">Plain-English walkthrough</span><span>&#8722;</span></summary>'
+        '<div class="tbody">'
         # Q1
-        f'<div style="padding:14px 0;border-bottom:1px solid #eef3f4">'
-        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
-        f'font-weight:600;color:{_PETROL};letter-spacing:.1em">QUESTION 1</div>'
-        f"<div style=\"font-family:'Fraunces',serif;font-weight:700;font-size:16px;"
-        'margin:3px 0 4px">How much market am I holding?</div>'
-        f'<p style="font-size:12px;color:{_MUT};line-height:1.5;margin:0 0 9px">'
-        '"Net beta" = how hard the book swings vs the market. 1.0 = step-for-step.</p>'
-        f'<p style="font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px">'
-        "<b>The net beta tells you the swing size.</b> No defined line for size &#8212; so it's grey.</p>"
+        '<div class="chap">'
+        '<div class="cnum">QUESTION 1</div>'
+        '<div class="cq">How much market am I holding?</div>'
+        '<p class="csub">&#8220;Net beta&#8221; = how hard the book swings vs the market. 1.0 = step-for-step.</p>'
+        f"{q1_ans}"
         "</div>"
         # Q2
-        f'<div style="padding:14px 0;border-bottom:1px solid #eef3f4">'
-        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
-        f'font-weight:600;color:{_PETROL};letter-spacing:.1em">QUESTION 2</div>'
-        f"<div style=\"font-family:'Fraunces',serif;font-weight:700;font-size:16px;"
-        'margin:3px 0 4px">Is it spread out, or one big bet?</div>'
-        f'<p style="font-size:12px;color:{_MUT};line-height:1.5;margin:0 0 9px">'
-        "Systematic share: the fraction of variance in market-wide forces vs individual names.</p>"
-        f'<p style="font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px">'
-        "<b>The systematic-share strip shows you exactly where you sit.</b> "
-        "Past 60% = the amber line trips.</p>"
+        '<div class="chap">'
+        '<div class="cnum">QUESTION 2</div>'
+        '<div class="cq">Is it spread out, or one big bet?</div>'
+        f"{q2_body}"
         "</div>"
         # Q3
-        f'<div style="padding:14px 0;border-bottom:1px solid #eef3f4">'
-        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
-        f'font-weight:600;color:{_PETROL};letter-spacing:.1em">QUESTION 3</div>'
-        f"<div style=\"font-family:'Fraunces',serif;font-weight:700;font-size:16px;"
-        "margin:3px 0 4px\">What's driving it?</div>"
-        f'<p style="font-size:12px;color:{_MUT};line-height:1.5;margin:0 0 9px">'
-        "See the factor + sector breakdowns above.</p>"
-        f'<p style="font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px">'
-        "<b>Long market, growth &amp; momentum; sector-heavy.</b> The dominant factor dwarfs the rest &#8212; "
-        "that's why concentration is flagged.</p>"
+        '<div class="chap">'
+        '<div class="cnum">QUESTION 3</div>'
+        '<div class="cq">What&#8217;s driving it?</div>'
+        '<p class="csub">See the factor + sector breakdowns above.</p>'
+        f"{q3_ans}"
         "</div>"
         # Q4
-        f'<div style="padding:14px 0">'
-        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
-        f'font-weight:600;color:{_PETROL};letter-spacing:.1em">QUESTION 4</div>'
-        f"<div style=\"font-family:'Fraunces',serif;font-weight:700;font-size:16px;"
-        'margin:3px 0 4px">So what should I watch?</div>'
-        f'<p style="font-size:12px;color:{_MUT};line-height:1.5;margin:0 0 9px">'
-        "Descriptive dials &#8212; check whether any defined lines tripped this week.</p>"
-        f'<p style="font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px">'
-        "Confirm the <b>concentration</b> and any <b>upward drift</b> are intentional. "
-        "Nothing here says to enter or exit positions.</p>"
+        '<div class="chap">'
+        '<div class="cnum">QUESTION 4</div>'
+        '<div class="cq">So what should I watch?</div>'
+        f'<p class="csub">{q4_sub}</p>'
+        f"{q4_body}"
         "</div>"
         "</div></details>"
     )
@@ -1512,7 +1611,7 @@ def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
     if ai_html:
         parts.append(ai_html)
     parts += [
-        _teach(),
+        _teach(macro),
         _flags_footer(
             flags,
             macro.get("coverage_holdings", "?"),
