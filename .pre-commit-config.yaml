@@ -30,7 +30,7 @@ repos:
     hooks:
       - id: mypy
         args: ["--strict"]
-        exclude: "^(tests/|audit_sentiment\\.py)"
+        exclude: "^(tests/|scripts/audit_sentiment\\.py)"
         additional_dependencies:
           - types-PyYAML
           - types-click
