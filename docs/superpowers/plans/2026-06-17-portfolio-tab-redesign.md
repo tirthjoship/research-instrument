@@ -1213,7 +1213,9 @@ def _row_html(r: PortfolioRow, show_more: bool) -> str:
     pnl_c = "#16A34A" if r.pnl >= 0 else "#DC2626"
     today_c = "#16A34A" if r.today >= 0 else "#DC2626"
     cells = [
-        f'<td style="font-family:\'Fraunces\',serif;font-weight:700;">{r.ticker}</td>',
+        f'<td style="font-family:\'Fraunces\',serif;font-weight:700;">'
+        f'<a href="?inspect={r.ticker}" target="_self" '
+        f'style="color:var(--ri-teal);text-decoration:none;">{r.ticker}</a></td>',
         f"<td>{r.sector}</td>",
         f'<td style="text-align:right;font-family:\'IBM Plex Mono\',monospace;">'
         f'<span style="display:inline-block;height:7px;border-radius:3px;background:#CBD5E1;'
@@ -1231,12 +1233,9 @@ def _row_html(r: PortfolioRow, show_more: bool) -> str:
         cells.append(f'<td style="text-align:right;font-family:\'IBM Plex Mono\',monospace;">{beta}</td>')
         cells.append(f'<td style="text-align:right;font-family:\'IBM Plex Mono\',monospace;">${r.cost:,.0f}</td>')
     cells.append(f"<td>{_pill(r.verdict)}</td>")
-    return (
-        f'<tr onclick="window.location.href=\'?inspect={r.ticker}\'" '
-        f'style="cursor:pointer;">'
-        f'<td style="display:none;"><a href="?inspect={r.ticker}" target="_self"></a></td>'
-        + "".join(cells) + "</tr>"
-    )
+    # Row click = the ticker-cell anchor (Streamlit strips inline onclick JS,
+    # so a real <a> is the only reliable click target). Whole row styled clickable.
+    return f'<tr style="cursor:pointer;">' + "".join(cells) + "</tr>"
 
 
 def build_table_html(rows: list[PortfolioRow], state: TableState) -> str:
@@ -1408,7 +1407,9 @@ from __future__ import annotations
 
 import streamlit as st
 
-from adapters.visualization.card_fetch import fetch_card, implied_cost, window_returns
+from adapters.visualization.card_fetch import (
+    fetch_card, implied_cost, window_returns, get_case_on_expand,
+)
 from adapters.visualization.components.decision_card import render_expanded_card
 from adapters.visualization.portfolio_view import PortfolioRow
 from adapters.visualization.price_cache import fetch_price_history, fetch_prices
@@ -1447,8 +1448,12 @@ def render_inspect_detail(row: PortfolioRow) -> None:
         hist = fetch_price_history(row.ticker) or {}
         rets = window_returns(list(hist.get("closes") or []))
         verdict = Verdict(row.verdict) if row.verdict else Verdict.REVIEW
+        try:
+            case = get_case_on_expand(row.ticker)  # lazy + cached per ticker
+        except Exception:
+            case = None  # DATA-GAP: omit case box, never fabricate
         html = render_expanded_card(
-            card, case=None, verdict=verdict, name=row.ticker,
+            card, case=case, verdict=verdict, name=row.ticker,
             unrealized_pct=row.pnl, means=row.why or "Discipline review prompt — not a forecast.",
             price=live_price, cost=cost, returns=rets, reliability="live",
         )
@@ -1466,7 +1471,7 @@ def render_inspect_detail(row: PortfolioRow) -> None:
         st.info(f"{row.ticker} pre-filled — open the Stock Analysis tab.")
 ```
 
-> NOTE: `render_expanded_card`'s exact kwargs were captured in Task 5 research; if `case` must be a real object, pass `get_case_on_expand(row.ticker)` from `card_fetch` instead of `None` (verify signature at implementation; both are in `card_fetch`).
+> NOTE: `get_case_on_expand` already lives in `card_fetch.py` (used by Home). Call it lazily on inspect; it caches per ticker, so one Gemini call per holding per inspect (not all 60 upfront). Empty/failed case → `None` → `render_expanded_card` omits the case box (DATA-GAP, never fabricated). Verify `render_expanded_card`'s `case` kwarg type at implementation.
 
 - [ ] **Step 4: Run test to verify it passes**
 

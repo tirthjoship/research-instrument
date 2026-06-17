@@ -201,9 +201,10 @@ Validated against the assembled mockup (`.superpowers/brainstorm/.../full-tab.ht
 - **Body:**
   1. Meaning box: `VERDICT` + "— discipline review prompt, not a forecast." + engine line "Same trend-break rule (v1) as Home; RAG + rubric fetched live on expand." (Unknown sector → DATA-GAP sentence instead.)
   2. 4 metric boxes: Weight · Lifetime P&L (colored) · Today (colored) · Value.
-  3. "Evidence — 5 signals (live on expand)" → RAG table: 5 rows (Technicals, Momentum, Valuation, Earnings, Analysts), each = dim name · color square · detail text. **Fetched live + lazy on open** via Home's `_fetch_card()`, cached per ticker.
+  3. "Evidence — 5 signals (live on expand)" → RAG table: 5 rows (Technicals, Momentum, Valuation, Earnings, Analysts), each = dim name · color square · detail text. **Fetched live + lazy on open** via Home's `fetch_card()`, cached per ticker.
   4. "Why VERDICT and not the others — rubric" → rows for each Verdict with trigger text; **current verdict row highlighted**.
-  5. Interlinks: "↗ Open in Weekly Brief" · "↗ Analyze TK" (sets `session_state["analyze_ticker"]`).
+  5. **Google-AI case** (in-favour / to-watch with cited sources) → fetched lazily via Home's `get_case_on_expand(ticker)`, **cached per ticker** (one fetch per holding per inspect, not all 60). DATA-GAP/empty case → omit the box, never fabricate. Decision 2026-06-17: case INCLUDED for full Home parity (resolves §3↔A6).
+  6. Interlinks: "↗ Open in Weekly Brief" · "↗ Analyze TK" (sets `session_state["analyze_ticker"]`).
 - This reuses `decision_card.render_expanded_card`; do NOT reimplement.
 
 ### A7. Portfolio vs SPY
@@ -252,3 +253,4 @@ Plan/implementation must satisfy ALL:
 - 2026-06-17 — §7 locked: healthy table = Lean default cols + "⊕ more columns" toggle (yield/beta/cost, DATA-GAP when absent). Sort/filter/search/page; row-click → shared detail panel (3rd entry point).
 - 2026-06-17 — §8 locked: Portfolio-vs-SPY = filled-area + SPY line + alpha callout + window toggle (YTD/All/1Y). Simple-return v1; money-weighted deferred. DATA-GAP before first buy.
 - 2026-06-17 — §5 locked (approach): sector via yfinance adapter-side enrichment (Unknown fallback), top-5 weight concentration, simple SPY series, lazy per-click RAG. §9 locked: 0-state / calm-no-flag / flat-treemap-small-book (C1). §10 locked: admin carried over, restyled, collapsed. **All sections locked — ready for full assembled mockup + spec sign-off.**
+- 2026-06-17 — Pre-execution drift check vs assembled mockup: (a) detail panel INCLUDES Google-AI case (lazy `get_case_on_expand`, cached per ticker) — resolves §3↔A6, full Home parity; (b) plan fix — table row-click via ticker-cell `<a>` anchor (Streamlit strips inline onclick JS); (c) acknowledged: detail = real `decision_card` chrome not bespoke mockup, toggles = `st.radio`, click→detail = full rerun. Plan patched.
