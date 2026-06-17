@@ -102,9 +102,21 @@ Full-width "Your book at a glance" — the showpiece + concentration read.
 
 ---
 
-## 7. Healthy Holdings Table  `[OPEN]`
+## 7. Healthy Holdings Table  `[LOCKED]`
 
-Dense sortable / filterable / paginated ledger. *Open: columns, default sort, page size, sortable columns, filter/chip behaviors, how verdict pill renders inline.*
+Dense ledger for non-flagged holdings (verdict ∈ {HOLD, ADD_OK}). Heading shows count ("Healthy holdings — N of total").
+
+**Columns — Lean default + "⊕ more columns" toggle.**
+- Lean (default): Ticker · Sector · Weight (inline bar + %) · Value · Lifetime P&L % · Today % · Verdict pill.
+- Toggle "⊕ more columns" reveals: **Div Yield · Beta · Cost basis** (the fundamentals from the web-scan gap analysis). Yield/Beta from yfinance `info`; **DATA-GAP "—" when provider returns none — never faked.** ⓘ glossary clouds on Beta and Div-Yield headers.
+
+**Behavior.**
+- **Sort:** click any header to sort; toggle asc/desc; arrow indicator. Default sort = Weight desc.
+- **Filter:** chips All / Gainers / Losers + ticker search box. Page size 10, pager.
+- **Row click → opens the shared detail panel** (same `decision_card` depth as a treemap tile / review card — one detail surface, three entry points: review card, treemap tile, table row).
+- Verdict pill rendered inline (same `_VERDICT_COLORS`).
+
+**Build note:** sort/filter/paging via Streamlit-native state (rerun); table emitted as styled HTML (consistent with current `positions.py` table approach) or `st.dataframe` with column config — decide at plan time, but row-click→detail needs the HTML/`st.button` path, not raw `st.dataframe`.
 
 ---
 
@@ -138,3 +150,4 @@ Trade history, closed positions, watchlist, record-trade — carried from curren
 - 2026-06-17 — Scope = full redesign (not additive). Spine = B + A's full-width treemap. Review cards reuse Home's `decision_card` at identical depth (option A: reuse on both surfaces). Engine confirmed shared (`grade_position`).
 - 2026-06-17 — §3a styling consistency locked (binned color, ⓘ glossary clouds, ri-chrome).
 - 2026-06-17 — §6 + §6a locked: squarified custom treemap (Python-computed rects), size=weight / color=lens, capped ±25% bins, label-on-big + hover-small + overflow-clip, Unknown-sector fallback. 3-lens toggle (P&L/Today/Verdict), hover peek, click → shared `decision_card` detail panel (lazy live RAG). Rejected plotly + flexbox. Scenario dropdown was mock-only.
+- 2026-06-17 — §7 locked: healthy table = Lean default cols + "⊕ more columns" toggle (yield/beta/cost, DATA-GAP when absent). Sort/filter/search/page; row-click → shared detail panel (3rd entry point).
