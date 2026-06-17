@@ -120,9 +120,15 @@ Dense ledger for non-flagged holdings (verdict ∈ {HOLD, ADD_OK}). Heading show
 
 ---
 
-## 8. Portfolio vs SPY Chart  `[OPEN]`
+## 8. Portfolio vs SPY Chart  `[LOCKED]`
 
-Full-width attributed line. *Open: time window (since-first-buy vs YTD), simple vs money-weighted return, how rebuilt on trade changes, chart builder (reuse `charts.py`).*
+Full-width "Portfolio vs SPY" — closes the CLAUDE.md-mandated benchmark gap.
+
+- **Treatment:** filled-area portfolio line + dashed SPY benchmark line + **alpha callout** ("▲ +X% vs SPY") in the section header.
+- **Window toggle pills:** YTD · All (since first buy) · 1Y — recolor/redraw + recompute alpha + window label per pill (consistent with the treemap's lens-toggle interaction model).
+- **Return basis:** simple time-weighted return for **v1**. **Money-weighted** (handles mid-window buys/sells correctly) is a flagged later upgrade — ⓘ cloud states this.
+- **Honesty:** lines + alpha computed from **actual** trade history & prices, no projection. Any window segment predating the first buy → **DATA-GAP, never back-filled**.
+- **Build:** reuse/extend `charts.py` (transparent `apply_dossier_template`); window state via Streamlit rerun.
 
 ---
 
@@ -151,3 +157,4 @@ Trade history, closed positions, watchlist, record-trade — carried from curren
 - 2026-06-17 — §3a styling consistency locked (binned color, ⓘ glossary clouds, ri-chrome).
 - 2026-06-17 — §6 + §6a locked: squarified custom treemap (Python-computed rects), size=weight / color=lens, capped ±25% bins, label-on-big + hover-small + overflow-clip, Unknown-sector fallback. 3-lens toggle (P&L/Today/Verdict), hover peek, click → shared `decision_card` detail panel (lazy live RAG). Rejected plotly + flexbox. Scenario dropdown was mock-only.
 - 2026-06-17 — §7 locked: healthy table = Lean default cols + "⊕ more columns" toggle (yield/beta/cost, DATA-GAP when absent). Sort/filter/search/page; row-click → shared detail panel (3rd entry point).
+- 2026-06-17 — §8 locked: Portfolio-vs-SPY = filled-area + SPY line + alpha callout + window toggle (YTD/All/1Y). Simple-return v1; money-weighted deferred. DATA-GAP before first buy.
