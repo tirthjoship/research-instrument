@@ -8,12 +8,20 @@ There are NO 5-signal RAG arrays on the Holding model — that is an honest DATA
 Test harness pattern mirrors test_weekly_brief_tab.py / test_risk_tab.py:
   - patch st.markdown to capture rendered HTML
   - assert structural invariants without starting Streamlit
+
+NOTE (Task 12): _render_position_card and _verdict_pill_html have been removed in the
+portfolio tab redesign. Their functionality is now provided by:
+  - portfolio_table._pill (verdict display)
+  - portfolio_review.build_review_card_html (flagged position cards)
+The tests for these removed helpers are skipped below.
 """
 
 from __future__ import annotations
 
 from typing import Any
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 # ---------------------------------------------------------------------------
 # Harness helpers
@@ -57,6 +65,9 @@ def _make_holding(
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.skip(
+    reason="Task 12: _render_position_card removed — replaced by portfolio_review cards"
+)
 def test_render_position_card_pill_present() -> None:
     """Decision-card row must render the verdict pill text (e.g. 'TRIM')."""
     collected: list[str] = []
@@ -98,6 +109,9 @@ def test_render_position_card_pill_present() -> None:
     ), f"Verdict pill 'TRIM' not found in rendered HTML:\n{all_html[:1000]}"
 
 
+@pytest.mark.skip(
+    reason="Task 12: _render_position_card removed — replaced by portfolio_review cards"
+)
 def test_render_position_card_unrealized_pct_present() -> None:
     """Decision-card row must show the unrealized % figure."""
     collected: list[str] = []
@@ -139,6 +153,9 @@ def test_render_position_card_unrealized_pct_present() -> None:
     ), f"Unrealized % not found in rendered HTML:\n{all_html[:1000]}"
 
 
+@pytest.mark.skip(
+    reason="Task 12: _render_position_card removed — replaced by portfolio_review cards"
+)
 def test_render_position_card_review_framing_not_buy_sell() -> None:
     """Verdict copy must use review-framing language, not 'buy' or 'sell'.
 
@@ -156,6 +173,9 @@ def test_render_position_card_review_framing_not_buy_sell() -> None:
     ), "_render_position_card must include review-framing language"
 
 
+@pytest.mark.skip(
+    reason="Task 12: _verdict_pill_html removed — replaced by portfolio_table._pill"
+)
 def test_render_position_card_verdict_no_buy_sell_in_pill() -> None:
     """The verdict pill rendered for TRIM must not contain the words 'buy' or 'sell'."""
     from adapters.visualization.tabs.positions import _verdict_pill_html
@@ -166,6 +186,9 @@ def test_render_position_card_verdict_no_buy_sell_in_pill() -> None:
     assert "TRIM" in pill, f"Verdict text 'TRIM' must appear in pill: {pill}"
 
 
+@pytest.mark.skip(
+    reason="Task 12: _verdict_pill_html removed — replaced by portfolio_table._pill"
+)
 def test_verdict_pill_html_hold() -> None:
     """HOLD verdict pill must render correctly."""
     from adapters.visualization.tabs.positions import _verdict_pill_html
@@ -176,6 +199,9 @@ def test_verdict_pill_html_hold() -> None:
     assert "sell" not in pill.lower()
 
 
+@pytest.mark.skip(
+    reason="Task 12: _verdict_pill_html removed — replaced by portfolio_table._pill"
+)
 def test_verdict_pill_html_reduce() -> None:
     """REDUCE verdict pill must render correctly."""
     from adapters.visualization.tabs.positions import _verdict_pill_html
@@ -185,6 +211,9 @@ def test_verdict_pill_html_reduce() -> None:
     assert "sell" not in pill.lower()
 
 
+@pytest.mark.skip(
+    reason="Task 12: _render_position_card removed — replaced by portfolio_review cards"
+)
 def test_render_position_card_data_gap_no_brief() -> None:
     """When no brief_holding is provided, card renders DATA-GAP for verdict — no crash."""
     import streamlit as st
@@ -217,6 +246,9 @@ def test_render_position_card_data_gap_no_brief() -> None:
     assert "msft" in all_html, "Ticker must always appear in card HTML"
 
 
+@pytest.mark.skip(
+    reason="Task 12: _render_position_card removed — replaced by portfolio_review cards"
+)
 def test_render_position_card_why_text_present() -> None:
     """The one-line why/meaning text from brief_holding must appear in the card."""
     collected: list[str] = []
