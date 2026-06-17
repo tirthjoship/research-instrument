@@ -1651,3 +1651,10 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
     # Single st.markdown call — ensures mockup order:
     #   _drift → Second opinion · Google AI → _teach → _flags_footer
     st.markdown(_compose(macro, ai_html), unsafe_allow_html=True)
+
+    # Lens-nav smooth-scroll shim — native hash anchors rerun the app instead of
+    # scrolling; this intercepts the bean click client-side (see lens_scroll.py).
+    if macro is not None:
+        from adapters.visualization.components.lens_scroll import render_lens_scroll
+
+        render_lens_scroll()
