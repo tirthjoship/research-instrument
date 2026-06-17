@@ -1,37 +1,36 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-16
-**Branch:** `develop` and `main` are ALIGNED (identical trees) as of release PR #63.
-**Phase:** **Cross-tab loading overlay + lazy tabs + header typography — SHIPPED to develop (PR #62) and main (PR #63). Session complete.**
+**As of:** 2026-06-17
+**Branch:** `feat/risk-tab-fixes` (off `develop`) — 9 commits, **not yet PR'd**. `develop` is ahead of `main` (Risk v8 release still pending).
+**Phase:** **Risk-tab fix sprint R01–R08 COMPLETE** — built (Sonnet subagents), gate-green at every step, live-eyeballed. Plus ADR-059 (verdict-logic decision). Ready to PR `feat/risk-tab-fixes` → `develop`.
 
 ## NEXT ACTION (start here)
-No open task from this stream. Header redesign + lazy tabs are live on develop and main.
-Open items from other streams: Risk tab v8 (PR #61 to develop, live eyeball still open);
-verdict-logic-extension decision (memory `project-verdict-logic-extension-question`).
+**Open PR `feat/risk-tab-fixes` → `develop`**, let CI confirm, merge. THEN cut the long-pending `develop` → `main` release (whole 6-tab redesign + Risk v8 + these fixes). Before the main merge: do the two interactive checks below.
 
 ## What shipped (this session)
-- **Lazy tabs + cross-tab loading overlay (ADR-058):** `components/tab_loading.py` (CSS+JS overlay,
-  left→right bar, per-tab label, real elapsed timer, shimmer, MutationObserver clear, 10s/90s escalation),
-  `dashboard.py` lazy tabs (`on_change="rerun"` + `if tabs[i].open:`) + per-tab `↻ refresh`. Fixes the
-  Home live-fetch starving other tabs into blank.
-- **Header typography (live-tuned to the approved mockup):** flat underline tabs (not Streamlit pill),
-  Fraunces title + tab labels, Newsreader subtitle, title/subtitle snug, centered compact layout.
-  Root causes fixed: Streamlit heading padding inflating the title box; tab-label text in a nested `<p>`
-  overriding the button font; `@st.fragment`/cli.py mypy reconciled with develop's PR #60.
+- **ADR-059** — verdict-logic extension DEFERRED: fundamentals stay attributed evidence (5 RAG squares), NOT folded into the verdict, until v1 clears its ADR-048 forward gate (currently 231 REDUCE flags logged, **0 resolvable** — 21-day horizon, earliest resolves ~July 2026). Locked constraint for any future extension: **asymmetric caution-only veto** (fundamentals may downgrade optimism / reinforce exits, never rescue a name from a REDUCE, never fabricate direction). Web-checked vs industry norms — foundations are mainstream.
+- **Risk-tab R01–R08** (all gate-green, eyeballed via solo CDP screenshot of the live tab):
+  - R01 header: drop v8/ADR-052, dynamic multi-flag banner copy + risk-line tooltip, Fraunces H1.
+  - R02 lens-nav beans → `#safe/#do/#teach` anchors + smooth scroll + hover lift.
+  - R03 factor chart (UI-only on honest 4): DOMINANT via `dominant_factor`, dynamic READ line, factor subtitles; VIF callout present-but-dormant.
+  - R04 ENB drill + R08 teach walkthrough → ported `.teach` card chrome; R08 Q2 live conic donut, all four Q&A data-driven.
+  - R05 who-owns ⓘ tooltip (both paths); R06 holdings rows = single clean %.
+  - R07 Google-AI panel moved between drift→teach (placement unit-tested); section header + re-run stub + honest empty-cache stub; off-local privacy guard.
+  - R09 (refresh button removal) was already done — carried in.
 
 ## Verification
-- Full `make check` green throughout: **2014 passed**, mypy strict clean (187 files), coverage **93.39%**.
-- CI green on both PRs (#62 feature→develop, #63 develop→main): Lint, Typecheck, Test Suite, Secret Scanning.
-- Header validated live via CDP screenshots against the approved mockup; user confirmed in a real browser.
-- develop and main trees verified byte-identical after #63.
+- Full `make check` green after every item: **2119 passed, 93.54%**, mypy strict + ruff clean.
+- Live eyeball: solo render of Risk tab screenshotted + compared band-by-band to `docs/fix-targets/screenshots/` — R01/R02(render)/R03/R04/R05/R06/R08 all faithful to mockup.
 
-## Merge/release trail
-`#62` feat/dashboard-legibility-redesign → develop · `#63` develop → main (release; 149 commits of backlog
-incl. screener redesign now on main). Prior: `#59` (earlier dashboard state), `#60` (CI mypy fix).
+## Open items (need an interactive browser / real cache — could NOT auto-verify)
+- **R02 scroll behaviour** — anchors render; native smooth-scroll needs a click in a real browser to confirm (Streamlit main-doc anchors, no JS hack added).
+- **R07 populated panel** — only renders with `is_local_runtime()` true AND `cited_cases.json` holding a `risk_second_opinion` entry (needs `weekly-brief` run with `GEMINI_API_KEY`). It is correctly HIDDEN otherwise (privacy). Placement drift→teach is test-verified.
+- **develop → main release** — the whole redesign, still pending user go.
+- **#57** fix/adherence-tz-naive-aware — unrelated, still open.
+- **Factor-universe expansion (9-factor, proper FF/AQR long-short)** — deferred from R03 to its OWN brief + ADR (config + pipeline + real-beta eyeball).
 
 ## Gotchas (carry forward)
-- Streamlit wraps a raw `<h1>` in `stHeadingWithActionElements` with 36px padding + an anchor element —
-  zero it via `.ri-app-title`/container rules, not margins. Tab label text is a nested
-  `[data-testid="stMarkdownContainer"] p` whose default Source Sans beats button-level font rules — style
-  the inner `<p>`. mypy runs in TWO envs (pre-commit isolated venv w/o streamlit; project venv w/ it) —
-  keep them in agreement (see pyproject research_candidates override).
+- Non-default Streamlit tabs screenshot BLANK; eyeball via the full dashboard + `scripts/screenshot_dashboard.py --tab 2`, or a solo render harness. (The harness waits for 6 tab buttons — a tab-less solo trips it.)
+- pre-commit auto-fixes (black/whitespace) on first run → `make check` "fails" once, passes on re-run. Watch for a *persistent* failure (e.g. ruff F541) vs a self-resolving reformat.
+- `data/reports/*.json` get regenerated by the test suite — leave them unstaged.
+- Verdict stays trend-break rule v1; fundamentals are evidence only (ADR-059).
