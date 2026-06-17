@@ -1454,6 +1454,13 @@ div[data-testid="stFileUploader"] span {
     font-size: 11px;
     letter-spacing: .06em;
 }
+
+/* ===== Portfolio Tab — Needs-Review Cards (Task 6) ===== */
+.pf-review{border:1px solid var(--ri-line);border-radius:10px;padding:12px 15px;margin-bottom:8px;transition:box-shadow .1s;}
+.pf-review:hover{box-shadow:0 2px 10px rgba(15,23,42,.08);}
+.pf-review.reduce{border-left:4px solid #991B1B;background:#FFFAFA;}
+.pf-review.trim{border-left:4px solid #DC2626;background:#FFFBFB;}
+.pf-review.review{border-left:4px solid #F59E0B;background:#FFFDF6;}
 </style>
 """
 
