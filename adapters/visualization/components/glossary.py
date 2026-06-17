@@ -321,7 +321,7 @@ GLOSSARY: dict[str, str] = {
     "Treemap colour": (
         "Tile size is the position's weight in your book. Tile colour is the "
         "lens you pick: realised profit/loss, today's move, or the verdict. "
-        "Colour is actual history, never a prediction."
+        "Colour is actual history, not a projection."
     ),
     "Dividend yield": (
         "Trailing dividend income as a percent of price, from the data provider. "
