@@ -3,7 +3,9 @@ repos:
     rev: v4.6.0
     hooks:
       - id: trailing-whitespace
+        stages: [pre-commit, pre-push]
       - id: end-of-file-fixer
+        stages: [pre-commit, pre-push]
       - id: check-yaml
       - id: check-added-large-files
         args: [--maxkb=500]
@@ -14,12 +16,14 @@ repos:
     hooks:
       - id: black
         language_version: python3.12
+        stages: [pre-commit, pre-push]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
       - id: isort
         args: ["--profile", "black"]
+        stages: [pre-commit, pre-push]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
