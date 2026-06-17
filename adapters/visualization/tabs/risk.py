@@ -1191,9 +1191,12 @@ def _who_owns(macro: dict[str, Any]) -> str:
 
     if not risk_contribution:
         return (
-            f'<div class="ri-sec">Who owns the bet <span style="font-family:\'IBM Plex Mono\',monospace;'
-            f"font-size:8px;font-weight:700;letter-spacing:.08em;background:{_PETROL};color:#fff;"
-            'padding:1px 6px;border-radius:6px;margin-left:8px;vertical-align:middle">RISK &#8800; $</span></div>'
+            f'<div class="ri-sec">Who owns the bet '
+            f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;"
+            f"letter-spacing:.08em;background:{_PETROL};color:#fff;"
+            'padding:1px 6px;border-radius:6px;margin-left:8px;vertical-align:middle">RISK &#8800; $</span> '
+            f'{tooltip("Risk contribution", "ⓘ")}'
+            f"</div>"
             f'<div class="barwrap" style="background:{_CARD};border:1px solid {_LINE};'
             f'border-radius:14px;padding:18px 20px">'
             f'<p style="font-size:12px;color:{_MUT}">DATA-GAP: risk contribution not available &#8212; '
@@ -1214,10 +1217,7 @@ def _who_owns(macro: dict[str, Any]) -> str:
     for ticker, rc in sorted_rc:
         meta = meta_lookup.get(ticker, {})
         name = str(meta.get("name", ticker))
-        weight = meta.get("weight")
         bar_pct = rc / max_rc * 100.0
-
-        weight_str = f"~{float(weight):.0%} of $" if weight is not None else ""
 
         rows += (
             f'<div class="risk-wrow">'
@@ -1225,13 +1225,7 @@ def _who_owns(macro: dict[str, Any]) -> str:
             f"<span style=\"color:{_FAINT};font-family:'IBM Plex Sans',sans-serif;font-size:9.5px\">{_html.escape(name)}</span>"
             "</span>"
             f'<span class="risk-wt"><span class="risk-wf" style="width:{bar_pct:.0f}%"></span></span>'
-            f'<span class="risk-wv">{rc:.0%} of risk'
-            + (
-                f'<br><span style="font-size:9px;color:{_FAINT}">{weight_str}</span>'
-                if weight_str
-                else ""
-            )
-            + "</span>"
+            f'<span class="risk-wv">{rc:.0%}</span>'
             "</div>"
         )
 
@@ -1268,7 +1262,8 @@ def _who_owns(macro: dict[str, Any]) -> str:
         f'<div class="ri-sec">Who owns the bet '
         f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;"
         f"letter-spacing:.08em;background:{_PETROL};color:#fff;"
-        'padding:1px 6px;border-radius:6px;margin-left:8px;vertical-align:middle">RISK &#8800; $</span>'
+        'padding:1px 6px;border-radius:6px;margin-left:8px;vertical-align:middle">RISK &#8800; $</span> '
+        f'{tooltip("Risk contribution", "ⓘ")}'
         f"</div>"
         f'<div class="barwrap" style="background:{_CARD};border:1px solid {_LINE};'
         'border-radius:14px;padding:18px 20px">'
@@ -1277,6 +1272,9 @@ def _who_owns(macro: dict[str, Any]) -> str:
         "<b>not dollar weight</b>. "
         + caption_example
         + "Trimming the biggest risk owners clears the flag fastest.</p>"
+        + '<p style="font-size:10.5px;color:var(--risk-mut);margin:0 0 10px">'
+        + "Right column = % of portfolio risk (Euler decomposition), not % of dollars"
+        + "</p>"
         + rows
         + gap_note
         + "</div>"

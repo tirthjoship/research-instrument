@@ -1260,7 +1260,7 @@ div[data-testid="stFileUploader"] span {
 /* ── Sector / weight bars ── */
 .risk-wrow {
     display: grid;
-    grid-template-columns: 140px 1fr 40px;
+    grid-template-columns: 140px 1fr 48px;
     align-items: center;
     gap: 10px;
     font-size: 12px;
@@ -1288,6 +1288,8 @@ div[data-testid="stFileUploader"] span {
     font-family: 'IBM Plex Mono', monospace;
     text-align: right;
     color: var(--risk-ink);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ── Google AI second-opinion panel ── */
