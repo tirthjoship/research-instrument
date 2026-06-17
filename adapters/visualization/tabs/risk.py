@@ -247,7 +247,7 @@ def _vitals(macro: dict[str, Any]) -> str:
         ci_text = f"±{(ci_list[1]-ci_list[0])/2:.2f}" if len(ci_list) == 2 else ""
         cards.append(
             f'<div class="risk-vit grey">'
-            f'<div class="risk-vk">Net beta (SPY)</div>'
+            f'<div class="risk-vk">Net beta (SPY){tooltip("Net beta", "ⓘ")}</div>'
             f'<div class="risk-vv">{spy_beta:.2f}<small>&times;</small></div>'
             f'<div class="risk-vs">{ci_text}&nbsp;&middot; grey = no line</div>'
             "</div>"
