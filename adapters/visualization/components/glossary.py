@@ -53,7 +53,8 @@ GLOSSARY: dict[str, str] = {
     ),
     "Beta": (
         "How much a stock (or your whole book) moves when the market moves. "
-        "+1.00 = exactly with the market."
+        "+1.00 = exactly with the market. Above 1.0 means it typically moves "
+        "more than the market (SPY = 1.0)."
     ),
     "Evidence grade": (
         "Where a stock ranks on present-day facts (valuation, quality, "
@@ -307,6 +308,28 @@ GLOSSARY: dict[str, str] = {
     "Trust the signal": (
         "Verdict from our pre-registered IC backtest gate. INCONCLUSIVE = no proven "
         "forward edge yet, so the ranking stays descriptive evidence, not a forecast."
+    ),
+    # ── Portfolio tab redesign terms (Task 0) ─────────────────────────────────
+    "Concentration (top 5)": (
+        "The combined weight of your five largest positions. Higher means more "
+        "of your book rides on a few names — more single-name risk."
+    ),
+    "Needs review": (
+        "Holdings where the discipline rule fired (REDUCE, TRIM, or REVIEW). "
+        "This list grows with problems, not with how many stocks you own."
+    ),
+    "Treemap colour": (
+        "Tile size is the position's weight in your book. Tile colour is the "
+        "lens you pick: realised profit/loss, today's move, or the verdict. "
+        "Colour is actual history, never a prediction."
+    ),
+    "Dividend yield": (
+        "Trailing dividend income as a percent of price, from the data provider. "
+        "Shown as a dash when the provider reports none."
+    ),
+    "Alpha vs SPY": (
+        "Your portfolio's return minus the S&P 500's over the same window. "
+        "Positive means you beat the benchmark; actual, not projected."
     ),
 }
 
