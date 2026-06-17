@@ -1473,9 +1473,10 @@ def _teach(macro: dict[str, Any]) -> str:  # noqa: C901
         # Build bold-phrase list for Q4 confirmation line
         confirm_parts = [f"<b>{_flag_short(f)}</b>" for f in flags]
         confirm_str = " and ".join(confirm_parts)
+        _verb = "is" if n_flags == 1 else "are"
         q4_body = (
             f'<p class="ans">Confirm the {confirm_str} '
-            "are intentional. Nothing here says to enter or exit positions.</p>"
+            f"{_verb} intentional. Nothing here says to enter or exit positions.</p>"
         )
 
     return (
