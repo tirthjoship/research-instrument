@@ -69,7 +69,7 @@ profile = "black"
 [tool.mypy]
 python_version = "3.12"
 strict = true
-exclude = ["tests/", "audit_sentiment.py"]
+exclude = ["tests/", "scripts/audit_sentiment.py"]
 
 [[tool.mypy.overrides]]
 module = [
