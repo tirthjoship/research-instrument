@@ -354,3 +354,24 @@ def test_pc_labels_two_pcs_mixed_dominance():
     assert labels[0] == "Energy"
     assert labels[1] == "Bet 2"
     assert data_gap is True
+
+
+def test_label_principal_components_dedups_same_sector() -> None:
+    """Two PCs dominated by the same sector → second marked within-sector spread,
+    so the ENB drill never shows the same bet name twice."""
+    from application.macro_beta_use_case import _label_principal_components
+
+    sectors = {
+        "A": "Information Technology",
+        "B": "Information Technology",
+        "X": "Energy",
+    }
+    labels, gap = _label_principal_components(
+        [["A", "B"], ["A", "B"], ["X"]], lambda t: sectors[t]
+    )
+    assert labels == (
+        "Information Technology",
+        "Information Technology (within-sector spread)",
+        "Energy",
+    )
+    assert gap is False

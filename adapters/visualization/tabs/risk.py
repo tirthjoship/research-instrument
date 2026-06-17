@@ -882,11 +882,12 @@ def _enb_section(macro: dict[str, Any]) -> str:
             return ""
         if i == 0:
             return (
-                "All large-cap tech-market names load the same way. "
-                "Reducing one tech name to add another does NOT reduce this bet."
+                "Your book's largest shared axis. The names loading on it move "
+                "together; swapping one for another <i>within</i> this axis does "
+                "NOT reduce the bet."
             )
         if i == 1:
-            return "A secondary tilt: names that rise when rates fall &#8212; a genuinely different axis from pure market direction."
+            return "A secondary axis &#8212; a genuinely different, smaller source of risk from the dominant one."
         return "A thin idiosyncratic spread &#8212; the only place your stock-picking actually shows up."
 
     chaps = ""
@@ -970,8 +971,8 @@ def _enb_section(macro: dict[str, Any]) -> str:
             f"background:{_AMBER};color:#fff;font-family:'IBM Plex Mono';"
             "font-weight:700;font-size:11px;display:flex;align-items:center;"
             'justify-content:center;margin-top:1px">&#10005;</span>'
-            "<div><b>Don't reshuffle within Bet 1.</b> "
-            "Trading tech-for-tech leaves ENB flat &#8212; it's the same bet wearing a different ticker.</div>"
+            "<div><b>Don't reshuffle within your largest bet.</b> "
+            "Swapping one name for another on the same axis leaves ENB flat &#8212; it's the same bet wearing a different ticker.</div>"
             "</div>"
         )
         + f'<div style="display:flex;gap:11px;align-items:flex-start;font-size:13px;'
@@ -987,6 +988,9 @@ def _enb_section(macro: dict[str, Any]) -> str:
         "</div></details>"
     )
 
+    # Data-driven framing: the narrative must match the actual decomposition.
+    # A book is "concentrated" only when one axis dominates the variance.
+    concentrated = bool(pc_variance) and pc_variance[0] >= 0.40
     main_enb = (
         '<div class="risk-enb">'
         '<div class="risk-enbnum">'
@@ -999,13 +1003,19 @@ def _enb_section(macro: dict[str, Any]) -> str:
         f"<b>~{enb:.0f} independent bets</b>. The first principal portfolio "
         f"&#8212; essentially &#8220;{_bet_name(0)}&#8221; &#8212; "
         + (
-            f"alone carries <b>{pc_variance[0]:.0%}</b> of your variance. "
+            f"carries <b>{pc_variance[0]:.0%}</b> of your variance"
+            f"{' &#8212; it dominates' if concentrated else ', the largest single share'}. "
             if pc_variance
             else "variance attribution is not yet available. "
         )
-        + "This is the rigorous version of the concentration flag: not "
-        "&#8220;you own too many of one thing,&#8221; but "
-        "<b>&#8220;you own one thing, many ways.&#8221;</b></p>"
+        + (
+            "This is the rigorous version of the concentration flag: "
+            "<b>one axis dominates</b> &#8212; you own &#8220;one thing, many ways.&#8221;</p>"
+            if concentrated
+            else "No single axis dominates &#8212; your risk is <b>genuinely spread</b> "
+            "across many independent bets, not one. The concentration flag is about "
+            "the systematic-share dial above, not this.</p>"
+        )
         + pc_rows
         + "</div></div>"
     )
