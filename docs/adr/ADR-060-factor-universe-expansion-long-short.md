@@ -1,7 +1,7 @@
 # ADR-060: Expand the macro-beta factor universe via long-short FF/AQR factors — not long-only ETF proxies
 
 **Date:** 2026-06-17
-**Status:** Accepted (decision); **build deferred to a dedicated, leakage-aware effort**
+**Status:** Accepted — **BUILT 2026-06-17** (9 factors live; see "Build outcome" below)
 **Deciders:** Tirth Joshi
 **Builds on:** Risk-tab v8 (ADR-052), the R03 fix-sprint item, CLAUDE.md non-negotiable #2 (no look-ahead bias)
 
@@ -51,6 +51,22 @@ proxies. The R03 UI work (DOMINANT badge, READ line, subtitles, dormant VIF call
 - The expansion is documented, not silently deferred — this ADR is the spec for the next focused effort.
 - Re-entry: a dedicated session — methodology review (`ds-methodology-review`) → ADR for the chosen factor
   set + data source + PIT scheme → build (data adapter, config, weekly-brief) → real-beta eyeball.
+
+## Build outcome (2026-06-17)
+
+Built on `feat/risk-tab-fixes`. Final factor set: **`[SPY, SMB, HML, MOM, RMW, CMA, TLT, UUP, XLE]`** (9).
+- `adapters/data/fama_french_provider.py` — fetches FF5 + Momentum daily (Ken French, `requests`), caches to
+  `data/cache/fama_french_daily.json`, returns a synthetic cumulative price-index per factor so it satisfies the
+  existing `PriceProvider` contract (`daily_returns` recovers the factor return). Point-in-time: never returns
+  dates after `end`. 14 fixture tests (no network).
+- `cli.py` routes `SMB/HML/MOM/RMW/CMA` → FF provider, ETF tickers → yfinance, in `_build_weekly_brief`.
+- **`history_days` raised to 500** — FF data lags ~6 weeks (publication), so the regression window had to widen
+  for the truncated FF series to clear the 252-pt headline requirement. **Consequence: the macro-beta readout is
+  now bounded by the FF publication window (~6 weeks stale).** Acceptable for a descriptive risk tool; a known
+  tradeoff of authentic FF factors.
+- **Live result validated:** SPY β≈1.20 (DOMINANT), RMW −0.35 (SHORT, profitability tilt), TLT −0.14 (SHORT);
+  SMB/HML/MOM/CMA/UUP/XLE **suppressed** (CI straddles zero). Max VIF ≈ 2.3 (HML/CMA) — none >5, so the cluster
+  callout stays dormant honestly. This is the real decomposition the rejected collinear ETF proxies would have faked.
 
 ## Related
 
