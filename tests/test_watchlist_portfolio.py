@@ -5,8 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-import pytest
-
 # ── Task 32/33: Watchlist folded into positions tab ──────────────────────────
 
 
@@ -35,15 +33,6 @@ def test_positions_render_importable() -> None:
     from adapters.visualization.tabs.positions import render
 
     assert callable(render)
-
-
-@pytest.mark.skip(
-    reason="Task 12: _render_portfolio_summary removed — replaced by build_hero_html"
-)
-def test_positions_portfolio_summary_importable() -> None:
-    from adapters.visualization.tabs.positions import _render_portfolio_summary
-
-    assert callable(_render_portfolio_summary)
 
 
 def test_positions_pnl_chart_importable() -> None:
