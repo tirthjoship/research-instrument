@@ -47,33 +47,29 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
 
     # LOCAL runtime below this point.
 
+    # Unified honest stub: used for both result=None (cache empty) and
+    # result.data_gap (template path or service unavailable).
+    _STUB_HEADER = (
+        '<div class="ri-sec">'
+        '<span class="ri-tg" style="color:var(--petrol)">Second opinion</span>'
+        " · Google AI"
+        "</div>"
+    )
+    _STUB_BODY = (
+        '<div class="risk-ai">'
+        '<div class="risk-aifoot">'
+        "Google AI second opinion not available"
+        " — set <code>GEMINI_API_KEY</code> and run"
+        " <code>weekly-brief --cite-cases</code> to enable it."
+        "</div>"
+        "</div>"
+    )
+
     if result is None:
-        # Cache empty — show honest data-gap stub (local only).
-        return (
-            '<div class="ri-sec">'
-            '<span class="ri-tg" style="color:var(--petrol)">Second opinion</span>'
-            " · Google AI"
-            "</div>"
-            '<div class="risk-ai">'
-            '<div class="risk-aifoot">'
-            "Run <code>weekly-brief</code> with <code>GEMINI_API_KEY</code> set "
-            "to populate the Google AI second opinion."
-            "</div>"
-            "</div>"
-        )
+        return _STUB_HEADER + _STUB_BODY
 
     if result.data_gap:
-        return (
-            '<div class="ri-sec">'
-            '<span class="ri-tg" style="color:var(--petrol)">Second opinion</span>'
-            " · Google AI"
-            "</div>"
-            '<div class="risk-ai">'
-            '<div class="risk-aifoot">'
-            "&#128269; Google AI second opinion unavailable — data gap or service unreachable."
-            "</div>"
-            "</div>"
-        )
+        return _STUB_HEADER + _STUB_BODY
 
     # Build numbered in_favor + to_watch point items
     def _norm(s: str) -> str:
@@ -118,14 +114,12 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
         )
     )
 
-    # Re-run instruction: a non-interactive label explaining how to refresh the
-    # cached result via the CLI. A live Gemini call at render time is out of scope
-    # (cache-first, spec §9). Rendered as a styled span so it reads as an
-    # instruction, not a broken disabled widget.
-    rerun_btn = (
-        '<span class="risk-aibtn">'
-        "&#8635; Re-run: <code>weekly-brief --gemini</code>"
-        "</span>"
+    # Info line: explains how the cached result is refreshed (no fake interactivity).
+    refresh_info = (
+        '<div class="risk-aifoot" style="margin-top:6px;">'
+        "Updated when <code>weekly-brief --cite-cases</code> runs with a Google AI key"
+        " — third-party, never the verdict."
+        "</div>"
     )
 
     return (
@@ -149,7 +143,7 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
         '<div class="risk-aiq">'
         "Google AI was asked to find blind spots in the dials above — "
         "it does not set the verdict"
-        "</div>" + points_html + rerun_btn + "</div>"
+        "</div>" + points_html + refresh_info + "</div>"
         # Footer / attribution
         '<div class="risk-aifoot">'
         "<b>This is a third-party second opinion, shown as Google AI's — "
