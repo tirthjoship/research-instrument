@@ -978,17 +978,12 @@ def _enb_section(macro: dict[str, Any]) -> str:
         var_pct = f"{pc_variance[i]:.0%}" if i < len(pc_variance) else "?"
         name = _bet_name(i)
         desc = _bet_desc(i)
+        cnum_color = f'style="color:{_AMBER}"' if i == 0 else ""
         chaps += (
-            f'<div style="padding:11px 0;border-bottom:1px solid #eef3f4">'
-            f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
-            f'font-weight:600;color:{_AMBER if i==0 else _PETROL};letter-spacing:.1em">'
-            f"BET {i+1} &middot; {var_pct} of your risk</div>"
-            f"<div style=\"font-family:'Fraunces',serif;font-weight:700;font-size:14px;margin:3px 0 4px\">{name}</div>"
-            + (
-                f'<p style="font-size:12.5px;line-height:1.55;color:#33474c;margin-top:4px">{desc}</p>'
-                if desc
-                else ""
-            )
+            f'<div class="chap">'
+            f'<div class="cnum" {cnum_color}>BET {i+1} &middot; {var_pct} of your risk</div>'
+            f'<div class="cq">{name}</div>'
+            + (f'<p class="ans">{desc}</p>' if desc else "")
             + "</div>"
         )
 
@@ -1008,17 +1003,13 @@ def _enb_section(macro: dict[str, Any]) -> str:
             "</div>"
         )
 
-    # Sector gaps note for "how to raise ENB"
-    gaps_text = ""
+    # Build the "how to raise" sector-gap action row using .act / .act .ic classes.
+    # The first .act row is data-driven (sector_gaps); rows 2 and 3 are static guidance.
     if sector_gaps:
-        gaps_text = (
-            f'<div style="display:flex;gap:11px;align-items:flex-start;font-size:13px;'
-            f'line-height:1.5;color:#33474c;margin-bottom:9px">'
-            f'<span style="flex-shrink:0;width:22px;height:22px;border-radius:6px;'
-            f"background:{_AMBER};color:#fff;font-family:'IBM Plex Mono';"
-            "font-weight:700;font-size:11px;display:flex;align-items:center;"
-            'justify-content:center;margin-top:1px">&#8593;</span>'
-            f"<div><b>Add exposure on an axis you're empty on.</b> "
+        levers_rows = (
+            '<div class="act">'
+            '<span class="ic">&#8593;</span>'
+            f"<div><b>Add exposure on an axis you&#8217;re empty on.</b> "
             f"The book has zero weight in: "
             f'{", ".join(_html.escape(g) for g in sector_gaps)}. '
             "Adding any one loads a new principal portfolio &#8594; ENB rises. "
@@ -1027,48 +1018,51 @@ def _enb_section(macro: dict[str, Any]) -> str:
             'letter-spacing:.05em">DESCRIPTIVE &middot; NOT A TRADE CALL</span>'
             "</div></div>"
         )
-
-    drill = (
-        '<details class="teach" style="border-left-color:var(--risk-amber);margin-top:10px" open>'
-        '<summary style="list-style:none;cursor:pointer;padding:14px 17px;'
-        f"font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;"
-        f"text-transform:uppercase;color:{_PETROL};font-weight:600;"
-        'display:flex;justify-content:space-between;align-items:center">'
-        "<span style=\"font-family:'Fraunces',serif;font-weight:700;font-size:15px;"
-        f'text-transform:none;color:{_INK}">What are my ~{enb:.0f} bets, and how do I raise it?</span>'
-        "<span>&#9660;</span></summary>"
-        '<div style="padding:4px 17px 14px">'
-        f'<p style="margin:6px 0 12px;font-size:12.5px;line-height:1.55;color:#33474c">'
-        f"<b>&#8220;{enb:.1f} effective bets&#8221; means:</b> if you redrew your {total_h} "
-        "holdings as a handful of <i>uncorrelated</i> wagers, you'd have about "
-        f"{enb:.0f}. Names aren&#8217;t bets &#8212; <b>independent risks</b> are. "
-        "Here's what the bets actually are:</p>"
-        + chaps
-        + gap_note
-        + '<div style="margin-top:8px">'
-        + gaps_text
-        + (
-            f'<div style="display:flex;gap:11px;align-items:flex-start;font-size:13px;'
-            f'line-height:1.5;color:#33474c;margin-bottom:9px">'
-            f'<span style="flex-shrink:0;width:22px;height:22px;border-radius:6px;'
-            f"background:{_AMBER};color:#fff;font-family:'IBM Plex Mono';"
-            "font-weight:700;font-size:11px;display:flex;align-items:center;"
-            'justify-content:center;margin-top:1px">&#10005;</span>'
-            "<div><b>Don't reshuffle within your largest bet.</b> "
-            "Swapping one name for another on the same axis leaves ENB flat &#8212; it's the same bet wearing a different ticker.</div>"
-            "</div>"
+    else:
+        levers_rows = (
+            '<div class="act">'
+            '<span class="ic">&#8593;</span>'
+            "<div><b>Add exposure on an axis you&#8217;re empty on.</b> "
+            "Diversify into an axis that moves differently from your current holdings &#8594; ENB rises. "
+            "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;"
+            "background:#eef1f4;color:var(--risk-mut);padding:1px 6px;border-radius:5px;"
+            'letter-spacing:.05em">DESCRIPTIVE &middot; NOT A TRADE CALL</span>'
+            "</div></div>"
         )
-        + f'<div style="display:flex;gap:11px;align-items:flex-start;font-size:13px;'
-        f'line-height:1.5;color:#33474c">'
-        f'<span style="flex-shrink:0;width:22px;height:22px;border-radius:6px;'
-        f"background:{_AMBER};color:#fff;font-family:'IBM Plex Mono';"
-        "font-weight:700;font-size:11px;display:flex;align-items:center;"
-        'justify-content:center;margin-top:1px">i</span>'
+
+    levers_html = (
+        '<div class="levers" style="border-left-color:var(--risk-amber)">'
+        '<div class="lvh">How to react &#8212; raise effective bets</div>'
+        + levers_rows
+        + '<div class="act">'
+        '<span class="ic">&#10005;</span>'
+        "<div><b>Don&#8217;t reshuffle within your largest bet.</b> "
+        "Swapping one name for another on the same axis leaves ENB flat &#8212; it&#8217;s the same bet wearing a different ticker.</div>"
+        "</div>"
+        '<div class="act">'
+        '<span class="ic">i</span>'
         "<div><b>This is descriptive, not advice.</b> "
         "It names the axes you lack; it does not tell you to enter any of them.</div>"
         "</div>"
         "</div>"
-        "</div></details>"
+    )
+
+    drill = (
+        '<details class="teach" style="border-left-color:var(--risk-amber);margin-top:10px" open>'
+        "<summary>"
+        f'<span class="h">What are my ~{enb:.0f} bets, and how do I raise it?</span>'
+        "<span>&#9660;</span>"
+        "</summary>"
+        '<div class="tbody">'
+        f'<p class="ans" style="margin:6px 0 12px">'
+        f"<b>&#8220;{enb:.1f} effective bets&#8221; means:</b> if you redrew your {total_h} "
+        "holdings as a handful of <i>uncorrelated</i> wagers, you&#8217;d have about "
+        f"{enb:.0f}. Names aren&#8217;t bets &#8212; <b>independent risks</b> are. "
+        "Here&#8217;s what the bets actually are:</p>"
+        + chaps
+        + gap_note
+        + levers_html
+        + "</div></details>"
     )
 
     # Data-driven framing: the narrative must match the actual decomposition.
