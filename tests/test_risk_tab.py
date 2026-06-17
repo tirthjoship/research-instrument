@@ -409,6 +409,27 @@ def test_risk_tab_who_owns_shows_risk_and_dollar() -> None:
     assert "14%" in html or "14 %" in html, "Who-owns must show risk % (NVDA=14%)"
 
 
+def test_risk_tab_enb_copy_concentrated_when_one_axis_dominates() -> None:
+    """A dominant PC-1 (>=40% variance) → 'one thing, many ways' framing."""
+    from adapters.visualization.tabs import risk
+
+    html = risk._compose(_MACRO_V8)  # pc_variance[0] = 0.64
+    assert "one thing, many ways" in html
+    assert "genuinely spread" not in html
+
+
+def test_risk_tab_enb_copy_diversified_when_no_axis_dominates() -> None:
+    """A spread book (PC-1 < 40%, high ENB) must NOT claim concentration."""
+    from adapters.visualization.tabs import risk
+
+    diversified = {**_MACRO_V8, "enb": 23.0, "pc_variance": [0.21, 0.10, 0.08]}
+    html = risk._compose(diversified)
+    assert "genuinely spread" in html, "diversified book must read as spread"
+    assert (
+        "one thing, many ways" not in html
+    ), "must NOT assert concentration when no axis dominates"
+
+
 def test_risk_tab_compose_is_pure_no_streamlit() -> None:
     """_compose must not import or call streamlit — pure string composer."""
     # Ensure module is loaded

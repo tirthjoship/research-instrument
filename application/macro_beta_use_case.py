@@ -56,13 +56,22 @@ def _label_principal_components(
     """
     labels: list[str] = []
     data_gap = False
+    used: dict[str, int] = {}
     for i, top_tickers in enumerate(loadings):
         named_sectors = [sector_fn(t) for t in top_tickers if sector_fn(t) != "Unknown"]
         if named_sectors:
             counts = Counter(named_sectors)
             top_sector, top_count = counts.most_common(1)[0]
             if top_count / len(named_sectors) >= 0.60:
-                labels.append(top_sector)
+                # Disambiguate a second/third PC dominated by the same sector:
+                # it is a within-sector dispersion axis, not the same bet twice.
+                used[top_sector] = used.get(top_sector, 0) + 1
+                label = (
+                    top_sector
+                    if used[top_sector] == 1
+                    else f"{top_sector} (within-sector spread)"
+                )
+                labels.append(label)
                 continue
         labels.append(f"Bet {i + 1}")
         data_gap = True
