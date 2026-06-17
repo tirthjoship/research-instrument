@@ -1494,6 +1494,25 @@ div[data-testid="stFileUploader"] span {
 .act:last-child{margin-bottom:0}
 .act .ic{flex-shrink:0;width:22px;height:22px;border-radius:6px;background:var(--risk-amber);color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .act b{color:var(--risk-ink)}
+
+/* ===== Portfolio Tab — Needs-Review Cards (Task 6) ===== */
+.pf-review{border:1px solid var(--ri-line);border-radius:10px;padding:12px 15px;margin-bottom:8px;transition:box-shadow .1s;}
+.pf-review:hover{box-shadow:0 2px 10px rgba(15,23,42,.08);}
+.pf-review.reduce{border-left:4px solid #991B1B;background:#FFFAFA;}
+.pf-review.trim{border-left:4px solid #DC2626;background:#FFFBFB;}
+.pf-review.review{border-left:4px solid #F59E0B;background:#FFFDF6;}
+
+/* ===== Portfolio Tab — Squarified Treemap (Task 7) ===== */
+.pf-stage{position:relative;width:100%;background:#E2E8F0;border-radius:11px;overflow:hidden;}
+.pf-sec{position:absolute;border-radius:8px;overflow:hidden;background:#0F172A;}
+.pf-sechdr{position:absolute;top:0;left:0;right:0;height:16px;background:rgba(15,23,42,.82);color:#fff;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;display:flex;justify-content:space-between;white-space:nowrap;}
+.pf-tile{position:absolute;overflow:hidden;text-decoration:none;padding:4px 6px;display:flex;flex-direction:column;justify-content:center;}
+.pf-tile:hover{outline:3px solid #0F172A;z-index:8;}
+.pf-tile:hover .pf-tip{opacity:1;}
+.pf-tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;border-radius:9px;padding:8px 10px;width:170px;opacity:0;pointer-events:none;transition:.12s;z-index:50;}
+.pf-tip-tt{font-family:'Fraunces',serif;font-weight:700;font-size:.85rem;margin-bottom:3px;}
+.pf-tip-row{font-size:.69rem;color:#CBD5E1;display:flex;justify-content:space-between;margin-top:2px;}
+.pf-tip-row b{color:#fff;}
 </style>
 """
 
