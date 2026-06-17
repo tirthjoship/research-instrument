@@ -8,9 +8,9 @@ from __future__ import annotations
 import json
 import os
 
+from adapters.ml.gemini_models import generate_with_fallback
 from domain.case_models import CaseContext, CasePoint, CaseResult
 
-_MODEL = "gemini-flash-latest"
 _PROMPT = (
     "You summarise an investment research CASE from ONLY the facts and cited article titles given. "
     'Output STRICT JSON: {{"in_favor":[{{"text":..,"source":..}}],"to_watch":[{{"text":..,"source":..}}]}}. '
@@ -44,15 +44,11 @@ class GeminiNarratorAdapter:
         if not self._key:
             return CaseResult((), (), True)
         try:
-            import google.generativeai as genai  # lazy import (matches GeminiEventClassifier)
-
-            genai.configure(api_key=self._key)
-            model = genai.GenerativeModel(_MODEL)
             prompt = _PROMPT.format(
                 facts="\n".join(ctx.facts),
                 news="\n".join(f"[{s}] {t}" for s, t in ctx.news) or "(none)",
             )
-            resp = model.generate_content(prompt)
-            return parse_case_json(resp.text)
+            text = generate_with_fallback(self._key, prompt)
+            return parse_case_json(text)
         except Exception:  # noqa: BLE001 — network/quota/parse → honest gap
             return CaseResult((), (), True)

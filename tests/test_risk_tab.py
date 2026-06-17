@@ -587,3 +587,61 @@ def test_risk_tab_enb_residual_is_honest() -> None:
         "Residual PC-4 row must display 13% (= 1 - 0.87). "
         f"Got PC4 segment: {pc4_segment}"
     )
+
+
+# ---------------------------------------------------------------------------
+# R07 — _compose ai_html injection ordering
+# ---------------------------------------------------------------------------
+
+
+def test_compose_ai_html_placed_after_drift_before_teach() -> None:
+    """When ai_html is provided, _compose must inject it AFTER drift and BEFORE teach.
+
+    Mockup order: _drift → [Second opinion · Google AI] → _teach → _flags_footer
+    """
+    from adapters.visualization.tabs import risk
+
+    sentinel = '<div class="test-ai-sentinel">AI_PANEL_HERE</div>'
+    html = risk._compose(_MACRO_V8, ai_html=sentinel)
+
+    assert sentinel in html, "_compose must include ai_html when provided"
+
+    # Verify ordering: drift section marker < ai_html < teach section marker.
+    # _drift emits "risk-drift" class; _teach emits id="teach" on its section div.
+    drift_idx = html.find("risk-drift")
+    ai_idx = html.find("AI_PANEL_HERE")
+    teach_idx = html.find('id="teach"')
+
+    assert drift_idx != -1, "drift section must be present (risk-drift class)"
+    assert ai_idx != -1, "AI sentinel must appear in composed HTML"
+    assert teach_idx != -1, 'teach section must be present (id="teach")'
+
+    assert (
+        drift_idx < ai_idx
+    ), f"AI panel (pos {ai_idx}) must appear AFTER drift (pos {drift_idx})"
+    assert (
+        ai_idx < teach_idx
+    ), f"AI panel (pos {ai_idx}) must appear BEFORE teach section (pos {teach_idx})"
+
+
+def test_compose_empty_ai_html_not_inserted() -> None:
+    """When ai_html is empty string (default), _compose must not add a blank entry."""
+    from adapters.visualization.tabs import risk
+
+    html_default = risk._compose(_MACRO_V8)
+    html_empty = risk._compose(_MACRO_V8, ai_html="")
+
+    assert (
+        html_default == html_empty
+    ), "_compose with ai_html='' must produce the same output as calling without ai_html"
+
+
+def test_compose_ai_html_not_present_without_arg() -> None:
+    """_compose without ai_html must not contain any AI-panel markers (pure test)."""
+    from adapters.visualization.tabs import risk
+
+    html = risk._compose(_MACRO_V8)
+    # No Google-AI specific CSS class should appear from _compose alone
+    assert (
+        "risk-ai" not in html
+    ), "_compose alone must not inject risk-ai CSS class — AI HTML comes from render()"

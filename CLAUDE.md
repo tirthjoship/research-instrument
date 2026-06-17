@@ -26,6 +26,12 @@ make daily-scan    # run daily sentiment scan and update recommendations
 pytest tests/test_domain_models.py::test_signal_valid_creation -v
 ```
 
+**Run discipline (efficiency — ADR-061):** the suite is ~2145 tests and `make check` is serial + verbose +
+coverage (~40-45s). While iterating, run **targeted** `pytest <file>`; run the full `make check` only at
+checkpoints / before commit — not after every edit. A dedicated token/efficiency pass (pytest-xdist,
+`make test-fast`, module decomposition of the 3440-LOC `cli.py` / 1710-LOC `risk.py`, cheaper verification) is
+planned — see **ADR-061** and the `project-efficiency-bottlenecks` memory.
+
 ## Architecture
 
 **Hexagonal (Ports & Adapters) with inward-pointing dependencies.**
