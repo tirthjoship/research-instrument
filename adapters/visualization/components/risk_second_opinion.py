@@ -76,27 +76,35 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
         )
 
     # Build numbered in_favor + to_watch point items
+    def _norm(s: str) -> str:
+        return s.strip().rstrip(":.").strip().lower()
+
+    def _point_html(n: int, text: str, source_tag: str) -> str:
+        # Only show the [source] tag when it adds information — i.e. it is not
+        # an echo of the point text. The TemplateCaseSummarizer (offline / no
+        # GEMINI key) echoes the metric into both text and source_tag, which
+        # would otherwise render as a confusing "metric: [metric]" duplicate.
+        nt, ns = _norm(text), _norm(source_tag)
+        src = (
+            f'<span style="font-size:9px;color:var(--risk-faint);margin-left:4px;">'
+            f"[{_html.escape(source_tag)}]</span>"
+            if ns and ns != nt and ns not in nt and nt not in ns
+            else ""
+        )
+        return (
+            f'<div class="risk-aipt">'
+            f'<span class="risk-n">{n}</span>'
+            f"<div>{_html.escape(text)}{src}</div>"
+            f"</div>"
+        )
+
     points: list[str] = []
     idx = 1
     for pt in result.in_favor:
-        points.append(
-            f'<div class="risk-aipt">'
-            f'<span class="risk-n">{idx}</span>'
-            f"<div>{_html.escape(pt.text)}"
-            f'<span style="font-size:9px;color:var(--risk-faint);margin-left:4px;">'
-            f"[{_html.escape(pt.source_tag)}]</span></div>"
-            f"</div>"
-        )
+        points.append(_point_html(idx, pt.text, pt.source_tag))
         idx += 1
     for pt in result.to_watch:
-        points.append(
-            f'<div class="risk-aipt">'
-            f'<span class="risk-n">{idx}</span>'
-            f"<div>{_html.escape(pt.text)}"
-            f'<span style="font-size:9px;color:var(--risk-faint);margin-left:4px;">'
-            f"[{_html.escape(pt.source_tag)}]</span></div>"
-            f"</div>"
-        )
+        points.append(_point_html(idx, pt.text, pt.source_tag))
         idx += 1
 
     points_html = (
