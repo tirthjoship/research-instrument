@@ -731,8 +731,12 @@ def _factor_chart(macro: dict[str, Any]) -> str:
             "The whiskers widen because of this overlap.</p>"
         )
 
+    # Sort factor rows by descending |net_beta| so highest-impact factors rise to the top.
+    # Display order only — does not affect which factors are shown or badge/READ logic.
+    sorted_factors = sorted(betas.items(), key=lambda kv: abs(kv[1]), reverse=True)
+
     rows = ""
-    for factor, beta_val in betas.items():
+    for factor, beta_val in sorted_factors:
         is_suppressed = factor in suppressed
         ci = ci_by_factor.get(factor) or []
 
@@ -866,11 +870,41 @@ def _factor_chart(macro: dict[str, Any]) -> str:
 
     read_html = f"<b>READ:</b> {_html.escape(read_body)}.{dom_note}"
 
-    # --- Combined .fnote block: READ + whisker footnote ---
+    # --- "Beyond the market" tilts line ---
+    # Non-SPY, non-suppressed factors with their direction and human label.
+    tilt_factors = [
+        (f, v) for f, v in betas.items() if f != "SPY" and f not in suppressed
+    ]
+    if tilt_factors:
+        tilt_parts: list[str] = []
+        for tf, tv in tilt_factors:
+            direction = "long" if tv >= 0.0 else "short"
+            human = _FACTOR_DISPLAY_NAMES.get(tf, tf)
+            tilt_parts.append(f"{direction} {human}")
+        tilt_list = (
+            " and ".join(tilt_parts)
+            if len(tilt_parts) <= 2
+            else (", ".join(tilt_parts[:-1]) + ", and " + tilt_parts[-1])
+        )
+        tilts_text = (
+            "Beyond the market (SPY): the distinctive style tilts are "
+            + tilt_list
+            + " &#8212; the other style factors sit near zero."
+        )
+    else:
+        tilts_text = (
+            "Beyond the market, no style factor stands out &#8212; "
+            "the book is essentially a broad-market bet."
+        )
+
+    tilts_html = f'<br><span style="color:{_FAINT}">' + tilts_text + "</span>"
+
+    # --- Combined .fnote block: READ + tilts line + whisker footnote ---
     fnote_html = (
         f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;color:{_FAINT};"
         'margin-top:12px;border-top:1px dashed var(--risk-line);padding-top:9px;line-height:1.6">'
         + read_html
+        + tilts_html
         + "<br>The thin whiskers are <b>90% confidence intervals</b>; greyed factors have "
         "an interval that straddles zero &#8212; not distinguishable from &#8220;no tie&#8221;, "
         "so we don&#8217;t pretend they&#8217;re real."
