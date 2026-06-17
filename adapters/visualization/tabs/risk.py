@@ -537,7 +537,7 @@ def _evidence_bands(macro: dict[str, Any]) -> str:
         "<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
         f"letter-spacing:.13em;text-transform:uppercase;color:{_FAINT};"
         'display:flex;justify-content:space-between;margin-bottom:7px">'
-        f'<span>{tooltip("Net beta", "Net market beta (SPY)")}</span>'
+        f'<span>NET MARKET BETA (SPY){tooltip("Net beta", "ⓘ")}</span>'
         f'<span style="color:{_INK};font-weight:600">+{spy_beta:.2f} &middot; {beta_label} '
         f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:9px;"
         f"font-weight:600;padding:1px 7px;border-radius:6px;margin-left:7px;"
@@ -677,6 +677,20 @@ _FACTOR_DISPLAY_NAMES: dict[str, str] = {
     "XLE": "Energy",
 }
 
+# Maps each factor ticker to its glossary term for hover-cloud tooltips.
+# Factors absent from this map render no tooltip (graceful degradation).
+_FACTOR_GLOSSARY_TERMS: dict[str, str] = {
+    "SPY": "Market (SPY)",
+    "SMB": "Size (SMB)",
+    "HML": "Value (HML)",
+    "MOM": "Momentum (MOM)",
+    "RMW": "Profitability (RMW)",
+    "CMA": "Investment (CMA)",
+    "TLT": "Rates (TLT)",
+    "UUP": "US Dollar (UUP)",
+    "XLE": "Energy (XLE)",
+}
+
 
 def _factor_chart(macro: dict[str, Any]) -> str:
     """Diverging petrol bars for configured factors with whiskers + VIF note."""
@@ -793,6 +807,10 @@ def _factor_chart(macro: dict[str, Any]) -> str:
             else ""
         )
 
+        # Hover-cloud tooltip for this factor (graceful: no tooltip if term absent)
+        _glossary_term = _FACTOR_GLOSSARY_TERMS.get(factor)
+        factor_ttip_html = tooltip(_glossary_term, "ⓘ") if _glossary_term else ""
+
         row_class = "frow supp" if is_suppressed else "frow"
         name_color = _FAINT if is_suppressed else _INK
         val_color = _FAINT if is_suppressed else _INK
@@ -802,7 +820,7 @@ def _factor_chart(macro: dict[str, Any]) -> str:
             'gap:10px;align-items:center;font-size:11.5px;margin-bottom:9px">'
             f"<span style=\"font-family:'IBM Plex Mono',monospace;color:{name_color};"
             'display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-            f"{_html.escape(factor)}{subtitle_html}&nbsp;{dom_label}</span>"
+            f"{_html.escape(factor)}{subtitle_html}{factor_ttip_html}&nbsp;{dom_label}</span>"
             f'<div style="position:relative;height:14px;border-radius:4px;background:#f4f7f8">'
             '<div style="position:absolute;left:40%;top:-3px;bottom:-3px;width:1.5px;background:#b6c2c2"></div>'
             f'<div style="position:absolute;top:3px;height:8px;border-radius:3px;'
