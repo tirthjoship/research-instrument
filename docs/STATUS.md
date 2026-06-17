@@ -1,46 +1,34 @@
 # STATUS — multi-modal-stock-recommender
 
 **As of:** 2026-06-17
-**Branch:** `feat/risk-tab-fixes` (off `develop`) — ~13 commits, **not yet PR'd**. `develop` is ahead of `main` (Risk v8 release still pending).
-**Phase:** **Risk-tab R01–R08 + follow-up gap-fix pass COMPLETE** — gate-green at every step, live-eyeballed; R02 scroll now CDP-verified. Plus ADR-059 (verdict-logic) + ADR-060 (factor-expansion decision). Ready to PR → `develop`.
+**Branch:** `feat/risk-tab-fixes` (off `develop`) — **24 commits ahead, NOT yet PR'd**. `develop` is ahead of `main` (whole redesign + Risk v8 release still pending user go).
+**Phase:** Risk-tab fix sprint + Cursor follow-ups + 9-factor FF expansion + project-wide Gemini fallback — **ALL DONE, gate-green (2145 tests, 92.8%, mypy strict).** Ready to PR.
 
-## NEXT ACTION (start here)
-**Open PR `feat/risk-tab-fixes` → `develop`**, let CI confirm, merge. THEN cut the long-pending `develop` → `main` release (whole 6-tab redesign + Risk v8 + these fixes). R07 populated panel still needs a Gemini cache to eyeball; everything else is verified.
+## NEXT ACTION (fresh session — start here)
+1. **PR `feat/risk-tab-fixes` → `develop`** (24 commits), CI confirm, merge. Then cut the long-pending `develop`→`main` release (needs explicit user go).
+2. **THEN: the efficiency / token-bottleneck pass (ADR-061)** — its own dedicated session. Suite is ~2145 tests + climbing, run serial+verbose+coverage every time; oversized modules (`cli.py` 3440 LOC, `risk.py` 1710, `styles.py` 1505) make edits token-heavy. Plan in ADR-061: pytest-xdist + `make test-fast`, run-discipline (targeted tests while iterating, full gate only at checkpoints), module decomposition, cheaper verification, test-value review. **Baseline timings/token cost FIRST, then fix highest-leverage.**
 
-## Follow-up gap-fix pass (Cursor review, 2026-06-17)
-Validated Cursor's 6 findings against code: 5 warranted + fixed, 1 (9-factor) contested + handled via ADR-060.
-- **FIX1 / R02** — native anchors RERUN the app instead of scrolling (CDP-confirmed: target vanished). Added `lens_scroll.py` v2-component shim → intercepts `.ri-lens` click, preventDefault, scrollIntoView. **CDP-verified: Teach-me bean scrolls 0→4358px, no rerun.**
-- **FIX4** — `_who_owns` was rendering ALL ~60 rows; capped to top 5 (footer already said TOP 5).
-- **FIX5** — R08 Q3 now uses human factor labels grouped by direction (no lowercase ticker dump).
-- **FIX3** — R07 re-run is now a styled `.risk-aibtn` instruction, not a broken disabled button; `ri-tg` defined.
-- **FIX6** — `.donut` hardcoded 71% conic default neutralized.
-- **FIX2 / R03 9-factor — NOT done as Cursor proposed.** Cursor's long-only ETF proxies are ~80% collinear with SPY → betas lie. Decision (ADR-060): expand via authentic FF/AQR long-short factors as a dedicated leakage-aware build. Tab keeps the honest 4-factor count meanwhile.
-
-## What shipped (this session)
-- **ADR-059** — verdict-logic extension DEFERRED: fundamentals stay attributed evidence (5 RAG squares), NOT folded into the verdict, until v1 clears its ADR-048 forward gate (currently 231 REDUCE flags logged, **0 resolvable** — 21-day horizon, earliest resolves ~July 2026). Locked constraint for any future extension: **asymmetric caution-only veto** (fundamentals may downgrade optimism / reinforce exits, never rescue a name from a REDUCE, never fabricate direction). Web-checked vs industry norms — foundations are mainstream.
-- **Risk-tab R01–R08** (all gate-green, eyeballed via solo CDP screenshot of the live tab):
-  - R01 header: drop v8/ADR-052, dynamic multi-flag banner copy + risk-line tooltip, Fraunces H1.
-  - R02 lens-nav beans → `#safe/#do/#teach` anchors + smooth scroll + hover lift.
-  - R03 factor chart (UI-only on honest 4): DOMINANT via `dominant_factor`, dynamic READ line, factor subtitles; VIF callout present-but-dormant.
-  - R04 ENB drill + R08 teach walkthrough → ported `.teach` card chrome; R08 Q2 live conic donut, all four Q&A data-driven.
-  - R05 who-owns ⓘ tooltip (both paths); R06 holdings rows = single clean %.
-  - R07 Google-AI panel moved between drift→teach (placement unit-tested); section header + re-run stub + honest empty-cache stub; off-local privacy guard.
-  - R09 (refresh button removal) was already done — carried in.
+## What shipped this session (all on feat/risk-tab-fixes)
+- **R01–R09** Risk-tab redesign fixes (header/banner copy + tooltips, lens-nav, factor chart, ENB drill, who-owns, Google-AI placement, teach donut, refresh-button removal).
+- **Cursor follow-up gap-fixes:** R02 scroll shim (CDP-verified 0→4358px), who-owns top-5 cap, R08 Q3 human labels, R07 re-run→info line, CSS cleanup, NET BETA (SPY) tooltip, factor source-bracket dedupe.
+- **R03 9-factor FF expansion (ADR-060):** authentic Fama-French long-short factors via new `FamaFrenchProvider` (NOT collinear ETF proxies). `[SPY,SMB,HML,MOM,RMW,CMA,TLT,UUP,XLE]`, sorted by impact, tilts-vs-market line, per-factor tooltips. `history_days=500`.
+- **R07 honesty + Gemini:** template output never shown as Google AI (data-gap stub when no key); fixed CLI not loading `.env` (shared `dotenv_loader`); **project-wide Gemini multi-model fallback chain (ADR-061-adjacent — see commit f0e6f15)** — exhausted model falls through to the next free model (verified live: 3.5-flash→2.5-flash, real insights). `tests/conftest.py` strips live API keys so tests never hit real APIs.
+- **ADR-059** verdict-logic deferral, **ADR-060** factor expansion, **ADR-061** efficiency initiative.
 
 ## Verification
-- Full `make check` green after every item: **2121 passed, 93.54%**, mypy strict + ruff clean.
-- Live eyeball: Risk tab screenshotted + compared band-by-band to `docs/fix-targets/screenshots/`. **R02 scroll CDP-verified** (bean → 4358px, no rerun). R01/R03/R04/R05/R06/R08 faithful to mockup.
+- Full `make check` green at each checkpoint: **2145 passed, 92.8%**, mypy strict + ruff clean.
+- Live eyeball (server bound `--server.address localhost`): 9 factors render with badges/tooltips; R07 real Gemini panel renders; who-owns capped to 5.
 
 ## Open items
-- **R07 populated panel** — only renders with `is_local_runtime()` true AND `cited_cases.json` holding a `risk_second_opinion` entry (needs `weekly-brief` run with `GEMINI_API_KEY`). Correctly HIDDEN otherwise (privacy). Placement drift→teach test-verified.
-- **develop → main release** — the whole redesign, still pending user go.
+- **PR feat/risk-tab-fixes → develop**, then **develop→main release** (user go).
+- **Efficiency pass (ADR-061)** — next dedicated session.
 - **#57** fix/adherence-tz-naive-aware — unrelated, still open.
-- **Factor-universe expansion (ADR-060) — BUILT 2026-06-17.** 9 authentic factors live: `[SPY, SMB, HML, MOM, RMW, CMA, TLT, UUP, XLE]` via new `FamaFrenchProvider` (FF5+MOM, cached, synthetic price-index, PIT). `history_days=500`. **Tradeoff: readout now ~6wk stale** (FF publication lag bounds the window) — descriptive tool, acceptable, documented in ADR-060. Live: market bet (SPY 1.2), short profitability (RMW −0.35), style factors suppressed. Eyeball-confirmed 9 factors render w/ subtitles + DOMINANT/SHORT/≈0 badges.
+- Risk readout is **~6wks stale** (FF publication lag bounds the regression window) — documented tradeoff (ADR-060). Could add a fresh-4-vs-full-9 toggle if wanted.
 
 ## Gotchas (carry forward)
-- Non-default Streamlit tabs screenshot BLANK; eyeball via the full dashboard + `scripts/screenshot_dashboard.py --tab 2`, or a solo render harness. (The harness waits for 6 tab buttons — a tab-less solo trips it.)
-- pre-commit auto-fixes (black/whitespace) on first run → `make check` "fails" once, passes on re-run. Watch for a *persistent* failure (e.g. ruff F541) vs a self-resolving reformat.
-- `data/reports/*.json` get regenerated by the test suite — leave them unstaged.
-- Verdict stays trend-break rule v1; fundamentals are evidence only (ADR-059).
-- **FF factors lag ~6wks** (Ken French publication) → with the 9-factor set the macro-beta window ends ~6wks ago and the whole readout is that stale. `history_days=500` keeps it ≥252 pts. Cache: `data/cache/fama_french_daily.json` (refresh via weekly-brief). FF data fetch needs `requests` (not urllib — SSL); `pandas_datareader` NOT installed.
-- **Disk-full recurs** — fills mid-`weekly-brief` and silently corrupts the run (wrote stale 4-factor output twice). Symptom: `ENOSPC` on tool output. Clear `.mypy_cache`/`.pytest_cache`/`__pycache__`/pip cache + kill stray streamlit/chrome. A weekly-brief that "completes" under low disk may be garbage — re-run clean.
+- **Gemini panel needs `--server.address localhost`** (privacy guard requires loopback server) AND a live `GEMINI_API_KEY` (now in `.env`, CLI loads it). Plain `streamlit run` binds 0.0.0.0 → panel hidden by design.
+- **Disk-full** fills mid-`weekly-brief` and silently writes stale output — `df -h`, clear `.mypy_cache`/`__pycache__`/pip cache + kill stray streamlit/chrome, re-run clean.
+- **mypy env disagreement** on `google.generativeai` (191 vs 196 file views) — handled by `disable_error_code=["attr-defined"]` override in pyproject for the 3 gemini modules; don't use `# type: ignore` (flagged unused in one view).
+- **pre-commit auto-fixes** (black/whitespace) → first `make check` "fails", passes on re-run; watch for a *persistent* failure vs self-resolving reformat.
+- `data/reports/*.json` + `data/cache/`, `data/personal/cited_cases.json` regenerate / are gitignored — leave unstaged.
+- FF cache: `data/cache/fama_french_daily.json` (refresh via weekly-brief).
