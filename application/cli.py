@@ -95,7 +95,12 @@ def _build_dependencies(market: str, use_cache: bool = False) -> dict[str, Any]:
 @click.group()
 def cli() -> None:
     """Multi-modal stock recommender CLI."""
-    pass
+    # Load project-root .env so keys like GEMINI_API_KEY reach CLI runs
+    # (e.g. weekly-brief --cite-cases). Without this the CLI silently used the
+    # offline template summarizer even when the key was present in .env.
+    from application.dotenv_loader import load_dotenv
+
+    load_dotenv()
 
 
 @cli.command()
