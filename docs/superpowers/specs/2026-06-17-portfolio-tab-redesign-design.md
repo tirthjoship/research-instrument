@@ -44,6 +44,13 @@ Top → bottom:
 
 ---
 
+## 3a. Cross-Cutting Styling Consistency  `[LOCKED]`
+
+Every component on this tab matches the other redesigned tabs (Home/Screener/Risk) for intuitiveness:
+- **Binned color coding** — discrete bins (NOT a smooth gradient), same palette as other tabs. Treemap heat capped at ±25% realized P&L.
+- **ⓘ cloud tooltips** — reuse existing `tooltip()` + `glossary.py` (`adapters/visualization/components/`); same `ⓘ` badge + hover cloud. Applied where a term needs explaining: Concentration, Needs review, treemap color-scale legend, Portfolio-vs-SPY. One glossary as single source of truth — add any new terms there.
+- **Chrome** — Fraunces `ri-sec` section headers, verdict pills (`_VERDICT_COLORS`), IBM Plex Mono numerics, `ri-*` CSS tokens.
+
 ## 4. Honesty Guards  `[LOCKED]`
 
 Carried, non-negotiable:
@@ -64,9 +71,34 @@ Identified, details pending:
 
 ---
 
-## 6. Treemap Spec  `[OPEN — next up]`
+## 6. Treemap Spec  `[LOCKED]`
 
-Full-width, grouped by sector; size = weight, color = realized P&L; ticker label on big tiles + hover (sparkline + verdict + P&L) for small. *Open: grouping/sizing algorithm, color-scale thresholds, small-tile label threshold, "+N" bucket, no-sector fallback, small-portfolio (<~5 holdings) behavior, plotly `go.Treemap` vs custom HTML.*
+Full-width "Your book at a glance" — the showpiece + concentration read.
+
+**Layout — squarified treemap (custom, NOT flexbox, NOT plotly).**
+- Two-level squarified packing: level 1 = sectors into the canvas, level 2 = holdings into each sector rectangle. Squarified keeps every tile near-square → a dominant sector renders as one big block (never thin slivers), and the layout rebalances as dominance shifts (verified in mock across balanced / Tech-70%-dominant / one-mega-position scenarios).
+- **Rectangles computed in Python** from holding weights and emitted as absolute-positioned divs — no client-side layout JS (clean for Streamlit). Rejected `plotly go.Treemap` (theming + hover-card integration cost) and flexbox (slivers under dominance).
+
+**Encoding.**
+- Size = weight (always positive, sums to 100%). Cannot size by gains (negatives have no area + would hide concentration).
+- Color = the active **lens** (see §6a). Discrete **bins**, capped ±25% so an outlier (+75% NVDA) can't wash out the scale.
+
+**Labels / overflow.**
+- Ticker label shown only above a tile-area threshold (mock used ~area>1300px²); larger tiles (~>4500px²) also show the lens value. Below threshold → no label, hover-only.
+- Every tile `overflow:hidden` + text-ellipsis + `white-space:nowrap` → a ticker can NEVER spill its tile.
+
+**Sector handling.**
+- No-sector holding (yfinance returns none) → grouped under an **"Unknown"** sector block (DATA-GAP, honest, never guessed).
+- Sector header shows sector name + combined weight % (= sector concentration).
+
+**Demo-only (NOT in build):** the mock's scenario dropdown was a demonstration aid for dominant-sector behavior; the real tab renders live holdings only.
+
+## 6a. Treemap Interaction Model  `[LOCKED]`
+
+- **3-lens color toggle** (`st.radio`-style pills, recolor server-side on rerun): **P&L (lifetime)** · **Today** (intraday %) · **Verdict** (REDUCE/TRIM red shades, REVIEW amber, HOLD/ADD_OK green). Each lens has an ⓘ cloud explaining it; legend updates per lens.
+- **Hover** (any tile size) → peek cloud: weight, lifetime P&L, today %, verdict. Exact numbers always one hover away (covers approximate-area concern).
+- **Click** (any tile size) → opens the **shared detail panel** below the treemap = the SAME `decision_card` expanded depth (§3): meaning, metrics incl. today, 5 live RAG signals, rubric, interlinks. Detail never renders inside the tile → a 0.3% tile expands exactly as well as a 12% one → scales to 60+. RAG/case fetched **live + lazy** on click (not upfront for all holdings).
+- Clicking a treemap tile and expanding a Needs-review card land in the **same** detail component (one detail surface, two entry points).
 
 ---
 
@@ -104,3 +136,5 @@ Trade history, closed positions, watchlist, record-trade — carried from curren
 ## Decision Log
 
 - 2026-06-17 — Scope = full redesign (not additive). Spine = B + A's full-width treemap. Review cards reuse Home's `decision_card` at identical depth (option A: reuse on both surfaces). Engine confirmed shared (`grade_position`).
+- 2026-06-17 — §3a styling consistency locked (binned color, ⓘ glossary clouds, ri-chrome).
+- 2026-06-17 — §6 + §6a locked: squarified custom treemap (Python-computed rects), size=weight / color=lens, capped ±25% bins, label-on-big + hover-small + overflow-clip, Unknown-sector fallback. 3-lens toggle (P&L/Today/Verdict), hover peek, click → shared `decision_card` detail panel (lazy live RAG). Rejected plotly + flexbox. Scenario dropdown was mock-only.
