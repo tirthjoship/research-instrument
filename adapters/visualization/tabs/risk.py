@@ -665,18 +665,16 @@ def _evidence_bands(macro: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 _FACTOR_DISPLAY_NAMES: dict[str, str] = {
     "SPY": "Market",
+    # Fama-French long-short style factors (ADR-060)
+    "SMB": "Size",
+    "HML": "Value",
+    "MOM": "Momentum",
+    "RMW": "Profitability",
+    "CMA": "Investment",
+    # macro factors
     "TLT": "Rates 10Y",
     "UUP": "US Dollar",
     "XLE": "Energy",
-    # common extended-universe proxies (for future expansion)
-    "IWM": "Small Caps",
-    "HYG": "Credit HYG",
-    "GLD": "Gold",
-    "USO": "Oil WTI",
-    "QQQ": "Nasdaq",
-    "IWD": "Value HML",
-    "MTUM": "Momentum",
-    "VLUE": "Value HML",
 }
 
 
