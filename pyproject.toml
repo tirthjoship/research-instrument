@@ -41,6 +41,7 @@ dashboard = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
     "hypothesis>=6.0.0",
     "black>=24.0.0",
     "isort>=5.13.0",
@@ -56,7 +57,7 @@ include = ["domain*", "adapters*", "application*", "config*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-v -p no:playwright"
+addopts = "-p no:playwright"
 
 [tool.black]
 line-length = 88
