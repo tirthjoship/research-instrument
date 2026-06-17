@@ -103,12 +103,120 @@ def test_render_points_included(monkeypatch: pytest.MonkeyPatch) -> None:
         assert pt.text in html
 
 
-def test_render_none_result_when_local(monkeypatch: pytest.MonkeyPatch) -> None:
-    """result=None with local runtime returns empty string (no crash)."""
+def test_render_none_result_when_local_returns_stub(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """result=None with local runtime returns a small data-gap stub (not empty string).
+
+    R07 spec: when LOCAL but cache empty, show 'ri-sec' header + one-line card
+    prompting user to run weekly-brief with GEMINI_API_KEY.
+    """
     import adapters.visualization.components.risk_second_opinion as mod
     from adapters.visualization.components.risk_second_opinion import (
         render_risk_second_opinion,
     )
 
     monkeypatch.setattr(mod, "is_local_runtime", lambda: True)
-    assert render_risk_second_opinion(result=None) == ""
+    html = render_risk_second_opinion(result=None)
+    # Must be a non-empty stub, not blank
+    assert html != "", "Local + cache empty must return a stub, not empty string"
+    # Must contain the ri-sec section heading
+    assert "ri-sec" in html, "Data-gap stub must include the ri-sec section heading"
+    # Must contain the unified "not available" stub text (FIX B)
+    assert "GEMINI_API_KEY" in html, "Stub must mention GEMINI_API_KEY"
+    assert "weekly-brief" in html, "Stub must mention weekly-brief CLI command"
+    assert "cite-cases" in html, "Stub must mention --cite-cases flag"
+    # Must NOT contain forbidden words
+    assert not any(w in html.lower() for w in FORBIDDEN_WORDS)
+
+
+def test_render_none_result_when_off_local_returns_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """result=None with off-local runtime MUST return '' (privacy fail-safe)."""
+    import adapters.visualization.components.risk_second_opinion as mod
+    from adapters.visualization.components.risk_second_opinion import (
+        render_risk_second_opinion,
+    )
+
+    monkeypatch.setattr(mod, "is_local_runtime", lambda: False)
+    assert (
+        render_risk_second_opinion(result=None) == ""
+    ), "Off-local + None result must return '' — never reveal data-gap info off-local"
+
+
+def test_render_section_heading_present(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When local + result valid, ri-sec section heading must appear above the card."""
+    import adapters.visualization.components.risk_second_opinion as mod
+    from adapters.visualization.components.risk_second_opinion import (
+        render_risk_second_opinion,
+    )
+
+    monkeypatch.setattr(mod, "is_local_runtime", lambda: True)
+    html = render_risk_second_opinion(result=_minimal_result())
+    assert (
+        "ri-sec" in html
+    ), "ri-sec section heading must be present when result is valid"
+    # Heading must appear BEFORE the card div
+    assert html.index("ri-sec") < html.index(
+        "risk-ai"
+    ), "ri-sec heading must appear before the .risk-ai card div"
+    # Heading text must include 'Second opinion' and 'Google AI'
+    assert "Second opinion" in html
+    assert "Google AI" in html
+
+
+def test_render_no_rerun_button_and_info_line_present(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When local + result valid, the re-run button (.risk-aibtn) must be GONE and
+    a plain info line describing how the panel refreshes must be present instead.
+
+    FIX C: replaced the fake interactive re-run span with a muted info line so
+    there is no false affordance.
+    """
+    import adapters.visualization.components.risk_second_opinion as mod
+    from adapters.visualization.components.risk_second_opinion import (
+        render_risk_second_opinion,
+    )
+
+    monkeypatch.setattr(mod, "is_local_runtime", lambda: True)
+    html = render_risk_second_opinion(result=_minimal_result())
+    # Re-run button class must be GONE
+    assert "risk-aibtn" not in html, "risk-aibtn must be removed (FIX C)"
+    # No button element
+    assert "<button" not in html, "Re-run control must not be a <button> element"
+    # Info line must mention weekly-brief and cite-cases
+    assert (
+        "weekly-brief" in html
+    ), "Info line must reference the weekly-brief CLI command"
+    assert "cite-cases" in html, "Info line must reference --cite-cases flag"
+
+
+def test_render_data_gap_stub_unified_text(monkeypatch: pytest.MonkeyPatch) -> None:
+    """data_gap=True must show the same unified stub as result=None (FIX B).
+
+    Both paths must say 'Google AI second opinion not available' and reference
+    GEMINI_API_KEY + weekly-brief --cite-cases.
+    """
+    import adapters.visualization.components.risk_second_opinion as mod
+    from adapters.visualization.components.risk_second_opinion import (
+        render_risk_second_opinion,
+    )
+
+    monkeypatch.setattr(mod, "is_local_runtime", lambda: True)
+
+    gap_result = CaseResult(in_favor=(), to_watch=(), data_gap=True)
+    html_gap = render_risk_second_opinion(result=gap_result)
+    html_none = render_risk_second_opinion(result=None)
+
+    # Both must be identical (same unified stub)
+    assert html_gap == html_none, "data_gap and None stubs must produce identical HTML"
+    # Stub must carry the ri-sec header
+    assert "ri-sec" in html_gap
+    # Stub must mention GEMINI_API_KEY and the CLI command
+    assert "GEMINI_API_KEY" in html_gap
+    assert "weekly-brief" in html_gap
+    assert "cite-cases" in html_gap
+    # No forbidden words
+    assert not any(w in html_gap.lower() for w in FORBIDDEN_WORDS)

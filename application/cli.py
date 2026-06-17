@@ -95,7 +95,12 @@ def _build_dependencies(market: str, use_cache: bool = False) -> dict[str, Any]:
 @click.group()
 def cli() -> None:
     """Multi-modal stock recommender CLI."""
-    pass
+    # Load project-root .env so keys like GEMINI_API_KEY reach CLI runs
+    # (e.g. weekly-brief --cite-cases). Without this the CLI silently used the
+    # offline template summarizer even when the key was present in .env.
+    from application.dotenv_loader import load_dotenv
+
+    load_dotenv()
 
 
 @cli.command()
@@ -2998,12 +3003,30 @@ def _build_weekly_brief(
 
     macro_cfg = deps.get("config", {}).get("macro_beta", {})
     risk_stats_cfg = deps.get("config", {}).get("risk_stats", {})
+
+    # Factor returns come from two sources: ETF tickers via yfinance, and the
+    # Fama-French long-short style factors (SMB/HML/MOM/RMW/CMA) via the FF data
+    # library (ADR-060). Route by factor name so both slot into one provider.
+    from adapters.data.fama_french_provider import FF_FACTORS, FamaFrenchProvider
+
+    _ff_provider = FamaFrenchProvider()
+
+    def _macro_price_provider(
+        name: str, start: datetime, end: datetime
+    ) -> list[tuple[datetime, float]]:
+        if name in FF_FACTORS:
+            return _ff_provider.series(name, start, end)
+        return load_price_series(name, start, end)
+
     macro_uc = MacroBetaUseCase(
-        price_provider=lambda t, s, e: load_price_series(t, s, e),
+        price_provider=_macro_price_provider,
         estimator=RidgeMacroBetaEstimator(alpha=macro_cfg.get("ridge_alpha", 0.2)),
         factors=macro_cfg.get("factors", ["SPY", "TLT", "UUP", "XLE"]),
         alpha=macro_cfg.get("ridge_alpha", 0.2),
         headline_window=macro_cfg.get("headline_window_days", 252),
+        # FF factors lag ~6wks (publication); widen lookback so the truncated
+        # FF window still clears the 252-pt headline requirement (ADR-060).
+        history_days=macro_cfg.get("history_days", 500),
         drift_window=macro_cfg.get("drift_window_days", 63),
         thresholds={
             "systematic_share_threshold": macro_cfg.get(

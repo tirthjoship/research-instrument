@@ -28,51 +28,79 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
     """Render the Google-AI second-opinion panel as HTML.
 
     Returns "" when:
-      - is_local_runtime() is False (privacy fail-safe)
-      - result is None
+      - is_local_runtime() is False (privacy fail-safe — nothing reaches HTML off-local)
+      - result is None AND is_local_runtime() is False
+
+    When LOCAL and result is None (cache empty), returns a small honest data-gap
+    stub prompting the user to run weekly-brief with GEMINI_API_KEY.
 
     Args:
-        result: CaseResult to render; pass None to get empty string.
+        result: CaseResult to render; pass None for empty/stub output.
 
     Returns:
-        HTML string (non-empty only when local and result is not None).
+        HTML string.  Empty string only when off-local (never reveals anything
+        off-local regardless of result).
     """
     if not is_local_runtime():
+        # Privacy fail-safe: off-local → never emit anything.
         return ""
+
+    # LOCAL runtime below this point.
+
+    # Unified honest stub: used for both result=None (cache empty) and
+    # result.data_gap (template path or service unavailable).
+    _STUB_HEADER = (
+        '<div class="ri-sec">'
+        '<span class="ri-tg" style="color:var(--petrol)">Second opinion</span>'
+        " · Google AI"
+        "</div>"
+    )
+    _STUB_BODY = (
+        '<div class="risk-ai">'
+        '<div class="risk-aifoot">'
+        "Google AI second opinion not available"
+        " — set <code>GEMINI_API_KEY</code> and run"
+        " <code>weekly-brief --cite-cases</code> to enable it."
+        "</div>"
+        "</div>"
+    )
+
     if result is None:
-        return ""
+        return _STUB_HEADER + _STUB_BODY
 
     if result.data_gap:
-        return (
-            '<div class="risk-ai">'
-            '<div class="risk-aifoot">'
-            "&#128269; Google AI second opinion unavailable — data gap or service unreachable."
-            "</div>"
-            "</div>"
-        )
+        return _STUB_HEADER + _STUB_BODY
 
     # Build numbered in_favor + to_watch point items
+    def _norm(s: str) -> str:
+        return s.strip().rstrip(":.").strip().lower()
+
+    def _point_html(n: int, text: str, source_tag: str) -> str:
+        # Only show the [source] tag when it adds information — i.e. it is not
+        # an echo of the point text. The TemplateCaseSummarizer (offline / no
+        # GEMINI key) echoes the metric into both text and source_tag, which
+        # would otherwise render as a confusing "metric: [metric]" duplicate.
+        nt, ns = _norm(text), _norm(source_tag)
+        src = (
+            f'<span style="font-size:9px;color:var(--risk-faint);margin-left:4px;">'
+            f"[{_html.escape(source_tag)}]</span>"
+            if ns and ns != nt and ns not in nt and nt not in ns
+            else ""
+        )
+        return (
+            f'<div class="risk-aipt">'
+            f'<span class="risk-n">{n}</span>'
+            f"<div>{_html.escape(text)}{src}</div>"
+            f"</div>"
+        )
+
     points: list[str] = []
     idx = 1
     for pt in result.in_favor:
-        points.append(
-            f'<div class="risk-aipt">'
-            f'<span class="risk-n">{idx}</span>'
-            f"<div>{_html.escape(pt.text)}"
-            f'<span style="font-size:9px;color:var(--risk-faint);margin-left:4px;">'
-            f"[{_html.escape(pt.source_tag)}]</span></div>"
-            f"</div>"
-        )
+        points.append(_point_html(idx, pt.text, pt.source_tag))
         idx += 1
     for pt in result.to_watch:
-        points.append(
-            f'<div class="risk-aipt">'
-            f'<span class="risk-n">{idx}</span>'
-            f"<div>{_html.escape(pt.text)}"
-            f'<span style="font-size:9px;color:var(--risk-faint);margin-left:4px;">'
-            f"[{_html.escape(pt.source_tag)}]</span></div>"
-            f"</div>"
-        )
+        points.append(_point_html(idx, pt.text, pt.source_tag))
         idx += 1
 
     points_html = (
@@ -86,7 +114,21 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
         )
     )
 
+    # Info line: explains how the cached result is refreshed (no fake interactivity).
+    refresh_info = (
+        '<div class="risk-aifoot" style="margin-top:6px;">'
+        "Updated when <code>weekly-brief --cite-cases</code> runs with a Google AI key"
+        " — third-party, never the verdict."
+        "</div>"
+    )
+
     return (
+        # Section heading matching ri-sec style used by other Risk sections
+        '<div class="ri-sec">'
+        '<span class="ri-tg" style="color:var(--petrol)">Second opinion</span>'
+        " · Google AI"
+        "</div>"
+        # Card
         '<div class="risk-ai">'
         # Header: Google dots + title + ATTRIBUTED badge
         '<div class="risk-aihd">'
@@ -101,11 +143,11 @@ def render_risk_second_opinion(result: CaseResult | None) -> str:
         '<div class="risk-aiq">'
         "Google AI was asked to find blind spots in the dials above — "
         "it does not set the verdict"
-        "</div>" + points_html + "</div>"
+        "</div>" + points_html + refresh_info + "</div>"
         # Footer / attribution
         '<div class="risk-aifoot">'
-        "<b>This is a third-party second opinion, shown as Google AI’s — "
-        "not adopted as the dashboard’s view.</b> "
+        "<b>This is a third-party second opinion, shown as Google AI's — "
+        "not adopted as the dashboard's view.</b> "
         "It can be wrong, cites no trade, and never overrides the deterministic dials. "
         "Runs only on your machine; throttled &amp; cached. "
         "If Google AI is unreachable, this panel is simply hidden."

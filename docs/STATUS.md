@@ -1,37 +1,34 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-16
-**Branch:** `develop` and `main` are ALIGNED (identical trees) as of release PR #63.
-**Phase:** **Cross-tab loading overlay + lazy tabs + header typography — SHIPPED to develop (PR #62) and main (PR #63). Session complete.**
+**As of:** 2026-06-17
+**Branch:** `feat/risk-tab-fixes` (off `develop`) — **24 commits ahead, NOT yet PR'd**. `develop` is ahead of `main` (whole redesign + Risk v8 release still pending user go).
+**Phase:** Risk-tab fix sprint + Cursor follow-ups + 9-factor FF expansion + project-wide Gemini fallback — **ALL DONE, gate-green (2145 tests, 92.8%, mypy strict).** Ready to PR.
 
-## NEXT ACTION (start here)
-No open task from this stream. Header redesign + lazy tabs are live on develop and main.
-Open items from other streams: Risk tab v8 (PR #61 to develop, live eyeball still open);
-verdict-logic-extension decision (memory `project-verdict-logic-extension-question`).
+## NEXT ACTION (fresh session — start here)
+1. **PR `feat/risk-tab-fixes` → `develop`** (24 commits), CI confirm, merge. Then cut the long-pending `develop`→`main` release (needs explicit user go).
+2. **THEN: the efficiency / token-bottleneck pass (ADR-061)** — its own dedicated session. Suite is ~2145 tests + climbing, run serial+verbose+coverage every time; oversized modules (`cli.py` 3440 LOC, `risk.py` 1710, `styles.py` 1505) make edits token-heavy. Plan in ADR-061: pytest-xdist + `make test-fast`, run-discipline (targeted tests while iterating, full gate only at checkpoints), module decomposition, cheaper verification, test-value review. **Baseline timings/token cost FIRST, then fix highest-leverage.**
 
-## What shipped (this session)
-- **Lazy tabs + cross-tab loading overlay (ADR-058):** `components/tab_loading.py` (CSS+JS overlay,
-  left→right bar, per-tab label, real elapsed timer, shimmer, MutationObserver clear, 10s/90s escalation),
-  `dashboard.py` lazy tabs (`on_change="rerun"` + `if tabs[i].open:`) + per-tab `↻ refresh`. Fixes the
-  Home live-fetch starving other tabs into blank.
-- **Header typography (live-tuned to the approved mockup):** flat underline tabs (not Streamlit pill),
-  Fraunces title + tab labels, Newsreader subtitle, title/subtitle snug, centered compact layout.
-  Root causes fixed: Streamlit heading padding inflating the title box; tab-label text in a nested `<p>`
-  overriding the button font; `@st.fragment`/cli.py mypy reconciled with develop's PR #60.
+## What shipped this session (all on feat/risk-tab-fixes)
+- **R01–R09** Risk-tab redesign fixes (header/banner copy + tooltips, lens-nav, factor chart, ENB drill, who-owns, Google-AI placement, teach donut, refresh-button removal).
+- **Cursor follow-up gap-fixes:** R02 scroll shim (CDP-verified 0→4358px), who-owns top-5 cap, R08 Q3 human labels, R07 re-run→info line, CSS cleanup, NET BETA (SPY) tooltip, factor source-bracket dedupe.
+- **R03 9-factor FF expansion (ADR-060):** authentic Fama-French long-short factors via new `FamaFrenchProvider` (NOT collinear ETF proxies). `[SPY,SMB,HML,MOM,RMW,CMA,TLT,UUP,XLE]`, sorted by impact, tilts-vs-market line, per-factor tooltips. `history_days=500`.
+- **R07 honesty + Gemini:** template output never shown as Google AI (data-gap stub when no key); fixed CLI not loading `.env` (shared `dotenv_loader`); **project-wide Gemini multi-model fallback chain (ADR-061-adjacent — see commit f0e6f15)** — exhausted model falls through to the next free model (verified live: 3.5-flash→2.5-flash, real insights). `tests/conftest.py` strips live API keys so tests never hit real APIs.
+- **ADR-059** verdict-logic deferral, **ADR-060** factor expansion, **ADR-061** efficiency initiative.
 
 ## Verification
-- Full `make check` green throughout: **2014 passed**, mypy strict clean (187 files), coverage **93.39%**.
-- CI green on both PRs (#62 feature→develop, #63 develop→main): Lint, Typecheck, Test Suite, Secret Scanning.
-- Header validated live via CDP screenshots against the approved mockup; user confirmed in a real browser.
-- develop and main trees verified byte-identical after #63.
+- Full `make check` green at each checkpoint: **2145 passed, 92.8%**, mypy strict + ruff clean.
+- Live eyeball (server bound `--server.address localhost`): 9 factors render with badges/tooltips; R07 real Gemini panel renders; who-owns capped to 5.
 
-## Merge/release trail
-`#62` feat/dashboard-legibility-redesign → develop · `#63` develop → main (release; 149 commits of backlog
-incl. screener redesign now on main). Prior: `#59` (earlier dashboard state), `#60` (CI mypy fix).
+## Open items
+- **PR feat/risk-tab-fixes → develop**, then **develop→main release** (user go).
+- **Efficiency pass (ADR-061)** — next dedicated session.
+- **#57** fix/adherence-tz-naive-aware — unrelated, still open.
+- Risk readout is **~6wks stale** (FF publication lag bounds the regression window) — documented tradeoff (ADR-060). Could add a fresh-4-vs-full-9 toggle if wanted.
 
 ## Gotchas (carry forward)
-- Streamlit wraps a raw `<h1>` in `stHeadingWithActionElements` with 36px padding + an anchor element —
-  zero it via `.ri-app-title`/container rules, not margins. Tab label text is a nested
-  `[data-testid="stMarkdownContainer"] p` whose default Source Sans beats button-level font rules — style
-  the inner `<p>`. mypy runs in TWO envs (pre-commit isolated venv w/o streamlit; project venv w/ it) —
-  keep them in agreement (see pyproject research_candidates override).
+- **Gemini panel needs `--server.address localhost`** (privacy guard requires loopback server) AND a live `GEMINI_API_KEY` (now in `.env`, CLI loads it). Plain `streamlit run` binds 0.0.0.0 → panel hidden by design.
+- **Disk-full** fills mid-`weekly-brief` and silently writes stale output — `df -h`, clear `.mypy_cache`/`__pycache__`/pip cache + kill stray streamlit/chrome, re-run clean.
+- **mypy env disagreement** on `google.generativeai` (191 vs 196 file views) — handled by `disable_error_code=["attr-defined"]` override in pyproject for the 3 gemini modules; don't use `# type: ignore` (flagged unused in one view).
+- **pre-commit auto-fixes** (black/whitespace) → first `make check` "fails", passes on re-run; watch for a *persistent* failure vs self-resolving reformat.
+- `data/reports/*.json` + `data/cache/`, `data/personal/cited_cases.json` regenerate / are gitignored — leave unstaged.
+- FF cache: `data/cache/fama_french_daily.json` (refresh via weekly-brief).

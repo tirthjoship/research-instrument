@@ -12,6 +12,7 @@ import time
 
 from loguru import logger
 
+from adapters.ml.gemini_models import generate_with_fallback
 from domain.models import ClassifiedEvent, EventCategory
 
 _CATEGORIES_LIST = ", ".join(sorted(e.value for e in EventCategory))
@@ -31,17 +32,13 @@ Only respond with the JSON object or null. No explanation."""
 
 
 def _call_gemini(api_key: str, headline: str) -> dict[str, object] | None:
-    """Call Gemini API. Separated for easy mocking."""
+    """Call Gemini API with multi-model fallback. Separated for easy mocking."""
     try:
-        import google.generativeai as genai
-
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        response = model.generate_content(
+        text = generate_with_fallback(
+            api_key,
             f"{_SYSTEM_PROMPT}\n\nHeadline: {headline}",
-            generation_config=genai.GenerationConfig(temperature=0),
-        )
-        text = response.text.strip()
+            temperature=0.0,  # deterministic classification (ADR-030)
+        ).strip()
         if text.lower() == "null" or not text:
             return None
         # Strip markdown code fences if present

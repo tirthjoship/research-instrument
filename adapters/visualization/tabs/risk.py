@@ -85,7 +85,7 @@ def _header() -> str:
     return (
         '<div class="eyebrow" style="font-family:\'IBM Plex Mono\',monospace;'
         "font-size:11px;letter-spacing:.2em;text-transform:uppercase;"
-        f'color:{_PETROL};margin-bottom:8px">Portfolio Risk · v8 — full methodology</div>'
+        f'color:{_PETROL};margin-bottom:8px">Portfolio Risk · full methodology</div>'
         '<h1 class="ri-h1">Where your book <em>stands</em></h1>'
         '<p class="lede" style="font-size:14px;color:var(--risk-mut,#5b7178);'
         'max-width:560px;line-height:1.6">'
@@ -96,7 +96,7 @@ def _header() -> str:
         '<div class="adr" style="font-family:\'IBM Plex Mono\',monospace;'
         "font-size:10px;letter-spacing:.12em;"
         f'color:{_FAINT};text-transform:uppercase;margin:6px 0 16px">'
-        "heuristic surfacing dial, not a validated edge &nbsp;&middot;&nbsp; ADR-052</div>"
+        "heuristic surfacing dials &nbsp;&middot;&nbsp; not validated edges</div>"
     )
 
 
@@ -115,12 +115,31 @@ def _status_banner(flags: list[str]) -> str:
         css_class = "risk-status"
         icon = str(n)
         label = "Needs a look"
-        headline = f"{n} of your risk line{'s' if n != 1 else ''} are crossed"
-        # Describe the flags that fired without forbidden words
-        flag_desc = " and ".join(_flag_short(f) for f in flags[:3])
+        _tip = tooltip("Risk line", "ⓘ")
+        if n == 1:
+            headline = f"1 of your risk line {_tip} is crossed"
+        else:
+            headline = f"{n} of your risk lines {_tip} are crossed"
+        # Build dynamic flag list (no forbidden words)
+        _shorts = [_flag_short(f) for f in flags]
+        if n == 1:
+            _flag_copy = f"One defined line tripped: <b>{_shorts[0]}</b>. Confirm it is intentional."
+        elif n == 2:
+            _flag_copy = (
+                f"Two defined lines tripped: <b>{_shorts[0]}</b> and an"
+                f" <b>{_shorts[1]}</b>. Confirm both are intentional."
+            )
+        else:
+            _joined = (
+                ", ".join(f"<b>{s}</b>" for s in _shorts[:-1])
+                + f" and <b>{_shorts[-1]}</b>"
+            )
+            _flag_copy = (
+                f"{n} defined lines tripped: {_joined}. Confirm all are intentional."
+            )
         detail = (
             "Your risk <i>character</i> is your choice &#8212; nothing here is &#8220;good&#8221; or &#8220;bad&#8221;. "
-            f"Lines tripped: <b>{flag_desc}</b>. Confirm both are intentional."
+            + _flag_copy
         )
 
     return (
@@ -228,7 +247,7 @@ def _vitals(macro: dict[str, Any]) -> str:
         ci_text = f"±{(ci_list[1]-ci_list[0])/2:.2f}" if len(ci_list) == 2 else ""
         cards.append(
             f'<div class="risk-vit grey">'
-            f'<div class="risk-vk">Net beta (SPY)</div>'
+            f'<div class="risk-vk">Net beta (SPY){tooltip("Net beta", "ⓘ")}</div>'
             f'<div class="risk-vv">{spy_beta:.2f}<small>&times;</small></div>'
             f'<div class="risk-vs">{ci_text}&nbsp;&middot; grey = no line</div>'
             "</div>"
@@ -274,21 +293,21 @@ def _vitals(macro: dict[str, Any]) -> str:
 def _lens_nav() -> str:
     return (
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0">'
-        f'<a style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
+        f'<a href="#safe" class="ri-lens" style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
         f"border:1px solid {_LINE};border-radius:11px;padding:11px 13px;"
         f'border-left:4px solid {_G2}">'
         f"<div style=\"font-family:'Fraunces',serif;font-weight:800;font-size:15px\">Am I safe?</div>"
         f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:9.5px;"
         f'letter-spacing:.08em;text-transform:uppercase;color:{_MUT};margin-top:3px">'
         "The standing &darr;</div></a>"
-        f'<a style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
+        f'<a href="#do" class="ri-lens" style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
         f"border:1px solid {_LINE};border-radius:11px;padding:11px 13px;"
         f'border-left:4px solid {_AMBER}">'
         f"<div style=\"font-family:'Fraunces',serif;font-weight:800;font-size:15px\">What do I do?</div>"
         f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:9.5px;"
         f'letter-spacing:.08em;text-transform:uppercase;color:{_MUT};margin-top:3px">'
         "Dials + drill-downs &darr;</div></a>"
-        f'<a style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
+        f'<a href="#teach" class="ri-lens" style="flex:1;min-width:150px;text-decoration:none;background:{_CARD};'
         f"border:1px solid {_LINE};border-radius:11px;padding:11px 13px;"
         f'border-left:4px solid {_PETROL}">'
         f"<div style=\"font-family:'Fraunces',serif;font-weight:800;font-size:15px\">Teach me</div>"
@@ -518,7 +537,7 @@ def _evidence_bands(macro: dict[str, Any]) -> str:
         "<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
         f"letter-spacing:.13em;text-transform:uppercase;color:{_FAINT};"
         'display:flex;justify-content:space-between;margin-bottom:7px">'
-        f'<span>{tooltip("Net beta", "Net market beta (SPY)")}</span>'
+        f'<span>NET MARKET BETA (SPY){tooltip("Net beta", "ⓘ")}</span>'
         f'<span style="color:{_INK};font-weight:600">+{spy_beta:.2f} &middot; {beta_label} '
         f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:9px;"
         f"font-weight:600;padding:1px 7px;border-radius:6px;margin-left:7px;"
@@ -640,6 +659,39 @@ def _evidence_bands(macro: dict[str, Any]) -> str:
     )
 
 
+# ---------------------------------------------------------------------------
+# Factor display-name map: ticker → (short subtitle for display under ticker)
+# Covers the 4 live factors; falls back to bare ticker for any unknown factor.
+# ---------------------------------------------------------------------------
+_FACTOR_DISPLAY_NAMES: dict[str, str] = {
+    "SPY": "Market",
+    # Fama-French long-short style factors (ADR-060)
+    "SMB": "Size",
+    "HML": "Value",
+    "MOM": "Momentum",
+    "RMW": "Profitability",
+    "CMA": "Investment",
+    # macro factors
+    "TLT": "Rates 10Y",
+    "UUP": "US Dollar",
+    "XLE": "Energy",
+}
+
+# Maps each factor ticker to its glossary term for hover-cloud tooltips.
+# Factors absent from this map render no tooltip (graceful degradation).
+_FACTOR_GLOSSARY_TERMS: dict[str, str] = {
+    "SPY": "Market (SPY)",
+    "SMB": "Size (SMB)",
+    "HML": "Value (HML)",
+    "MOM": "Momentum (MOM)",
+    "RMW": "Profitability (RMW)",
+    "CMA": "Investment (CMA)",
+    "TLT": "Rates (TLT)",
+    "UUP": "US Dollar (UUP)",
+    "XLE": "Energy (XLE)",
+}
+
+
 def _factor_chart(macro: dict[str, Any]) -> str:
     """Diverging petrol bars for configured factors with whiskers + VIF note."""
     betas: dict[str, float] = macro.get("net_beta_by_factor", {})
@@ -655,6 +707,7 @@ def _factor_chart(macro: dict[str, Any]) -> str:
     ci_by_factor: dict[str, list[float]] = macro.get("beta_ci_by_factor") or {}
     suppressed: list[str] = macro.get("suppressed_factors") or []
     vif: dict[str, Any] = macro.get("vif_by_factor") or {}
+    dominant_factor: str = macro.get("dominant_factor") or ""
 
     n_factors = len(betas)
 
@@ -678,8 +731,12 @@ def _factor_chart(macro: dict[str, Any]) -> str:
             "The whiskers widen because of this overlap.</p>"
         )
 
+    # Sort factor rows by descending |net_beta| so highest-impact factors rise to the top.
+    # Display order only — does not affect which factors are shown or badge/READ logic.
+    sorted_factors = sorted(betas.items(), key=lambda kv: abs(kv[1]), reverse=True)
+
     rows = ""
-    for factor, beta_val in betas.items():
+    for factor, beta_val in sorted_factors:
         is_suppressed = factor in suppressed
         ci = ci_by_factor.get(factor) or []
 
@@ -722,9 +779,8 @@ def _factor_chart(macro: dict[str, Any]) -> str:
         # Label for dominant factor — exactly one label per factor, in priority order:
         #   suppressed (CI straddles 0) → ≈0
         #   short (negative beta, not suppressed) → SHORT
-        #   long and high-VIF → DOMINANT
+        #   dominant (factor == macro["dominant_factor"]) → DOMINANT
         #   otherwise → no label
-        vif_val = vif.get(factor)
         if is_suppressed:
             dom_label = (
                 "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;"
@@ -737,7 +793,7 @@ def _factor_chart(macro: dict[str, Any]) -> str:
                 f"font-weight:700;background:{_PETROL_L};color:{_PETROL_D};"
                 f'padding:1px 5px;border-radius:5px;border:1px solid #bfe0e6">SHORT</span>'
             )
-        elif vif_val is not None and isinstance(vif_val, (int, float)) and vif_val > 5:
+        elif dominant_factor and factor == dominant_factor:
             dom_label = (
                 f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;"
                 f"font-weight:700;background:{_PETROL};color:#fff;"
@@ -745,6 +801,19 @@ def _factor_chart(macro: dict[str, Any]) -> str:
             )
         else:
             dom_label = ""
+
+        # Factor display subtitle (e.g. "Market" for SPY)
+        subtitle = _FACTOR_DISPLAY_NAMES.get(factor, "")
+        subtitle_html = (
+            f'<span style="font-size:9.5px;font-weight:400;color:{_FAINT};margin-left:3px">'
+            f"{_html.escape(subtitle)}</span>"
+            if subtitle
+            else ""
+        )
+
+        # Hover-cloud tooltip for this factor (graceful: no tooltip if term absent)
+        _glossary_term = _FACTOR_GLOSSARY_TERMS.get(factor)
+        factor_ttip_html = tooltip(_glossary_term, "ⓘ") if _glossary_term else ""
 
         row_class = "frow supp" if is_suppressed else "frow"
         name_color = _FAINT if is_suppressed else _INK
@@ -754,8 +823,8 @@ def _factor_chart(macro: dict[str, Any]) -> str:
             f'<div class="{row_class}" style="display:grid;grid-template-columns:128px 1fr 50px;'
             'gap:10px;align-items:center;font-size:11.5px;margin-bottom:9px">'
             f"<span style=\"font-family:'IBM Plex Mono',monospace;color:{name_color};"
-            'display:flex;align-items:center;gap:6px">'
-            f"{_html.escape(factor)}&nbsp;{dom_label}</span>"
+            'display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+            f"{_html.escape(factor)}{subtitle_html}{factor_ttip_html}&nbsp;{dom_label}</span>"
             f'<div style="position:relative;height:14px;border-radius:4px;background:#f4f7f8">'
             '<div style="position:absolute;left:40%;top:-3px;bottom:-3px;width:1.5px;background:#b6c2c2"></div>'
             f'<div style="position:absolute;top:3px;height:8px;border-radius:3px;'
@@ -770,6 +839,77 @@ def _factor_chart(macro: dict[str, Any]) -> str:
 
     axis_lo = -round(domain, 1)
     axis_hi = round(domain, 1)
+
+    # --- READ summary line (dynamically generated from live macro) ---
+    long_factors = [f for f, v in betas.items() if v > 0.0 and f not in suppressed]
+    short_factors = [f for f, v in betas.items() if v < 0.0 and f not in suppressed]
+    suppressed_non_dominant = [f for f in suppressed if f != dominant_factor]
+
+    def _factor_label(f: str) -> str:
+        sub = _FACTOR_DISPLAY_NAMES.get(f, "")
+        return f"{f} ({sub})" if sub else f
+
+    dom_label_str = _factor_label(dominant_factor) if dominant_factor else ""
+
+    read_parts: list[str] = []
+    if long_factors:
+        long_names = ", ".join(_factor_label(f) for f in long_factors)
+        read_parts.append(f"long {long_names}")
+    if short_factors:
+        short_names = ", ".join(_factor_label(f) for f in short_factors)
+        read_parts.append(f"short {short_names}")
+    if suppressed_non_dominant:
+        supp_names = ", ".join(_factor_label(f) for f in suppressed_non_dominant)
+        read_parts.append(f"{supp_names} near zero (not distinguishable from no tie)")
+
+    read_body = "; ".join(read_parts) if read_parts else "no active factor exposures"
+
+    dom_note = ""
+    if dom_label_str:
+        dom_note = f" {_html.escape(dom_label_str)} dwarfs the rest &#8212; that&#8217;s why concentration is flagged."
+
+    read_html = f"<b>READ:</b> {_html.escape(read_body)}.{dom_note}"
+
+    # --- "Beyond the market" tilts line ---
+    # Non-SPY, non-suppressed factors with their direction and human label.
+    tilt_factors = [
+        (f, v) for f, v in betas.items() if f != "SPY" and f not in suppressed
+    ]
+    if tilt_factors:
+        tilt_parts: list[str] = []
+        for tf, tv in tilt_factors:
+            direction = "long" if tv >= 0.0 else "short"
+            human = _FACTOR_DISPLAY_NAMES.get(tf, tf)
+            tilt_parts.append(f"{direction} {human}")
+        tilt_list = (
+            " and ".join(tilt_parts)
+            if len(tilt_parts) <= 2
+            else (", ".join(tilt_parts[:-1]) + ", and " + tilt_parts[-1])
+        )
+        tilts_text = (
+            "Beyond the market (SPY): the distinctive style tilts are "
+            + tilt_list
+            + " &#8212; the other style factors sit near zero."
+        )
+    else:
+        tilts_text = (
+            "Beyond the market, no style factor stands out &#8212; "
+            "the book is essentially a broad-market bet."
+        )
+
+    tilts_html = f'<br><span style="color:{_FAINT}">' + tilts_text + "</span>"
+
+    # --- Combined .fnote block: READ + tilts line + whisker footnote ---
+    fnote_html = (
+        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;color:{_FAINT};"
+        'margin-top:12px;border-top:1px dashed var(--risk-line);padding-top:9px;line-height:1.6">'
+        + read_html
+        + tilts_html
+        + "<br>The thin whiskers are <b>90% confidence intervals</b>; greyed factors have "
+        "an interval that straddles zero &#8212; not distinguishable from &#8220;no tie&#8221;, "
+        "so we don&#8217;t pretend they&#8217;re real."
+        "</div>"
+    )
 
     return (
         f'<div class="ri-sec">What\'s driving it &middot; {n_factors} factors</div>'
@@ -791,14 +931,7 @@ def _factor_chart(macro: dict[str, Any]) -> str:
         f"<span>{axis_lo:.1f}</span>"
         f'<span style="position:relative;left:-12px">0 (no tie)</span>'
         f"<span>+{axis_hi:.1f}</span>"
-        "</div>"
-        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;color:{_FAINT};"
-        'margin-top:12px;border-top:1px dashed var(--risk-line);padding-top:9px;line-height:1.6">'
-        "The thin whiskers are <b>90% confidence intervals</b>; greyed factors have "
-        "an interval that straddles zero &#8212; not distinguishable from &#8220;no tie&#8221;, "
-        "so we don't pretend they're real."
-        "</div>"
-        "</div>"
+        "</div>" + fnote_html + "</div>"
     )
 
 
@@ -895,17 +1028,12 @@ def _enb_section(macro: dict[str, Any]) -> str:
         var_pct = f"{pc_variance[i]:.0%}" if i < len(pc_variance) else "?"
         name = _bet_name(i)
         desc = _bet_desc(i)
+        cnum_color = f'style="color:{_AMBER}"' if i == 0 else ""
         chaps += (
-            f'<div style="padding:11px 0;border-bottom:1px solid #eef3f4">'
-            f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
-            f'font-weight:600;color:{_AMBER if i==0 else _PETROL};letter-spacing:.1em">'
-            f"BET {i+1} &middot; {var_pct} of your risk</div>"
-            f"<div style=\"font-family:'Fraunces',serif;font-weight:700;font-size:14px;margin:3px 0 4px\">{name}</div>"
-            + (
-                f'<p style="font-size:12.5px;line-height:1.55;color:#33474c;margin-top:4px">{desc}</p>'
-                if desc
-                else ""
-            )
+            f'<div class="chap">'
+            f'<div class="cnum" {cnum_color}>BET {i+1} &middot; {var_pct} of your risk</div>'
+            f'<div class="cq">{name}</div>'
+            + (f'<p class="ans">{desc}</p>' if desc else "")
             + "</div>"
         )
 
@@ -925,17 +1053,13 @@ def _enb_section(macro: dict[str, Any]) -> str:
             "</div>"
         )
 
-    # Sector gaps note for "how to raise ENB"
-    gaps_text = ""
+    # Build the "how to raise" sector-gap action row using .act / .act .ic classes.
+    # The first .act row is data-driven (sector_gaps); rows 2 and 3 are static guidance.
     if sector_gaps:
-        gaps_text = (
-            f'<div style="display:flex;gap:11px;align-items:flex-start;font-size:13px;'
-            f'line-height:1.5;color:#33474c;margin-bottom:9px">'
-            f'<span style="flex-shrink:0;width:22px;height:22px;border-radius:6px;'
-            f"background:{_AMBER};color:#fff;font-family:'IBM Plex Mono';"
-            "font-weight:700;font-size:11px;display:flex;align-items:center;"
-            'justify-content:center;margin-top:1px">&#8593;</span>'
-            f"<div><b>Add exposure on an axis you're empty on.</b> "
+        levers_rows = (
+            '<div class="act">'
+            '<span class="ic">&#8593;</span>'
+            f"<div><b>Add exposure on an axis you&#8217;re empty on.</b> "
             f"The book has zero weight in: "
             f'{", ".join(_html.escape(g) for g in sector_gaps)}. '
             "Adding any one loads a new principal portfolio &#8594; ENB rises. "
@@ -944,48 +1068,51 @@ def _enb_section(macro: dict[str, Any]) -> str:
             'letter-spacing:.05em">DESCRIPTIVE &middot; NOT A TRADE CALL</span>'
             "</div></div>"
         )
-
-    drill = (
-        '<details class="teach" style="border-left-color:var(--risk-amber);margin-top:10px" open>'
-        '<summary style="list-style:none;cursor:pointer;padding:14px 17px;'
-        f"font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;"
-        f"text-transform:uppercase;color:{_PETROL};font-weight:600;"
-        'display:flex;justify-content:space-between;align-items:center">'
-        "<span style=\"font-family:'Fraunces',serif;font-weight:700;font-size:15px;"
-        f'text-transform:none;color:{_INK}">What are my ~{enb:.0f} bets, and how do I raise it?</span>'
-        "<span>&#9660;</span></summary>"
-        '<div style="padding:4px 17px 14px">'
-        f'<p style="margin:6px 0 12px;font-size:12.5px;line-height:1.55;color:#33474c">'
-        f"<b>&#8220;{enb:.1f} effective bets&#8221; means:</b> if you redrew your {total_h} "
-        "holdings as a handful of <i>uncorrelated</i> wagers, you'd have about "
-        f"{enb:.0f}. Names aren&#8217;t bets &#8212; <b>independent risks</b> are. "
-        "Here's what the bets actually are:</p>"
-        + chaps
-        + gap_note
-        + '<div style="margin-top:8px">'
-        + gaps_text
-        + (
-            f'<div style="display:flex;gap:11px;align-items:flex-start;font-size:13px;'
-            f'line-height:1.5;color:#33474c;margin-bottom:9px">'
-            f'<span style="flex-shrink:0;width:22px;height:22px;border-radius:6px;'
-            f"background:{_AMBER};color:#fff;font-family:'IBM Plex Mono';"
-            "font-weight:700;font-size:11px;display:flex;align-items:center;"
-            'justify-content:center;margin-top:1px">&#10005;</span>'
-            "<div><b>Don't reshuffle within your largest bet.</b> "
-            "Swapping one name for another on the same axis leaves ENB flat &#8212; it's the same bet wearing a different ticker.</div>"
-            "</div>"
+    else:
+        levers_rows = (
+            '<div class="act">'
+            '<span class="ic">&#8593;</span>'
+            "<div><b>Add exposure on an axis you&#8217;re empty on.</b> "
+            "Diversify into an axis that moves differently from your current holdings &#8594; ENB rises. "
+            "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;"
+            "background:#eef1f4;color:var(--risk-mut);padding:1px 6px;border-radius:5px;"
+            'letter-spacing:.05em">DESCRIPTIVE &middot; NOT A TRADE CALL</span>'
+            "</div></div>"
         )
-        + f'<div style="display:flex;gap:11px;align-items:flex-start;font-size:13px;'
-        f'line-height:1.5;color:#33474c">'
-        f'<span style="flex-shrink:0;width:22px;height:22px;border-radius:6px;'
-        f"background:{_AMBER};color:#fff;font-family:'IBM Plex Mono';"
-        "font-weight:700;font-size:11px;display:flex;align-items:center;"
-        'justify-content:center;margin-top:1px">i</span>'
+
+    levers_html = (
+        '<div class="levers" style="border-left-color:var(--risk-amber)">'
+        '<div class="lvh">How to react &#8212; raise effective bets</div>'
+        + levers_rows
+        + '<div class="act">'
+        '<span class="ic">&#10005;</span>'
+        "<div><b>Don&#8217;t reshuffle within your largest bet.</b> "
+        "Swapping one name for another on the same axis leaves ENB flat &#8212; it&#8217;s the same bet wearing a different ticker.</div>"
+        "</div>"
+        '<div class="act">'
+        '<span class="ic">i</span>'
         "<div><b>This is descriptive, not advice.</b> "
         "It names the axes you lack; it does not tell you to enter any of them.</div>"
         "</div>"
         "</div>"
-        "</div></details>"
+    )
+
+    drill = (
+        '<details class="teach" style="border-left-color:var(--risk-amber);margin-top:10px" open>'
+        "<summary>"
+        f'<span class="h">What are my ~{enb:.0f} bets, and how do I raise it?</span>'
+        "<span>&#9660;</span>"
+        "</summary>"
+        '<div class="tbody">'
+        f'<p class="ans" style="margin:6px 0 12px">'
+        f"<b>&#8220;{enb:.1f} effective bets&#8221; means:</b> if you redrew your {total_h} "
+        "holdings as a handful of <i>uncorrelated</i> wagers, you&#8217;d have about "
+        f"{enb:.0f}. Names aren&#8217;t bets &#8212; <b>independent risks</b> are. "
+        "Here&#8217;s what the bets actually are:</p>"
+        + chaps
+        + gap_note
+        + levers_html
+        + "</div></details>"
     )
 
     # Data-driven framing: the narrative must match the actual decomposition.
@@ -1114,9 +1241,12 @@ def _who_owns(macro: dict[str, Any]) -> str:
 
     if not risk_contribution:
         return (
-            f'<div class="ri-sec">Who owns the bet <span style="font-family:\'IBM Plex Mono\',monospace;'
-            f"font-size:8px;font-weight:700;letter-spacing:.08em;background:{_PETROL};color:#fff;"
-            'padding:1px 6px;border-radius:6px;margin-left:8px;vertical-align:middle">RISK &#8800; $</span></div>'
+            f'<div class="ri-sec">Who owns the bet '
+            f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;"
+            f"letter-spacing:.08em;background:{_PETROL};color:#fff;"
+            'padding:1px 6px;border-radius:6px;margin-left:8px;vertical-align:middle">RISK &#8800; $</span> '
+            f'{tooltip("Risk contribution", "ⓘ")}'
+            f"</div>"
             f'<div class="barwrap" style="background:{_CARD};border:1px solid {_LINE};'
             f'border-radius:14px;padding:18px 20px">'
             f'<p style="font-size:12px;color:{_MUT}">DATA-GAP: risk contribution not available &#8212; '
@@ -1134,13 +1264,10 @@ def _who_owns(macro: dict[str, Any]) -> str:
     max_rc = sorted_rc[0][1] if sorted_rc else 1.0
 
     rows = ""
-    for ticker, rc in sorted_rc:
+    for ticker, rc in sorted_rc[:5]:
         meta = meta_lookup.get(ticker, {})
         name = str(meta.get("name", ticker))
-        weight = meta.get("weight")
         bar_pct = rc / max_rc * 100.0
-
-        weight_str = f"~{float(weight):.0%} of $" if weight is not None else ""
 
         rows += (
             f'<div class="risk-wrow">'
@@ -1148,13 +1275,7 @@ def _who_owns(macro: dict[str, Any]) -> str:
             f"<span style=\"color:{_FAINT};font-family:'IBM Plex Sans',sans-serif;font-size:9.5px\">{_html.escape(name)}</span>"
             "</span>"
             f'<span class="risk-wt"><span class="risk-wf" style="width:{bar_pct:.0f}%"></span></span>'
-            f'<span class="risk-wv">{rc:.0%} of risk'
-            + (
-                f'<br><span style="font-size:9px;color:{_FAINT}">{weight_str}</span>'
-                if weight_str
-                else ""
-            )
-            + "</span>"
+            f'<span class="risk-wv">{rc:.0%}</span>'
             "</div>"
         )
 
@@ -1191,7 +1312,8 @@ def _who_owns(macro: dict[str, Any]) -> str:
         f'<div class="ri-sec">Who owns the bet '
         f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;"
         f"letter-spacing:.08em;background:{_PETROL};color:#fff;"
-        'padding:1px 6px;border-radius:6px;margin-left:8px;vertical-align:middle">RISK &#8800; $</span>'
+        'padding:1px 6px;border-radius:6px;margin-left:8px;vertical-align:middle">RISK &#8800; $</span> '
+        f'{tooltip("Risk contribution", "ⓘ")}'
         f"</div>"
         f'<div class="barwrap" style="background:{_CARD};border:1px solid {_LINE};'
         'border-radius:14px;padding:18px 20px">'
@@ -1200,6 +1322,9 @@ def _who_owns(macro: dict[str, Any]) -> str:
         "<b>not dollar weight</b>. "
         + caption_example
         + "Trimming the biggest risk owners clears the flag fastest.</p>"
+        + '<p style="font-size:10.5px;color:var(--risk-mut);margin:0 0 10px">'
+        + "Right column = % of portfolio risk (Euler decomposition), not % of dollars"
+        + "</p>"
         + rows
         + gap_note
         + "</div>"
@@ -1277,65 +1402,174 @@ def _drift(macro: dict[str, Any]) -> str:
     )
 
 
-def _teach() -> str:
+def _teach(macro: dict[str, Any]) -> str:  # noqa: C901
+    """Plain-English walkthrough card — data-driven from live macro."""
+    # ── pull live values (degrade gracefully) ────────────────────────────────
+    betas: dict[str, float] = macro.get("net_beta_by_factor") or {}
+    spy_beta: float | None = betas.get("SPY")
+    sys_share_raw = macro.get("systematic_share")
+    idio_share_raw = macro.get("idiosyncratic_share")
+    flags: list[str] = macro.get("flags") or []
+    dominant_factor: str = macro.get("dominant_factor") or ""
+
+    # ── Q1: net beta answer ───────────────────────────────────────────────────
+    if spy_beta is None:
+        q1_ans = '<p class="ans">DATA-GAP: net beta not available &#8212; run weekly-brief to populate.</p>'
+    else:
+        band = classify_net_beta(spy_beta)
+        band_desc = band.value.lower()  # e.g. "market-like", "elevated"
+        q1_ans = (
+            f'<p class="ans"><b>{band_desc.capitalize()} market exposure '
+            f"({spy_beta:+.2f}&times;)</b>. "
+            "No defined line for size &#8212; so it&#8217;s grey.</p>"
+        )
+
+    # ── Q2: donut + verdict ───────────────────────────────────────────────────
+    _SYS_THRESHOLD = 0.60
+    if sys_share_raw is None or idio_share_raw is None:
+        q2_body = (
+            '<p class="csub">Systematic share: the fraction of variance from market-wide forces vs individual names.</p>'
+            '<p class="ans">DATA-GAP: systematic / idiosyncratic shares not available.</p>'
+        )
+    else:
+        sys_pct = int(round(float(sys_share_raw) * 100))
+        idio_pct = int(round(float(idio_share_raw) * 100))
+        flagged = float(sys_share_raw) >= _SYS_THRESHOLD
+        sys_colour = _AMBER if flagged else _OK
+        sys_label = "flagged bet" if flagged else "within line"
+        idio_label = "within line" if flagged else "spread out"
+        verdict_phrase = "One big bet" if flagged else "Spread out"
+        if flagged:
+            verdict_body = (
+                f"<b>{verdict_phrase}</b> &#8212; the amber slice crossed the 60% line."
+            )
+        else:
+            verdict_body = f"<b>{verdict_phrase}</b> &#8212; the stock-specific slice dominates (below the 60% line)."
+        donut_html = (
+            f'<div class="donut" style="background:conic-gradient({sys_colour} 0 {sys_pct}%,{_OK} {sys_pct}% 100%)">'
+            f"<b>{sys_pct}%<span>SYSTEMATIC</span></b>"
+            "</div>"
+        )
+        legend_html = (
+            '<div class="dleg">'
+            f'<span class="sw2" style="background:{sys_colour}"></span>'
+            f"Systematic ({sys_label}) {sys_pct}%<br>"
+            f'<span class="sw2" style="background:{_OK}"></span>'
+            f"Stock-specific ({idio_label}) {idio_pct}%"
+            "</div>"
+        )
+        q2_body = (
+            '<p class="csub">Systematic share: the fraction of variance from market-wide forces vs individual names.</p>'
+            f'<div class="split" style="margin-top:6px">'
+            f"{donut_html}"
+            f'<div style="flex:1">{legend_html}'
+            f'<p class="ans" style="margin-top:8px">{verdict_body}</p>'
+            "</div></div>"
+        )
+
+    # ── Q3: what's driving it ─────────────────────────────────────────────────
+    # Build a concise factor summary using human-readable labels from _FACTOR_DISPLAY_NAMES
+    long_labels: list[str] = []
+    short_labels: list[str] = []
+    for fname, fval in betas.items():
+        if fname == "SPY":
+            continue  # SPY is covered separately as "market"
+        if abs(fval) >= 0.1:
+            human = _FACTOR_DISPLAY_NAMES.get(fname, fname)
+            if fval > 0:
+                long_labels.append(human)
+            else:
+                short_labels.append(human)
+
+    factor_parts: list[str] = []
+    if long_labels:
+        factor_parts.append("long " + " & ".join(long_labels))
+    if short_labels:
+        factor_parts.append("short " + " & ".join(short_labels))
+    factor_str = ", ".join(factor_parts) if factor_parts else "factor exposures present"
+
+    # Sector tilt note
+    sector_weights: dict[str, float] = macro.get("sector_weights") or {}
+    top_sector = (
+        max(sector_weights, key=lambda k: sector_weights[k]) if sector_weights else None
+    )
+    sector_note = f"; {top_sector}-heavy" if top_sector else ""
+
+    if dominant_factor:
+        dom_human = _FACTOR_DISPLAY_NAMES.get(dominant_factor, dominant_factor)
+        q3_ans = (
+            f'<p class="ans"><b>Long market{", " + factor_str if factor_parts else ""}'
+            f"{sector_note}.</b> "
+            f"<b>{dom_human}</b> dwarfs everything.</p>"
+        )
+    else:
+        q3_ans = (
+            f'<p class="ans"><b>Long market{", " + factor_str if factor_parts else ""}'
+            f"{sector_note}.</b> See the factor breakdowns above for the full picture.</p>"
+        )
+
+    # ── Q4: what to watch — dynamic from flags ────────────────────────────────
+    n_flags = len(flags)
+    if n_flags == 0:
+        q4_sub = "Descriptive dials &#8212; no defined lines tripped this week."
+        q4_body = (
+            '<p class="ans">Nothing flagged &#8212; the dials are informational. '
+            "Nothing here says to enter or exit positions.</p>"
+        )
+    else:
+        shorts = [_flag_short(f) for f in flags]
+        if n_flags == 1:
+            tripped = f"one line tripped: <b>{shorts[0]}</b>"
+        elif n_flags == 2:
+            tripped = f"two lines tripped: <b>{shorts[0]}</b> and <b>{shorts[1]}</b>"
+        else:
+            joined = (
+                ", ".join(f"<b>{s}</b>" for s in shorts[:-1])
+                + f" and <b>{shorts[-1]}</b>"
+            )
+            tripped = f"{n_flags} lines tripped: {joined}"
+        q4_sub = f"Descriptive dials &#8212; {tripped} this week."
+        # Build bold-phrase list for Q4 confirmation line
+        confirm_parts = [f"<b>{_flag_short(f)}</b>" for f in flags]
+        confirm_str = " and ".join(confirm_parts)
+        _verb = "is" if n_flags == 1 else "are"
+        q4_body = (
+            f'<p class="ans">Confirm the {confirm_str} '
+            f"{_verb} intentional. Nothing here says to enter or exit positions.</p>"
+        )
+
     return (
         '<div class="ri-sec" id="teach">'
         f'<span style="color:{_PETROL}">Teach me</span> &middot; The risk story</div>'
         '<details class="teach" open>'
-        '<summary style="list-style:none;cursor:pointer;padding:14px 17px;'
-        f"font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;"
-        f"text-transform:uppercase;color:{_PETROL};font-weight:600;"
-        'display:flex;justify-content:space-between;align-items:center">'
-        f"<span style=\"font-family:'Fraunces',serif;font-weight:700;font-size:15px;"
-        f'text-transform:none;color:{_INK}">Plain-English walkthrough</span>'
-        "<span>&#8722;</span></summary>"
-        '<div style="padding:4px 17px 14px">'
+        '<summary><span class="h">Plain-English walkthrough</span><span>&#8722;</span></summary>'
+        '<div class="tbody">'
         # Q1
-        f'<div style="padding:14px 0;border-bottom:1px solid #eef3f4">'
-        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
-        f'font-weight:600;color:{_PETROL};letter-spacing:.1em">QUESTION 1</div>'
-        f"<div style=\"font-family:'Fraunces',serif;font-weight:700;font-size:16px;"
-        'margin:3px 0 4px">How much market am I holding?</div>'
-        f'<p style="font-size:12px;color:{_MUT};line-height:1.5;margin:0 0 9px">'
-        '"Net beta" = how hard the book swings vs the market. 1.0 = step-for-step.</p>'
-        f'<p style="font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px">'
-        "<b>The net beta tells you the swing size.</b> No defined line for size &#8212; so it's grey.</p>"
+        '<div class="chap">'
+        '<div class="cnum">QUESTION 1</div>'
+        '<div class="cq">How much market am I holding?</div>'
+        '<p class="csub">&#8220;Net beta&#8221; = how hard the book swings vs the market. 1.0 = step-for-step.</p>'
+        f"{q1_ans}"
         "</div>"
         # Q2
-        f'<div style="padding:14px 0;border-bottom:1px solid #eef3f4">'
-        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
-        f'font-weight:600;color:{_PETROL};letter-spacing:.1em">QUESTION 2</div>'
-        f"<div style=\"font-family:'Fraunces',serif;font-weight:700;font-size:16px;"
-        'margin:3px 0 4px">Is it spread out, or one big bet?</div>'
-        f'<p style="font-size:12px;color:{_MUT};line-height:1.5;margin:0 0 9px">'
-        "Systematic share: the fraction of variance in market-wide forces vs individual names.</p>"
-        f'<p style="font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px">'
-        "<b>The systematic-share strip shows you exactly where you sit.</b> "
-        "Past 60% = the amber line trips.</p>"
+        '<div class="chap">'
+        '<div class="cnum">QUESTION 2</div>'
+        '<div class="cq">Is it spread out, or one big bet?</div>'
+        f"{q2_body}"
         "</div>"
         # Q3
-        f'<div style="padding:14px 0;border-bottom:1px solid #eef3f4">'
-        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
-        f'font-weight:600;color:{_PETROL};letter-spacing:.1em">QUESTION 3</div>'
-        f"<div style=\"font-family:'Fraunces',serif;font-weight:700;font-size:16px;"
-        "margin:3px 0 4px\">What's driving it?</div>"
-        f'<p style="font-size:12px;color:{_MUT};line-height:1.5;margin:0 0 9px">'
-        "See the factor + sector breakdowns above.</p>"
-        f'<p style="font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px">'
-        "<b>Long market, growth &amp; momentum; sector-heavy.</b> The dominant factor dwarfs the rest &#8212; "
-        "that's why concentration is flagged.</p>"
+        '<div class="chap">'
+        '<div class="cnum">QUESTION 3</div>'
+        '<div class="cq">What&#8217;s driving it?</div>'
+        '<p class="csub">See the factor + sector breakdowns above.</p>'
+        f"{q3_ans}"
         "</div>"
         # Q4
-        f'<div style="padding:14px 0">'
-        f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
-        f'font-weight:600;color:{_PETROL};letter-spacing:.1em">QUESTION 4</div>'
-        f"<div style=\"font-family:'Fraunces',serif;font-weight:700;font-size:16px;"
-        'margin:3px 0 4px">So what should I watch?</div>'
-        f'<p style="font-size:12px;color:{_MUT};line-height:1.5;margin:0 0 9px">'
-        "Descriptive dials &#8212; check whether any defined lines tripped this week.</p>"
-        f'<p style="font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px">'
-        "Confirm the <b>concentration</b> and any <b>upward drift</b> are intentional. "
-        "Nothing here says to enter or exit positions.</p>"
+        '<div class="chap">'
+        '<div class="cnum">QUESTION 4</div>'
+        '<div class="cq">So what should I watch?</div>'
+        f'<p class="csub">{q4_sub}</p>'
+        f"{q4_body}"
         "</div>"
         "</div></details>"
     )
@@ -1390,11 +1624,16 @@ def _flags_footer(
 # ===========================================================================
 
 
-def _compose(macro: dict[str, Any] | None) -> str:
+def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
     """Compose the full Risk-tab HTML.
 
     Args:
-        macro: the macro dict from load_brief_summary(), or None.
+        macro:    the macro dict from load_brief_summary(), or None.
+        ai_html:  optional pre-rendered HTML for the Google-AI second-opinion
+                  panel.  When non-empty it is injected between the drift
+                  section and the teach section (matching mockup order).
+                  Ignored (not inserted) when empty / falsy — _compose stays
+                  fully testable without a live CaseResult.
 
     Returns:
         Complete HTML string (safe to pass to st.markdown(unsafe_allow_html=True)).
@@ -1425,9 +1664,12 @@ def _compose(macro: dict[str, Any] | None) -> str:
         _sector_section(macro),
         _who_owns(macro),
         _drift(macro),
-        # render_risk_second_opinion is called separately in render() since it
-        # needs a CaseResult object; _compose stays pure / testable without it.
-        _teach(),
+    ]
+    # Mockup order: _drift → [Second opinion · Google AI] → _teach → _flags_footer
+    if ai_html:
+        parts.append(ai_html)
+    parts += [
+        _teach(macro),
         _flags_footer(
             flags,
             macro.get("coverage_holdings", "?"),
@@ -1447,15 +1689,22 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
     summary = load_brief_summary(path)
     macro = (summary or {}).get("macro") if summary else None
 
-    # v8 pure-HTML compose
-    st.markdown(_compose(macro), unsafe_allow_html=True)
+    # Build AI second-opinion panel HTML BEFORE composing (spec §9 — no live
+    # Gemini at render time; cache-first load only).  ai_html is "" when
+    # off-local or cache empty — _compose ignores empty strings.
+    ai_html = ""
+    if macro is not None:
+        from application.risk_second_opinion import load_cached_risk_second_opinion
 
-    if macro is None:
-        return
+        ai_html = render_risk_second_opinion(load_cached_risk_second_opinion())
 
-    # Render AI second-opinion panel: cache-first load (spec §9 — no live Gemini at render time)
-    from application.risk_second_opinion import load_cached_risk_second_opinion
+    # Single st.markdown call — ensures mockup order:
+    #   _drift → Second opinion · Google AI → _teach → _flags_footer
+    st.markdown(_compose(macro, ai_html), unsafe_allow_html=True)
 
-    ai_html = render_risk_second_opinion(load_cached_risk_second_opinion())
-    if ai_html:
-        st.markdown(ai_html, unsafe_allow_html=True)
+    # Lens-nav smooth-scroll shim — native hash anchors rerun the app instead of
+    # scrolling; this intercepts the bean click client-side (see lens_scroll.py).
+    if macro is not None:
+        from adapters.visualization.components.lens_scroll import render_lens_scroll
+
+        render_lens_scroll()
