@@ -223,8 +223,12 @@ def test_no_cite_cases_skips_prefetch(
     fake_summarizer = _FakeCaseSummarizer()
     monkeypatch.setattr(cli_mod, "_build_weekly_brief", _fake_build)
     import application.card_loading as cl_mod
+    import application.risk_second_opinion as _rso_mod
 
     monkeypatch.setattr(cl_mod, "select_case_summarizer", lambda: fake_summarizer)
+    # build_risk_second_opinion is a cache-warming side-effect unrelated to --cite-cases;
+    # stub it out so it doesn't call the fake summarizer and pollute the assertion.
+    monkeypatch.setattr(_rso_mod, "build_risk_second_opinion", lambda *a, **k: None)
 
     runner = CliRunner()
     result = runner.invoke(
