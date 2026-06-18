@@ -1,4 +1,4 @@
-.PHONY: test test-fast test-tab test-domain test-adapters test-cov lint typecheck setup check
+.PHONY: test test-fast test-tab test-domain test-adapters test-smoke test-cov lint typecheck setup check
 
 # ── Iteration targets (fast, no coverage) ────────────────────────────────────
 
@@ -15,6 +15,9 @@ test-domain:
 
 test-adapters:
 	pytest tests/adapters/ -q -n auto --tb=short
+
+test-smoke:
+	pytest tests/ -q -n auto -m smoke --tb=short
 
 # ── Full suite, no coverage ───────────────────────────────────────────────────
 
