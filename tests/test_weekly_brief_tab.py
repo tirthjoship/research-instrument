@@ -265,7 +265,7 @@ def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-de
             st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
         ),
         patch.object(st, "progress", return_value=progress_mock),
-        patch.object(wb, "_fetch_card", return_value=EvidenceCard("YUMC", (), ())),
+        patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
         patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
         # FIX B: stub network fetches so _render_one_holding doesn't hit yfinance
@@ -624,7 +624,7 @@ def test_home_cards_loader_returns_one_per_needs_review(monkeypatch: object) -> 
         {"ticker": "AAPL", "verdict": "HOLD", "unrealized_pct": 2.0, "why": "y"},
     ]
     # stub the cached fetch to avoid network
-    monkeypatch.setattr(wb, "_fetch_card", lambda t: EvidenceCard(t, (), ()))  # type: ignore[attr-defined]
+    monkeypatch.setattr(wb, "fetch_card", lambda t: EvidenceCard(t, (), ()))  # type: ignore[attr-defined]
     cards = wb._needs_review_cards(holds)  # type: ignore[attr-defined]
     assert [t for t, _ in cards] == ["YUMC"]  # only the TRIM row
 
@@ -713,7 +713,7 @@ def test_home_render_shows_door_and_book_vitals_together(tmp_path: object) -> No
             st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
         ),
         patch.object(st, "progress", return_value=progress_mock),
-        patch.object(wb, "_fetch_card", return_value=EvidenceCard("YUMC", (), ())),
+        patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
         patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
         patch.object(wb, "is_local_runtime", return_value=False),
@@ -875,7 +875,7 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
             st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
         ),
         patch.object(st, "progress", return_value=progress_mock),
-        patch.object(wb, "_fetch_card", return_value=EvidenceCard("YUMC", (), ())),
+        patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
         patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
         patch.object(wb, "is_local_runtime", return_value=False),
@@ -901,11 +901,11 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
 
 
 def test_fetch_card_analyst_key_mapping_lights_analysts_square() -> None:
-    """_fetch_card must remap numberOfAnalystOpinions → analyst_count so
+    """fetch_card must remap numberOfAnalystOpinions → analyst_count so
     build_analyst_panel builds a non-GAP panel when coverage is present."""
     from unittest.mock import patch  # noqa: PLC0415
 
-    from adapters.visualization.tabs import weekly_brief as wb
+    import adapters.visualization.card_fetch as card_fetch_mod
     from domain.evidence_rag import RagColor
 
     raw_info = {
@@ -952,7 +952,7 @@ def test_fetch_card_analyst_key_mapping_lights_analysts_square() -> None:
             "cache_data",
             side_effect=lambda *a, **kw: (lambda f: f),
         ):
-            card = wb._fetch_card("MSFT")  # type: ignore[attr-defined]
+            card = card_fetch_mod.fetch_card("MSFT")
 
     # Find the Analysts signal in the card
     analysts_sig = next((s for s in card.signals if s.dimension == "Analysts"), None)

@@ -1,6 +1,24 @@
 from adapters.visualization.components import glossary as g
 from domain.fit import FORBIDDEN_WORDS
 
+NEW_RISK_TERMS = [
+    "Effective bets",
+    "Adjusted R²",
+    "Bootstrap band",
+    "Downside beta",
+    "Risk contribution",
+    "VIF",
+    "Diversification ratio",
+    "HHI",
+    "GICS sector",
+    "Drift",
+    "Risk line",
+    "Coverage",
+    "Systematic share",
+    "Net beta",
+    "Concentration",
+]
+
 REQUIRED = {
     "Net beta",
     "Universe",
@@ -37,3 +55,17 @@ def test_glossary_definitions_have_no_forbidden_words():
         low = definition.lower()
         for w in FORBIDDEN_WORDS:
             assert w not in low, f"'{w}' in glossary[{term}]"
+
+
+def test_new_risk_terms_present() -> None:
+    for term in NEW_RISK_TERMS:
+        assert (
+            term in g.GLOSSARY and g.GLOSSARY[term]
+        ), f"glossary missing or empty: {term!r}"
+
+
+def test_new_terms_have_no_forbidden_words() -> None:
+    for term in NEW_RISK_TERMS:
+        text = g.GLOSSARY[term].lower()
+        for w in FORBIDDEN_WORDS:
+            assert w not in text, f"'{w}' found in glossary[{term!r}]"

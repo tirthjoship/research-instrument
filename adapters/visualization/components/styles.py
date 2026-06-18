@@ -39,6 +39,7 @@ html, body, [class*="css"] {
     color: var(--text-primary);
     background-color: var(--bg-primary);
     -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
 }
 h1 {
     font-family: 'DM Sans', sans-serif !important;
@@ -745,7 +746,7 @@ header[data-testid="stHeader"] { display: none !important; }
 #MainMenu,header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"]{display:none!important;}
 html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px at 12% -8%,#FFF 0%,rgba(255,255,255,0) 55%),var(--ri-app)!important;}
 [data-testid="stMainBlockContainer"],.block-container{max-width:1180px!important;margin-left:auto!important;margin-right:auto!important;padding:0.5rem 1.9rem 3rem!important;font-family:'IBM Plex Sans',sans-serif;color:var(--ri-ink);}
-.ri-h1{font-family:'Fraunces',serif;font-weight:600;font-size:2.6rem;line-height:1.03;letter-spacing:-.015em;color:var(--ri-ink);}
+.ri-h1{font-family:'Fraunces',serif;font-weight:900;font-size:38px;line-height:1.04;letter-spacing:-.02em;color:var(--ri-ink);}.ri-h1 em{font-style:italic;font-weight:400;}
 .ri-sub{font-family:'Fraunces',serif;font-style:italic;font-size:1.12rem;color:var(--ri-ink2);}
 .ri-sec{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:.8rem;margin:.4rem 0 1rem;}
 .ri-sec::after{content:"";flex:1;height:1px;background:var(--ri-hair);}
@@ -753,6 +754,8 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .ri-tip{position:absolute;bottom:142%;left:50%;transform:translateX(-50%) translateY(5px);background:#1b2733;color:#eef3f6;font-family:'IBM Plex Sans';font-size:.76rem;line-height:1.45;padding:.65rem .8rem;border-radius:10px;width:240px;box-shadow:0 10px 30px rgba(15,30,45,.22);opacity:0;visibility:hidden;transition:.15s;z-index:60;text-align:left;}
 .ri-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1b2733;}
 .ri-ttip:hover .ri-tip{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+.ri-lens{transition:transform .15s;display:block;}
+.ri-lens:hover{transform:translateY(-2px);}
 
 /* ===== Research Instrument — Evidence Ledger ===== */
 .ri-ledger{display:flex;align-items:center;flex-wrap:wrap;border-top:1.5px solid var(--ri-ink);border-bottom:1px solid var(--ri-hair);font-family:'IBM Plex Mono',monospace;font-size:.78rem;letter-spacing:.04em;color:var(--ri-ink2);margin:.2rem 0 2rem;padding:.6rem 0;}
@@ -944,6 +947,572 @@ div[data-testid="stFileUploader"] span {
     font-size: 12.5px !important;
     color: #0F6E80 !important;
 }
+
+/* ===== Risk Tab — Status-First Design Tokens (Task 10 / ADR-052) ===== */
+/* STATUS SPINE: green=within line · grey=neutral character · amber=look-here
+   Petrol (--ri-teal) is the ONLY data colour. These tokens mirror risk-v8.html :root */
+:root {
+    --risk-ok: #15803d;
+    --risk-ok-l: #e7f4ec;
+    --risk-amber: #b45309;
+    --risk-amber-l: #fbf0dc;
+    --risk-amber-b: #ecdcb6;
+    --risk-g0: #E2E8F0;
+    --risk-g1: #94A3B8;
+    --risk-g2: #475569;
+    /* petrol data hue — reuse existing --ri-teal (#0F6E80) for data bars */
+    --risk-petrol: #0F6E80;
+    --risk-petrol-d: #0a5260;
+    --risk-petrol-l: #e6f1f3;
+    --risk-ink: #0f1c1f;
+    --risk-mut: #5b7178;
+    --risk-faint: #94a8ad;
+    --risk-line: #dde7e9;
+    --risk-paper: #fbfcfc;
+    --risk-card: #ffffff;
+    --risk-shadow: 0 1px 2px rgba(15,28,31,.05), 0 8px 24px -12px rgba(15,28,31,.12);
+}
+
+/* ── Status banner (green / amber states) ── */
+.risk-status {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-radius: 14px;
+    padding: 15px 18px;
+    box-shadow: var(--risk-shadow);
+    margin-bottom: 12px;
+    border: 1px solid var(--risk-amber-b);
+    background: linear-gradient(120deg, var(--risk-amber-l), #fff 75%);
+}
+.risk-status.ok {
+    border-color: #bbddc8;
+    background: linear-gradient(120deg, var(--risk-ok-l), #fff 75%);
+}
+.risk-status .risk-big {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 22px;
+    background: var(--risk-amber);
+    color: #fff;
+}
+.risk-status.ok .risk-big { background: var(--risk-ok); }
+.risk-status .risk-sk {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--risk-amber);
+    font-weight: 600;
+}
+.risk-status.ok .risk-sk { color: var(--risk-ok); }
+.risk-status .risk-sv {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-top: 2px;
+}
+.risk-status .risk-ss {
+    font-size: 12px;
+    color: var(--risk-mut);
+    margin-top: 3px;
+    line-height: 1.45;
+}
+.risk-status .risk-meas {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--risk-faint);
+    letter-spacing: .06em;
+    text-align: right;
+    flex-shrink: 0;
+    line-height: 1.6;
+}
+
+/* ── Vitals strip ── */
+.risk-vitals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    gap: 10px;
+    margin: 14px 0 0;
+}
+.risk-vit {
+    background: var(--risk-card);
+    border: 1px solid var(--risk-line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: var(--risk-shadow);
+    border-top: 3px solid var(--risk-petrol);
+}
+.risk-vit.amber { border-top-color: var(--risk-amber); }
+.risk-vit.grey  { border-top-color: var(--risk-g1); }
+.risk-vit.ok    { border-top-color: var(--risk-ok); }
+.risk-vit .risk-vk {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--risk-faint);
+    display: flex;
+    align-items: center;
+}
+.risk-vit .risk-vv {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: 23px;
+    margin-top: 5px;
+    line-height: 1;
+}
+.risk-vit .risk-vv small {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--risk-mut);
+}
+.risk-vit .risk-vs {
+    font-size: 10.5px;
+    color: var(--risk-mut);
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+/* ── Gauge dials ── */
+.risk-cluster {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 13px;
+}
+.risk-gauge {
+    background: var(--risk-card);
+    border: 1px solid var(--risk-line);
+    border-radius: 14px;
+    padding: 16px 14px 14px;
+    box-shadow: var(--risk-shadow);
+    text-align: center;
+    border-top: 3px solid var(--risk-g1);
+}
+.risk-gauge.flagged {
+    border-top-color: var(--risk-amber);
+    background: linear-gradient(180deg, var(--risk-amber-l), #fff 55%);
+}
+.risk-gauge.clear { border-top-color: var(--risk-ok); }
+.risk-glab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--risk-faint);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.risk-gval {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: 24px;
+    line-height: 1;
+    margin-top: 5px;
+}
+.risk-gband {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: #eef1f4;
+    color: var(--risk-g2);
+    display: inline-block;
+    margin-top: 7px;
+}
+.risk-gband.warn { background: var(--risk-amber); color: #fff; }
+.risk-gband.ok   { background: var(--risk-ok);    color: #fff; }
+.risk-gsub {
+    font-size: 10.5px;
+    color: var(--risk-mut);
+    margin-top: 7px;
+    line-height: 1.4;
+}
+
+/* ── Bootstrap CI band on a track strip ── */
+.risk-ciband {
+    position: absolute;
+    top: 0;
+    height: 14px;
+    background: rgba(180, 83, 9, .16);
+    border-left: 1px dashed rgba(180, 83, 9, .5);
+    border-right: 1px dashed rgba(180, 83, 9, .5);
+}
+.risk-cilabel {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--risk-amber);
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* ── Factor whiskers (90% CI on factor bars) ── */
+.risk-whisk {
+    position: absolute;
+    top: 6.5px;
+    height: 1.5px;
+    background: rgba(15, 28, 31, .45);
+}
+.risk-whisk::before,
+.risk-whisk::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    width: 1.5px;
+    height: 7px;
+    background: rgba(15, 28, 31, .45);
+}
+.risk-whisk::before { left: 0; }
+.risk-whisk::after  { right: 0; }
+
+/* ── ENB (Effective Number of Bets) block ── */
+.risk-enb {
+    background: var(--risk-card);
+    border: 1px solid var(--risk-line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: var(--risk-shadow);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+.risk-enbnum {
+    text-align: center;
+    flex-shrink: 0;
+}
+.risk-enbnum .risk-big-n {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 46px;
+    line-height: .9;
+    color: var(--risk-amber);
+}
+.risk-enbnum .risk-of {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--risk-faint);
+    letter-spacing: .06em;
+    margin-top: 4px;
+}
+.risk-enbnum .risk-lab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--risk-faint);
+    margin-top: 8px;
+}
+.risk-enbright { flex: 1; }
+.risk-enbright p {
+    font-size: 12.5px;
+    color: #33474c;
+    line-height: 1.55;
+    margin: 0 0 12px;
+}
+.risk-enbright p b { color: var(--risk-ink); }
+
+/* PC variance bars inside ENB block */
+.risk-pcrow {
+    display: grid;
+    grid-template-columns: 64px 1fr 40px;
+    align-items: center;
+    gap: 9px;
+    font-size: 11px;
+    margin-bottom: 6px;
+}
+.risk-pcrow .risk-pn {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--risk-mut);
+}
+.risk-pcrow .risk-pt {
+    height: 9px;
+    background: #f4f7f8;
+    border-radius: 5px;
+    position: relative;
+    overflow: hidden;
+}
+.risk-pcrow .risk-pf {
+    position: absolute;
+    top: 0; left: 0;
+    height: 9px;
+    border-radius: 5px;
+    background: var(--risk-petrol);
+}
+.risk-pcrow .risk-pf.one { background: var(--risk-amber); }
+.risk-pcrow .risk-pv {
+    font-family: 'IBM Plex Mono', monospace;
+    text-align: right;
+    color: var(--risk-ink);
+}
+
+/* ── Sector / weight bars ── */
+.risk-wrow {
+    display: grid;
+    grid-template-columns: 140px 1fr 48px;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+.risk-wrow .risk-wn {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--risk-ink);
+}
+.risk-wrow .risk-wt {
+    height: 11px;
+    background: #f4f7f8;
+    border-radius: 5px;
+    position: relative;
+    overflow: hidden;
+}
+.risk-wrow .risk-wf {
+    position: absolute;
+    top: 0; left: 0;
+    height: 11px;
+    border-radius: 5px;
+    background: var(--risk-petrol);
+}
+.risk-wrow .risk-wv {
+    font-family: 'IBM Plex Mono', monospace;
+    text-align: right;
+    color: var(--risk-ink);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Google AI second-opinion panel ── */
+.risk-ai {
+    border: 1px solid #dfe3ea;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fbfcff, #fff 60%);
+    box-shadow: var(--risk-shadow);
+    overflow: hidden;
+}
+.risk-aihd {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 14px 17px;
+    border-bottom: 1px solid #eef1f6;
+}
+.risk-aihd .risk-at {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 15px;
+}
+.risk-aihd .risk-ab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    background: #eef1f4;
+    color: var(--risk-mut);
+    padding: 2px 7px;
+    border-radius: 7px;
+    margin-left: auto;
+}
+.risk-aibody { padding: 14px 17px; }
+.risk-aiq {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .06em;
+    color: var(--risk-faint);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+.risk-aipt {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #33474c;
+    margin-bottom: 10px;
+}
+.risk-aipt .risk-n {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background: #eef1f6;
+    color: var(--risk-mut);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+}
+.risk-aipt b { color: var(--risk-ink); }
+.risk-aifoot {
+    font-size: 10.5px;
+    color: var(--risk-faint);
+    background: #f8f9fc;
+    border-top: 1px solid #eef1f6;
+    padding: 9px 17px;
+    line-height: 1.5;
+}
+/* Google coloured dots for AI attribution */
+.risk-gdot { display: flex; gap: 3px; }
+.risk-gdot i { width: 8px; height: 8px; border-radius: 50%; }
+.risk-gdot .gb { background: #4285F4; }
+.risk-gdot .gr { background: #EA4335; }
+.risk-gdot .gy { background: #FBBC05; }
+.risk-gdot .gg { background: #34A853; }
+/* Re-run instruction label (non-interactive — live calls happen via weekly-brief CLI, not at render) */
+.risk-aibtn{display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--risk-petrol);border:1px solid var(--risk-line);border-radius:9px;padding:8px 13px;background:#fff;margin-top:4px}
+/* Section-tag label used in ri-sec headers */
+.ri-tg{color:var(--risk-petrol)}
+
+/* ── Drift flag card ── */
+.risk-drift {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    background: var(--risk-card);
+    border: 1px solid var(--risk-amber-b);
+    border-left: 4px solid var(--risk-amber);
+    border-radius: 14px;
+    padding: 16px 20px;
+    box-shadow: var(--risk-shadow);
+}
+.risk-drift .risk-dk {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--risk-amber);
+    display: flex;
+    align-items: center;
+}
+.risk-drift .risk-dt {
+    font-size: 13px;
+    line-height: 1.55;
+    color: #33474c;
+    margin-top: 6px;
+}
+.risk-drift .risk-dt b  { color: var(--risk-ink); }
+.risk-drift .risk-dt .risk-up { color: var(--risk-amber); font-weight: 600; }
+
+/* ── Spectrum note (under dials) ── */
+.risk-spectrum-note {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    color: var(--risk-faint);
+    text-align: center;
+    margin-top: 9px;
+    letter-spacing: .04em;
+}
+
+/* ── Coverage line ── */
+.risk-cov {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--risk-faint);
+    letter-spacing: .08em;
+    margin-top: 10px;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* ── Flag cards (active flags list) ── */
+.risk-flagcard {
+    display: flex;
+    gap: 11px;
+    align-items: flex-start;
+    background: var(--risk-amber-l);
+    border: 1px solid var(--risk-amber-b);
+    border-left: 4px solid var(--risk-amber);
+    border-radius: 11px;
+    padding: 13px 15px;
+    margin-bottom: 9px;
+}
+.risk-flagcard .risk-fdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--risk-amber);
+    margin-top: 5px;
+    flex-shrink: 0;
+}
+.risk-flagcard .risk-ft {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #5b4a28;
+}
+.risk-flagcard .risk-ft b {
+    color: #3f3318;
+    display: block;
+    margin-bottom: 3px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .06em;
+}
+
+/* ── Teach-me walkthrough (.teach family) — ported from risk-v8.html lines 100-104 ── */
+/* .teach border-left-color is NOT !important so R04/ENB can override it with style="border-left-color:var(--risk-amber)" */
+.teach{border:1px solid var(--risk-line);border-left:4px solid var(--risk-petrol);border-radius:13px;background:var(--risk-paper);overflow:hidden}
+.teach summary{list-style:none;cursor:pointer;padding:14px 17px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--risk-petrol);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.teach summary::-webkit-details-marker{display:none}
+.teach summary .h{font-family:'Fraunces',serif;font-weight:700;font-size:15px;text-transform:none;color:var(--risk-ink)}
+.teach[open] summary{border-bottom:1px solid var(--risk-line)}
+.tbody{padding:4px 17px 14px}
+.chap{padding:14px 0;border-bottom:1px solid #eef3f4}
+.chap:last-child{border-bottom:0}
+.cnum{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--risk-petrol);letter-spacing:.1em}
+.cq{font-family:'Fraunces',serif;font-weight:700;font-size:16px;margin:3px 0 4px}
+.csub{font-size:12px;color:var(--risk-mut);line-height:1.5;margin:0 0 9px}
+.ans{font-size:12.5px;line-height:1.55;color:#33474c;margin-top:8px}
+.ans b{color:var(--risk-ink)}
+/* donut: base is a neutral placeholder; inline style="background:conic-gradient(...)" from _teach() sets the real split */
+.donut{width:118px;height:118px;border-radius:50%;background:var(--risk-line);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.donut b{width:74px;height:74px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:800;font-size:18px}
+.donut b span{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;color:var(--risk-faint);letter-spacing:.05em}
+.split{display:flex;gap:16px;align-items:center}
+.dleg{font-size:10.5px;color:var(--risk-mut);line-height:1.7}
+.sw2{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin-right:4px}
+/* .levers: sub-block inside .tbody; default border-left petrol, R04 overrides to amber inline */
+.levers{border-left:3px solid var(--risk-petrol);padding:10px 0 4px 14px;margin-top:8px}
+.lvh{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--risk-mut);margin-bottom:8px}
+/* .act / .act .ic: action rows inside .levers (icon badge + body text) */
+.act{display:flex;gap:11px;align-items:flex-start;font-size:13px;line-height:1.5;color:#33474c;margin-bottom:9px}
+.act:last-child{margin-bottom:0}
+.act .ic{flex-shrink:0;width:22px;height:22px;border-radius:6px;background:var(--risk-amber);color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.act b{color:var(--risk-ink)}
+
+/* ===== Portfolio Tab — Needs-Review Cards (Task 6) ===== */
+.pf-review{border:1px solid var(--ri-line);border-radius:10px;padding:12px 15px;margin-bottom:8px;transition:box-shadow .1s;}
+.pf-review:hover{box-shadow:0 2px 10px rgba(15,23,42,.08);}
+.pf-review.reduce{border-left:4px solid #991B1B;background:#FFFAFA;}
+.pf-review.trim{border-left:4px solid #DC2626;background:#FFFBFB;}
+.pf-review.review{border-left:4px solid #F59E0B;background:#FFFDF6;}
+
+/* ===== Portfolio Tab — Squarified Treemap (Task 7) ===== */
+.pf-stage{position:relative;width:100%;background:#E2E8F0;border-radius:11px;overflow:hidden;}
+.pf-sec{position:absolute;border-radius:8px;overflow:hidden;background:#0F172A;}
+.pf-sechdr{position:absolute;top:0;left:0;right:0;height:16px;background:rgba(15,23,42,.82);color:#fff;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;display:flex;justify-content:space-between;white-space:nowrap;}
+.pf-tile{position:absolute;overflow:hidden;text-decoration:none;padding:4px 6px;display:flex;flex-direction:column;justify-content:center;}
+.pf-tile:hover{outline:3px solid #0F172A;z-index:8;}
+.pf-tile:hover .pf-tip{opacity:1;}
+.pf-tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;border-radius:9px;padding:8px 10px;width:170px;opacity:0;pointer-events:none;transition:.12s;z-index:50;}
+.pf-tip-tt{font-family:'Fraunces',serif;font-weight:700;font-size:.85rem;margin-bottom:3px;}
+.pf-tip-row{font-size:.69rem;color:#CBD5E1;display:flex;justify-content:space-between;margin-top:2px;}
+.pf-tip-row b{color:#fff;}
 </style>
 """
 

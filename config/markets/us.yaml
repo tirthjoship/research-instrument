@@ -40,8 +40,13 @@ sector_etfs:
 # those are yield/index LEVELS; these are tradeable ETFs whose daily RETURNS are
 # the factors. Thresholds are heuristic surfacing dials, NOT validated edges.
 macro_beta:
-  factors: [SPY, TLT, UUP, XLE]   # market / rates / dollar / energy-equity
+  # SPY/TLT/UUP/XLE via yfinance; SMB/HML/MOM/RMW/CMA = Fama-French long-short
+  # style factors via the FF data library (ADR-060). FF factors are orthogonalised
+  # by construction -> low VIF with SPY; HML/CMA are genuinely correlated (callout fires).
+  factors: [SPY, SMB, HML, MOM, RMW, CMA, TLT, UUP, XLE]
+  # market / size / value / momentum / profitability / investment / rates / dollar / energy
   headline_window_days: 252       # ~1 year
+  history_days: 500               # wide enough that the ~6wk-lagged FF factors still clear 252 pts
   drift_window_days: 63           # ~1 quarter
   # NOTE: ridge_alpha is NOT a literal sklearn alpha. The estimator scales it by
   # mean factor-return variance, so it is a scale-invariant relative shrinkage
@@ -92,6 +97,10 @@ gemini:
   # Minimum seconds between Gemini API calls. Free tier is ~14 rpm (~4.3 s min).
   # Override at runtime with GEMINI_MIN_INTERVAL_S env var (env wins).
   min_interval_seconds: 5.0
+
+risk_stats:
+  bootstrap_iters: 500
+  seed: 7
 
 sentiment:
   rss_feeds:

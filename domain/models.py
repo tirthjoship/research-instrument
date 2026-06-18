@@ -5,7 +5,7 @@ Pure Python value objects. No pandas, numpy, or external ML/data imports.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
@@ -495,3 +495,39 @@ class BookMacroExposure:
     coverage_holdings: int
     total_holdings: int
     coverage_value_frac: float
+
+    # v8 risk-stats fields — all defaulted so existing constructions stay unchanged
+    enb: float = 0.0
+    """Effective number of bets (portfolio concentration measure)."""
+    pc_variance: tuple[float, ...] = ()
+    """Fraction of book variance explained by each principal component."""
+    pc_labels: tuple[str, ...] = ()
+    """Human-readable labels for each principal component."""
+    pc_labels_data_gap: bool = False
+    """True when principal-component labels could not be assigned (data gap)."""
+    systematic_share_adj: float = 0.0
+    """Systematic share adjusted for estimation uncertainty."""
+    systematic_share_ci: tuple[float, float] = (0.0, 0.0)
+    """90 % bootstrap interval (low, high) for systematic share."""
+    beta_ci_by_factor: dict[str, tuple[float, float]] = field(default_factory=dict)
+    """90 % bootstrap intervals (low, high) for net beta, keyed by factor."""
+    suppressed_factors: tuple[str, ...] = ()
+    """Factors whose beta CI straddles zero — not shown as a real exposure."""
+    downside_beta: float = 0.0
+    """Beta estimated on down-market periods only (proxy for tail sensitivity)."""
+    risk_contribution: dict[str, float] = field(default_factory=dict)
+    """Fractional contribution to total portfolio variance, keyed by ticker."""
+    holdings_meta: tuple[dict[str, object], ...] = ()
+    """Per-holding metadata (ticker, name, sector, weight) for display."""
+    sector_weights: dict[str, float] = field(default_factory=dict)
+    """Aggregate portfolio weight by GICS sector."""
+    sector_hhi: float = 0.0
+    """Herfindahl-Hirschman Index of sector weights (sector concentration)."""
+    sector_gaps: tuple[str, ...] = ()
+    """Sectors with zero exposure relative to a reference benchmark."""
+    vif_by_factor: dict[str, float] = field(default_factory=dict)
+    """Variance Inflation Factor for each factor (multicollinearity diagnostic)."""
+    diversification_ratio: float = 1.0
+    """Ratio of weighted-average volatility to portfolio volatility."""
+    sys_share_history: tuple[tuple[str, float], ...] = ()
+    """Time series of (date_str, systematic_share) for trend display."""
