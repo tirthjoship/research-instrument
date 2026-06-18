@@ -41,6 +41,7 @@ dashboard = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
     "hypothesis>=6.0.0",
     "black>=24.0.0",
     "isort>=5.13.0",
@@ -48,6 +49,10 @@ dev = [
     "ruff>=0.1.0",
     "pre-commit>=3.0.0",
     "scipy>=1.11",
+    "types-PyYAML>=6.0.0",
+    "types-click>=7.0.0",
+    "types-requests>=2.0.0",
+    "pandas-stubs>=2.0.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -56,7 +61,16 @@ include = ["domain*", "adapters*", "application*", "config*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-v -p no:playwright"
+addopts = "-p no:playwright"
+markers = [
+    "smoke: critical regression guard — run before every commit",
+    "tab_risk: risk tab tests",
+    "tab_weekly_brief: weekly brief tab tests",
+    "tab_research: research candidates tab tests",
+    "tab_screener: screener tab tests",
+    "tab_positions: positions tab tests",
+    "tab_trust: trust tab tests",
+]
 
 [tool.black]
 line-length = 88
@@ -65,10 +79,13 @@ target-version = ["py312"]
 [tool.isort]
 profile = "black"
 
+[tool.ruff.lint.per-file-ignores]
+"adapters/visualization/tabs/risk/*.py" = ["F403", "F405"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true
-exclude = ["tests/", "audit_sentiment.py"]
+exclude = ["tests/", "scripts/audit_sentiment.py"]
 
 [[tool.mypy.overrides]]
 module = [
@@ -109,7 +126,19 @@ module = [
 disable_error_code = ["attr-defined"]
 
 [[tool.mypy.overrides]]
-module = "application.cli"
+module = [
+    "application.cli",
+    "application.cli._cli_group",
+    "application.cli._deps",
+    "application.cli.ml_commands",
+    "application.cli.scan_commands",
+    "application.cli.portfolio_commands",
+    "application.cli.screen_commands",
+    "application.cli.validation_commands",
+    "application.cli.data_commands",
+    "application.cli.backtest_commands",
+    "application.cli.brief_commands",
+]
 disallow_untyped_decorators = false
 
 # google-generativeai ships incomplete type info; its top-level helpers
@@ -152,7 +181,7 @@ disallow_any_generics = false
 
 [tool.coverage.run]
 omit = [
-    "application/cli.py",
+    "application/cli/*.py",
     "application/backtest_runner.py",
     "application/shap_analysis.py",
     "application/use_cases.py",
@@ -164,7 +193,7 @@ omit = [
 
 [tool.coverage.report]
 omit = [
-    "application/cli.py",
+    "application/cli/*.py",
     "application/backtest_runner.py",
     "application/shap_analysis.py",
     "application/use_cases.py",
