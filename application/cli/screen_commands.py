@@ -1,0 +1,331 @@
+"""Screen-related CLI commands: screen-candidates, backtest-screen."""
+
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+from pathlib import Path
+
+import click
+
+from ._cli_group import cli
+from ._deps import (
+    _build_dependencies,
+    _build_evidence_screen,
+    _get_backtest_universe,
+    _get_ticker_universe,
+)
+
+
+@cli.command("screen-candidates")
+@click.option("--top", default=10, show_default=True, type=int, help="Top N rank limit")
+@click.option(
+    "--report-dir",
+    default="data/reports/",
+    show_default=True,
+    help="Directory to write screen_<date>.json",
+)
+def screen_candidates(top: int, report_dir: str) -> None:
+    """Screen universe for disciplined, evidence-bounded candidates.
+
+    Writes the FULL ranked candidate distribution to <report-dir>/screen_<date>.json
+    (honesty rule: full distribution, not just top-N).  Prints a masked summary to
+    stdout (counts + label distribution only — no per-ticker scores).
+    """
+    import json
+    from datetime import date, timezone
+
+    from application.evidence_screen_use_case import label_from_verdict_file
+
+    deps = _build_dependencies("us")
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+
+    # Reuse the shared helper so weekly-brief wires the same adapters (DRY).
+    uc = _build_evidence_screen(deps)
+    as_of = date.today().isoformat()
+    # Run with full universe length so rank_universe returns ALL eligible candidates.
+    # --top applies ONLY to the stdout masked summary and the surfaced-calls slice.
+    result = uc.run(universe=tickers, as_of=as_of, top_n=len(tickers))
+
+    # --- verdict-driven label: read latest backtest verdict and relabel candidates ---
+    verdict_label = label_from_verdict_file(report_dir)
+    from dataclasses import replace
+
+    labeled_candidates = tuple(
+        replace(c, label=verdict_label) for c in result.candidates
+    )
+    # Use replace() so ALL fields (incl. diagnostics) carry through — a full
+    # reconstruction silently dropped `diagnostics`, writing `diagnostics: null`
+    # and starving the Screener funnel / Home tile of their rich states.
+    result = replace(result, candidates=labeled_candidates)
+
+    # --- surface ONLY the top-N candidates as SurfacedCalls for forward-tracking ---
+    store = deps["store"]
+    as_of_dt = datetime.now(timezone.utc)
+    from domain.screen_models import ScreenResult as _SR
+
+    top_result = _SR(
+        as_of=result.as_of,
+        candidates=result.candidates[:top],
+        universe_size=result.universe_size,
+        regime=result.regime,
+        scorecard_ref=result.scorecard_ref,
+        abstained=result.abstained,
+    )
+    uc.surface_calls(top_result, as_of_dt=as_of_dt, store=store)
+
+    # --- persist FULL distribution (honesty rule) ---
+    report_path = Path(report_dir)
+    report_path.mkdir(parents=True, exist_ok=True)
+    out_file = report_path / f"screen_{as_of}.json"
+    # Serialize diagnostics if available (4 raw ints — no fabrication).
+    diagnostics_payload: dict[str, int] | None = None
+    if result.diagnostics is not None:
+        d = result.diagnostics
+        diagnostics_payload = {
+            "scanned": d.scanned,
+            "had_history": d.had_history,
+            "above_trend": d.above_trend,
+            "cleared": d.cleared,
+        }
+
+    payload: dict[str, object] = {
+        "as_of": as_of,
+        "universe_size": result.universe_size,
+        "top_n": top,
+        "regime": result.regime,
+        "abstained": result.abstained,
+        "diagnostics": diagnostics_payload,
+        "candidates": [
+            {
+                "ticker": c.ticker,
+                "composite": c.composite,
+                "trend_health": c.trend_health,
+                "label": c.label.value,
+                "why": c.why,
+                "factor_scores": [
+                    {
+                        "name": f.name,
+                        "value": f.value,
+                        "percentile": f.percentile,
+                        "contribution": f.contribution,
+                    }
+                    for f in c.factor_scores
+                ],
+            }
+            for c in result.candidates  # ALL candidates (full distribution)
+        ],
+    }
+    out_file.write_text(json.dumps(payload, indent=2))
+
+    # --- masked stdout (counts + label distribution only) ---
+    from collections import Counter
+
+    label_counts = Counter(c.label.value for c in result.candidates)
+    abstain_note = "  [abstaining: thin factor coverage]" if result.abstained else ""
+    click.echo(
+        f"\nScreen complete ({as_of}): {len(result.candidates)} candidates "
+        f"from {result.universe_size} universe  [top_n={top}]{abstain_note}"
+    )
+    for label, count in sorted(label_counts.items()):
+        click.echo(f"  {label}: {count}")
+    click.echo(f"Full distribution written to: {out_file}")
+
+
+@cli.command("backtest-screen")
+@click.option("--market", default="us", show_default=True, help="Market config (us|ca)")
+@click.option(
+    "--start", default="2018-01-01", show_default=True, help="Backtest start date"
+)
+@click.option(
+    "--end", default="2026-01-01", show_default=True, help="Backtest end date"
+)
+@click.option(
+    "--horizon-days",
+    default=21,
+    show_default=True,
+    type=int,
+    help="Forward-return horizon in calendar days",
+)
+@click.option(
+    "--limit",
+    default=0,
+    type=int,
+    show_default=True,
+    help="Cap universe size (0 = all tickers from sp500+nasdaq100+tsx60)",
+)
+@click.option(
+    "--report-dir",
+    default="data/reports/",
+    show_default=True,
+    help="Directory to write screen_ic_<date>.json",
+)
+def backtest_screen(
+    market: str,
+    start: str,
+    end: str,
+    horizon_days: int,
+    limit: int,
+    report_dir: str,
+) -> None:
+    """Point-in-time IC backtest for the evidence-screen MOMENTUM composite.
+
+    HONESTY CONSTRAINT (project rule #2 — no look-ahead bias):
+    Only the MOMENTUM factor is backtested.  Revision, quality, and value
+    require point-in-time fundamental/analyst snapshots unavailable from
+    yfinance for 2018-2026.  Using current values at past dates would be
+    catastrophic look-ahead bias.  Those factors are flagged-neutral (None)
+    throughout, exactly as the live composite_score handles missing factors.
+    The caveat is printed to stdout and embedded in the JSON report every run.
+
+    Universe: US S&P 500 + NASDAQ-100 (sp500.txt + nasdaq100.txt) plus TSX 60
+    (tsx60.txt with .TO suffix).  Monthly evaluation cadence.
+    """
+    import json
+    from datetime import date
+
+    from application.screen_backtest_use_case import ScreenBacktestUseCase
+    from application.screen_ic_panels import build_screen_panels
+
+    _CAVEAT = (
+        "Composite tested on MOMENTUM leg only; revision/quality/value lack "
+        "point-in-time history for 2018-2026 and were flagged-neutral to avoid "
+        "look-ahead bias (project rule #2)."
+    )
+
+    # ------------------------------------------------------------------
+    # Build universe: SP500 + NASDAQ100 + TSX60 (reuse _get_backtest_universe)
+    # ------------------------------------------------------------------
+    tickers = _get_backtest_universe(market)
+    universe_size = len(tickers)
+    if limit:
+        tickers = tickers[:limit]
+        universe_size = len(tickers)
+
+    click.echo(f"Universe: {universe_size} tickers (sp500+nasdaq100+tsx60, deduped)")
+
+    # ------------------------------------------------------------------
+    # Date range: monthly cadence (first-of-month / 28-day steps)
+    # ------------------------------------------------------------------
+    start_dt = datetime.fromisoformat(start)
+    end_dt = datetime.fromisoformat(end)
+    dates: list[datetime] = []
+    d = start_dt
+    while d <= end_dt - timedelta(days=horizon_days):
+        dates.append(d)
+        d += timedelta(days=28)
+
+    click.echo(
+        f"Date range: {start} → {end}  |  {len(dates)} evaluation dates  |  horizon={horizon_days}d"
+    )
+
+    # ------------------------------------------------------------------
+    # Price cache (load once per ticker over [start-400d, end+horizon+5d])
+    # ------------------------------------------------------------------
+    price_start = start_dt - timedelta(days=400)
+    price_end = end_dt + timedelta(days=horizon_days + 5)
+
+    _price_cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def _prices(ticker: str) -> list[tuple[datetime, float]]:
+        if ticker not in _price_cache:
+            from application.price_returns import load_price_series
+
+            _price_cache[ticker] = load_price_series(ticker, price_start, price_end)
+        return _price_cache[ticker]
+
+    # Preload benchmark
+    click.echo("Loading price data (this is the network call — skipped in tests)...")
+    _prices("SPY")
+    all_tickers_to_load = list(tickers)
+    for i, t in enumerate(all_tickers_to_load, 1):
+        _prices(t)
+        if i % 50 == 0:
+            click.echo(f"  Loaded {i}/{len(all_tickers_to_load)} tickers...")
+
+    n_with_data = sum(1 for t in tickers if _price_cache.get(t))
+    click.echo(f"Tickers with price data: {n_with_data}/{len(tickers)}")
+
+    # ------------------------------------------------------------------
+    # Build panels
+    # ------------------------------------------------------------------
+    click.echo("Building point-in-time panels...")
+    panels, benchmark_returns = build_screen_panels(
+        tickers=list(tickers),
+        dates=dates,
+        price_series_fn=_prices,
+        horizon_days=horizon_days,
+        benchmark_ticker="SPY",
+    )
+
+    # ------------------------------------------------------------------
+    # Run ScreenBacktestUseCase
+    # ------------------------------------------------------------------
+    uc = ScreenBacktestUseCase()
+    verdict = uc.run(panels, market_returns=benchmark_returns)
+
+    # ------------------------------------------------------------------
+    # Write report JSON
+    # ------------------------------------------------------------------
+    as_of = date.today().isoformat()
+    report_path = Path(report_dir)
+    report_path.mkdir(parents=True, exist_ok=True)
+    out_file = report_path / f"screen_ic_{as_of}.json"
+    report_data = {
+        "as_of": as_of,
+        "universe_size": universe_size,
+        "n_tickers_with_data": n_with_data,
+        "decision": verdict.decision,
+        "mean_ic": verdict.mean_ic,
+        "n_dates": verdict.n_dates,
+        "ic_ci_low": verdict.ic_ci_low,
+        "ic_ci_high": verdict.ic_ci_high,
+        "sharpe_diff_point": verdict.sharpe_diff_point,
+        "sharpe_diff_ci_low": verdict.sharpe_diff_ci_low,
+        "sharpe_diff_ci_high": verdict.sharpe_diff_ci_high,
+        "primary_pass": verdict.primary_pass,
+        "secondary_pass": verdict.secondary_pass,
+        "horizon_days": horizon_days,
+        "start": start,
+        "end": end,
+        "caveat": _CAVEAT,
+    }
+    out_file.write_text(json.dumps(report_data, indent=2))
+
+    # ------------------------------------------------------------------
+    # Stdout (honest/full per ADR-042 — CI and caveat every run)
+    # ------------------------------------------------------------------
+    _VERDICT_LABELS = {
+        "PASS": "PASS — IC >= 0.02 and/or top-decile Sharpe-diff CI excludes 0.",
+        "INCONCLUSIVE": "INCONCLUSIVE — IC in (0, 0.02); insufficient evidence of edge.",
+        "HALT": "HALT — IC CI entirely negative; signal has no cross-sectional lift.",
+    }
+    click.echo(f"\nScreen IC Backtest  ({as_of})")
+    click.echo(
+        f"  universe        : {universe_size} tickers  ({n_with_data} with price data)"
+    )
+    click.echo(f"  n_dates         : {verdict.n_dates}")
+    click.echo(f"  mean_IC         : {verdict.mean_ic:.6f}")
+    ic_ci = (
+        f"[{verdict.ic_ci_low}, {verdict.ic_ci_high}]"
+        if verdict.ic_ci_low is not None
+        else "n/a (n<2)"
+    )
+    click.echo(f"  IC bootstrap CI : {ic_ci}")
+    sd_pt = (
+        f"{verdict.sharpe_diff_point:.4f}"
+        if verdict.sharpe_diff_point is not None
+        else "n/a"
+    )
+    sd_ci = (
+        f"[{verdict.sharpe_diff_ci_low:.4f}, {verdict.sharpe_diff_ci_high:.4f}]"
+        if verdict.sharpe_diff_ci_low is not None
+        else "n/a"
+    )
+    click.echo(f"  sharpe_diff     : {sd_pt}  CI={sd_ci}")
+    click.echo(f"  primary_pass    : {verdict.primary_pass}")
+    click.echo(f"  secondary_pass  : {verdict.secondary_pass}")
+    click.echo(f"  verdict         : {verdict.decision}")
+    click.echo(f"  {_VERDICT_LABELS.get(verdict.decision, verdict.decision)}")
+    click.echo(f"\n  CAVEAT: {_CAVEAT}")
+    click.echo(f"\nReport written to: {out_file}")

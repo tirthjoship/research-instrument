@@ -52,11 +52,11 @@ Run the narrowest target that covers your change. `make check` is for checkpoint
 
 | Change type | Run immediately | Before commit | Before PR |
 |-------------|-----------------|---------------|-----------|
-| Any dashboard tab | `make test-tab tab=<name>` | `make test-fast` | `make check` |
-| CLI command | `pytest tests/test_<name>.py -q` | `make test-fast` | `make check` |
-| Domain model | `make test-domain` | `make test-fast` | `make check` |
-| Adapter change | `make test-adapters` | `make test-fast` | `make check` |
-| Cross-cutting | `make test-fast` | `make test-fast` | `make check` |
+| Any dashboard tab | `make test-tab tab=<name>` | `make test-smoke` | `make check` |
+| CLI command | `pytest tests/test_<name>.py -q` | `make test-smoke` | `make check` |
+| Domain model | `make test-domain` | `make test-smoke` | `make check` |
+| Adapter change | `make test-adapters` | `make test-smoke` | `make check` |
+| Cross-cutting | `make test-fast` | `make test-smoke` | `make check` |
 
 Tab names for `make test-tab`: `risk`, `weekly_brief`, `research`, `screener`, `positions`, `trust`
 
@@ -143,8 +143,17 @@ Full per-phase routing incl. context7: `docs/SKILL_ROUTING.md` (when it lands, d
 domain/models.py                   Core dataclasses (Signal, Conviction, Brief, etc.)
 domain/ports.py                    All port interfaces — source of truth for contracts
 domain/services.py                 Business logic (LookAheadBias enforcement here)
-application/cli.py                 CLI entry point — Tier 2 decomp target (3440 LOC)
-adapters/visualization/tabs/       One file per dashboard tab
+application/cli/                   CLI package (decomposed from 3440-LOC monolith)
+  _cli_group.py                    Click group definition
+  _deps.py                         _build_dependencies() + shared helpers
+  *_commands.py                    One file per command domain (~300-500 LOC each)
+adapters/visualization/tabs/risk/   Risk tab package (decomposed from 1710-LOC monolith)
+  compose.py                        _compose() + render() entry point
+  components.py                     Header, banner, nav, vitals, dials (~400 LOC)
+  evidence.py                       Evidence bands, grill drill, flags footer
+  factor_chart.py                   Fama-French factor chart (~240 LOC isolated)
+  enb_section.py                    ENB drill section (~220 LOC isolated)
+  sections.py                       Sector, who_owns, drift, teach sections
 adapters/visualization/components/ Shared UI components (styles.py, charts.py, cards.py)
 adapters/data/sqlite_store.py      Persistence layer
 tests/fakes/                       Test doubles for all ports — use these, never mock
