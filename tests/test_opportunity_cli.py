@@ -17,8 +17,6 @@ def test_scan_help_renders() -> None:
 
 
 def test_scan_show_all_prints_distribution(monkeypatch: object) -> None:
-    import application.cli as climod
-
     class _UC:
         def __init__(self, *a: object, **k: object) -> None:
             pass
@@ -28,9 +26,11 @@ def test_scan_show_all_prints_distribution(monkeypatch: object) -> None:
         ) -> list[object]:
             return []
 
-    # OpportunityScanUseCase is now a module-level import in cli.py, so
-    # patching climod.OpportunityScanUseCase intercepts the constructor call.
-    monkeypatch.setattr(climod, "OpportunityScanUseCase", _UC)  # type: ignore[attr-defined]
+    # OpportunityScanUseCase is a lazy import inside scan_commands.scan_opportunities();
+    # patch it at the source module so the lazy `from ... import` picks up the stub.
+    import application.opportunity_scan_use_case as _opp_mod
+
+    monkeypatch.setattr(_opp_mod, "OpportunityScanUseCase", _UC)  # type: ignore[attr-defined]
 
     runner = CliRunner()
     result = runner.invoke(cli, ["scan-opportunities", "--show-all"])
@@ -38,8 +38,6 @@ def test_scan_show_all_prints_distribution(monkeypatch: object) -> None:
 
 
 def test_daily_cycle_invokes_scan_then_resolve(monkeypatch: object) -> None:
-    import application.cli as climod
-
     class _ScanUC:
         def __init__(self, *a: object, **k: object) -> None:
             pass
@@ -56,7 +54,9 @@ def test_daily_cycle_invokes_scan_then_resolve(monkeypatch: object) -> None:
         def resolve_due_calls(self, now: object) -> list[object]:
             return []
 
-    monkeypatch.setattr(climod, "OpportunityScanUseCase", _ScanUC)  # type: ignore[attr-defined]
+    import application.opportunity_scan_use_case as _opp_mod
+
+    monkeypatch.setattr(_opp_mod, "OpportunityScanUseCase", _ScanUC)  # type: ignore[attr-defined]
     monkeypatch.setattr(
         "application.forward_tracking_use_case.ForwardTrackingUseCase",
         _ResolveUC,
@@ -109,7 +109,7 @@ def test_drip_backfill_command_runs(monkeypatch: object) -> None:
 
 
 def test_drip_backfill_source_filter(monkeypatch: object) -> None:
-    import application.cli as climod
+    import application.cli.data_commands as _data_cmd
     from domain.models import SourceHealth
 
     captured: dict[str, object] = {}
@@ -129,7 +129,7 @@ def test_drip_backfill_source_filter(monkeypatch: object) -> None:
         ) -> dict[str, object]:
             return {"wikipedia": SourceHealth("wikipedia", attempts=1, ok=1)}
 
-    monkeypatch.setattr(climod, "DripBackfillUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "DripBackfillUseCase", _UC)  # type: ignore[attr-defined]
 
     runner = CliRunner()
     result = runner.invoke(
@@ -207,7 +207,7 @@ def test_drip_backfill_invalid_source_rejected() -> None:
 def test_validate_divergence_ic_runs(monkeypatch: object) -> None:
     from click.testing import CliRunner
 
-    import application.cli as climod
+    import application.cli.validation_commands as _val_cmd
     from application.cli import cli
 
     class _UC:
@@ -227,7 +227,7 @@ def test_validate_divergence_ic_runs(monkeypatch: object) -> None:
 
     import pytest  # noqa: F401  (monkeypatch type hint workaround)
 
-    monkeypatch.setattr(climod, "DivergenceICBacktestUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_val_cmd, "DivergenceICBacktestUseCase", _UC)  # type: ignore[attr-defined]
 
     runner = CliRunner()
     result = runner.invoke(cli, ["validate-divergence-ic", "--limit", "5", "--quick"])
@@ -239,7 +239,7 @@ def test_validate_divergence_ic_runs(monkeypatch: object) -> None:
 def test_validate_divergence_ic_passes_naive_dates(monkeypatch: object) -> None:
     from click.testing import CliRunner
 
-    import application.cli as climod
+    import application.cli.validation_commands as _val_cmd
     from application.cli import cli
 
     captured: dict = {}
@@ -260,7 +260,7 @@ def test_validate_divergence_ic_passes_naive_dates(monkeypatch: object) -> None:
                 "date_level": {},
             }
 
-    monkeypatch.setattr(climod, "DivergenceICBacktestUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_val_cmd, "DivergenceICBacktestUseCase", _UC)  # type: ignore[attr-defined]
 
     runner = CliRunner()
     result = runner.invoke(cli, ["validate-divergence-ic", "--limit", "2", "--quick"])
@@ -279,7 +279,7 @@ def test_resolve_wiki_articles_writes_yaml(
 ) -> None:
     import yaml
 
-    import application.cli as climod
+    import application.cli.data_commands as _data_cmd
     from application.cli import cli
 
     class _FakeResolver:
@@ -291,13 +291,13 @@ def test_resolve_wiki_articles_writes_yaml(
         ) -> str | None:
             return "Apple Inc." if name == "Apple Inc." else None
 
-    monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "WikipediaArticleResolver", _FakeResolver)  # type: ignore[attr-defined]
     # Prevent the test from reading the real wiki_articles_us.yaml (which may have AAPL already)
-    monkeypatch.setattr(climod, "_load_wiki_map", lambda market: {}, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_load_wiki_map", lambda market: {})  # type: ignore[attr-defined]
 
     names = {"AAPL": "Apple Inc.", "AIZ": "Assurant"}
-    monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: names.get(t), raising=False)  # type: ignore[attr-defined]
-    monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["AAPL", "AIZ"], raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_get_company_name", lambda deps, t: names.get(t))  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_get_ticker_universe", lambda config: ["AAPL", "AIZ"])  # type: ignore[attr-defined]
 
     from pathlib import Path
 
@@ -373,7 +373,7 @@ def test_resolve_wiki_articles_skips_throttled(
 ) -> None:
     import yaml
 
-    import application.cli as climod
+    import application.cli.data_commands as _data_cmd
     from application.cli import cli
     from domain.exceptions import SourceThrottledError
 
@@ -388,13 +388,13 @@ def test_resolve_wiki_articles_skips_throttled(
                 raise SourceThrottledError("throttled")
             return "Abbott Laboratories"
 
-    monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "WikipediaArticleResolver", _FakeResolver)  # type: ignore[attr-defined]
     # Prevent reading real wiki_articles_us.yaml which may contain AAPL/ABT
-    monkeypatch.setattr(climod, "_load_wiki_map", lambda market: {}, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_load_wiki_map", lambda market: {})  # type: ignore[attr-defined]
 
     names = {"AAPL": "Apple Inc.", "ABT": "Abbott Laboratories"}
-    monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: names.get(t), raising=False)  # type: ignore[attr-defined]
-    monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["AAPL", "ABT"], raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_get_company_name", lambda deps, t: names.get(t))  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_get_ticker_universe", lambda config: ["AAPL", "ABT"])  # type: ignore[attr-defined]
 
     from pathlib import Path
 
@@ -421,7 +421,7 @@ def test_backtest_universe_includes_tsx(monkeypatch: object) -> None:
 def test_portfolio_verdict_cli(monkeypatch: object, tmp_path: object) -> None:
     from click.testing import CliRunner
 
-    import application.cli as climod
+    import application.cli.portfolio_commands as _port_cmd
     from application.cli import cli
 
     holdings = tmp_path / "holdings.csv"  # type: ignore[operator]
@@ -441,7 +441,7 @@ def test_portfolio_verdict_cli(monkeypatch: object, tmp_path: object) -> None:
                 "why": "test",
             }
 
-    monkeypatch.setattr(climod, "PortfolioVerdictUseCase", _UC, raising=False)
+    monkeypatch.setattr(_port_cmd, "PortfolioVerdictUseCase", _UC)
 
     runner = CliRunner()
     result = runner.invoke(cli, ["portfolio-verdict", "--holdings", str(holdings)])
@@ -515,7 +515,7 @@ def test_validate_momentum_discipline_runs(monkeypatch: object) -> None:
 def test_holdings_risk_cli_masked_summary(monkeypatch, tmp_path):
     from click.testing import CliRunner
 
-    import application.cli as climod
+    import application.cli.portfolio_commands as _port_cmd
     from application.cli import cli
     from domain.discipline import Verdict
     from domain.models import PortfolioRisk, PositionRisk
@@ -551,7 +551,7 @@ def test_holdings_risk_cli_masked_summary(monkeypatch, tmp_path):
                 "portfolio": PortfolioRisk(1, 1.0, 1.0, {"REDUCE": 1}),
             }
 
-    monkeypatch.setattr(climod, "HoldingsRiskAssessmentUseCase", _UC, raising=False)
+    monkeypatch.setattr(_port_cmd, "HoldingsRiskAssessmentUseCase", _UC)
 
     runner = CliRunner()
     out_file = tmp_path / "detail.txt"
