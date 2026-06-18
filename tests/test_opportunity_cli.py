@@ -140,7 +140,7 @@ def test_drip_backfill_source_filter(monkeypatch: object) -> None:
 
 
 def test_audit_command_runs(monkeypatch: object) -> None:
-    import application.cli as climod
+    import application.cli.validation_commands as _val_cmd
 
     class _Store:
         def get_scan_candidates(
@@ -160,7 +160,7 @@ def test_audit_command_runs(monkeypatch: object) -> None:
     def _deps(market: str) -> dict[str, object]:
         return {"store": _Store(), "config": {}}
 
-    monkeypatch.setattr(climod, "_build_dependencies", _deps, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_val_cmd, "_build_dependencies", _deps)  # type: ignore[attr-defined]
 
     runner = CliRunner()
     result = runner.invoke(cli, ["audit-dimensions"])
