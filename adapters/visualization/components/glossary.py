@@ -53,7 +53,8 @@ GLOSSARY: dict[str, str] = {
     ),
     "Beta": (
         "How much a stock (or your whole book) moves when the market moves. "
-        "+1.00 = exactly with the market."
+        "+1.00 = exactly with the market. Above 1.0 means it typically moves "
+        "more than the market (SPY = 1.0)."
     ),
     "Evidence grade": (
         "Where a stock ranks on present-day facts (valuation, quality, "
@@ -199,6 +200,108 @@ GLOSSARY: dict[str, str] = {
         "long-run trend filter (SMA-200). Below-trend names are excluded from "
         "the scored pool — they pass the data gate but not the trend gate."
     ),
+    # ── Risk tab redesign terms (Task 10) ─────────────────────────────────────
+    "Effective bets": (
+        "How many truly independent bets your book behaves like, after "
+        "accounting for holdings that move together (Meucci ENB). Lower = "
+        "fewer genuinely separate risks — a concentration signal."
+    ),
+    "Adjusted R²": (
+        "The share of your book's moves explained by the market factors, "
+        "adjusted down for the number of factors used so the fit isn't "
+        "flattered by simply counting more factors."
+    ),
+    "Bootstrap band": (
+        "A range showing how much an estimate would wobble if the sample "
+        "days were resampled. A wider band means less statistical certainty "
+        "— the true value could land anywhere inside it."
+    ),
+    "Downside beta": (
+        "Beta measured only on market-DOWN days (semi-beta, Ang-Chen-Xing). "
+        "It describes how the book tends to move when the market falls — "
+        "which can differ from its behaviour on up days."
+    ),
+    "Risk contribution": (
+        "Each holding's share of the book's total variance (Euler "
+        "decomposition), summing to 100%. Can differ a great deal from its "
+        "dollar weight — a small volatile name can own more risk than a "
+        "large calm one."
+    ),
+    "VIF": (
+        "Variance Inflation Factor. Measures how much two factors overlap. "
+        "VIF > 5 means those factors move so together they act as one shared "
+        "influence — their individual net-beta figures cannot be read as "
+        "fully independent."
+    ),
+    "Diversification ratio": (
+        "Weighted-average holding volatility divided by the book's volatility "
+        "(Choueifaty). Higher = more offsetting movement among holdings; "
+        "1.0 = no diversification benefit at all."
+    ),
+    "HHI": (
+        "Herfindahl-Hirschman Index — a standard concentration score applied "
+        "here to sector weights. Higher = more of the book clustered in "
+        "fewer sectors."
+    ),
+    "GICS sector": (
+        "The Global Industry Classification Standard used to group holdings "
+        "by the part of the economy they operate in. Used here to show where "
+        "the book clusters by industry."
+    ),
+    "Drift": (
+        "How much a factor exposure has shifted over recent weeks versus its "
+        "longer-run level. A rising line crossing a defined threshold is a "
+        "prompt to confirm the change was intentional."
+    ),
+    "Risk line": (
+        "A fixed threshold checked every week (e.g. concentration over 60%). "
+        "Crossing one isn’t “bad” — it’s a prompt to confirm you meant it."
+    ),
+    "Coverage": (
+        "The share of the book (by holding count) that had enough price "
+        "history to measure. Holdings outside coverage are honestly excluded, "
+        "not assumed to have zero exposure."
+    ),
+    "Concentration": (
+        "How much of the book's risk sits in a few holdings, sectors, or "
+        "factors rather than spread across many. Measured here as systematic "
+        "share and HHI — a description of structure, not a verdict."
+    ),
+    # ── Fama-French + macro ETF factor terms (Task 16) ───────────────────────
+    "Size (SMB)": (
+        "Small-minus-big — small-cap stocks' return minus large-cap. "
+        "Positive beta = your book leans small-cap; negative = leans large-cap."
+    ),
+    "Value (HML)": (
+        "High-minus-low book-to-market — cheap “value” stocks minus expensive "
+        "“growth”. Positive = value tilt; negative = growth tilt."
+    ),
+    "Momentum (MOM)": (
+        "Recent higher-return names minus recent lower-return names (trailing ~12 months). "
+        "Positive = your book rides trends; negative = contrarian."
+    ),
+    "Profitability (RMW)": (
+        "Robust-minus-weak — profitable firms minus unprofitable. "
+        "Positive = quality tilt; negative = leans to low-profitability names."
+    ),
+    "Investment (CMA)": (
+        "Conservative-minus-aggressive — low-capex firms minus high-capex. "
+        "Positive = conservative-investment tilt."
+    ),
+    "Rates (TLT)": (
+        "Long-term US Treasuries (20yr). Captures sensitivity to interest-rate moves; "
+        "positive = moves with bonds."
+    ),
+    "US Dollar (UUP)": (
+        "US dollar index. Positive = your book moves with a strengthening dollar."
+    ),
+    "Energy (XLE)": (
+        "Energy-sector equities. Positive = moves with oil & energy names."
+    ),
+    "Market (SPY)": (
+        "The broad US equity market (S&P 500). For a stock book this is usually "
+        "the largest single exposure — most of the daily swing."
+    ),
     # ── S3 Screener redesign terms ─────────────────────────────────────────────
     "Evidence score": (
         "Equal-weight average of the factor z-scores. Higher = more factors look "
@@ -239,6 +342,28 @@ GLOSSARY: dict[str, str] = {
     "Trust the signal": (
         "Verdict from our pre-registered IC backtest gate. INCONCLUSIVE = no proven "
         "forward edge yet, so the ranking stays descriptive evidence, not a forecast."
+    ),
+    # ── Portfolio tab redesign terms (Task 0) ─────────────────────────────────
+    "Concentration (top 5)": (
+        "The combined weight of your five largest positions. Higher means more "
+        "of your book rides on a few names — more single-name risk."
+    ),
+    "Needs review": (
+        "Holdings where the discipline rule fired (REDUCE, TRIM, or REVIEW). "
+        "This list grows with problems, not with how many stocks you own."
+    ),
+    "Treemap colour": (
+        "Tile size is the position's weight in your book. Tile colour is the "
+        "lens you pick: realised profit/loss, today's move, or the verdict. "
+        "Colour is actual history, not a projection."
+    ),
+    "Dividend yield": (
+        "Trailing dividend income as a percent of price, from the data provider. "
+        "Shown as a dash when the provider reports none."
+    ),
+    "Excess return vs SPY": (
+        "Your portfolio's return minus the S&P 500's over the same window. "
+        "Positive means you beat the benchmark; actual, not projected."
     ),
 }
 

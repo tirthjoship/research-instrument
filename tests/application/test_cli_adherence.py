@@ -16,7 +16,7 @@ def _provider(ticker: str) -> list[tuple[datetime, float]]:
 
 def test_adherence_report_end_to_end(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(
-        "application.price_returns.load_price_series",
+        "application.cli.validation_commands.load_price_series",
         lambda t, s, e: _provider(t),
     )
     log = tmp_path / "discipline_log.jsonl"

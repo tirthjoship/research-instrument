@@ -16,6 +16,30 @@ _MIN_DRIFT_BETA = (
 )
 
 
+def aligned_return_matrix(
+    holding_returns: dict[str, list[tuple[datetime, float]]],
+) -> tuple[list[str], list[list[float]]]:
+    """Holdings return matrix over dates present in EVERY holding series.
+
+    Returns (tickers, rows) where tickers is the column order and rows[i] is the
+    cross-sectional return vector on common date i (rows ascending by date).
+    Empty/degenerate (no holdings or no common dates) → (tickers, []).
+    """
+    tickers = list(holding_returns)
+    if not tickers:
+        return (tickers, [])
+    date_maps: dict[str, dict[datetime, float]] = {
+        t: dict(holding_returns[t]) for t in tickers
+    }
+    common: set[datetime] = set(date_maps[tickers[0]].keys())
+    for t in tickers[1:]:
+        common &= date_maps[t].keys()
+    if not common:
+        return (tickers, [])
+    rows = [[date_maps[t][d] for t in tickers] for d in sorted(common)]
+    return (tickers, rows)
+
+
 def daily_returns(
     series: list[tuple[datetime, float]],
 ) -> list[tuple[datetime, float]]:
@@ -166,6 +190,24 @@ def aggregate_macro_exposure(
     total_holdings: int,
     coverage_value_frac: float,
     thresholds: dict[str, float],
+    # v8 risk-stats fields — all defaulted so existing callers stay unchanged
+    enb: float = 0.0,
+    pc_variance: tuple[float, ...] = (),
+    pc_labels: tuple[str, ...] = (),
+    pc_labels_data_gap: bool = False,
+    systematic_share_adj: float = 0.0,
+    systematic_share_ci: tuple[float, float] = (0.0, 0.0),
+    beta_ci_by_factor: dict[str, tuple[float, float]] | None = None,
+    suppressed_factors: tuple[str, ...] = (),
+    downside_beta: float = 0.0,
+    risk_contribution: dict[str, float] | None = None,
+    vif_by_factor: dict[str, float] | None = None,
+    diversification_ratio: float = 1.0,
+    sector_weights: dict[str, float] | None = None,
+    sector_hhi: float = 0.0,
+    sector_gaps: tuple[str, ...] = (),
+    holdings_meta: tuple[dict[str, object], ...] = (),
+    sys_share_history: tuple[tuple[str, float], ...] = (),
 ) -> BookMacroExposure:
     """Assemble the book-level exposure summary from pure pieces."""
     nb = net_beta(per_holding, factors)
@@ -193,4 +235,22 @@ def aggregate_macro_exposure(
         coverage_holdings=len(per_holding),
         total_holdings=total_holdings,
         coverage_value_frac=coverage_value_frac,
+        # v8 risk-stats fields
+        enb=enb,
+        pc_variance=pc_variance,
+        pc_labels=pc_labels,
+        pc_labels_data_gap=pc_labels_data_gap,
+        systematic_share_adj=systematic_share_adj,
+        systematic_share_ci=systematic_share_ci,
+        beta_ci_by_factor=beta_ci_by_factor if beta_ci_by_factor is not None else {},
+        suppressed_factors=suppressed_factors,
+        downside_beta=downside_beta,
+        risk_contribution=risk_contribution if risk_contribution is not None else {},
+        vif_by_factor=vif_by_factor if vif_by_factor is not None else {},
+        diversification_ratio=diversification_ratio,
+        sector_weights=sector_weights if sector_weights is not None else {},
+        sector_hhi=sector_hhi,
+        sector_gaps=sector_gaps,
+        holdings_meta=holdings_meta,
+        sys_share_history=sys_share_history,
     )

@@ -11,20 +11,56 @@ The project uses hexagonal architecture (ports & adapters) so the domain logic s
 ## Commands
 
 ```bash
-# Full quality check (lint + typecheck + test with coverage)
+# Full quality gate (lint + typecheck + test with coverage) — CI and pre-PR only
 make check
 
-# Individual targets
-make test          # pytest -v --tb=short
-make test-cov      # pytest with --cov-fail-under=90
-make lint          # pre-commit run --all-files
-make typecheck     # mypy strict on domain/ adapters/ application/
-make setup         # pip install + pre-commit install
-make daily-scan    # run daily sentiment scan and update recommendations
+# Fast iteration targets
+make test-fast        # full suite, parallel, no coverage (~35s)
+make test-tab tab=risk  # single tab tests, <15s — replace 'risk' with tab name
+make test-domain      # domain/ tests only
+make test-adapters    # adapters/ tests only
+
+# Coverage gate (when you need to confirm coverage)
+make test-cov
+
+# Other targets
+make lint             # pre-commit run --all-files
+make typecheck        # mypy strict on domain/ adapters/ application/
+make setup            # uv sync + pre-commit install
 
 # Single test
-pytest tests/test_domain_models.py::test_signal_valid_creation -v
+pytest tests/test_domain_models.py::test_signal_valid_creation -q
 ```
+
+## Model Routing (this project)
+
+Use the right model for each task — never burn Opus on work Sonnet handles.
+
+| Task | Model |
+|------|-------|
+| Tab/adapter edits, CLI commands, tests | Sonnet |
+| Domain model changes | Sonnet |
+| Architecture decisions, ADRs | Fable (main loop) |
+| Debugging test failures, root cause analysis | Opus |
+| File lookup, grep, targeted search | Haiku |
+| Full codebase exploration (Explore agent) | Sonnet |
+| Code review pre-PR | Opus |
+
+## Testing Discipline (mandatory — not advisory)
+
+Run the narrowest target that covers your change. `make check` is for checkpoints and PR only — not after every edit.
+
+| Change type | Run immediately | Before commit | Before PR |
+|-------------|-----------------|---------------|-----------|
+| Any dashboard tab | `make test-tab tab=<name>` | `make test-smoke` | `make check` |
+| CLI command | `pytest tests/test_<name>.py -q` | `make test-smoke` | `make check` |
+| Domain model | `make test-domain` | `make test-smoke` | `make check` |
+| Adapter change | `make test-adapters` | `make test-smoke` | `make check` |
+| Cross-cutting | `make test-fast` | `make test-smoke` | `make check` |
+
+Tab names for `make test-tab`: `risk`, `weekly_brief`, `research`, `screener`, `positions`, `trust`
+
+**Never run `make check` during iterative edits in a session — only at checkpoints and pre-PR.**
 
 ## Architecture
 
@@ -100,6 +136,34 @@ signature, a click command option, or an xgboost/lightgbm training call. Skip it
 domain logic (`domain/` is stdlib-only) and refactors with no third-party API involved.
 
 Full per-phase routing incl. context7: `docs/SKILL_ROUTING.md` (when it lands, dashboard plan Task 1).
+
+## Key Files — Where to Look
+
+```
+domain/models.py                   Core dataclasses (Signal, Conviction, Brief, etc.)
+domain/ports.py                    All port interfaces — source of truth for contracts
+domain/services.py                 Business logic (LookAheadBias enforcement here)
+application/cli/                   CLI package (decomposed from 3440-LOC monolith)
+  _cli_group.py                    Click group definition
+  _deps.py                         _build_dependencies() + shared helpers
+  *_commands.py                    One file per command domain (~300-500 LOC each)
+adapters/visualization/tabs/risk/   Risk tab package (decomposed from 1710-LOC monolith)
+  compose.py                        _compose() + render() entry point
+  components.py                     Header, banner, nav, vitals, dials (~400 LOC)
+  evidence.py                       Evidence bands, grill drill, flags footer
+  factor_chart.py                   Fama-French factor chart (~240 LOC isolated)
+  enb_section.py                    ENB drill section (~220 LOC isolated)
+  sections.py                       Sector, who_owns, drift, teach sections
+adapters/visualization/components/ Shared UI components (styles.py, charts.py, cards.py)
+adapters/data/sqlite_store.py      Persistence layer
+tests/fakes/                       Test doubles for all ports — use these, never mock
+tests/conftest.py                  Strips live API keys — one autouse fixture only
+```
+
+## CONTEXT.md — Do NOT auto-read
+
+`CONTEXT.md` is a historical session timeline (~17,800 tokens). **Do not read it** at session start or during exploration. Open only if the user explicitly asks about project history.
+Current state: `docs/STATUS.md` — read this first. It is short and authoritative.
 
 ## Phase Status
 

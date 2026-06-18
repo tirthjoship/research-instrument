@@ -67,6 +67,38 @@ def brief_to_summary_dict(brief: WeeklyBrief) -> dict[str, Any]:
                 "flags": [f.kind for f in macro.flags],
                 "coverage_holdings": macro.coverage_holdings,
                 "total_holdings": macro.total_holdings,
+                # v8 risk-stats fields (Task 9) --------------------------------
+                # Scalars pass through directly.
+                "enb": macro.enb,
+                "pc_labels_data_gap": macro.pc_labels_data_gap,
+                "systematic_share_adj": macro.systematic_share_adj,
+                "downside_beta": macro.downside_beta,
+                "sector_hhi": macro.sector_hhi,
+                "diversification_ratio": macro.diversification_ratio,
+                # Tuples → lists (JSON arrays).
+                "pc_variance": list(macro.pc_variance),
+                "pc_labels": list(macro.pc_labels),
+                "suppressed_factors": list(macro.suppressed_factors),
+                "sector_gaps": list(macro.sector_gaps),
+                # tuple[tuple[str, float], ...] → list of [date, value] lists.
+                "sys_share_history": [[d, v] for d, v in macro.sys_share_history],
+                # tuple[dict, ...] → list of dicts (each dict is already JSON-safe).
+                "holdings_meta": list(macro.holdings_meta),
+                # Dicts pass through; scalars unchanged.
+                "risk_contribution": dict(macro.risk_contribution),
+                "sector_weights": dict(macro.sector_weights),
+                # Scalar-valued CI tuple → list [lo, hi].
+                "systematic_share_ci": list(macro.systematic_share_ci),
+                # dict[str, tuple[float, float]] → dict[str, [lo, hi]].
+                "beta_ci_by_factor": {
+                    f: list(ci) for f, ci in macro.beta_ci_by_factor.items()
+                },
+                # VIF dict: float('inf') → None (JSON-safe sentinel meaning
+                # "collinear / data-gap"; UI should show as "—" not a number).
+                "vif_by_factor": {
+                    f: (None if v != v or v == float("inf") else v)
+                    for f, v in macro.vif_by_factor.items()
+                },
             }
         ),
     }
