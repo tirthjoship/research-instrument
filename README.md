@@ -6,7 +6,7 @@ It does NOT predict returns — we tested that across 18 years of data and every
 failed.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-1628%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-2185%20passing-success)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
 
@@ -70,8 +70,8 @@ tell us honestly whether the tool improved the household's adherence to its own 
 ## How to run it
 
 ```bash
-# Install
-pip install -e ".[dev,dashboard]"
+# Install (uv)
+uv sync
 pre-commit install
 
 # Launch the dashboard
@@ -82,6 +82,12 @@ bash scripts/discipline_weekly_review.sh
 
 # Generate the weekly brief from the CLI
 python -m application.cli weekly-brief --market us
+
+# Run tests (parallel, ~35s)
+make test-fast
+
+# Single-tab tests (fast iteration)
+make test-tab tab=risk
 ```
 
 ---
@@ -158,7 +164,10 @@ adapters/
                                  #   chart builders, CSS components
 
 application/
-  cli.py                         # Click CLI (weekly-brief, screen-candidates, ...)
+  cli/                           # Click CLI package (38 commands across 8 modules)
+    _cli_group.py                #   Click group entry point
+    _deps.py                     #   Shared dependency builder + helpers
+    *_commands.py                #   One file per command domain (~300-500 LOC each)
   weekly_brief_use_case.py       # Weekly brief orchestration
   macro_beta_use_case.py         # Book macro-factor exposure
   fit_use_case.py                # Portfolio-fit verdict input gathering
