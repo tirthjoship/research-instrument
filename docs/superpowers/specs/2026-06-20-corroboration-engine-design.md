@@ -71,21 +71,29 @@ three consumers — **new-candidate surfacing, screener revamp, portfolio-verdic
 
 ```
 HARVEST (adapters, free, attributed)        CORROBORATE (domain, pure)              EMIT
-GeminiGroundedHarvester (primary,+search)─┐  CorroborationService:                ┌─ CorroboratedCandidate
-RSS / dated news adapters              ───┤   • drop unverified claims            ├─ DirectionalView
-yfinance analyst events (dated)        ───┼─► • pull EXISTING signals             │   (theme/sector tilt)
-GDELT / Finnhub / AlphaVantage (free)  ───┘   • weight by source_reliability      └─ weekly snapshot → SQLite
-[CitationVerifier gate drops bad claims]      • compute convergence tier              → forward-resolve → #9 gate
+SearchHarvester (Tavily→Brave→DDG) ──┐       CorroborationService:                ┌─ CorroboratedCandidate
+  → real citable URLs                │        • drop unverified claims            ├─ DirectionalView
+LLMSummarizer (Gemini→Groq, via   ──┼──► raw  • pull EXISTING signals             │   (theme/sector tilt)
+  ModelRegistry) → attributed why   │  claims  • weight by source_reliability     └─ weekly snapshot → SQLite
+RSS / yfinance-analyst / GDELT ─────┘         • compute convergence tier             → forward-resolve → #9 gate
+[CitationVerifier gate drops bad claims]
 ```
 
+**Harvesting is decoupled: search (real URLs) and LLM (attributed summary) are separate layers** — the
+LLM never invents a citation, it only summarizes text behind a URL the search engine returned.
+
 - **New port** `RecommendationHarvestPort` (`domain/ports.py`): `harvest(as_of) -> list[HarvestedClaim]`.
-- **Primary adapter** `GeminiGroundedHarvester` (`adapters/data/`): asks Gemini (with Google-Search
-  grounding) "which stocks are credible sources recommending now, and why, with citation URLs"; reuses
-  `gemini_models.py` fallback rotation. Returns claims with candidate URLs.
-- **Corroborator adapters** (free): RSS/dated-news, `YFinanceAnalystAdapter` rating events, GDELT,
-  Finnhub/AlphaVantage (free keys). Each contributes independent `HarvestedClaim`s.
-- **`CitationVerifier`** (adapter): for each claim, fetch the URL (existing `WebFetch`-style/requests),
-  confirm it resolves (HTTP 200) and the page text names the ticker/company. Unverified → dropped.
+- **`SearchHarvester`** (adapter, *primary*): queries a free search API for "stocks credible sources
+  recommend now" + per-candidate queries; returns real result URLs. Provider fallback Tavily (1k/mo
+  free) → Brave (2k/mo) → DuckDuckGo (keyless). The URLs are facts, not model output.
+- **`LLMSummarizer`** (adapter): given the *fetched page text* behind a verified URL, extracts the
+  source's stance + ≤280-char attributed thesis. Model chosen via `ModelRegistry` (§7b): Gemini Flash
+  free → Groq (Llama-3.3-70B) → spares. Summarizes only; never sources.
+- **Corroborator adapters** (free, independent claims): RSS/dated-news, `YFinanceAnalystAdapter` rating
+  events, GDELT, Finnhub/AlphaVantage (free keys).
+- **`CitationVerifier`** (adapter): for each claim, fetch the URL (throttled), confirm it resolves
+  (HTTP 200) and the page text names the ticker/company. Unverified → dropped. This guards both the
+  search-returned URLs and any URL an LLM might emit.
 - **`CorroborationService`** (`domain/`, stdlib-only): consumes verified claims + existing outputs of
   `EvidenceScreenUseCase` (factor rank), trend-health, divergence, discipline; weights each source by
   its `source_reliability` row; emits `CorroboratedCandidate` + rolls up `DirectionalView`.
@@ -147,6 +155,25 @@ black box. **Tiers carry no predictive weight until Hypothesis #9 (Sub-project 5
 - Result: corroboration weights credible-by-track-record sources up and noise down, transparently and
   with no model. This is the only "self-improvement" mechanism; it is auditable per source.
 
+## 7b. ModelRegistry — self-updating free-model discovery
+
+Goal: stop hand-maintaining LLM lists as models deprecate (the existing `gemini_models.py` chain
+already lists `gemini-2.0-flash*`, deprecated 2026-06-01) or new free ones appear.
+
+- **`ModelRegistry`** (adapter): per *wired* provider (Gemini, Groq, …), calls the provider's
+  `list-models` endpoint, filters to currently-available free chat models, ranks by
+  `(provider_priority, version_recency, known_good_family)`, and writes a cached preferred-order list
+  to `data/cache/model_registry.json` with a TTL (refresh weekly or on first call past TTL).
+- The `LLMSummarizer` fallback chain **reads from the registry**, not a hardcoded list. Deprecated
+  models drop out automatically (absent from list / 404 on use → skip to next). New models in a known
+  family are picked up with no code change.
+- **Search backends** get the same treatment: a small registry of wired search providers with a
+  health-check ping; dead/quota-exhausted providers fall to the next.
+- **Honest limits (stated in code + docstring):** discovery covers *availability*, not *quality* —
+  "better" is a recency/family heuristic, never a proven quality claim. Only providers we have an
+  adapter for are polled; a brand-new vendor still needs a one-time adapter. No auto-adoption of a
+  model that fails a cheap smoke probe.
+
 ## 8. Persistence + Hypothesis #9 hook
 
 - Weekly run writes a `corroboration_runs` row + N `harvested_recs` rows (point-in-time `as_of`).
@@ -187,17 +214,30 @@ black box. **Tiers carry no predictive weight until Hypothesis #9 (Sub-project 5
 ## 12. Build order (for the implementation plan)
 
 1. Domain types (`HarvestedClaim`, `CorroboratedCandidate`, `DirectionalView`, enums) + `CorroborationService` (TDD, pure).
-2. `RecommendationHarvestPort` + `CitationVerifier` + `GeminiGroundedHarvester` (fakes first).
-3. Free corroborator adapters (reuse existing RSS / analyst / GDELT).
-4. `CorroborationSnapshotStore` (SQLite tables).
-5. A `corroborate` CLI command that runs harvest→verify→corroborate→persist and prints the cards + DirectionalView (RESEARCH_ONLY banner).
-6. Limited dated-source historical sanity check (labelled).
+2. `ModelRegistry` + `CitationVerifier` (fakes first) — the trust/maintenance spine.
+3. `RecommendationHarvestPort` + `SearchHarvester` (Tavily→Brave→DDG) + `LLMSummarizer` (registry-driven).
+4. Free corroborator adapters (reuse existing RSS / analyst / GDELT).
+5. `CorroborationSnapshotStore` (SQLite tables).
+6. A `corroborate` CLI command that runs harvest→verify→corroborate→persist and prints the cards + DirectionalView (RESEARCH_ONLY banner).
+7. Limited dated-source historical sanity check (labelled).
 
-## 13. Open questions
+## 13. Resolved decisions (was open questions)
 
-- Q: Gemini Google-Search grounding on the *free* tier — confirm quota + that citation URLs are returned
-  (verify via context7 / a probe before building the harvester). If grounding is not free, fall back to
-  B-sources primary + Gemini summarization-only.
-- Q: theme taxonomy — extend `themes.yaml` (6 themes) or add sectors from yfinance? (Default: both,
-  sector from yfinance `info['sector']`, theme from `themes.yaml`.)
-- Q: how many candidates per weekly harvest to cap (free-tier + verification cost)? Proposed default: 25.
+- **Harvesting mechanism (RESOLVED 2026-06-20):** decoupled **Search + LLM** stack is primary (not
+  Gemini grounding). Rationale: free-tier Gemini grounding is quota-limited (~20/day worst case due to
+  a known free-tier bug; 5k/mo only on higher tiers) and an LLM can invent citations. A free search API
+  returns *real* URLs we verify, then any free LLM summarizes — more honest, no single-vendor lock-in.
+  Gemini grounding is demoted to an optional fallback. (Sources in chat: pecollective free-tier guide;
+  ai.google.dev grounding-quota bug thread; aifreeapi pricing 2026.)
+- **Model maintenance (RESOLVED):** `ModelRegistry` (§7b) auto-discovers free models per wired
+  provider; the deprecated `gemini-2.0-flash*` entries in `gemini_models.py` are refreshed via the
+  registry rather than hand-edited.
+- **Theme taxonomy (RESOLVED, default accepted):** both — sector from yfinance `info['sector']`, theme
+  from `themes.yaml`.
+- **Harvest cap (RESOLVED, default accepted):** 25 candidates per weekly run (free-tier + verify cost).
+
+## 14. Remaining build-time probes (not blockers)
+
+- Probe the chosen search provider (Tavily free key) returns clean result URLs before wiring Brave/DDG.
+- Probe `genai.list_models()` (or provider equivalent) shape for the `ModelRegistry` parser.
+- Confirm a Groq free key path for the `LLMSummarizer` spare.
