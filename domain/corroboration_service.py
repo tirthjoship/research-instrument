@@ -8,6 +8,7 @@ from domain.corroboration_models import (
     Agreement,
     ConvergenceTier,
     CorroboratedCandidate,
+    DirectionalView,
     HarvestedClaim,
     OurReadout,
     Stance,
@@ -16,6 +17,13 @@ from domain.corroboration_models import (
 )
 
 _SIGN = {Stance.BULLISH: 1, Stance.BEARISH: -1, Stance.NEUTRAL: 0}
+_TIER_NUM = {
+    ConvergenceTier.STRONG: 1.0,
+    ConvergenceTier.MODERATE: 0.6,
+    ConvergenceTier.WEAK: 0.3,
+    ConvergenceTier.CONFLICTED: 0.1,
+    ConvergenceTier.NONE: 0.0,
+}
 
 
 class CorroborationService:
@@ -101,3 +109,52 @@ class CorroborationService:
         if 0.2 <= abs(s) < 0.5 and u.coverage_n >= 2 and a.our_alignment != "DIVERGES":
             return ConvergenceTier.MODERATE
         return ConvergenceTier.WEAK
+
+    def roll_up(
+        self,
+        candidates: list[CorroboratedCandidate],
+        groups: dict[str, list[str]],
+        exposure_pct: dict[str, float],
+        group_kind: str = "theme",
+    ) -> list[DirectionalView]:
+        views: list[DirectionalView] = []
+        by_ticker = {c.ticker: c for c in candidates}
+        for name, tickers in groups.items():
+            members = [by_ticker[t] for t in tickers if t in by_ticker]
+            if not members:
+                continue
+            mean_conv = sum(_TIER_NUM[m.convergence] for m in members) / len(members)
+            net = sum(m.agreement.weighted_score for m in members) / len(members)
+            net_stance = (
+                Stance.BULLISH
+                if net > 0.1
+                else Stance.BEARISH if net < -0.1 else Stance.NEUTRAL
+            )
+            yours = exposure_pct.get(name, 0.0)
+            ev_weight = mean_conv * 100.0
+            tilt = self._tilt(net_stance, mean_conv, yours, ev_weight)
+            views.append(
+                DirectionalView(
+                    group_kind=group_kind,
+                    group_name=name,
+                    net_stance=net_stance,
+                    mean_convergence=mean_conv,
+                    your_exposure_pct=yours,
+                    evidence_weight_pct=ev_weight,
+                    tilt=tilt,
+                )
+            )
+        return views
+
+    def _tilt(
+        self, net_stance: Stance, mean_conv: float, yours: float, ev_weight: float
+    ) -> str:
+        if net_stance is Stance.BEARISH and mean_conv >= 0.6:
+            return "LEAN_OUT" if yours > 0 else "AVOID"
+        if (
+            net_stance is Stance.BULLISH
+            and mean_conv >= 0.6
+            and yours < ev_weight * 0.5
+        ):
+            return "LEAN_IN"
+        return "HOLD"
