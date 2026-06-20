@@ -71,7 +71,7 @@ class CorroborationService:
         return Agreement(n_bull, n_bear, score, align)
 
     def _alignment(self, score: float, r: OurReadout) -> str:
-        # Our directional read: healthy+top-decile = bullish lean; broken = bearish.
+        # Our directional read: healthy+top-quartile = bullish lean; broken = bearish.
         our_sign = 0
         if r.trend_health is TrendHealth.HEALTHY and (r.factor_percentile or 100) <= 25:
             our_sign = 1
