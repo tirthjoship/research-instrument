@@ -1,8 +1,10 @@
 name: Lint & Typecheck
 
 on:
+  # Feature branches run once via their PR (pull_request); pushing to
+  # main/develop (merges) runs once via push. Avoids the double-run.
   push:
-    branches: [main, develop, "feature/**", "feat/**", "fix/**"]
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
