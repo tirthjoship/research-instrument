@@ -4,12 +4,14 @@ Adapters implement these ports; domain and application depend only
 on these abstractions. Ports support point-in-time access and leakage pruning.
 """
 
+from datetime import date as _date
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
 from .analyst import AnalystRating
 from .case_models import CaseContext, CaseResult
 from .conviction import SmartMoneySignal
+from .corroboration_models import HarvestedClaim
 from .insider_cluster import InsiderTransaction
 from .models import (
     AccuracyRecord,
@@ -343,3 +345,19 @@ class CaseSummarizerPort(Protocol):
     verdict. Any failure must return data_gap=True — never fabricated output."""
 
     def summarize_case(self, ctx: CaseContext) -> CaseResult: ...
+
+
+class RecommendationHarvestPort(Protocol):
+    def harvest(self, as_of: _date) -> list[HarvestedClaim]: ...
+
+
+class CitationVerifierPort(Protocol):
+    def verify(self, url: str, ticker: str) -> bool: ...
+
+
+class ModelProviderPort(Protocol):
+    def list_free_models(self) -> list[str]: ...
+
+    def summarize(self, model: str, page_text: str, ticker: str) -> tuple[str, str]:
+        """Return (stance_str, thesis_summary)."""
+        ...
