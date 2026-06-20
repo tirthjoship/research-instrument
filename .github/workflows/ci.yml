@@ -1,8 +1,11 @@
 name: Test
 
 on:
+  # Feature branches run CI once via their PR (pull_request); pushing to
+  # main/develop (merges) runs once via push. Avoids the double-run that
+  # firing on both push:feat/** and pull_request caused.
   push:
-    branches: [main, develop, "feature/**", "feat/**", "fix/**"]
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
