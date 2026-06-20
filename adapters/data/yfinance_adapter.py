@@ -7,12 +7,15 @@ caches raw API responses for reproducibility (ADR-017).
 from __future__ import annotations
 
 import logging
+import random
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, TypeVar
 
 import numpy as np
 import yfinance as yf
+from yfinance.exceptions import YFRateLimitError
 
 from domain.exceptions import LookAheadBiasError
 from domain.models import Signal
@@ -21,21 +24,85 @@ from .cache_mixin import CachingMixin
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T")
+
 
 class YFinanceAdapter(CachingMixin):
     """Adapter for yfinance market data.
 
     Implements MarketDataPort and TechnicalAnalysisPort protocols.
     Uses auto_adjust=False for point-in-time correctness.
+
+    Network calls are paced (a min interval between hits, plus jitter) and
+    retried with exponential backoff on ``YFRateLimitError`` so a large
+    universe sweep does not fire every request at once and get the whole run
+    429'd by Yahoo. The throttle/retry is centralised here, so every caller
+    (tournament screen, pretrain, macro, dashboard) inherits it.
     """
 
     def __init__(
         self,
         cache_dir: Path,
         use_cache: bool = False,
+        *,
+        min_interval_s: float = 0.4,
+        max_retries: int = 3,
+        backoff_base_s: float = 2.0,
+        jitter_s: float = 0.25,
+        sleep: Callable[[float], None] = time.sleep,
+        monotonic: Callable[[], float] = time.monotonic,
     ) -> None:
         super().__init__(cache_dir)
         self._use_cache = use_cache
+        self._min_interval_s = min_interval_s
+        self._max_retries = max_retries
+        self._backoff_base_s = backoff_base_s
+        self._jitter_s = jitter_s
+        self._sleep = sleep
+        self._monotonic = monotonic
+        self._last_call_at: float | None = None
+        # Belt-and-suspenders: let yfinance also retry transient network errors.
+        try:
+            yf.config.network.retries = max(yf.config.network.retries, 2)
+        except Exception:  # pragma: no cover - older yfinance without config
+            pass
+
+    def _call_with_retry(self, symbol: str, fn: Callable[[], T]) -> T:
+        """Run a yfinance network call: throttled, with backoff on rate-limit.
+
+        Sleeps to honour ``min_interval_s`` since the previous network call,
+        then invokes ``fn``. On ``YFRateLimitError`` it backs off exponentially
+        (base * 2**attempt, plus jitter) up to ``max_retries`` and re-raises if
+        the limit persists — never swallowing it into a silent empty result.
+        """
+        for attempt in range(self._max_retries + 1):
+            if self._last_call_at is not None:
+                elapsed = self._monotonic() - self._last_call_at
+                wait = self._min_interval_s - elapsed
+                if wait > 0:
+                    self._sleep(wait)
+            try:
+                return fn()
+            except YFRateLimitError:
+                self._last_call_at = self._monotonic()
+                if attempt == self._max_retries:
+                    logger.warning(
+                        "yfinance rate-limited on %s after %d retries", symbol, attempt
+                    )
+                    raise
+                backoff = self._backoff_base_s * (2**attempt) + random.uniform(
+                    0.0, self._jitter_s
+                )
+                logger.debug(
+                    "Rate-limited on %s; backoff %.2fs (attempt %d)",
+                    symbol,
+                    backoff,
+                    attempt + 1,
+                )
+                self._sleep(backoff)
+            finally:
+                self._last_call_at = self._monotonic()
+        raise RuntimeError("unreachable")  # pragma: no cover
 
     # ── MarketDataPort ──────────────────────────────────────────────
 
@@ -61,10 +128,13 @@ class YFinanceAdapter(CachingMixin):
         )
         effective_end = end_date or prediction_time
 
-        df = ticker.history(
-            start=effective_start.strftime("%Y-%m-%d"),
-            end=effective_end.strftime("%Y-%m-%d"),
-            auto_adjust=False,
+        df = self._call_with_retry(
+            symbol,
+            lambda: ticker.history(
+                start=effective_start.strftime("%Y-%m-%d"),
+                end=effective_end.strftime("%Y-%m-%d"),
+                auto_adjust=False,
+            ),
         )
 
         if df.empty:
@@ -84,7 +154,7 @@ class YFinanceAdapter(CachingMixin):
         """Return the company's long name (or short name) from yfinance, or None on error."""
         try:
             ticker = yf.Ticker(symbol)
-            info = ticker.info
+            info = self._call_with_retry(symbol, lambda: ticker.info)
             return info.get("longName") or info.get("shortName") or None
         except Exception:
             logger.warning("Failed to fetch company name for %s", symbol)
@@ -93,7 +163,7 @@ class YFinanceAdapter(CachingMixin):
     def get_ticker_info(self, symbol: str) -> dict[str, float]:
         """Map yfinance info fields to standardised feature names."""
         ticker = yf.Ticker(symbol)
-        info = ticker.info
+        info = self._call_with_retry(symbol, lambda: ticker.info)
 
         field_map: dict[str, str] = {
             "marketCap": "market_cap",
@@ -133,12 +203,14 @@ class YFinanceAdapter(CachingMixin):
 
         try:
             ticker = yf.Ticker(symbol)
-            expirations = ticker.options
+            expirations = self._call_with_retry(symbol, lambda: ticker.options)
             if not expirations:
                 return None
 
             # Use nearest expiration
-            chain = ticker.option_chain(expirations[0])
+            chain = self._call_with_retry(
+                symbol, lambda: ticker.option_chain(expirations[0])
+            )
             calls = chain.calls
             puts = chain.puts
 
@@ -187,7 +259,7 @@ class YFinanceAdapter(CachingMixin):
 
         try:
             ticker = yf.Ticker(symbol)
-            info = ticker.info
+            info = self._call_with_retry(symbol, lambda: ticker.info)
 
             result: dict[str, float] = {}
 
