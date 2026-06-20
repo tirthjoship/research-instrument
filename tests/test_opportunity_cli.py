@@ -317,7 +317,7 @@ def test_resolve_wiki_articles_writes_yaml(
 def test_resolve_wiki_articles_skips_existing_alias(
     monkeypatch: object, tmp_path: object
 ) -> None:
-    import application.cli as climod
+    import application.cli.data_commands as _data_cmd
     from application.cli import cli
 
     seen: list[str] = []
@@ -332,12 +332,12 @@ def test_resolve_wiki_articles_skips_existing_alias(
             seen.append(name)
             return "X"
 
-    monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
-    monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: "Name " + t, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "WikipediaArticleResolver", _FakeResolver)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_get_company_name", lambda deps, t: "Name " + t)  # type: ignore[attr-defined]
     # Pin the curated skip set in-test (isolate from live on-disk wiki_articles_us.yaml):
     # RKLB as a curated alias must be skipped, resolver never called for it.
-    monkeypatch.setattr(climod, "_load_wiki_map", lambda market: {"RKLB": "Rocket_Lab"}, raising=False)  # type: ignore[attr-defined]
-    monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["RKLB"], raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_load_wiki_map", lambda market: {"RKLB": "Rocket_Lab"})  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_get_ticker_universe", lambda config: ["RKLB"])  # type: ignore[attr-defined]
 
     from pathlib import Path
 

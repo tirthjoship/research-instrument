@@ -42,6 +42,7 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "pytest-xdist>=3.0.0",
+    "pytest-timeout>=2.1.0",
     "hypothesis>=6.0.0",
     "black>=24.0.0",
     "isort>=5.13.0",
@@ -61,7 +62,7 @@ include = ["domain*", "adapters*", "application*", "config*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-p no:playwright"
+addopts = "-p no:playwright --timeout=90 --timeout-method=thread"
 markers = [
     "smoke: critical regression guard — run before every commit",
     "tab_risk: risk tab tests",
