@@ -122,6 +122,8 @@ module = [
     "adapters.ml.gemini_narrator",
     "adapters.ml.gemini_event_classifier",
     "adapters.ml.gemini_models",
+    "adapters.ml.model_registry",
+    "application.cli.corroboration_commands",
 ]
 disable_error_code = ["attr-defined"]
 
@@ -138,6 +140,7 @@ module = [
     "application.cli.data_commands",
     "application.cli.backtest_commands",
     "application.cli.brief_commands",
+    "application.cli.corroboration_commands",
 ]
 disallow_untyped_decorators = false
 

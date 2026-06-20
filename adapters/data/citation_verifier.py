@@ -3,6 +3,7 @@ Unverified claims are dropped (spec §4). Default fetcher is throttled requests.
 
 from __future__ import annotations
 
+import re
 import time
 from typing import Callable
 
@@ -50,6 +51,9 @@ class CitationVerifier:
             return False
         if status != 200 or not text:
             return False
+        # Word-boundary match so short tickers (F, A, C) don't false-verify on
+        # any page containing that letter — the anti-hallucination gate (spec §4).
         needles = [ticker] + self._names.get(ticker, [])
-        low = text.lower()
-        return any(n.lower() in low for n in needles)
+        return any(
+            re.search(rf"\b{re.escape(n)}\b", text, re.IGNORECASE) for n in needles
+        )
