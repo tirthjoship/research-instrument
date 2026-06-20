@@ -17,8 +17,14 @@ def _version_key(name: str) -> tuple[int, ...]:
 def gemini_lister() -> list[str]:
     """List available Gemini flash models (free family). Lazy import — no key at module load."""
     try:
+        import os
+
         import google.generativeai as genai
 
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            return []
+        genai.configure(api_key=api_key)
         models = genai.list_models()
         result: list[str] = []
         for m in models:
