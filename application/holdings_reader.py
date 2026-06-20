@@ -7,6 +7,10 @@ from __future__ import annotations
 import csv
 import os
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from domain.models import Holding as DomainHolding
 
 
 @dataclass(frozen=True)
@@ -63,6 +67,46 @@ def make_manual_holding(
         cost_basis=cost_basis,
         account_type=account_type,
     )
+
+
+def aggregate_to_book(holdings: list[Holding]) -> list["DomainHolding"]:
+    """Aggregate broker rows by ticker into domain Holdings for the portfolio view.
+
+    A real book holds the same ticker across several accounts (FHSA, TFSA, …).
+    The portfolio tab wants one row per stock, so shares and book value are summed
+    per ticker and the purchase price is the book-value-weighted average
+    (total_cost / total_shares).
+
+    Rows whose aggregate cannot yield a positive purchase_price (zero/blank book
+    value, e.g. a cash-like position) are dropped — domain ``Holding`` forbids a
+    non-positive price, and we never fabricate one. ``purchase_date`` is left
+    blank because the broker export carries no per-lot date; nothing in the
+    portfolio view reads it.
+    """
+    from collections import defaultdict
+
+    from domain.models import Holding as DomainHolding
+
+    shares: dict[str, float] = defaultdict(float)
+    cost: dict[str, float] = defaultdict(float)
+    for h in holdings:
+        shares[h.ticker] += h.shares
+        cost[h.ticker] += h.cost_basis
+
+    book: list[DomainHolding] = []
+    for ticker, qty in shares.items():
+        if qty <= 0 or cost[ticker] <= 0:
+            continue
+        book.append(
+            DomainHolding(
+                symbol=ticker,
+                quantity=qty,
+                purchase_price=cost[ticker] / qty,
+                purchase_date="",
+                notes="aggregated from holdings.csv",
+            )
+        )
+    return book
 
 
 def read_holdings(path: str) -> list[Holding]:

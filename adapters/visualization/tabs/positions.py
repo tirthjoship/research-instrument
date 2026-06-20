@@ -14,8 +14,39 @@ from adapters.visualization.price_cache import batch_fetch_prices, fetch_ticker_
 
 DB_PATH = "data/recommendations.db"
 
+# Canonical local book — same file Home/Risk derive their brief from.
+HOLDINGS_CSV = "data/personal/holdings.csv"
+
 # Small-book threshold: ≤ this many positions → flat treemap layout.
 SMALL_BOOK_MAX = 5
+
+
+def _resolve_book(db_path: str) -> tuple[list[Any], str]:
+    """Resolve the portfolio book from a single source, preferring the user's CSV.
+
+    Priority:
+      1. In-session book (Home tab upload / manual / sample → session_state["book"])
+      2. Canonical ``data/personal/holdings.csv`` — the same file Home/Risk use
+      3. SQLite store (trade-recorded / demo holdings) as a last resort
+
+    Returns ``(holdings, source_label)`` where ``holdings`` are domain Holdings
+    aggregated one-row-per-ticker. The label is shown to the user so they always
+    know which book they are looking at (legibility over silent magic).
+    """
+    from adapters.visualization.data_loader import load_holdings
+    from application.holdings_reader import aggregate_to_book, read_holdings
+
+    session_book = st.session_state.get("book")
+    if session_book:
+        book = aggregate_to_book(session_book)
+        if book:
+            return book, "uploaded book"
+
+    csv_book = aggregate_to_book(read_holdings(HOLDINGS_CSV))
+    if csv_book:
+        return csv_book, "holdings.csv"
+
+    return load_holdings(db_path), "recorded trades"
 
 
 def render(db_path: str = DB_PATH) -> None:
@@ -38,7 +69,6 @@ def render(db_path: str = DB_PATH) -> None:
     from adapters.visualization.components.treemap import LENSES, build_treemap_html
     from adapters.visualization.data_loader import (
         load_brief_summary,
-        load_holdings,
         load_outcomes,
         load_trades,
     )
@@ -51,7 +81,7 @@ def render(db_path: str = DB_PATH) -> None:
 
     st.markdown('<div class="ri-h1">My Portfolio</div>', unsafe_allow_html=True)
 
-    holdings = load_holdings(db_path)
+    holdings, book_source = _resolve_book(db_path)
     trades = load_trades(db_path)
     outcomes = load_outcomes(db_path)
 
@@ -60,6 +90,9 @@ def render(db_path: str = DB_PATH) -> None:
         with st.expander("Record a Trade", expanded=False):
             _render_trade_form(db_path)
         return
+
+    if holdings:
+        st.caption(f"{len(holdings)} holdings · source: {book_source}")
 
     tickers = tuple(h.symbol for h in holdings)
     try:
