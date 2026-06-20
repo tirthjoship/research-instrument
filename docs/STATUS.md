@@ -1,14 +1,23 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-20 (session 3)
-**Branch:** `feat/corroboration-engine` (off `develop`)
-**Phase:** Corroboration engine (sub-project 1 of 5) — BUILT, RESEARCH_ONLY
+**As of:** 2026-06-20 (session 4 — wrap/handoff)
+**Branch:** `feat/corroboration-engine` (off `develop`) — SP1 done, PR #73 open (deferred)
+**Phase:** Corroboration engine SP1 BUILT + LIVE-VALIDATED, RESEARCH_ONLY → next = SP2–7 specs
 
 ## NEXT ACTION (fresh session — start here)
 
-1. PR `feat/corroboration-engine` → `develop` (gate green locally, see evidence below).
-2. Then sub-projects 2–4 (consumers: surfacing / screener / portfolio-verdict) +
-   SP5 (forward Hypothesis #9 gate) + SP6 (dashboard) + SP7 (weekly-job reliability).
+**Spec the next sub-project (SP2–7).** PR #73 is OPEN but deferred by user — do NOT merge/PR this session.
+Briefs already committed: `docs/superpowers/specs/2026-06-20-sp{2..7}-*.md`. Pick one with the user, then
+brainstorming → writing-plans → subagent-driven-development.
+
+Sub-project sequence (ADR-062): SP2 candidate-surfacing → SP3 screener-revamp → SP4 portfolio-verdict →
+SP5 Hypothesis #9 forward gate → SP6 stock-analysis tabs → SP7 weekly-job reliability. ADR-062 notes SP7
+reliability is "fixed first" — confirm with user which to spec first.
+
+**CAVEAT — shared working tree:** the main repo tree may be on another branch (a concurrent session ran
+`fix/test-hang-timeout`). Check `git branch --show-current` first; do SP2+ work in an isolated `git worktree`
+off `feat/corroboration-engine` (or off `develop` once #73 merges). `.venv` is uv-managed (no pip → use
+`uv pip install`); symlink it into the worktree.
 
 Plan: `docs/superpowers/plans/2026-06-20-corroboration-engine.md`
 Spec: `docs/superpowers/specs/2026-06-20-corroboration-engine-design.md`
