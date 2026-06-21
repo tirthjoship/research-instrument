@@ -39,7 +39,7 @@ _RS_WINDOW = 126
 
 def _vol(returns: list[float], window: int) -> float:
     tail = returns[-window:]
-    return statistics.pstdev(tail) if len(tail) >= 2 else 0.0
+    return statistics.pstdev([float(x) for x in tail]) if len(tail) >= 2 else 0.0
 
 
 def backtest_discipline_calibration(
