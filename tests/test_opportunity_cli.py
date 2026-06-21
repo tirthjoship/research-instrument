@@ -76,7 +76,7 @@ def test_daily_cycle_invokes_scan_then_resolve(monkeypatch: object) -> None:
 
 
 def test_drip_backfill_command_runs(monkeypatch: object) -> None:
-    import application.cli as climod
+    import application.cli.data_commands as _data_cmd
     from domain.models import SourceHealth
 
     class _UC:
@@ -88,7 +88,7 @@ def test_drip_backfill_command_runs(monkeypatch: object) -> None:
         ) -> dict[str, object]:
             return {"google_trends": SourceHealth("google_trends", attempts=1, ok=1)}
 
-    monkeypatch.setattr(climod, "DripBackfillUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "DripBackfillUseCase", _UC)  # type: ignore[attr-defined]
 
     runner = CliRunner()
     result = runner.invoke(
@@ -170,7 +170,7 @@ def test_audit_command_runs(monkeypatch: object) -> None:
 
 
 def test_backfill_history_command_runs(monkeypatch: object, tmp_path: object) -> None:
-    import application.cli as climod
+    import application.cli.data_commands as _data_cmd
 
     class _UC:
         def __init__(self, *a: object, **k: object) -> None:
@@ -181,7 +181,7 @@ def test_backfill_history_command_runs(monkeypatch: object, tmp_path: object) ->
         ) -> dict[str, int]:
             return {"tickers": len(tickers), "errors": 0}
 
-    monkeypatch.setattr(climod, "BackfillHistoryUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "BackfillHistoryUseCase", _UC)  # type: ignore[attr-defined]
 
     runner = CliRunner()
     result = runner.invoke(
