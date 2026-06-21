@@ -58,7 +58,7 @@ class HoldingsRiskAssessmentUseCase:
 
     def _vol(self, returns: list[float], window: int) -> float:
         tail = returns[-window:]
-        return statistics.pstdev(tail) if len(tail) >= 2 else 0.0
+        return statistics.pstdev([float(x) for x in tail]) if len(tail) >= 2 else 0.0
 
     def execute(
         self, holdings: list[Holding], start: datetime, end: datetime
