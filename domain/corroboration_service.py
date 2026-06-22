@@ -41,6 +41,7 @@ class CorroborationService:
         agreement = self._agreement(verified, readout)
         uncertainty = self._uncertainty(verified, as_of)
         tier = self._tier(agreement, uncertainty)
+        mean_convergence = _TIER_NUM[tier]
         verification = (
             "NONE_DROPPED"
             if not verified
@@ -52,6 +53,7 @@ class CorroborationService:
             sources=tuple(verified),
             our_readout=readout,
             convergence=tier,
+            mean_convergence=mean_convergence,
             agreement=agreement,
             uncertainty=uncertainty,
             held=held,

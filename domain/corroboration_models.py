@@ -69,6 +69,7 @@ class CorroboratedCandidate:
     sources: tuple[HarvestedClaim, ...]
     our_readout: OurReadout
     convergence: ConvergenceTier
+    mean_convergence: float  # 0-1 numeric tier score for surfacing sort
     agreement: Agreement
     uncertainty: Uncertainty
     held: bool
