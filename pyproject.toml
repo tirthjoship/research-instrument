@@ -110,6 +110,8 @@ module = [
     "botocore.*",
     "streamlit.*",
     "plotly.*",
+    "ddgs.*",
+    "duckduckgo_search.*",
 ]
 ignore_missing_imports = true
 
@@ -123,6 +125,8 @@ module = [
     "adapters.ml.gemini_narrator",
     "adapters.ml.gemini_event_classifier",
     "adapters.ml.gemini_models",
+    "adapters.ml.model_registry",
+    "application.cli.corroboration_commands",
 ]
 disable_error_code = ["attr-defined"]
 
@@ -139,6 +143,7 @@ module = [
     "application.cli.data_commands",
     "application.cli.backtest_commands",
     "application.cli.brief_commands",
+    "application.cli.corroboration_commands",
 ]
 disallow_untyped_decorators = false
 
@@ -166,6 +171,14 @@ warn_return_any = false
 [[tool.mypy.overrides]]
 module = ["adapters.visualization.tabs.research_candidates"]
 disallow_untyped_decorators = false
+warn_unused_ignores = false
+
+# corroboration_commands imports ddgs (fallback duckduckgo_search); the DDGS
+# rebind needs a type:ignore[assignment] where the package IS installed (project
+# venv) but is unused where it is NOT (CI typecheck job). Tolerate either so both
+# envs agree — mirrors the research_candidates case above.
+[[tool.mypy.overrides]]
+module = ["application.cli.corroboration_commands"]
 warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
