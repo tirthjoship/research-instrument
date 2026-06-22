@@ -8,6 +8,7 @@ from domain.corroboration_models import (
     ConvergenceTier,
     DiscoveredEntry,
 )
+from domain.ports import TickerResolverPort
 
 
 def test_candidate_snapshot_fields() -> None:
@@ -61,3 +62,19 @@ def test_discovered_entry_is_frozen() -> None:
     )
     with pytest.raises(FrozenInstanceError):
         entry.ticker = "MSFT"  # type: ignore[misc]
+
+
+def test_ticker_resolver_port_has_resolve_method() -> None:
+    assert hasattr(TickerResolverPort, "resolve")
+
+
+class _FakeResolver:
+    def resolve(self, ticker: str) -> tuple[str, str]:
+        return ("Fake Corp", "Technology")
+
+
+def test_fake_resolver_satisfies_port() -> None:
+    resolver: TickerResolverPort = _FakeResolver()  # type: ignore[assignment]
+    name, sector = resolver.resolve("NVDA")
+    assert name == "Fake Corp"
+    assert sector == "Technology"
