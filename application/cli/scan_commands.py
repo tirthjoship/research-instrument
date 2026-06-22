@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date as _date
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -540,3 +541,132 @@ def opportunity_report(top: int) -> None:
             f"  {p.signal_name:<28} {p.hit_rate:>9.1%} {p.total_trades:>8d} "
             f"{p.avg_return_pct:>11.2f}%"
         )
+
+
+@cli.command("surface-candidates")
+@click.option(
+    "--run-id",
+    default=None,
+    type=int,
+    help="Corroboration run ID to read (default: latest)",
+)
+@click.option(
+    "--date",
+    "as_of_str",
+    default=None,
+    help="As-of date YYYY-MM-DD for TTL (default: today UTC)",
+)
+@click.option(
+    "--max",
+    "max_admissions",
+    default=10,
+    show_default=True,
+    type=int,
+    help="Max tickers to admit this run",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Print admissions without writing to store",
+)
+def surface_candidates(
+    run_id: int | None,
+    as_of_str: str | None,
+    max_admissions: int,
+    dry_run: bool,
+) -> None:
+    """Surface corroborated tickers into the discovered-universe overlay. RESEARCH_ONLY."""
+    import sqlite3
+    from pathlib import Path
+
+    import yaml
+
+    from adapters.data.corroboration_store import CorroborationStore
+    from adapters.data.yfinance_resolver import YFinanceResolver
+    from application.surfacing_use_case import SurfacingUseCase
+
+    as_of = _date.fromisoformat(as_of_str) if as_of_str else datetime.utcnow().date()
+
+    conn = sqlite3.connect("data/recommendations.db")
+    store = CorroborationStore(conn)
+    store.init_schema()
+
+    # Resolve run_id
+    resolved_run_id = run_id if run_id is not None else store.latest_run_id()
+    if resolved_run_id is None:
+        click.echo(
+            click.style(
+                "No corroboration runs found. Run `corroborate` first.", fg="yellow"
+            )
+        )
+        return
+
+    candidates = store.load_candidates(resolved_run_id)
+    if not candidates:
+        click.echo(
+            click.style(
+                f"No candidate snapshots for run #{resolved_run_id}. Re-run `corroborate`.",
+                fg="yellow",
+            )
+        )
+        return
+
+    # Load spine tickers (themes.yaml + sp500.txt + nasdaq100.txt)
+    spine: set[str] = set()
+    themes_path = Path("config/universe/themes.yaml")
+    if themes_path.exists():
+        data = yaml.safe_load(themes_path.read_text())
+        for tickers in data.get("themes", {}).values():
+            spine.update(tickers)
+    config_dir = Path("config/tickers")
+    for fname in ("sp500.txt", "nasdaq100.txt"):
+        fpath = config_dir / fname
+        if fpath.exists():
+            for line in fpath.read_text().splitlines():
+                s = line.strip()
+                if s and not s.startswith("#"):
+                    spine.add(s)
+
+    click.echo(click.style("\n  RESEARCH ONLY -- no buy/sell signals\n", bold=True))
+    click.echo(
+        f"Surfacing from run #{resolved_run_id} ({as_of.isoformat()}) -- {len(candidates)} candidate(s)"
+    )
+
+    if dry_run:
+        # Print what would be admitted without writing
+        from domain.corroboration_models import ConvergenceTier
+
+        _ADMIT_TIERS = {ConvergenceTier.STRONG, ConvergenceTier.MODERATE}
+        eligible = sorted(
+            (
+                c
+                for c in candidates
+                if c.convergence in _ADMIT_TIERS and c.verification == "ALL_VERIFIED"
+            ),
+            key=lambda c: c.mean_convergence,
+            reverse=True,
+        )[:max_admissions]
+        for c in eligible:
+            if c.ticker in spine:
+                click.echo(f"  ~ {c.ticker:<6} already in spine -- would skip")
+            else:
+                click.echo(f"  + {c.ticker:<6} convergence={c.convergence.value}")
+        click.echo("\n[dry-run] no changes written.")
+        return
+
+    uc = SurfacingUseCase(
+        store=store,
+        spine_tickers=frozenset(spine),
+        resolver=YFinanceResolver(),
+        max_admissions=max_admissions,
+    )
+    active = uc.run(candidates=candidates, run_id=resolved_run_id, as_of=as_of)
+
+    click.echo(f"\nActive discovered universe: {len(active)} ticker(s)")
+    for entry in sorted(active, key=lambda e: e.ticker):
+        click.echo(
+            f"  {entry.ticker:<6} {entry.company_name:<30} ({entry.sector})  convergence={entry.convergence.value}"
+        )
+
+    click.echo(click.style("\n  RESEARCH ONLY -- no buy/sell signals\n", bold=True))
