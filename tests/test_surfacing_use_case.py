@@ -173,3 +173,75 @@ def test_resolver_failure_still_admits(store: CorroborationStore) -> None:
     assert result[0].ticker == "NVDA"
     assert result[0].company_name == ""
     assert result[0].sector == "unknown"
+
+
+def test_hybrid_universe_corroboration_overlay(
+    store: CorroborationStore, resolver: FakeTickerResolver
+) -> None:
+    from datetime import datetime
+    from unittest.mock import MagicMock
+
+    from adapters.data.hybrid_universe_provider import HybridUniverseProvider
+
+    store.upsert_discovered(
+        "NVDA",
+        "NVIDIA",
+        "Technology",
+        date(2026, 6, 22),
+        ConvergenceTier.STRONG,
+        run_id=1,
+    )
+
+    buzz_mock = MagicMock()
+    buzz_mock.scan_sources.return_value = []
+    provider = HybridUniverseProvider(
+        themes_path="config/universe/themes.yaml",
+        buzz_discovery=buzz_mock,
+        store=store,
+    )
+    universe = provider.get_universe(datetime(2026, 6, 22))
+    tickers = {e.ticker for e in universe}
+    assert "NVDA" in tickers
+    nvda_entry = next(e for e in universe if e.ticker == "NVDA")
+    assert nvda_entry.theme == "corroboration"
+
+
+def test_hybrid_universe_dedup_log(
+    store: CorroborationStore,
+    caplog: pytest.LogCaptureFixture,
+    caplog_loguru: None,
+) -> None:
+    from datetime import datetime
+    from pathlib import Path
+    from unittest.mock import MagicMock
+
+    import yaml
+
+    from adapters.data.hybrid_universe_provider import HybridUniverseProvider
+
+    themes_path = "config/universe/themes.yaml"
+    data = yaml.safe_load(Path(themes_path).read_text())
+    spine_ticker = next(iter(next(iter(data["themes"].values()))))
+
+    store.upsert_discovered(
+        spine_ticker,
+        "Corp",
+        "Tech",
+        date(2026, 6, 22),
+        ConvergenceTier.STRONG,
+        run_id=1,
+    )
+
+    buzz_mock = MagicMock()
+    buzz_mock.scan_sources.return_value = []
+    provider = HybridUniverseProvider(
+        themes_path=themes_path,
+        buzz_discovery=buzz_mock,
+        store=store,
+    )
+    with caplog.at_level(logging.DEBUG):
+        universe = provider.get_universe(datetime(2026, 6, 22))
+
+    tickers = [e.ticker for e in universe]
+    assert tickers.count(spine_ticker) == 1
+    assert any("corroboration overlay" in r.message.lower() for r in caplog.records)
