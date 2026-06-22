@@ -17,6 +17,7 @@ from application.price_returns import load_price_series  # noqa: F401
 from . import (  # noqa: F401
     backtest_commands,
     brief_commands,
+    corroboration_commands,
     data_commands,
     ml_commands,
     portfolio_commands,

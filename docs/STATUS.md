@@ -1,67 +1,68 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-17 (session 2)
-**Branch:** `feat/efficiency-overhaul` (off `develop`) — Tier 2 complete
-**Phase:** Efficiency overhaul (ADR-061) — ready for PR to `develop`
+**As of:** 2026-06-20 (session 4 — wrap/handoff)
+**Branch:** `feat/corroboration-engine` (off `develop`) — SP1 done, PR #73 open (deferred)
+**Phase:** Corroboration engine SP1 BUILT + LIVE-VALIDATED, RESEARCH_ONLY → next = SP2–7 specs
 
 ## NEXT ACTION (fresh session — start here)
 
-**Open PR** `feat/efficiency-overhaul` → `develop`:
-```bash
-make check              # gate: lint + mypy + test-cov ≥90%
-make test-smoke         # ~26s, 264 smoke tests
-make test-tab tab=risk  # <25s
-```
+**Spec the next sub-project (SP2–7).** PR #73 is OPEN but deferred by user — do NOT merge/PR this session.
+Briefs already committed: `docs/superpowers/specs/2026-06-20-sp{2..7}-*.md`. Pick one with the user, then
+brainstorming → writing-plans → subagent-driven-development.
 
-**Then:** user go for `develop` → `main` when ready.
+Sub-project sequence (ADR-062): SP2 candidate-surfacing → SP3 screener-revamp → SP4 portfolio-verdict →
+SP5 Hypothesis #9 forward gate → SP6 stock-analysis tabs → SP7 weekly-job reliability. ADR-062 notes SP7
+reliability is "fixed first" — confirm with user which to spec first.
 
-Plan: `docs/superpowers/plans/2026-06-17-efficiency-overhaul.md`
-Spec: `docs/superpowers/specs/2026-06-17-efficiency-overhaul-design.md`
+**CAVEAT — shared working tree:** the main repo tree may be on another branch (a concurrent session ran
+`fix/test-hang-timeout`). Check `git branch --show-current` first; do SP2+ work in an isolated `git worktree`
+off `feat/corroboration-engine` (or off `develop` once #73 merges). `.venv` is uv-managed (no pip → use
+`uv pip install`); symlink it into the worktree.
 
-## Tier 1 completion status
+Plan: `docs/superpowers/plans/2026-06-20-corroboration-engine.md`
+Spec: `docs/superpowers/specs/2026-06-20-corroboration-engine-design.md`
+ADR:  `docs/adr/ADR-062-corroboration-engine-pivot.md` (the corroboration-engine ADR — no
+separate ADR added; 062 already records attributed-not-predicted, decoupled search+LLM,
+forward-only validation, ModelRegistry honest-limits).
 
-| Task | Status | Commit |
-|------|--------|--------|
-| T1: Makefile + xdist + drop -v | ✅ done | `47037ad` + `a83dd58` |
-| T2: uv migration + CI workflows | ✅ done | `ece3ed3` |
-| T3: pre-push hook | ✅ done | `ef2c978` |
-| T4: .gitignore + scripts/ cleanup | ✅ done | `73da34e` |
-| T5: CLAUDE.md overhaul | ✅ done | committed |
-| T6: CONTEXT.md trim (884→29 lines) | ✅ done | `806b1ec` |
+## What landed (11 TDD tasks, ~12 commits)
 
-## Tier 2 completion status
+| Layer | Files | Status |
+|-------|-------|--------|
+| Domain (stdlib-only) | `corroboration_models.py`, `corroboration_service.py` (§6 tier math + rollup), `ports.py` (+3 protocols) | ✅ |
+| Adapters | `model_registry.py`, `citation_verifier.py`, `search_harvester.py`, `llm_summarizer.py`, `corroboration_store.py` | ✅ |
+| Application | `corroboration_use_case.py`, `corroboration_sanity.py`, `cli/corroboration_commands.py` (`corroborate` cmd) | ✅ |
+| Tests | 50 passing (tier branches + Hypothesis invariant, PIT leakage guard, citation word-boundary, summarizer fallback, store round-trip, TTL cache, readout band/percentile/assembly) | ✅ |
 
-| Task | Status | Notes |
-|------|--------|-------|
-| T7: `cli.py` → `application/cli/` | ✅ done | 38 commands, `python -m application.cli` works |
-| T8: `risk.py` → `risk/` package | ✅ done | 29/29 risk tab tests pass; max file 432 LOC |
-| T9: smoke suite + tab markers | ✅ done | 264 smoke tests in ~26s; tab targeting works |
+## Verification evidence (gate)
 
-## Key wins already landed
+- `mypy domain/ adapters/ application/ --strict` → **Success, 228 files** (via `.venv`).
+- 50 corroboration tests pass. ruff clean. Two-Opus review done; both criticals fixed.
+- **LIVE smoke PASSED** (`python -m application.cli corroborate`, Run ID 2, 4 candidates):
+  real ddgs search → real verified citations (kiplinger URLs resolve + name ticker) → real Gemini
+  stances → real per-ticker trend_health (NVDA=healthy, MSFT=broken, AMZN=healthy, IBM=caution);
+  IBM dropped (NONE_DROPPED) by the verifier. Double RESEARCH_ONLY banner, no prediction language.
 
-- `make test-fast`: 2185 tests in ~35s (was 484s serial+verbose)
-- `make test-tab tab=risk`: single-tab targeting in <15s
-- `make check`: lint + mypy + test-cov (CI/pre-PR only, not during iteration)
-- uv: CI cold install ~4s (was ~45s)
-- pre-push hook: eliminates CI auto-fix loop
-- CONTEXT.md: 17,800 tokens → ~350 tokens
+## Post-review live-path fixes (all DONE on this branch)
 
-## Tier 2 plan summary (completed)
+- **readout_fn now real** (`application/corroboration_readout.py`, pure+tested): live trend_health
+  (yfinance) → TrendHealth band; factor_percentile from `screen_<date>.json` when present (else None);
+  divergence/discipline honestly deferred (no buzz-only proxy — buzz ≠ returns per thesis).
+- **Gemini auth fixed**: `gemini_lister`/`_GeminiProvider` now `genai.configure(GEMINI_API_KEY)` —
+  the live LLM was previously silently dead (never authenticated).
+- **Search**: switched to maintained `ddgs` package (duckduckgo_search deprecated/renamed).
+- **`cached_preferred` wired** into the CLI (7-day TTL; no more re-pinging list_models).
+- **Broken-vs-empty warning**: CLI distinguishes "search returned nothing" from "all dropped".
 
-**T7:** `application/cli/` package — `_cli_group`, `_deps`, 8 `*_commands.py`, `__main__.py`
+## Still deferred (honest, not bugs)
 
-**T8:** `adapters/visualization/tabs/risk/` — compose, components, evidence, factor_chart, enb_section, sections, _theme
-
-**T9:** `make test-smoke` + `tab_*` pytest markers on domain + tab test files
-
-## Open items (carry forward)
-
-- `develop` → `main` release still needs explicit user go (not done yet)
-- `#57` fix/adherence-tz-naive-aware — unrelated, still open
-- Risk readout ~6wks stale (FF publication lag) — documented tradeoff (ADR-060)
+- **factor_percentile** is None unless a `screen_<date>.json` exists (run `screen-candidates` first).
+- **divergence_flag / discipline_flag**: deferred to SP2 (need price+buzz series; holdings input).
+- `ddgs` is a runtime dep for the live path (installed in `.venv`; add to pyproject extras in SP2/SP7).
 
 ## Gotchas
 
-- `data/reports/*.json` regenerates — always unstaged, never commit
-- Gemini panel needs `--server.address localhost` + live `GEMINI_API_KEY` in `.env`
-- All Tier 1 tasks committed; branch is clean except data/reports/*.json (never commit those)
+- Use `.venv` (uv-managed, no pip — use `uv pip install`), NOT miniforge: prefix with `PATH=.venv/bin:$PATH`.
+- **Full `make check` coverage suite HANGS** (open flag, `fix/test-hang-timeout`). streamlit not in `.venv`
+  so viz/smoke tests fail there — environment, not corroboration. Verify via the targeted pytest set + `--strict` mypy.
+- google.generativeai prints a deprecation FutureWarning (project-wide; migrate to google.genai later).
