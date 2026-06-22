@@ -103,6 +103,6 @@ class DiscoveredEntry:
     ticker: str
     company_name: str
     sector: str
-    first_seen: date
-    last_seen: date
+    first_seen: date  # date of first admission to discovered universe
+    last_seen: date  # date of most-recent STRONG/MODERATE corroboration
     convergence: ConvergenceTier
