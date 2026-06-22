@@ -126,6 +126,20 @@ def corroborate(as_of_str: str | None) -> None:
     result = uc.execute(as_of)
     click.echo(f"Run ID: {result.run_id}  |  candidates: {len(result.candidates)}\n")
 
+    # Persist lightweight snapshots so surface-candidates can load past runs.
+    from domain.corroboration_models import CandidateSnapshot
+
+    snaps = [
+        CandidateSnapshot(
+            ticker=c.ticker,
+            convergence=c.convergence,
+            verification=c.verification,
+            mean_convergence=c.mean_convergence,
+        )
+        for c in result.candidates
+    ]
+    store.save_candidates(result.run_id, snaps)
+
     # Task C: Distinguish broken-pipeline from genuinely-empty result.
     if len(result.candidates) == 0:
         raw_count = harvester.last_raw_count
