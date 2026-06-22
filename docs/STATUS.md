@@ -29,6 +29,9 @@ SP2 commits sit on top — both will ship together.
 
 Gate: 2266 tests pass, mypy --strict 230 files clean.
 
+**Post-verification fix (2026-06-22):** Opus drift review caught `CorroboratedCandidate.mean_convergence`
+missing — CLI snapshot save would AttributeError at runtime. Field added + populated from tier map.
+
 ## Worktree / branch layout
 
 - Main tree: `fix/test-hang-timeout` (CI gate fix, not yet merged)
