@@ -130,3 +130,33 @@ def test_latest_run_id_returns_most_recent(store: CorroborationStore) -> None:
     r2 = store.save_run(date(2026, 6, 22), [])
     assert store.latest_run_id() == r2
     assert r2 > r1
+
+
+def test_yfinance_resolver_returns_name_and_sector(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from adapters.data.yfinance_resolver import YFinanceResolver
+
+    class _FakeTicker:
+        info = {"longName": "NVIDIA Corporation", "sector": "Technology"}
+
+    monkeypatch.setattr("yfinance.Ticker", lambda _: _FakeTicker())
+    resolver = YFinanceResolver()
+    name, sector = resolver.resolve("NVDA")
+    assert name == "NVIDIA Corporation"
+    assert sector == "Technology"
+
+
+def test_yfinance_resolver_returns_empty_on_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from adapters.data.yfinance_resolver import YFinanceResolver
+
+    def _raise(_: str) -> None:
+        raise RuntimeError("rate limit")
+
+    monkeypatch.setattr("yfinance.Ticker", _raise)
+    resolver = YFinanceResolver()
+    name, sector = resolver.resolve("FAKE")
+    assert name == ""
+    assert sector == "unknown"
