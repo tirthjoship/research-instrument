@@ -361,3 +361,11 @@ class ModelProviderPort(Protocol):
     def summarize(self, model: str, page_text: str, ticker: str) -> tuple[str, str]:
         """Return (stance_str, thesis_summary)."""
         ...
+
+
+class TickerResolverPort(Protocol):
+    """Port: resolve a ticker symbol to company metadata."""
+
+    def resolve(self, ticker: str) -> tuple[str, str]:
+        """Return (company_name, sector). Never raises — returns ("", "unknown") on failure."""
+        ...
