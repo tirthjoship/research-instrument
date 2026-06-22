@@ -22,6 +22,9 @@ data/reports/backtest_report_*.json
 data/reports/screen_20*.json
 # Personal holdings review log — contains book-level output, never commit
 data/reports/discipline_weekly_review.log
+# Always-regenerating live reports — untracked to avoid pre-commit stash conflicts
+data/reports/divergence_ic_21d.json
+data/reports/momentum_discipline.json
 
 # Raw data — never commit large files to Git
 data/raw/
