@@ -2,14 +2,22 @@ name: Test
 
 on:
   push:
-    branches: [main, develop, "feature/**", "feat/**", "fix/**"]
+    branches: [main, develop]
+    paths-ignore: ["**.md", "docs/**", "research/**"]
   pull_request:
     branches: [main, develop]
+    paths-ignore: ["**.md", "docs/**", "research/**"]
+
+# Cancel superseded runs on the same ref so stacked pushes don't burn minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     name: Test Suite (Python 3.12)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

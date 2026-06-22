@@ -47,3 +47,16 @@ repos:
     rev: v8.18.4
     hooks:
       - id: gitleaks
+
+  # Local pre-push gate — run the fast suite on YOUR machine before pushing so
+  # failures don't burn GitHub Actions minutes upstream. Lint/format/mypy already
+  # run at pre-commit; this adds the test pass at pre-push.
+  - repo: local
+    hooks:
+      - id: test-fast
+        name: test-fast (pre-push gate)
+        entry: make test-fast
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true
