@@ -76,7 +76,7 @@ def test_daily_cycle_invokes_scan_then_resolve(monkeypatch: object) -> None:
 
 
 def test_drip_backfill_command_runs(monkeypatch: object) -> None:
-    import application.cli as climod
+    import application.cli.data_commands as _data_cmd
     from domain.models import SourceHealth
 
     class _UC:
@@ -88,7 +88,7 @@ def test_drip_backfill_command_runs(monkeypatch: object) -> None:
         ) -> dict[str, object]:
             return {"google_trends": SourceHealth("google_trends", attempts=1, ok=1)}
 
-    monkeypatch.setattr(climod, "DripBackfillUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "DripBackfillUseCase", _UC)  # type: ignore[attr-defined]
 
     runner = CliRunner()
     result = runner.invoke(
@@ -170,7 +170,7 @@ def test_audit_command_runs(monkeypatch: object) -> None:
 
 
 def test_backfill_history_command_runs(monkeypatch: object, tmp_path: object) -> None:
-    import application.cli as climod
+    import application.cli.data_commands as _data_cmd
 
     class _UC:
         def __init__(self, *a: object, **k: object) -> None:
@@ -181,7 +181,7 @@ def test_backfill_history_command_runs(monkeypatch: object, tmp_path: object) ->
         ) -> dict[str, int]:
             return {"tickers": len(tickers), "errors": 0}
 
-    monkeypatch.setattr(climod, "BackfillHistoryUseCase", _UC, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "BackfillHistoryUseCase", _UC)  # type: ignore[attr-defined]
 
     runner = CliRunner()
     result = runner.invoke(
@@ -317,7 +317,7 @@ def test_resolve_wiki_articles_writes_yaml(
 def test_resolve_wiki_articles_skips_existing_alias(
     monkeypatch: object, tmp_path: object
 ) -> None:
-    import application.cli as climod
+    import application.cli.data_commands as _data_cmd
     from application.cli import cli
 
     seen: list[str] = []
@@ -332,12 +332,12 @@ def test_resolve_wiki_articles_skips_existing_alias(
             seen.append(name)
             return "X"
 
-    monkeypatch.setattr(climod, "WikipediaArticleResolver", _FakeResolver, raising=False)  # type: ignore[attr-defined]
-    monkeypatch.setattr(climod, "_get_company_name", lambda deps, t: "Name " + t, raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "WikipediaArticleResolver", _FakeResolver)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_get_company_name", lambda deps, t: "Name " + t)  # type: ignore[attr-defined]
     # Pin the curated skip set in-test (isolate from live on-disk wiki_articles_us.yaml):
     # RKLB as a curated alias must be skipped, resolver never called for it.
-    monkeypatch.setattr(climod, "_load_wiki_map", lambda market: {"RKLB": "Rocket_Lab"}, raising=False)  # type: ignore[attr-defined]
-    monkeypatch.setattr(climod, "_get_ticker_universe", lambda config: ["RKLB"], raising=False)  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_load_wiki_map", lambda market: {"RKLB": "Rocket_Lab"})  # type: ignore[attr-defined]
+    monkeypatch.setattr(_data_cmd, "_get_ticker_universe", lambda config: ["RKLB"])  # type: ignore[attr-defined]
 
     from pathlib import Path
 
