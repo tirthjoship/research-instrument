@@ -238,3 +238,32 @@ class TestEnsemblePredictor:
         model.fit(features, targets)
         _, confidences = model.predict_with_confidence(features[:5])
         assert all(c > 0.3 for c in confidences)
+
+
+def test_ensemble_predictor_not_fitted_by_default() -> None:
+    predictor = EnsemblePredictor(random_seed=42)
+    assert predictor.is_fitted() is False
+
+
+def test_ensemble_predictor_fitted_after_fit() -> None:
+    predictor = EnsemblePredictor(random_seed=42)
+    features = [{"f1": float(i), "f2": float(i) * 0.5} for i in range(10)]
+    targets = [float(i) * 0.01 for i in range(10)]
+    predictor.fit(features, targets)
+    assert predictor.is_fitted() is True
+
+
+def test_ensemble_predictor_fitted_after_load_model(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    p1 = EnsemblePredictor(random_seed=42)
+    features = [{"f1": float(i), "f2": float(i) * 0.5} for i in range(10)]
+    targets = [float(i) * 0.01 for i in range(10)]
+    p1.fit(features, targets)
+    model_path = str(tmp_path / "model")
+    p1.save_model(model_path)
+
+    p2 = EnsemblePredictor(random_seed=42)
+    assert p2.is_fitted() is False
+    p2.load_model(model_path)
+    assert p2.is_fitted() is True
