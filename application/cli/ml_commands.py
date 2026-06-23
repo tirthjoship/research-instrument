@@ -97,6 +97,15 @@ def run_tournament(market: str, date: str | None) -> None:
     )
 
     report = use_case.execute(prediction_date=prediction_date)
+
+    if not report.recommendations:
+        click.echo(
+            "run-tournament: 0 picks generated — predictors are not trained. "
+            "Run 'pretrain' first. This run is a no-op.",
+            err=True,
+        )
+        raise SystemExit(1)
+
     _print_report(report)
 
 

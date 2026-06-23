@@ -37,6 +37,7 @@ def test_three_bull_sources_plus_our_agreement_is_strong():
     assert cand.agreement.weighted_score > 0.9
     assert cand.agreement.our_alignment == "AGREES"
     assert cand.convergence is ConvergenceTier.STRONG
+    assert cand.mean_convergence == 1.0
 
 
 def test_diverges_yields_conflicted_even_when_sources_strong():
@@ -54,6 +55,7 @@ def test_diverges_yields_conflicted_even_when_sources_strong():
         held=False,
     )
     assert cand.convergence is ConvergenceTier.CONFLICTED
+    assert cand.mean_convergence == 0.1
 
 
 def test_no_verified_sources_is_none():
@@ -65,6 +67,7 @@ def test_no_verified_sources_is_none():
         "NVDA", date(2026, 6, 20), [unverified], _readout(), held=False
     )
     assert cand.convergence is ConvergenceTier.NONE
+    assert cand.mean_convergence == 0.0
     assert cand.verification == "NONE_DROPPED"
 
 

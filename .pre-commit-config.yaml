@@ -25,18 +25,15 @@ repos:
         args: ["--profile", "black"]
         stages: [pre-commit, pre-push]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+  - repo: local
     hooks:
       - id: mypy
-        args: ["--strict"]
-        exclude: "^(tests/|scripts/audit_sentiment\\.py)"
-        additional_dependencies:
-          - types-PyYAML
-          - types-click
-          - types-requests
-          - pandas-stubs
-          - loguru
+        name: mypy
+        entry: uv run mypy domain/ adapters/ application/ --strict
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit, pre-push]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.15
