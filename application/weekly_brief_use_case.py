@@ -60,7 +60,7 @@ def _build_directional_views(
         ev_weight = mean_conv * 100.0
         # Tilt logic mirrors CorroborationService._tilt()
         if net_stance is Stance.BEARISH and mean_conv >= 0.6:
-            tilt = "LEAN_OUT" if yours > 0 else "AVOID"
+            tilt = "LEAN_OUT"
         elif (
             net_stance is Stance.BULLISH
             and mean_conv >= 0.6
