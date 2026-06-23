@@ -345,6 +345,28 @@ def load_latest_screen(reports_dir: str = "data/reports") -> dict[str, Any] | No
         return None
 
 
+def load_latest_screened(reports_dir: str = "data/reports") -> dict[str, Any] | None:
+    """Load newest screened_<date>.json (SP3 blended). Falls back to screen_<date>.json.
+
+    Returns dict with key 'rows' (list of ScreenedRow dicts) if screened file found,
+    or standard screen dict with key 'candidates' if falling back.
+    The caller checks for 'rows' key to distinguish.
+    """
+    screened = sorted(Path(reports_dir).glob("screened_*.json"))
+    if screened:
+        try:
+            data = cast(dict[str, Any], json.loads(screened[-1].read_text()))
+            data["_source"] = "screened"
+            return data
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    screen = load_latest_screen(reports_dir)
+    if screen:
+        screen["_source"] = "screen"
+    return screen
+
+
 def staleness_days(iso_date: str) -> int | None:
     """Days since iso_date (YYYY-MM-DD prefix tolerated). None if unparseable."""
     try:
