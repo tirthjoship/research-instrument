@@ -162,6 +162,53 @@ def test_tournament_with_sentiment_blending() -> None:
         assert rec.composite_score == pytest.approx(0.05, abs=1e-6)
 
 
+def test_run_tournament_cli_exits_nonzero_on_zero_picks() -> None:
+    """run-tournament must exit non-zero when predictors are untrained.
+    A clean exit with 0 picks is a silent lie — the command is a no-op."""
+    from unittest.mock import MagicMock, patch
+
+    from click.testing import CliRunner
+
+    from application.cli._cli_group import cli
+
+    runner = CliRunner()
+    # Patch _build_dependencies to return a use case that produces 0 recommendations
+    mock_report = MagicMock()
+    mock_report.recommendations = []
+
+    mock_use_case = MagicMock()
+    mock_use_case.execute.return_value = mock_report
+
+    with patch(
+        "application.cli.ml_commands.WeeklyTournamentUseCase",
+        return_value=mock_use_case,
+    ):
+        with patch("application.cli.ml_commands._build_dependencies") as mock_deps:
+            mock_deps.return_value = {
+                "config": MagicMock(),
+                "market_data": MagicMock(),
+                "technical_analysis": MagicMock(),
+                "feature_engineer": MagicMock(),
+                "predictors": {},
+                "store": MagicMock(),
+                "macro_symbols": {},
+                "fundamental_engineer": None,
+                "cross_asset_engineer": None,
+                "event_causal_engineer": None,
+            }
+            with patch(
+                "application.cli.ml_commands._get_ticker_universe",
+                return_value=["AAPL"],
+            ):
+                result = runner.invoke(cli, ["run-tournament", "--market", "us"])
+
+    assert result.exit_code == 1, (
+        f"Expected exit code 1 (untrained/0 picks), got {result.exit_code}. "
+        f"Output: {result.output}"
+    )
+    assert "no picks" in result.output.lower() or "not trained" in result.output.lower()
+
+
 def test_tournament_without_sentiment_is_unchanged() -> None:
     """Without sentiment params, composite is purely technical (backward compatible)."""
     signals = _make_signals(5)

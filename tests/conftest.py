@@ -10,7 +10,10 @@ deterministically uses the offline template path unless a test sets its own key.
 
 from __future__ import annotations
 
+import logging
+
 import pytest
+from loguru import logger as loguru_logger
 
 _LIVE_API_KEYS = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
 
@@ -56,3 +59,16 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 
         if fname in _SMOKE_FILES:
             item.add_marker(pytest.mark.smoke)
+
+
+@pytest.fixture(autouse=False)
+def caplog_loguru(caplog: pytest.LogCaptureFixture) -> None:
+    """Bridge loguru output into pytest caplog so caplog.records captures loguru logs."""
+
+    class PropagateHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            logging.getLogger(record.name).handle(record)
+
+    handler_id = loguru_logger.add(PropagateHandler(), format="{message}")
+    yield  # type: ignore[misc]
+    loguru_logger.remove(handler_id)

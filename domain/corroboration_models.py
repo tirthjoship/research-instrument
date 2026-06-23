@@ -69,6 +69,7 @@ class CorroboratedCandidate:
     sources: tuple[HarvestedClaim, ...]
     our_readout: OurReadout
     convergence: ConvergenceTier
+    mean_convergence: float  # 0-1 numeric tier score for surfacing sort
     agreement: Agreement
     uncertainty: Uncertainty
     held: bool
@@ -84,3 +85,25 @@ class DirectionalView:
     your_exposure_pct: float
     evidence_weight_pct: float
     tilt: str  # "LEAN_IN"/"HOLD"/"LEAN_OUT"/"AVOID"
+
+
+@dataclass(frozen=True)
+class CandidateSnapshot:
+    """Lightweight projection of CorroboratedCandidate for persistence and surfacing."""
+
+    ticker: str
+    convergence: ConvergenceTier
+    verification: str  # "ALL_VERIFIED" | "PARTIAL" | "NONE_DROPPED"
+    mean_convergence: float  # 0-1
+
+
+@dataclass(frozen=True)
+class DiscoveredEntry:
+    """A ticker admitted to the corroboration overlay universe."""
+
+    ticker: str
+    company_name: str
+    sector: str
+    first_seen: date  # date of first admission to discovered universe
+    last_seen: date  # date of most-recent STRONG/MODERATE corroboration
+    convergence: ConvergenceTier
