@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Any
 
 import pytest
 
@@ -54,7 +55,7 @@ def _make_position(ticker: str = "AAPL") -> PositionRisk:
 
 
 @pytest.fixture
-def minimal_brief_kwargs() -> dict:  # type: ignore[type-arg]
+def minimal_brief_kwargs() -> dict[str, Any]:
     return dict(
         as_of="2026-06-23",
         regime=Regime.RISK_ON,
@@ -111,7 +112,7 @@ def test_holding_verdict_line_corroboration_fields_default_none() -> None:
 
 
 def test_assemble_brief_enriches_holdings_from_corroboration_map(
-    minimal_brief_kwargs: dict,  # type: ignore[type-arg]
+    minimal_brief_kwargs: dict[str, Any],
 ) -> None:
     snap = _make_snapshot("AAPL", ConvergenceTier.STRONG, 3, Stance.BULLISH)
     brief = assemble_brief(**minimal_brief_kwargs, corroboration_map={"AAPL": snap})
@@ -122,7 +123,7 @@ def test_assemble_brief_enriches_holdings_from_corroboration_map(
 
 
 def test_assemble_brief_leaves_missing_tickers_as_none(
-    minimal_brief_kwargs: dict,  # type: ignore[type-arg]
+    minimal_brief_kwargs: dict[str, Any],
 ) -> None:
     # AAPL in holdings but no snapshot — fields remain None
     brief = assemble_brief(**minimal_brief_kwargs, corroboration_map={})
@@ -131,21 +132,21 @@ def test_assemble_brief_leaves_missing_tickers_as_none(
 
 
 def test_assemble_brief_no_corroboration_map_is_safe(
-    minimal_brief_kwargs: dict,  # type: ignore[type-arg]
+    minimal_brief_kwargs: dict[str, Any],
 ) -> None:
     brief = assemble_brief(**minimal_brief_kwargs)
     assert all(h.convergence_tier is None for h in brief.holdings)
 
 
 def test_weekly_brief_directional_views_default_empty(
-    minimal_brief_kwargs: dict,  # type: ignore[type-arg]
+    minimal_brief_kwargs: dict[str, Any],
 ) -> None:
     brief = assemble_brief(**minimal_brief_kwargs)
     assert brief.directional_views == ()
 
 
 def test_weekly_brief_stores_directional_views(
-    minimal_brief_kwargs: dict,  # type: ignore[type-arg]
+    minimal_brief_kwargs: dict[str, Any],
 ) -> None:
     view = DirectionalView(
         group_kind="sector",
