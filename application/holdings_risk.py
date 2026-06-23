@@ -57,7 +57,7 @@ class HoldingsRiskAssessmentUseCase:
         return [c for d, c in self._prices(ticker) if s <= d.replace(tzinfo=None) <= e]
 
     def _vol(self, returns: list[float], window: int) -> float:
-        tail = returns[-window:]
+        tail = [float(x) for x in returns[-window:]]
         return statistics.pstdev(tail) if len(tail) >= 2 else 0.0
 
     def execute(
