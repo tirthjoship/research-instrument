@@ -5,7 +5,8 @@ from __future__ import annotations
 import sqlite3
 from datetime import date
 
-from domain.corroboration_models import HarvestedClaim, Stance
+from domain.corroboration_models import ConvergenceTier, HarvestedClaim, Stance
+from domain.screened_row import CorroborationSnapshot
 
 
 class CorroborationStore:
@@ -71,3 +72,61 @@ class CorroborationStore:
             )
             for r in rows
         ]
+
+    def get_snapshots(
+        self, as_of: date, window_days: int = 7
+    ) -> list[CorroborationSnapshot]:
+        """Return CorroborationSnapshot per ticker from most recent run within window_days of as_of."""
+        rows = self._c.execute(
+            "SELECT id, as_of FROM corroboration_runs ORDER BY as_of DESC"
+        ).fetchall()
+
+        run_id: int | None = None
+        run_date: date | None = None
+        for row in rows:
+            candidate_date = date.fromisoformat(row[1])
+            if 0 <= (as_of - candidate_date).days <= window_days:
+                run_id = int(row[0])
+                run_date = candidate_date
+                break
+
+        if run_id is None or run_date is None:
+            return []
+
+        claims = self.load_run(run_id)
+        return _claims_to_snapshots(claims, run_date)
+
+
+def _claims_to_snapshots(
+    claims: list[HarvestedClaim], run_date: date
+) -> list[CorroborationSnapshot]:
+    from collections import defaultdict
+
+    by_ticker: dict[str, list[HarvestedClaim]] = defaultdict(list)
+    for c in claims:
+        if c.verified:
+            by_ticker[c.ticker].append(c)
+
+    snapshots: list[CorroborationSnapshot] = []
+    for ticker, verified_claims in by_ticker.items():
+        bullish = sum(1 for c in verified_claims if c.stance == Stance.BULLISH)
+        bearish = sum(1 for c in verified_claims if c.stance == Stance.BEARISH)
+        if bullish > 0 and bearish > 0:
+            tier = ConvergenceTier.CONFLICTED
+        elif bullish >= 3:
+            tier = ConvergenceTier.STRONG
+        elif bullish == 2:
+            tier = ConvergenceTier.MODERATE
+        elif bullish == 1:
+            tier = ConvergenceTier.WEAK
+        else:
+            tier = ConvergenceTier.NONE
+        snapshots.append(
+            CorroborationSnapshot(
+                ticker=ticker,
+                convergence_tier=tier,
+                n_sources=len(verified_claims),
+                surfaced_at=run_date,
+            )
+        )
+    return snapshots

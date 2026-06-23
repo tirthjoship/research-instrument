@@ -27,7 +27,11 @@ from adapters.visualization.components.gemini_read import (
 )
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
-from adapters.visualization.data_loader import load_latest_screen, staleness_days
+from adapters.visualization.data_loader import (
+    load_latest_screen,
+    load_latest_screened,
+    staleness_days,
+)
 from application.runtime_guard import is_local_runtime
 from domain.factor_bands import Band, band_for_percentile, plain_read
 from domain.screen_buckets import PRIORITY, BucketInput, assign_buckets
@@ -116,6 +120,36 @@ _FRIENDLY: dict[str, str] = {
     "revision": "analyst signal",
     "lowvol": "low-vol",
 }
+
+
+def _corroboration_badge_html(row_dict: dict[str, object]) -> str:
+    """Return HTML pill showing corroboration tier, or empty string if factor-only."""
+    if row_dict.get("factor_only", True):
+        return (
+            '<span style="color:#888;font-size:0.78rem;margin-left:8px">'
+            "(factor only)</span>"
+        )
+    tier = str(row_dict.get("convergence_tier", "")).upper()
+    n_raw = row_dict.get("n_sources", 0)
+    n = int(n_raw) if isinstance(n_raw, (int, float, str)) else 0
+    corr_date = str(row_dict.get("corroboration_date", ""))
+    colours = {
+        "STRONG": ("#22c55e", "#052e16"),
+        "MODERATE": ("#f59e0b", "#1c1100"),
+        "WEAK": ("#94a3b8", "#0f172a"),
+        "CONFLICTED": ("#f87171", "#1c0505"),
+    }
+    bg, fg = colours.get(tier, ("#94a3b8", "#0f172a"))
+    label = f"✓ {tier.capitalize()} · {n} source{'s' if n != 1 else ''}"
+    date_note = (
+        f'<span style="color:#888;font-size:0.72rem;margin-left:6px">'
+        f"corroborated {corr_date}</span>"
+    )
+    return (
+        f'<span style="background:{bg};color:{fg};padding:2px 8px;'
+        f'border-radius:4px;font-size:0.78rem;font-weight:600;margin-left:8px">'
+        f"{label}</span>{date_note}"
+    )
 
 
 def _candidate_bands(candidate: dict[str, Any]) -> dict[str, Band]:
@@ -662,6 +696,7 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
                 f'padding:9px 13px;cursor:pointer;list-style:none;">'
                 f'<b style="color:var(--text-muted);">{rank_i}</b>'
                 f"<b style=\"font-family:'DM Sans',sans-serif;\">{safe_ticker}</b>"
+                f"{_corroboration_badge_html(c)}"
                 f'<span style="color:var(--text-secondary);">{why_text}</span>'
                 f"{_standout_chip_html(c)}"
                 f"<span style=\"font-family:'JetBrains Mono',monospace;"
@@ -724,6 +759,7 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
             f'padding:9px 13px;cursor:pointer;list-style:none;">'
             f'<b style="color:var(--text-muted);">{rank_i}</b>'
             f"<b style=\"font-family:'DM Sans',sans-serif;\">{safe_ticker}</b>"
+            f"{_corroboration_badge_html(c)}"
             f'<span style="color:var(--text-secondary);">{why_text}</span>'
             f"{_standout_chip_html(c)}"
             f"<span style=\"font-family:'JetBrains Mono',monospace;"
@@ -769,7 +805,7 @@ def build_body_html(
     If candidates is empty: renders honest abstention/funnel.
     Otherwise: dispatches to reason or rank view.
     """
-    candidates = screen.get("candidates", [])[:_TOP_N]
+    candidates = (screen.get("rows") or screen.get("candidates", []))[:_TOP_N]
 
     if not candidates:
         # Abstention path (reskinned, honest)
@@ -1116,7 +1152,7 @@ def _render_history_and_upload(reports_dir: str) -> None:
 
 def render(reports_dir: str = "data/reports") -> None:
     """Main render entry point for the Research Candidates tab."""
-    screen = load_latest_screen(reports_dir)
+    screen = load_latest_screened(reports_dir)
     if screen is None:
         st.warning(
             "No screen report found. Run "
@@ -1124,11 +1160,21 @@ def render(reports_dir: str = "data/reports") -> None:
         )
         return
 
+    _using_screened = screen.get("_source") == "screened"
+
     days = staleness_days(screen.get("as_of", ""))
     if days is not None and days > 8:
         st.error(f"Screen is {days} days old — re-run `screen-candidates`.")
 
-    candidates = screen.get("candidates", [])[:_TOP_N]
+    if _using_screened:
+        candidates = screen.get("rows", [])[:_TOP_N]
+    else:
+        candidates = screen.get("candidates", [])[:_TOP_N]
+
+    if not _using_screened:
+        st.caption(
+            "ℹ No corroboration data this week — run `corroborate` to blend analyst signals."
+        )
 
     # Zone ① — Header: headline (left) + VIEW toggle (right, mockup layout),
     # then the 4 tiles + ledger full-width below.

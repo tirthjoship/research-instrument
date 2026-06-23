@@ -20,12 +20,14 @@ class EnsemblePredictor:
         self._lgbm = LightGBMPredictor(random_seed=random_seed)
         self._ridge = RidgePredictor(random_seed=random_seed)
         self._weights = list(weights)
+        self._fitted: bool = False
         self._normalize_weights()
 
     def fit(self, features: list[dict[str, float]], targets: list[float]) -> None:
         self._xgb.fit(features, targets)
         self._lgbm.fit(features, targets)
         self._ridge.fit(features, targets)
+        self._fitted = True
 
     def predict(self, features: list[dict[str, float]]) -> list[float]:
         preds_xgb = self._xgb.predict(features)
@@ -88,6 +90,10 @@ class EnsemblePredictor:
         self._ridge.load_model(str(p / "ridge.model"))
         meta = json.loads((p / "ensemble_meta.json").read_text())
         self._weights = meta["weights"]
+        self._fitted = True
+
+    def is_fitted(self) -> bool:
+        return self._fitted
 
     def _normalize_weights(self) -> None:
         total = sum(self._weights)
