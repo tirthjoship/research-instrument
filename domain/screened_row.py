@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from domain.corroboration_models import ConvergenceTier
+from domain.corroboration_models import ConvergenceTier, Stance
 from domain.screen_models import ScreenCandidate
 
 TIER_RANK: dict[ConvergenceTier, float | None] = {
@@ -23,6 +23,7 @@ class CorroborationSnapshot:
     convergence_tier: ConvergenceTier
     n_sources: int
     surfaced_at: date
+    net_stance: Stance = Stance.NEUTRAL
 
 
 @dataclass(frozen=True)
