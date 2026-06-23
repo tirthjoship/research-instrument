@@ -1,6 +1,7 @@
 """Tests for ML predictors."""
 
 import math
+import pathlib
 import random
 
 import pytest
@@ -254,7 +255,7 @@ def test_ensemble_predictor_fitted_after_fit() -> None:
 
 
 def test_ensemble_predictor_fitted_after_load_model(
-    tmp_path: pytest.TempPathFactory,
+    tmp_path: pathlib.Path,
 ) -> None:
     p1 = EnsemblePredictor(random_seed=42)
     features = [{"f1": float(i), "f2": float(i) * 0.5} for i in range(10)]
