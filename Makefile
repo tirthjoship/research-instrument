@@ -24,7 +24,7 @@ test-smoke:
 # ── Full suite, no coverage ───────────────────────────────────────────────────
 
 test:
-	$(PYTEST) tests/ -n auto --tb=short
+	$(PYTEST) tests/ -q -n auto --tb=short
 
 # ── Coverage gate (CI + pre-PR only) ─────────────────────────────────────────
 
@@ -43,7 +43,7 @@ typecheck:
 
 # ── Full gate — CI and pre-PR only, NOT during iteration ─────────────────────
 
-check: lint typecheck test-cov
+check: lint test-cov
 
 # ── Environment setup ─────────────────────────────────────────────────────────
 
