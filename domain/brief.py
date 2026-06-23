@@ -21,10 +21,12 @@ __all__ = [
     "to_stdout_masked",
 ]
 
+from domain.corroboration_models import ConvergenceTier, DirectionalView, Stance
 from domain.discipline import Verdict
 from domain.models import BookMacroExposure, PortfolioRisk, PositionRisk
 from domain.regime import Regime
 from domain.screen_models import ScreenCandidate, ScreenLabel, ScreenResult
+from domain.screened_row import CorroborationSnapshot
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,9 @@ class HoldingVerdictLine:
     trend_state: str  # "uptrend" | "broken" | "unknown"
     verdict: Verdict
     why: str
+    convergence_tier: ConvergenceTier | None = None
+    n_sources: int | None = None
+    source_stance: Stance | None = None
 
 
 @dataclass(frozen=True)
@@ -87,6 +92,7 @@ class WeeklyBrief:
     # Single source of truth: threaded from ScreenResult.abstained at construction.
     # Never recomputed from len(candidates) — those are orthogonal concerns.
     abstained: bool = False
+    directional_views: tuple[DirectionalView, ...] = ()
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +144,8 @@ def assemble_brief(
     scorecard: ScorecardSnapshot,
     concentration_threshold: float = 0.20,
     macro: BookMacroExposure | None = None,
+    corroboration_map: dict[str, CorroborationSnapshot] | None = None,
+    directional_views: list[DirectionalView] | None = None,
 ) -> WeeklyBrief:
     """Compose a WeeklyBrief from already-fetched pieces (pure, IO-free).
 
@@ -156,18 +164,26 @@ def assemble_brief(
         for c in screen_result.candidates[:top_n]
     )
 
+    _corr = corroboration_map or {}
     holdings = tuple(
         sorted(
-            (
+            [
                 HoldingVerdictLine(
                     ticker=p.ticker,
                     unrealized_pct=p.unrealized_pct,
                     trend_state=_trend_state(p.trend_health),
                     verdict=p.verdict,
                     why=p.why,
+                    convergence_tier=(
+                        _corr[p.ticker].convergence_tier if p.ticker in _corr else None
+                    ),
+                    n_sources=_corr[p.ticker].n_sources if p.ticker in _corr else None,
+                    source_stance=(
+                        _corr[p.ticker].net_stance if p.ticker in _corr else None
+                    ),
                 )
                 for p in positions
-            ),
+            ],
             key=lambda h: _VERDICT_ORDER.get(h.verdict, 99),
         )
     )
@@ -208,6 +224,7 @@ def assemble_brief(
         screen_label=screen_label,
         macro=macro,
         abstained=screen_result.abstained,
+        directional_views=tuple(directional_views) if directional_views else (),
     )
 
 
