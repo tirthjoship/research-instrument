@@ -427,19 +427,19 @@ class TestAnalyzeTicker:
                 return_value=MOCK_INSIDER_TXNS,
             ),
             patch(
-                "adapters.visualization.stock_analyzer._load_buzz_signals",
+                "adapters.visualization.analysis.analyze.load_buzz_signals",
                 return_value=[],
             ),
             patch(
-                "adapters.visualization.stock_analyzer._load_recommendation",
+                "adapters.visualization.analysis.analyze.load_recommendation",
                 return_value=None,
             ),
             patch(
-                "adapters.visualization.stock_analyzer._find_supply_chain_group",
+                "adapters.visualization.analysis.analyze.find_supply_chain_group",
                 return_value=None,
             ),
             patch(
-                "adapters.visualization.stock_analyzer._get_sector_peers",
+                "adapters.visualization.analysis.analyze.get_sector_peers",
                 return_value=[],
             ),
         ):
@@ -464,19 +464,19 @@ class TestAnalyzeTicker:
             ),
             patch(f"{_PC}._fetch_insider_transactions_impl", return_value=[]),
             patch(
-                "adapters.visualization.stock_analyzer._load_buzz_signals",
+                "adapters.visualization.analysis.analyze.load_buzz_signals",
                 return_value=[],
             ),
             patch(
-                "adapters.visualization.stock_analyzer._load_recommendation",
+                "adapters.visualization.analysis.analyze.load_recommendation",
                 return_value=rec,
             ),
             patch(
-                "adapters.visualization.stock_analyzer._find_supply_chain_group",
+                "adapters.visualization.analysis.analyze.find_supply_chain_group",
                 return_value=None,
             ),
             patch(
-                "adapters.visualization.stock_analyzer._get_sector_peers",
+                "adapters.visualization.analysis.analyze.get_sector_peers",
                 return_value=[],
             ),
         ):
@@ -513,19 +513,19 @@ class TestAnalyzeTicker:
             ),
             patch(f"{_PC}._fetch_insider_transactions_impl", return_value=[]),
             patch(
-                "adapters.visualization.stock_analyzer._load_buzz_signals",
+                "adapters.visualization.analysis.analyze.load_buzz_signals",
                 return_value=[],
             ),
             patch(
-                "adapters.visualization.stock_analyzer._load_recommendation",
+                "adapters.visualization.analysis.analyze.load_recommendation",
                 return_value=None,
             ),
             patch(
-                "adapters.visualization.stock_analyzer._find_supply_chain_group",
+                "adapters.visualization.analysis.analyze.find_supply_chain_group",
                 return_value=None,
             ),
             patch(
-                "adapters.visualization.stock_analyzer._get_sector_peers",
+                "adapters.visualization.analysis.analyze.get_sector_peers",
                 return_value=[],
             ),
         ):
@@ -568,19 +568,19 @@ class TestHoldDuration:
             ),
             patch(f"{_PC}._fetch_insider_transactions_impl", return_value=[]),
             patch(
-                "adapters.visualization.stock_analyzer._load_buzz_signals",
+                "adapters.visualization.analysis.analyze.load_buzz_signals",
                 return_value=[],
             ),
             patch(
-                "adapters.visualization.stock_analyzer._load_recommendation",
+                "adapters.visualization.analysis.analyze.load_recommendation",
                 return_value=rec,
             ),
             patch(
-                "adapters.visualization.stock_analyzer._find_supply_chain_group",
+                "adapters.visualization.analysis.analyze.find_supply_chain_group",
                 return_value=None,
             ),
             patch(
-                "adapters.visualization.stock_analyzer._get_sector_peers",
+                "adapters.visualization.analysis.analyze.get_sector_peers",
                 return_value=[],
             ),
         ):
