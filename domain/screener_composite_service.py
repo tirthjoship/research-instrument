@@ -27,7 +27,7 @@ class ScreenerCompositeService:
         in_window = {
             s.ticker: s
             for s in snapshots
-            if abs((as_of - s.surfaced_at).days) <= window_days
+            if 0 <= (as_of - s.surfaced_at).days <= window_days
         }
 
         factor_pcts = _rank_percentiles(result.candidates)

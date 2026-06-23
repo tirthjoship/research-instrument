@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 
 from adapters.data.corroboration_store import CorroborationStore
+from domain.corroboration_models import ConvergenceTier as _CT
 from domain.screened_row import CorroborationSnapshot, ScreenedRow
 from domain.screener_composite_service import ScreenerCompositeService
 
@@ -138,8 +139,8 @@ def screen_candidates(top: int, report_dir: str) -> None:
         if snapshots:
             corroboration_run_date = snapshots[0].surfaced_at
         conn.close()
-    except Exception:
-        pass
+    except Exception as e:
+        click.echo(f"  WARNING: corroboration unavailable — {e}", err=True)
 
     svc = ScreenerCompositeService()
     screened_rows = svc.compose(result, snapshots, _date.fromisoformat(as_of))
@@ -149,8 +150,6 @@ def screen_candidates(top: int, report_dir: str) -> None:
 
     n_corroborated = sum(1 for r in screened_rows if not r.factor_only)
     if n_corroborated > 0:
-        from domain.corroboration_models import ConvergenceTier as _CT
-
         strong = sum(
             1
             for r in screened_rows
@@ -197,19 +196,19 @@ def _write_screened_json(
     """Persist screened_<date>.json sidecar with blended rows. Returns file path."""
     import json
 
+    # Factor percentiles from original composite scores — independent of blended rerank
+    _sorted_by_factor = sorted(rows, key=lambda r: r.candidate.composite)
+    _n = len(_sorted_by_factor)
+    _factor_pct: dict[str, float] = {
+        r.candidate.ticker: i / max(_n - 1, 1) for i, r in enumerate(_sorted_by_factor)
+    }
+
     def _row_to_dict(r: ScreenedRow) -> dict[str, object]:
         corr = r.corroboration
         return {
             "ticker": r.candidate.ticker,
             "composite": r.candidate.composite,
-            "factor_percentile": round(
-                1.0
-                - (
-                    [rr.candidate.ticker for rr in rows].index(r.candidate.ticker)
-                    / max(len(rows) - 1, 1)
-                ),
-                4,
-            ),
+            "factor_percentile": round(_factor_pct[r.candidate.ticker], 4),
             "blended_percentile": round(r.blended_percentile, 4),
             "factor_only": r.factor_only,
             "convergence_tier": corr.convergence_tier.value if corr else None,

@@ -85,7 +85,7 @@ class CorroborationStore:
         run_date: date | None = None
         for row in rows:
             candidate_date = date.fromisoformat(row[1])
-            if abs((as_of - candidate_date).days) <= window_days:
+            if 0 <= (as_of - candidate_date).days <= window_days:
                 run_id = int(row[0])
                 run_date = candidate_date
                 break
