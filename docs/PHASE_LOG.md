@@ -384,11 +384,14 @@
 - Weekly resolve script: `scripts/corroboration_weekly_resolve.sh` (Sunday 18:00 launchd).
 - **2364 tests passing**. ADR-063/064. Spec/plan archived.
 
-## 2026-06-24 — SP6: Dashboard Tabs — Stock Analysis Decomposition + Corroboration Surface (in progress)
+## 2026-06-24 — SP6: Dashboard Tabs — Stock Analysis Decomposition + Corroboration Surface (PR #80)
 
-- Brainstorm + grill-me complete (10 design decisions locked). Spec written: `docs/superpowers/specs/2026-06-24-sp6-dashboard-tabs-design.md`.
-- Implementation plan written: `docs/superpowers/plans/2026-06-24-sp6-dashboard-tabs.md` (5 tasks).
-- `/sp-close` project command created at `.claude/commands/sp-close.md` for post-SP doc automation.
-- Scope: decompose `stock_analysis.py` (1055 lines) → 6-file package + add Corroboration section with evidence cards, OurReadout bridge, DirectionalView tilt panel, RESEARCH_ONLY amber banner, convergence tier badge on Verdict.
-- Implementation pending — see plan.
-  **Returns to maintenance.** Standing watch unchanged: ADR-048/051 forward gate ~mid-July 2026.
+- Brainstorm + grill-me complete (10 design decisions locked). `/sp-close` project command added.
+- **Task 1** — `tests/fakes/corroboration_store_fake.py`: FakeCorroborationStore + FAKE_CLAIM_BULLISH/BEARISH/WEAK/FAKE_SNAPSHOT.
+- **Task 2** — `adapters/visualization/data_loader.py`: `CorroborationTabView` frozen DTO + `load_corroboration_snapshot()` (lazy import, connection-safe SQLite, `DirectionalView` by sector).
+- **Task 3** — `adapters/visualization/tabs/stock_analysis/corroboration_section.py`: pure HTML builders (no module-level Streamlit) + claim tier bucketing (strong ≥0.70 verified, moderate ≥0.45 or verified, weak = rest) + `render_corroboration_section()`.
+- **Task 4** — Decomposed `stock_analysis.py` (1055 lines) → 6-file package: `compose.py`, `verdict_section.py`, `financials_section.py`, `market_section.py`, `signals_section.py`, `__init__.py`. Page-level RESEARCH_ONLY amber banner. `_SECTION_LABELS` = 10 items.
+- **Task 5** — Convergence badge on Verdict header: `_convergence_badge_html(tier)` pure helper + 9 smoke tests.
+- All pre-commit hooks pass. **2392 tests passing**, coverage 92.85%. Spec/plan archived.
+- Deferred: `date.today()` injection in `_build_corroboration_view` (display-only, not leakage).
+- Standing watch: ADR-048/051 forward gate resolves ~mid-July 2026.

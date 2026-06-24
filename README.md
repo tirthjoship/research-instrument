@@ -6,7 +6,7 @@ It does NOT predict returns — we tested that across 18 years of data and every
 failed.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-2364%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-2392%20passing-success)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
 
@@ -50,11 +50,12 @@ leveraged market bet).
 
 **My Portfolio** — position tracking for the household's holdings.
 
-**Stock Analysis** — for any stock you look up: the portfolio-fit verdict (where it
-ranks on factual evidence — valuation, quality, financial health — relative to the
-~430-stock universe, and whether adding it would deepen an existing risk
-concentration), plus an evidence snowflake summarising those present-day facts. A
-description of today, never a forecast.
+**Stock Analysis** — for any stock you look up: the portfolio-fit verdict, an evidence
+snowflake (valuation, quality, financial health vs the ~430-stock universe), and a
+**Corroboration** section that surfaces external analyst claims harvested by the
+corroboration engine — bucketed by source reliability (strong / moderate / weak),
+with directional views by sector and a convergence badge on the verdict header.
+A description of today, never a forecast.
 
 **Trust** — the credibility wall: the full record of hypotheses tested with their
 pre-registered thresholds and mechanically-executed kill decisions, the four rules
