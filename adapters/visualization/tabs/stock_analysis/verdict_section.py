@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 from adapters.visualization.components.tooltip import tooltip as glossary_tooltip
 from adapters.visualization.stock_analyzer import AnalysisResult
+from domain.corroboration_models import ConvergenceTier
 from domain.fit import FitVerdict
 
 _SEVERITY_CLASS = {
@@ -24,6 +25,18 @@ _TIER_COLOUR: dict[str, str] = {
     "CONFLICTED": "#DC2626",
     "NONE": "#94A3B8",
 }
+
+
+def _convergence_badge_html(tier: ConvergenceTier) -> str:
+    """Return an HTML pill badge for a convergence tier. Pure function — no Streamlit."""
+    key = tier.value.upper()
+    colour = _TIER_COLOUR.get(key, "#94A3B8")
+    return (
+        f'<span style="font-size:11px;font-weight:600;color:{colour};'
+        f"background:#F8FAFC;padding:2px 8px;border-radius:4px;"
+        f'margin-left:10px;border:1px solid {colour};">'
+        f"CORROBORATION: {key}</span>"
+    )
 
 
 def _fmt_market_cap(mc: float) -> str:
@@ -52,14 +65,7 @@ def _render_verdict(
     # Convergence badge from corroboration snapshot
     convergence_badge = ""
     if corr_view is not None and corr_view.snapshot is not None:
-        tier = corr_view.snapshot.convergence.value.upper()
-        colour = _TIER_COLOUR.get(tier, "#94A3B8")
-        convergence_badge = (
-            f'<span style="font-size:11px;font-weight:600;color:{colour};'
-            f"background:#F8FAFC;padding:2px 8px;border-radius:4px;"
-            f'margin-left:10px;border:1px solid {colour};">'
-            f"CORROBORATION: {tier}</span>"
-        )
+        convergence_badge = _convergence_badge_html(corr_view.snapshot.convergence)
 
     st.markdown(
         f'<div style="margin-bottom:12px;">'
