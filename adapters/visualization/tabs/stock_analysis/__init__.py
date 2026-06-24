@@ -12,6 +12,7 @@ from adapters.visualization.tabs.stock_analysis.corroboration_section import (
 )
 from adapters.visualization.tabs.stock_analysis.verdict_section import (
     _SEVERITY_CLASS,
+    _convergence_badge_html,
     _render_analyst_panel,
     _render_fit_card,
     _render_news_context,
@@ -28,6 +29,7 @@ __all__ = [
     "select_case_summarizer",
     "render_corroboration_section",
     "_SEVERITY_CLASS",
+    "_convergence_badge_html",
     "_render_analyst_panel",
     "_render_fit_card",
     "_render_news_context",
