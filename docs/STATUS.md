@@ -1,45 +1,57 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-22
-**Branch:** `feat/corroboration-engine` (worktree: corroboration-sp7)
-**Phase:** SP2 DONE — candidate surfacing + discovered-universe overlay live
+**As of:** 2026-06-23
+**Branch:** `develop` (working branch)
+**Phase:** SP5 designed — ready for writing-plans → implementation
 
 ## NEXT ACTION (fresh session — start here)
 
-**Run verification-before-completion (Opus) to catch spec/plan drift before PR.**
-Then SP3: Screener revamp to consume discovered universe from `HybridUniverseProvider`.
-Brief: `docs/superpowers/specs/2026-06-20-sp3-*.md`
-Workflow: brainstorming → writing-plans → subagent-driven-development.
+SP5: Hypothesis #9 Forward Gate — invoke `superpowers:writing-plans` with:
+- Spec: `docs/superpowers/specs/2026-06-23-sp5-hypothesis9-forward-gate-design.md`
+- Branch: `feat/sp5-forward-gate` off `develop`
+- Task 1 MUST be ADR-064 commit before any resolver code
 
-PR #73 (SP1 corroboration core) still OPEN → develop, deferred by user.
-SP2 commits sit on top — both will ship together.
+## SP Status Summary
 
-## SP2 — DONE (9 tasks, 9 commits)
+| SP | Name | Status | Branch / PR |
+|----|------|--------|-------------|
+| SP1 | Corroboration core | PR #73 OPEN | `feat/corroboration-engine` |
+| SP2 | Candidate surfacing | ✅ merged to develop | — |
+| SP3 | Screener revamp | ✅ merged to develop | — |
+| SP4 | Portfolio verdict | PR #78 OPEN | `feat/sp4-portfolio-verdict` |
+| SP5 | Forward gate | ✅ DESIGNED | `feat/sp5-forward-gate` (not started) |
+| SP6 | Dashboard tabs | brief only | — |
+| SP7 | Weekly job reliability | ✅ merged to develop | — |
 
-| Component | File | Commit |
-|-----------|------|--------|
-| CandidateSnapshot + DiscoveredEntry | `domain/corroboration_models.py` | aaaf087 |
-| TickerResolverPort protocol | `domain/ports.py` | 7d2f0e2 |
-| Store: candidates_snapshot + discovered_tickers tables + 5 methods | `adapters/data/corroboration_store.py` | a83d08a |
-| corroborate CLI saves CandidateSnapshots | `application/cli/corroboration_commands.py` | 890a506 |
-| YFinanceResolver adapter | `adapters/data/yfinance_resolver.py` | a33d3bf |
-| SurfacingUseCase + 11 tests + caplog_loguru fixture | `application/surfacing_use_case.py` | ab601bc |
-| HybridUniverseProvider corroboration overlay | `adapters/data/hybrid_universe_provider.py` | 5ce52a0 |
-| surface-candidates CLI command | `application/cli/scan_commands.py` | ac5b5af |
+## Open PRs
 
-Gate: 2266 tests pass, mypy --strict 230 files clean.
+- PR #73 (SP1 corroboration core) — open, develop deferred by user
+- PR #76 (efficiency pass) — open
+- PR #78 (SP4 portfolio verdict) — open, implementation complete + verified
 
-**Post-verification fix (2026-06-22):** Opus drift review caught `CorroboratedCandidate.mean_convergence`
-missing — CLI snapshot save would AttributeError at runtime. Field added + populated from tier map.
+## SP5 Key Decisions (locked — see ADR-064)
 
-## Worktree / branch layout
+- Unit: per-ticker-snapshot `(ticker, snapshot_date)`
+- Gate: STRONG-tier only, mean 21d excess vs SPY ≥ 50 bps AND bootstrap 95% CI lower bound > 0
+- n_min: 30 resolved pairs
+- KILL: permanent at first evaluation where n≥30 and gate fails
+- Storage: `data/corroboration_samples.jsonl` + `data/corroboration_gate_log.jsonl`
+- ADR-064 committed as Task 1 before any resolver runs
 
-- Main tree: `fix/test-hang-timeout` (CI gate fix, not yet merged)
-- This worktree: `feat/corroboration-engine` (SP1+SP2, PR #73 open)
+## Future Enhancement (deferred from SP5)
+
+Source reliability learning loop: update `HarvestedClaim.reliability_weight` per-source based on
+proven 21d forward hit-rates. Deferred until SP5 gate resolves — if SP5 KILLs the signal,
+the loop was never needed. Track as SP5b when SP5 verdict is known.
+
+## ADRs Written This Session
+
+- ADR-063: SP3 screener blend formula (retroactive — equal-weight 50/50 factor + tier)
+- ADR-064: SP5 forward gate parameters (pre-registration lock)
 
 ## Gotchas
 
-- Use `.venv` (uv-managed): prefix commands with `PATH=.venv/bin:$PATH`
-- google.generativeai prints FutureWarning (project-wide, non-blocking)
-- SP2 depends on SP1 — PR #73 must merge before SP2 ships to develop
-- make test-fast takes ~19 min serial; use narrowest target during iteration
+- `uv run pytest` required (bare pytest fails — pyproject.toml injects --timeout flags)
+- `make test-fast` runs ~21s parallel (2316 tests on develop + SP4)
+- SP5 depends on SP1 (CorroborationStore weekly snapshots) — implement after PR #73 merges
+- `ResolverPricePort.price_at(ticker, date)` is a new port — needs yfinance adapter + fake
