@@ -15,6 +15,7 @@ from adapters.visualization.components.charts import (
     apply_dossier_template,
     comparison_bars,
     financials_line,
+    gauge_chart,
 )
 from adapters.visualization.stock_analyzer import AnalysisResult
 from adapters.visualization.tabs.stock_analysis.verdict_section import (
@@ -203,8 +204,6 @@ def _render_health(result: AnalysisResult) -> None:
     with col_gauge:
         de = info.get("debtToEquity")
         if de is not None:
-            from adapters.visualization.components.charts import gauge_chart
-
             fig = gauge_chart(
                 value=float(de),
                 min_v=0,

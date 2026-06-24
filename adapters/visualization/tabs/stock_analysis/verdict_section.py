@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from adapters.visualization.data_loader import CorroborationTabView
-    from domain.fit import FitVerdict
 
 from adapters.visualization.components.tooltip import tooltip as glossary_tooltip
 from adapters.visualization.stock_analyzer import AnalysisResult
