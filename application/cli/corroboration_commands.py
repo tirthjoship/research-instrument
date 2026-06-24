@@ -2,11 +2,24 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+import sqlite3
+from datetime import date as _date
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, cast
 
 import click
+
+from adapters.data.corroboration_gate_log import (
+    append_result,
+    append_samples,
+    load_latest_result,
+    load_samples,
+)
+from adapters.data.corroboration_store import CorroborationStore
+from adapters.data.yfinance_price_resolver import YFinancePriceResolver
+from application.corroboration_resolver_use_case import CorroborationResolverUseCase
+from domain.corroboration_gate import evaluate_gate
 
 from ._cli_group import cli
 
@@ -32,7 +45,9 @@ def corroborate(as_of_str: str | None) -> None:
     from adapters.ml.model_registry import ModelRegistry, gemini_lister
     from application.corroboration_use_case import CorroborationUseCase
 
-    as_of: date = date.fromisoformat(as_of_str) if as_of_str else datetime.now().date()
+    as_of: _date = (
+        _date.fromisoformat(as_of_str) if as_of_str else datetime.now().date()
+    )
 
     # ---- adapters -------------------------------------------------------
     # Task B: use cached_preferred to avoid re-pinging list_models every run.
@@ -193,9 +208,9 @@ _SENTINEL: object = object()
 
 
 def _build_readout_fn(
-    as_of: date,
+    as_of: _date,
     held_tickers: set[str],
-) -> Callable[[str, date], Any]:
+) -> Callable[[str, _date], Any]:
     """Return a closure that assembles a real OurReadout for each ticker.
 
     All live fetches are lazy (inside the closure) and exception-safe so the
@@ -243,7 +258,7 @@ def _build_readout_fn(
         _screen_cache[0] = screen
         return screen
 
-    def _readout_fn(ticker: str, _as_of: date) -> Any:
+    def _readout_fn(ticker: str, _as_of: _date) -> Any:
         # --- trend health (live yfinance fetch) ---
         trend_health_float: float | None = None
         try:
@@ -385,7 +400,7 @@ class _SummarizingSearchHarvester:
         self._summarizer = summarizer
         self.last_raw_count: int = 0
 
-    def harvest(self, as_of: date) -> list[HarvestedClaim]:
+    def harvest(self, as_of: _date) -> list[HarvestedClaim]:
         from domain.corroboration_models import HarvestedClaim, Stance
 
         candidates = self._harvester.search_candidates(as_of)
@@ -415,3 +430,97 @@ class _SummarizingSearchHarvester:
                 )
             )
         return claims
+
+
+# ---------------------------------------------------------------------------
+# SP5 forward-gate commands
+# ---------------------------------------------------------------------------
+
+
+@cli.command("resolve-corroboration")
+@click.option(
+    "--as-of",
+    "as_of_str",
+    default=None,
+    help="Resolution date (YYYY-MM-DD). Defaults to today.",
+)
+def resolve_corroboration(as_of_str: str | None) -> None:
+    """Compute realized returns for STRONG-tier snapshots >=21d old. Accrues SP5 gate samples."""
+    as_of = (
+        _date.fromisoformat(as_of_str)
+        if as_of_str
+        else datetime.now(timezone.utc).date()
+    )
+    conn = sqlite3.connect("data/recommendations.db")
+    store = CorroborationStore(conn)
+    price = YFinancePriceResolver()
+    uc = CorroborationResolverUseCase(store, price)
+
+    new_samples = uc.resolve(as_of)
+    n_appended = append_samples(new_samples)
+    all_samples = load_samples()
+    n_total = len(all_samples)
+
+    click.echo(
+        f"resolved {n_appended} new samples (total: {n_total}). Gate: ",
+        nl=False,
+    )
+
+    if n_total >= 30:
+        gate_result = evaluate_gate(all_samples, evaluated_at=as_of)
+        append_result(gate_result)
+        click.echo(gate_result.verdict)
+        if gate_result.verdict == "FAIL":
+            click.echo(
+                "\n⚠️  HYPOTHESIS #9 FAILED — corroboration stays"
+                " RESEARCH_ONLY (permanent).",
+                err=True,
+            )
+    else:
+        click.echo(f"PENDING ({n_total}/30 samples)")
+
+
+@cli.command("corroboration-calibration-status")
+def corroboration_calibration_status() -> None:
+    """Show SP5 forward-gate status (PENDING / PASS / FAIL). Read-only."""
+    all_samples = load_samples()
+    latest = load_latest_result()
+    n = len(all_samples)
+
+    if n == 0:
+        mean_str = "n/a"
+        ci_str = "n/a"
+        hit_str = "n/a"
+        mean_63_str = "n/a (insufficient data)"
+        verdict_str = "PENDING"
+    elif latest is not None:
+        mean_str = f"{latest.mean_excess_21d:+.2%}"
+        ci_str = f"[{latest.ci_lower:+.2%}, {latest.ci_upper:+.2%}]"
+        hit_str = f"{latest.hit_rate_21d:.0%}"
+        mean_63_str = (
+            f"{latest.mean_excess_63d:+.2%}"
+            if latest.mean_excess_63d is not None
+            else "n/a (insufficient data)"
+        )
+        verdict_str = latest.verdict
+    else:
+        # Samples exist but no evaluation yet (n < 30)
+        excesses = [s.excess_21d for s in all_samples]
+        mean_val = sum(excesses) / len(excesses)
+        mean_str = f"{mean_val:+.2%} (preliminary)"
+        ci_str = "n/a (n < 30)"
+        hit_str = (
+            f"{sum(1 for s in all_samples if s.beat_spy_21d) / n:.0%} (preliminary)"
+        )
+        mean_63_str = "n/a (insufficient data)"
+        verdict_str = "PENDING"
+
+    click.echo("Corroboration Forward Gate (Hypothesis #9)")
+    click.echo(f"  verdict:          {verdict_str}")
+    click.echo(f"  n resolved:       {n} / 30 required")
+    click.echo(f"  mean excess 21d:  {mean_str}")
+    click.echo(f"  95% CI:           {ci_str}")
+    click.echo(f"  hit rate 21d:     {hit_str}")
+    click.echo(f"  mean excess 63d:  {mean_63_str}")
+    click.echo("  gate locked:      2026-06-23 (ADR-064)")
+    click.echo("  RESEARCH_ONLY until gate passes.")
