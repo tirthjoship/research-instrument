@@ -34,8 +34,8 @@ class YFinancePriceResolver:
         if df.empty:
             raise ValueError(f"No price data for {ticker} around {on}")
 
-        # df["Close"] is a Series when a single ticker string is passed
-        close_series = df[["Close"]].squeeze()
+        # df["Close"] is a Series when a single ticker string is passed (not a list)
+        close_series = df["Close"]
         mask = [d.date() <= on for d in close_series.index]
         filtered = close_series[mask]
         if filtered.empty:
