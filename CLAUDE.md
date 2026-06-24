@@ -160,9 +160,19 @@ tests/fakes/                       Test doubles for all ports — use these, nev
 tests/conftest.py                  Strips live API keys — one autouse fixture only
 ```
 
-## CONTEXT.md — Do NOT auto-read
+## Files — Do NOT auto-read
 
-`CONTEXT.md` is a historical session timeline (~17,800 tokens). **Do not read it** at session start or during exploration. Open only if the user explicitly asks about project history.
+| File / Directory | Why |
+|---|---|
+| `CONTEXT.md` | Historical session timeline (~17,800 tokens). Open only if user asks about project history. |
+| `docs/superpowers/plans/*.md` | Implementation plans (600-1500 LOC each). SDD `task-brief` script extracts the relevant task — never read the full plan inline in the controller. Archive after SP merges. |
+| `docs/superpowers/specs/*.md` | Design specs. Read on demand only (when the named task references one). Archive after SP merges. |
+| `docs/superpowers/archive/` | Completed plans/specs — never read. |
+| `docs/PHASE_LOG.md` | History doc — open only for past detail requests. |
+| `research/` | Investigation snapshots — open only if explicitly referenced. |
+
+**Archive discipline (mandatory):** When an SP merges to develop, move its plan + spec to `docs/superpowers/archive/` in the same session. Unarchived completed plans auto-load into every SDD subagent context (~9k tokens per session per forgotten plan).
+
 Current state: `docs/STATUS.md` — read this first. It is short and authoritative.
 
 ## Phase Status
