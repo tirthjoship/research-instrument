@@ -154,9 +154,22 @@ adapters/visualization/tabs/risk/   Risk tab package (decomposed from 1710-LOC m
   factor_chart.py                   Fama-French factor chart (~240 LOC isolated)
   enb_section.py                    ENB drill section (~220 LOC isolated)
   sections.py                       Sector, who_owns, drift, teach sections
+adapters/visualization/tabs/stock_analysis/  SP6 package (decomposed from 1055-LOC monolith — in progress)
+  compose.py                        render() entry, RESEARCH_ONLY banner, chip nav
+  verdict_section.py                Verdict, Fit, Analyst, News, Peer percentiles
+  financials_section.py             Valuation, Growth, Health
+  market_section.py                 Performance, Ownership
+  signals_section.py                Sentiment, Supply chain
+  corroboration_section.py          NEW: claim cards, OurReadout bridge, DirectionalView
 adapters/visualization/components/ Shared UI components (styles.py, charts.py, cards.py)
-adapters/data/sqlite_store.py      Persistence layer
+adapters/visualization/data_loader.py  Dashboard data boundary — all store reads go here
+  CorroborationTabView              DTO for corroboration tab data (SP6)
+  load_corroboration_snapshot()     Reads CorroborationStore snapshot by ticker
+domain/corroboration_models.py     Corroboration domain types (HarvestedClaim, CorroboratedCandidate, etc.)
+adapters/data/corroboration_store.py  SQLite persistence for corroboration runs + snapshots
+adapters/data/sqlite_store.py      Main persistence layer (recommendations, holdings, etc.)
 tests/fakes/                       Test doubles for all ports — use these, never mock
+  corroboration_store_fake.py       FakeCorroborationStore + FAKE_CLAIM_* fixtures (SP6)
 tests/conftest.py                  Strips live API keys — one autouse fixture only
 ```
 

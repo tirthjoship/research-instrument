@@ -6,7 +6,7 @@ It does NOT predict returns — we tested that across 18 years of data and every
 failed.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-2185%20passing-success)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-2364%20passing-success)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
 
@@ -82,6 +82,12 @@ bash scripts/discipline_weekly_review.sh
 
 # Generate the weekly brief from the CLI
 python -m application.cli weekly-brief --market us
+
+# Corroboration pipeline (SP1+SP5 — runs weekly via launchd)
+python -m application.cli corroborate                    # harvest + verify external claims
+python -m application.cli surface-candidates             # surface STRONG/MODERATE tickers
+python -m application.cli resolve-corroboration          # score resolved 21-day outcomes (SP5 gate)
+python -m application.cli corroboration-calibration-status  # check SP5 forward-gate status
 
 # Run tests (parallel, ~35s)
 make test-fast
