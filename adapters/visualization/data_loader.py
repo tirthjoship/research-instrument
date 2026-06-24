@@ -8,13 +8,111 @@ from __future__ import annotations
 
 import json
 import logging
+import sqlite3
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any, cast
 
+from domain.corroboration_models import (
+    CandidateSnapshot,
+    DirectionalView,
+    HarvestedClaim,
+    OurReadout,
+    Stance,
+)
 from domain.models import Holding, StockRecommendation
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class CorroborationTabView:
+    """Visualization-layer DTO for corroboration data. Not a domain type."""
+
+    ticker: str
+    as_of: date
+    claims: tuple[HarvestedClaim, ...]
+    snapshot: CandidateSnapshot | None
+    our_readout: OurReadout | None  # populated by caller from AnalysisResult
+    directional_views: tuple[DirectionalView, ...]
+
+
+def _compute_directional_views(claims: list[HarvestedClaim]) -> list[DirectionalView]:
+    """Derive a single DirectionalView from claims (evidence-consensus level)."""
+    if not claims:
+        return []
+    total_w = sum(c.reliability_weight for c in claims)
+    if total_w == 0.0:
+        return []
+    bull_w = sum(c.reliability_weight for c in claims if c.stance == Stance.BULLISH)
+    bear_w = sum(c.reliability_weight for c in claims if c.stance == Stance.BEARISH)
+    evidence_weight_pct = bull_w / total_w
+    if evidence_weight_pct >= 0.70:
+        tilt = "LEAN_IN"
+    elif evidence_weight_pct >= 0.45:
+        tilt = "HOLD"
+    elif evidence_weight_pct >= 0.20:
+        tilt = "LEAN_OUT"
+    else:
+        tilt = "AVOID"
+    if bull_w > bear_w:
+        net_stance = Stance.BULLISH
+    elif bear_w > bull_w:
+        net_stance = Stance.BEARISH
+    else:
+        net_stance = Stance.NEUTRAL
+    return [
+        DirectionalView(
+            group_kind="sources",
+            group_name="Evidence consensus",
+            net_stance=net_stance,
+            mean_convergence=evidence_weight_pct,
+            your_exposure_pct=0.0,
+            evidence_weight_pct=evidence_weight_pct,
+            tilt=tilt,
+        )
+    ]
+
+
+def _build_corroboration_view(
+    ticker: str,
+    store: Any,
+) -> "CorroborationTabView | None":
+    """Build CorroborationTabView from a store instance (real or fake)."""
+    run_id = store.latest_run_id()
+    if run_id is None:
+        return None
+    all_claims: list[HarvestedClaim] = store.load_run(run_id)
+    ticker_claims = [c for c in all_claims if c.ticker == ticker]
+    candidates: list[CandidateSnapshot] = store.load_candidates(run_id)
+    snapshot = next((c for c in candidates if c.ticker == ticker), None)
+    return CorroborationTabView(
+        ticker=ticker,
+        as_of=date.today(),
+        claims=tuple(ticker_claims),
+        snapshot=snapshot,
+        our_readout=None,
+        directional_views=tuple(_compute_directional_views(ticker_claims)),
+    )
+
+
+def load_corroboration_snapshot(
+    ticker: str,
+    db_path: str = "data/corroboration.db",
+) -> "CorroborationTabView | None":
+    """Load latest corroboration snapshot for ticker. Returns None on missing DB or store error."""
+    if not Path(db_path).exists():
+        return None
+    try:
+        from adapters.data.corroboration_store import CorroborationStore
+
+        conn = sqlite3.connect(db_path)
+        store = CorroborationStore(conn)
+        return _build_corroboration_view(ticker=ticker, store=store)
+    except Exception as e:
+        logger.warning("corroboration snapshot load failed for %s: %s", ticker, e)
+        return None
 
 
 def load_backtest_reports(reports_dir: str) -> list[dict[str, Any]]:
