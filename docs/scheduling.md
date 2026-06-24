@@ -350,3 +350,59 @@ also be local: a cloud cron runner (GitHub Actions scheduled workflow, AWS Event
 read or write the SQLite file on this machine. launchd is therefore not a separate architectural
 choice — it is the scheduling mechanism implied by ADR-007. If the project ever migrates to a
 hosted database, the scheduling decision should be revisited (see docs/adr/ for the relevant ADR).
+
+---
+
+## Corroboration WEEKLY resolution (Sundays) — SP5 / ADR-064
+
+Resolves STRONG-tier snapshots ≥21d old, accrues `GateSample` records to
+`data/corroboration_samples.jsonl`, and evaluates Hypothesis #9 gate when n ≥ 30.
+Gate parameters are permanently locked (see ADR-064). Permanent KILL if gate fails.
+
+> **Note:** the `corroborate` job (which harvests snapshots) must run **before** this resolver
+> each week. If scheduling manually, run `stockrec corroborate` first.
+
+Save the plist below as
+`~/Library/LaunchAgents/com.tirthjoshi.stockrec.corroboration-weekly.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.tirthjoshi.stockrec.corroboration-weekly</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/scripts/corroboration_weekly_resolve.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>0</integer>
+    <key>Hour</key><integer>18</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/corroboration_weekly_resolve.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/corroboration_weekly_resolve.log</string>
+  <key>RunAtLoad</key><false/>
+</dict>
+</plist>
+```
+
+Load and verify:
+```bash
+cp com.tirthjoshi.stockrec.corroboration-weekly.plist ~/Library/LaunchAgents/
+launchctl load -w ~/Library/LaunchAgents/com.tirthjoshi.stockrec.corroboration-weekly.plist
+launchctl list | grep corroboration-weekly
+```
+
+Smoke-test once manually:
+```bash
+bash scripts/corroboration_weekly_resolve.sh
+```
+
+`Weekday 0` = Sunday. Runs at 18:00 local time (after NYSE close + corroborate job window).
