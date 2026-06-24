@@ -233,6 +233,17 @@ def assemble_brief(
 # ---------------------------------------------------------------------------
 
 
+def _is_corroboration_conflict(h: HoldingVerdictLine) -> bool:
+    if h.source_stance is None:
+        return False
+    bullish_but_reduce = h.source_stance == Stance.BULLISH and h.verdict in (
+        Verdict.REDUCE,
+        Verdict.TRIM,
+    )
+    bearish_but_add = h.source_stance == Stance.BEARISH and h.verdict == Verdict.ADD_OK
+    return bullish_but_reduce or bearish_but_add
+
+
 def _candidates_header(label: ScreenLabel) -> str:
     if label == ScreenLabel.VALIDATED:
         return "BUY CANDIDATES (validated)"
@@ -264,10 +275,31 @@ def to_markdown(brief: WeeklyBrief) -> str:
     lines.append("")
     lines.append("## HOLDINGS VERDICTS")
     for h in brief.holdings:
-        lines.append(
+        base = (
             f"- **{h.ticker}**  {h.unrealized_pct:+.0%}  {h.trend_state}  "
             f"**{h.verdict.value}** — {h.why}"
         )
+        if (
+            h.convergence_tier is not None
+            and h.n_sources is not None
+            and h.source_stance is not None
+        ):
+            src_line = f"│ sources: {h.source_stance.value.upper()} ×{h.n_sources} [{h.convergence_tier.value.upper()}]"
+            if _is_corroboration_conflict(h):
+                src_line += " ⚠ CONFLICT"
+            base = base + "  " + src_line
+        lines.append(base)
+    if brief.directional_views:
+        lines.append("")
+        lines.append("## Directional Tilts (RESEARCH_ONLY)")
+        for v in brief.directional_views:
+            lines.append(
+                f"- {v.group_name}: {v.tilt} ({v.net_stance.value}, your book {v.your_exposure_pct:.0%})"
+            )
+    missing = sum(1 for h in brief.holdings if h.convergence_tier is None)
+    if missing:
+        lines.append("")
+        lines.append(f"_{missing} holding(s) have no corroboration snapshot_")
     lines.append("")
     lines.append("## RESEARCH LINKS (research-only, Phase C pending)")
     if not brief.research_links:
@@ -369,6 +401,12 @@ def to_stdout_masked(brief: WeeklyBrief) -> str:
     lines.append(
         "HOLDINGS (masked): " + ", ".join(f"{v} {counts[v]}" for v in sorted(counts))
     )
+    if brief.directional_views:
+        lines.append("Directional Tilts (RESEARCH_ONLY):")
+        for v in brief.directional_views:
+            lines.append(
+                f"  {v.group_name}: {v.tilt} ({v.net_stance.value}, your book {v.your_exposure_pct:.0%})"
+            )
     if brief.concentration:
         lines.append(
             f"CONCENTRATION: {len(brief.concentration)} flag(s) — see full brief"
