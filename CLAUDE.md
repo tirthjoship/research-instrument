@@ -154,7 +154,7 @@ adapters/visualization/tabs/risk/   Risk tab package (decomposed from 1710-LOC m
   factor_chart.py                   Fama-French factor chart (~240 LOC isolated)
   enb_section.py                    ENB drill section (~220 LOC isolated)
   sections.py                       Sector, who_owns, drift, teach sections
-adapters/visualization/tabs/stock_analysis/  SP6 package (decomposed from 1055-LOC monolith — in progress)
+adapters/visualization/tabs/stock_analysis/  SP6 package (decomposed from 1055-LOC monolith)
   compose.py                        render() entry, RESEARCH_ONLY banner, chip nav
   verdict_section.py                Verdict, Fit, Analyst, News, Peer percentiles
   financials_section.py             Valuation, Growth, Health
