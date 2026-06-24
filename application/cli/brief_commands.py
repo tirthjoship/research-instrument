@@ -175,7 +175,12 @@ def _build_weekly_brief(
         )
         return (dr, n, gate)
 
+    import sqlite3
+
+    from adapters.data.corroboration_store import CorroborationStore
     from application.evidence_screen_use_case import label_from_verdict_file
+
+    _corr_store = CorroborationStore(sqlite3.connect("data/recommendations.db"))
 
     uc = WeeklyBriefUseCase(
         screen=screen,
@@ -186,6 +191,8 @@ def _build_weekly_brief(
         screen_scorecard_fn=_screen_scorecard,
         discipline_scorecard_fn=_discipline_scorecard,
         macro_fn=_macro_fn,
+        corroboration_fn=_corr_store.get_snapshots,
+        sector_provider=SectorProvider(),
     )
     return uc, universe
 

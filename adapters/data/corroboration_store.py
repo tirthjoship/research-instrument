@@ -263,12 +263,19 @@ def _claims_to_snapshots(
             tier = ConvergenceTier.WEAK
         else:
             tier = ConvergenceTier.NONE
+        if bullish > bearish:
+            net_stance = Stance.BULLISH
+        elif bearish > bullish:
+            net_stance = Stance.BEARISH
+        else:
+            net_stance = Stance.NEUTRAL
         snapshots.append(
             CorroborationSnapshot(
                 ticker=ticker,
                 convergence_tier=tier,
                 n_sources=len(verified_claims),
                 surfaced_at=run_date,
+                net_stance=net_stance,
             )
         )
     return snapshots
