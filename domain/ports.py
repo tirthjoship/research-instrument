@@ -355,6 +355,12 @@ class CitationVerifierPort(Protocol):
     def verify(self, url: str, ticker: str) -> bool: ...
 
 
+class ResolverPricePort(Protocol):
+    def price_at(self, ticker: str, on: _date) -> float:
+        """Closing price for ticker on the given date. Raises if unavailable."""
+        ...
+
+
 class ModelProviderPort(Protocol):
     def list_free_models(self) -> list[str]: ...
 

@@ -105,6 +105,19 @@ class CorroborationStore:
             for r in rows
         ]
 
+    def load_all_snapshots(self) -> list[CorroborationSnapshot]:
+        """Return CorroborationSnapshot from every stored run (all tickers, all dates)."""
+        rows = self._c.execute(
+            "SELECT id, as_of FROM corroboration_runs ORDER BY as_of ASC"
+        ).fetchall()
+        all_snapshots: list[CorroborationSnapshot] = []
+        for row in rows:
+            run_id = int(row[0])
+            run_date = date.fromisoformat(str(row[1]))
+            claims = self.load_run(run_id)
+            all_snapshots.extend(_claims_to_snapshots(claims, run_date))
+        return all_snapshots
+
     def get_snapshots(
         self, as_of: date, window_days: int = 7
     ) -> list[CorroborationSnapshot]:

@@ -8,10 +8,8 @@ data/personal/
 # Internal AI config — keep locally (agent scaffolding is implementation detail)
 .claude/settings.json
 .claude/settings.local.json
-# Note: docs/superpowers/plans/ and specs/ are tracked in git
-# They contain design decisions and implementation plans that are project artifacts
-# Superseded plans/specs are moved to archive/ (local-only) to prevent agent drift
-archive/
+# docs/superpowers/ — plans/specs/archive all tracked in git (design record)
+# Agents must NOT auto-read archive/ — see CLAUDE.md do-not-auto-read list
 
 # Coverage artifacts
 .coverage
@@ -25,6 +23,11 @@ data/reports/discipline_weekly_review.log
 # Always-regenerating live reports — untracked to avoid pre-commit stash conflicts
 data/reports/divergence_ic_21d.json
 data/reports/momentum_discipline.json
+data/reports/corroboration_weekly_resolve.log
+
+# SP5 forward-gate resolution logs — local data, never commit
+data/corroboration_samples.jsonl
+data/corroboration_gate_log.jsonl
 
 # Raw data — never commit large files to Git
 data/raw/
