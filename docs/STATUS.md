@@ -2,14 +2,14 @@
 
 **As of:** 2026-06-23
 **Branch:** `develop` (working branch)
-**Phase:** SP5 designed — ready for writing-plans → implementation
+**Phase:** SP5 plan written — ready for subagent-driven implementation
 
 ## NEXT ACTION (fresh session — start here)
 
-SP5: Hypothesis #9 Forward Gate — invoke `superpowers:writing-plans` with:
-- Spec: `docs/superpowers/specs/2026-06-23-sp5-hypothesis9-forward-gate-design.md`
-- Branch: `feat/sp5-forward-gate` off `develop`
-- Task 1 MUST be ADR-064 commit before any resolver code
+SP5: Hypothesis #9 Forward Gate — plan at `docs/superpowers/plans/2026-06-23-sp5-forward-gate.md`
+- Cut branch `feat/sp5-forward-gate` off `develop`
+- Invoke `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans`
+- ADR-064 already on develop — Task 1 just verifies its presence then begins domain types
 
 ## SP Status Summary
 
@@ -18,8 +18,8 @@ SP5: Hypothesis #9 Forward Gate — invoke `superpowers:writing-plans` with:
 | SP1 | Corroboration core | PR #73 OPEN | `feat/corroboration-engine` |
 | SP2 | Candidate surfacing | ✅ merged to develop | — |
 | SP3 | Screener revamp | ✅ merged to develop | — |
-| SP4 | Portfolio verdict | PR #78 OPEN | `feat/sp4-portfolio-verdict` |
-| SP5 | Forward gate | ✅ DESIGNED | `feat/sp5-forward-gate` (not started) |
+| SP4 | Portfolio verdict | ✅ merged to develop | — |
+| SP5 | Forward gate | 📋 PLANNED | `feat/sp5-forward-gate` (not started) |
 | SP6 | Dashboard tabs | brief only | — |
 | SP7 | Weekly job reliability | ✅ merged to develop | — |
 
@@ -27,7 +27,6 @@ SP5: Hypothesis #9 Forward Gate — invoke `superpowers:writing-plans` with:
 
 - PR #73 (SP1 corroboration core) — open, develop deferred by user
 - PR #76 (efficiency pass) — open
-- PR #78 (SP4 portfolio verdict) — open, implementation complete + verified
 
 ## SP5 Key Decisions (locked — see ADR-064)
 
