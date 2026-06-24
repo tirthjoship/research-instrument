@@ -64,7 +64,7 @@ def _compute_directional_views(claims: list[HarvestedClaim]) -> list[Directional
         net_stance = Stance.NEUTRAL
     return [
         DirectionalView(
-            group_kind="sources",
+            group_kind="sector",
             group_name="Evidence consensus",
             net_stance=net_stance,
             mean_convergence=evidence_weight_pct,
@@ -107,9 +107,9 @@ def load_corroboration_snapshot(
     try:
         from adapters.data.corroboration_store import CorroborationStore
 
-        conn = sqlite3.connect(db_path)
-        store = CorroborationStore(conn)
-        return _build_corroboration_view(ticker=ticker, store=store)
+        with sqlite3.connect(db_path) as conn:
+            store = CorroborationStore(conn)
+            return _build_corroboration_view(ticker=ticker, store=store)
     except Exception as e:
         logger.warning("corroboration snapshot load failed for %s: %s", ticker, e)
         return None
