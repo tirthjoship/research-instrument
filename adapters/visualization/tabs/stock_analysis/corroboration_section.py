@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import streamlit as st
-
 if TYPE_CHECKING:
     from adapters.visualization.data_loader import CorroborationTabView
 
@@ -46,6 +44,8 @@ _STANCE_ICON: dict[Stance, str] = {
 
 def render_corroboration_section(view: "CorroborationTabView | None") -> None:
     """Render the full corroboration section. Handles empty state gracefully."""
+    import streamlit as st
+
     st.divider()
     st.markdown("#### Corroboration Evidence")
     if view is None or not view.claims:
@@ -212,6 +212,8 @@ def _directional_views_html(views: list[DirectionalView]) -> str:
 
 
 def _render_strong_claims(claims: list[HarvestedClaim]) -> None:
+    import streamlit as st
+
     if not claims:
         return
     st.markdown(
@@ -225,6 +227,8 @@ def _render_strong_claims(claims: list[HarvestedClaim]) -> None:
 
 
 def _render_moderate_claims(claims: list[HarvestedClaim]) -> None:
+    import streamlit as st
+
     if not claims:
         return
     st.markdown(
@@ -238,6 +242,8 @@ def _render_moderate_claims(claims: list[HarvestedClaim]) -> None:
 
 
 def _render_weak_claims(claims: list[HarvestedClaim]) -> None:
+    import streamlit as st
+
     if not claims:
         return
     with st.expander(f"Weak / unverified signals ({len(claims)})"):
@@ -246,12 +252,16 @@ def _render_weak_claims(claims: list[HarvestedClaim]) -> None:
 
 
 def _render_our_readout(readout: OurReadout | None) -> None:
+    import streamlit as st
+
     if readout is None:
         return
     st.markdown(_our_readout_html(readout), unsafe_allow_html=True)
 
 
 def _render_directional_views(views: list[DirectionalView]) -> None:
+    import streamlit as st
+
     html = _directional_views_html(views)
     if html:
         st.markdown(html, unsafe_allow_html=True)
