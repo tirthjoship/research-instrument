@@ -25,6 +25,11 @@ data/reports/discipline_weekly_review.log
 # Always-regenerating live reports — untracked to avoid pre-commit stash conflicts
 data/reports/divergence_ic_21d.json
 data/reports/momentum_discipline.json
+data/reports/corroboration_weekly_resolve.log
+
+# SP5 forward-gate resolution logs — local data, never commit
+data/corroboration_samples.jsonl
+data/corroboration_gate_log.jsonl
 
 # Raw data — never commit large files to Git
 data/raw/
