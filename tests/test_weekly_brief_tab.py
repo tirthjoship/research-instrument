@@ -642,24 +642,17 @@ def test_home_shows_door_when_no_book(monkeypatch: object) -> None:  # type: ign
     from adapters.visualization.tabs import weekly_brief as wb
 
     monkeypatch.setattr(wb, "is_local_runtime", lambda: True)  # type: ignore[attr-defined]
-    html = wb._render_onboarding_html(has_book=False)  # type: ignore[attr-defined]
-    # "Explore sample book" is now a real st.button, not in the HTML banner
-    assert "Load a book to begin" in html
+    html = wb._render_onboarding_html()  # type: ignore[attr-defined]
+    assert "Sample book" in html
 
 
 def test_home_door_always_present_even_with_book(monkeypatch: object) -> None:
-    """FIX A: door must render regardless of whether a book is loaded.
-
-    Old test (test_home_hides_door_when_book_present) asserted door is hidden
-    when has_book=True.  New behaviour: door is ALWAYS rendered so the user can
-    always reach Upload/Add-manually.
-    """
+    """Banner renders the same regardless of book state — always visible."""
     from adapters.visualization.tabs import weekly_brief as wb
 
     monkeypatch.setattr(wb, "is_local_runtime", lambda: True)  # type: ignore[attr-defined]
-    html = wb._render_onboarding_html(has_book=True)  # type: ignore[attr-defined]
-    assert "Load a book to begin" in html, "Door must render even when book is loaded"
-    # "Explore sample book" is now a real st.button — not in the HTML banner string
+    html = wb._render_onboarding_html()  # type: ignore[attr-defined]
+    assert "Sample book" in html, "Banner must always be present"
 
 
 def test_home_render_shows_door_and_book_vitals_together(tmp_path: object) -> None:  # type: ignore[no-untyped-def]
@@ -726,8 +719,8 @@ def test_home_render_shows_door_and_book_vitals_together(tmp_path: object) -> No
         )
     html = "\n".join(captured)
     assert (
-        "Load a book to begin" in html
-    ), "Landing door must be present even when a brief exists"
+        "Sample book" in html
+    ), "Sample-book banner must be present even when a brief exists"
     assert "YOUR BOOK" in html, "Book vitals strip must also be present"
 
 
@@ -864,6 +857,8 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
     fake_history = {"closes": fake_closes, "atr": 1.5, "ma200": 110.0, "vs_spy": None}
     fake_prices = {"YUMC": {"price": 44.63, "change_pct": 0.5}}
 
+    # Pre-populate book so _handle_onboarding skips auto-load (which would clear the cache).
+    st.session_state["book"] = []
     # Pre-populate case cache so _render_one_holding renders the full expanded card
     # (case=None → data_gap placeholder, but price/returns still wired from fetched data)
     st.session_state[wb._HOME_CASES_KEY] = {"YUMC": None}
