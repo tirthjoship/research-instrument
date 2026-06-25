@@ -352,25 +352,32 @@ def _render_needs_review_html(holdings: list[dict[str, Any]]) -> str:
     return f'<div class="ws-card" style="padding:0">{"".join(rows)}</div>'
 
 
+_HOME_LOADED_KEY = "_home_holdings_loaded"
+
+
 def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
     """Progressive render: progress bar + per-holding fragment render + lazy case.
 
-    Each holding row is rendered via ``_render_one_holding_fragment`` which is
-    wrapped with ``st.fragment`` in a live Streamlit session, providing per-row
-    render isolation (spec §7).  In bare-mode / CI the ``_fragment`` fallback is
-    a no-op decorator, so ``_render_one_holding_fragment`` is identical to
-    ``_render_one_holding`` — tests capture ``st.markdown`` output unchanged.
+    Progress bar shown only on first load per session. Subsequent renders (tab
+    switches) skip the bar — price data is already cached in st.cache_data so
+    re-rendering the fragments is fast. Avoids Gemini summarizer being called
+    again on every tab switch.
     """
     cards = _needs_review_cards(holdings)
     if not cards:
         st.markdown(_render_needs_review_html([]), unsafe_allow_html=True)
         return
-    bar = st.progress(0.0, text=f"Fetching 0 / {len(cards)} holdings…")
     summarizer = select_case_summarizer()
+    first_load = st.session_state.get(_HOME_LOADED_KEY) != id(holdings)
+    if first_load:
+        bar = st.progress(0.0, text=f"Fetching 0 / {len(cards)} holdings…")
     for i, (ticker, h) in enumerate(cards, 1):
         _render_one_holding_fragment(ticker, h, summarizer)
-        bar.progress(i / len(cards), text=f"Fetching {i} / {len(cards)} holdings…")
-    bar.empty()
+        if first_load:
+            bar.progress(i / len(cards), text=f"Fetching {i} / {len(cards)} holdings…")
+    if first_load:
+        bar.empty()
+        st.session_state[_HOME_LOADED_KEY] = id(holdings)
 
 
 def _render_honesty_line_html() -> str:
@@ -396,6 +403,7 @@ def _render_book_actions() -> None:
         )
         if st.button("▸ Explore sample book", key="ob_sample", type="primary"):
             st.session_state["book"] = load_sample_book()
+            st.session_state.pop(_HOME_LOADED_KEY, None)
             st.rerun()
     with col2:
         if is_local_runtime():
@@ -423,6 +431,7 @@ def _render_book_actions() -> None:
                         )
                     else:
                         st.session_state["book"] = holdings
+                        st.session_state.pop(_HOME_LOADED_KEY, None)
                         st.rerun()
                 except Exception as exc:  # noqa: BLE001
                     st.error(f"Could not parse CSV: {exc}")
