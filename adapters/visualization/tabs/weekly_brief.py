@@ -30,7 +30,6 @@ from adapters.visualization.data_loader import (
 )
 from application.card_loading import select_case_summarizer
 from application.holdings_reader import read_holdings
-from application.runtime_guard import is_local_runtime
 from application.sample_book import load_sample_book
 from domain.discipline import Verdict
 from domain.risk_rubric import classify_net_beta, classify_systematic_share
@@ -476,43 +475,36 @@ def _handle_onboarding() -> None:
 
     ob_mode = st.session_state.get("_ob_mode")
     if ob_mode == "upload":
-        if is_local_runtime():
-            uploaded = st.file_uploader(
-                "Upload your holdings CSV",
-                type=["csv"],
-                key="ob_csv",
-                label_visibility="visible",
-            )
-            if uploaded is not None:
-                try:
-                    content = uploaded.read().decode("utf-8")
-                    import tempfile  # noqa: PLC0415
+        uploaded = st.file_uploader(
+            "Upload your holdings CSV",
+            type=["csv"],
+            key="ob_csv",
+            label_visibility="visible",
+        )
+        if uploaded is not None:
+            try:
+                content = uploaded.read().decode("utf-8")
+                import tempfile  # noqa: PLC0415
 
-                    with tempfile.NamedTemporaryFile(
-                        mode="w", suffix=".csv", delete=False
-                    ) as tmp:
-                        tmp.write(content)
-                        tmp_path = tmp.name
-                    holdings = read_holdings(tmp_path)
-                    if not holdings:
-                        st.error(
-                            "No valid holdings found. Columns: symbol, quantity, "
-                            "book value (cad), exchange, account type."
-                        )
-                    else:
-                        st.session_state["book"] = holdings
-                        st.session_state.pop(_HOME_CASES_KEY, None)
-                        st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
-                        st.session_state.pop("_ob_mode", None)
-                        st.rerun()
-                except Exception as exc:  # noqa: BLE001
-                    st.error(f"Could not parse CSV: {exc}")
-        else:
-            st.info(
-                "CSV upload requires local mode. "
-                "Set `STOCKREC_LOCAL_ONLY=1` and run locally.",
-                icon="ℹ️",
-            )
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".csv", delete=False
+                ) as tmp:
+                    tmp.write(content)
+                    tmp_path = tmp.name
+                holdings = read_holdings(tmp_path)
+                if not holdings:
+                    st.error(
+                        "No valid holdings found. Columns: symbol, quantity, "
+                        "book value (cad), exchange, account type."
+                    )
+                else:
+                    st.session_state["book"] = holdings
+                    st.session_state.pop(_HOME_CASES_KEY, None)
+                    st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
+                    st.session_state.pop("_ob_mode", None)
+                    st.rerun()
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"Could not parse CSV: {exc}")
     elif ob_mode == "manual":
         st.info("Manual holdings entry coming in a future sprint.", icon="ℹ️")
 
