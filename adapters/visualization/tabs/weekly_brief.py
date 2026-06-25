@@ -463,20 +463,8 @@ def _handle_onboarding() -> None:
     with col_banner:
         st.markdown(_render_onboarding_html(), unsafe_allow_html=True)
     with col_btn:
-        if st.button(
-            "⬆ Upload your CSV",
-            key="ob_csv_btn",
-            type="primary",
-            use_container_width=True,
-        ):
-            st.session_state["_ob_mode"] = "upload"
-        if st.button("+ Add manually", key="ob_manual_btn", use_container_width=True):
-            st.session_state["_ob_mode"] = "manual"
-
-    ob_mode = st.session_state.get("_ob_mode")
-    if ob_mode == "upload":
         uploaded = st.file_uploader(
-            "Upload your holdings CSV",
+            "⬆ Upload your CSV",
             type=["csv"],
             key="ob_csv",
             label_visibility="visible",
@@ -501,12 +489,11 @@ def _handle_onboarding() -> None:
                     st.session_state["book"] = holdings
                     st.session_state.pop(_HOME_CASES_KEY, None)
                     st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
-                    st.session_state.pop("_ob_mode", None)
                     st.rerun()
             except Exception as exc:  # noqa: BLE001
                 st.error(f"Could not parse CSV: {exc}")
-    elif ob_mode == "manual":
-        st.info("Manual holdings entry coming in a future sprint.", icon="ℹ️")
+        if st.button("+ Add manually", key="ob_manual_btn", use_container_width=True):
+            st.info("Manual holdings entry coming in a future sprint.", icon="ℹ️")
 
 
 def _compute_vs_market_1y(holdings: list[dict[str, Any]]) -> float | None:
