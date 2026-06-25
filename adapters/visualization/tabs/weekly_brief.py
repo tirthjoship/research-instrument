@@ -464,12 +464,10 @@ def _handle_onboarding() -> None:
         st.markdown(_render_onboarding_html(), unsafe_allow_html=True)
     with col_btn:
         with st.popover("⬆ Upload your CSV", use_container_width=True):
-            st.markdown("**Drop or browse your holdings CSV**")
             uploaded = st.file_uploader(
-                "Holdings CSV",
+                "Select your holdings CSV",
                 type=["csv"],
                 key="ob_csv",
-                label_visibility="collapsed",
             )
             if uploaded is not None:
                 try:
