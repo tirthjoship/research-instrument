@@ -459,6 +459,17 @@ def _handle_onboarding() -> None:
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
 
+    # Strip Streamlit file-uploader drop-zone clutter so only Browse button shows.
+    st.markdown(
+        "<style>"
+        "[data-testid='stFileUploaderDropzone']{"
+        "border:none!important;background:transparent!important;padding:2px 0!important}"
+        "[data-testid='stFileUploaderDropzone']>div:first-child{display:none!important}"
+        "[data-testid='stFileUploaderDropzone'] small{display:none!important}"
+        "</style>",
+        unsafe_allow_html=True,
+    )
+
     col_banner, col_btn = st.columns([4, 1])
     with col_banner:
         st.markdown(_render_onboarding_html(), unsafe_allow_html=True)
