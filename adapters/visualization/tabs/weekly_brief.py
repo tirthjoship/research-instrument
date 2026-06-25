@@ -368,16 +368,19 @@ def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
         st.markdown(_render_needs_review_html([]), unsafe_allow_html=True)
         return
     summarizer = select_case_summarizer()
-    first_load = st.session_state.get(_HOME_LOADED_KEY) != id(holdings)
-    if first_load:
+    already_loaded = _HOME_LOADED_KEY in st.session_state
+    if not already_loaded:
+        # Mark BEFORE the loop — tab-switch mid-load won't restart the bar
+        st.session_state[_HOME_LOADED_KEY] = True
         bar = st.progress(0.0, text=f"Fetching 0 / {len(cards)} holdings…")
+    else:
+        bar = None
     for i, (ticker, h) in enumerate(cards, 1):
         _render_one_holding_fragment(ticker, h, summarizer)
-        if first_load:
+        if bar is not None:
             bar.progress(i / len(cards), text=f"Fetching {i} / {len(cards)} holdings…")
-    if first_load:
+    if bar is not None:
         bar.empty()
-        st.session_state[_HOME_LOADED_KEY] = id(holdings)
 
 
 def _render_honesty_line_html() -> str:
