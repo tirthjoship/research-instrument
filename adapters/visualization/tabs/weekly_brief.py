@@ -463,35 +463,37 @@ def _handle_onboarding() -> None:
     with col_banner:
         st.markdown(_render_onboarding_html(), unsafe_allow_html=True)
     with col_btn:
-        uploaded = st.file_uploader(
-            "⬆ Upload your CSV",
-            type=["csv"],
-            key="ob_csv",
-            label_visibility="visible",
-        )
-        if uploaded is not None:
-            try:
-                content = uploaded.read().decode("utf-8")
-                import tempfile  # noqa: PLC0415
+        with st.popover("⬆ Upload your CSV", use_container_width=True):
+            st.markdown("**Drop or browse your holdings CSV**")
+            uploaded = st.file_uploader(
+                "Holdings CSV",
+                type=["csv"],
+                key="ob_csv",
+                label_visibility="collapsed",
+            )
+            if uploaded is not None:
+                try:
+                    content = uploaded.read().decode("utf-8")
+                    import tempfile  # noqa: PLC0415
 
-                with tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".csv", delete=False
-                ) as tmp:
-                    tmp.write(content)
-                    tmp_path = tmp.name
-                holdings = read_holdings(tmp_path)
-                if not holdings:
-                    st.error(
-                        "No valid holdings found. Columns: symbol, quantity, "
-                        "book value (cad), exchange, account type."
-                    )
-                else:
-                    st.session_state["book"] = holdings
-                    st.session_state.pop(_HOME_CASES_KEY, None)
-                    st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
-                    st.rerun()
-            except Exception as exc:  # noqa: BLE001
-                st.error(f"Could not parse CSV: {exc}")
+                    with tempfile.NamedTemporaryFile(
+                        mode="w", suffix=".csv", delete=False
+                    ) as tmp:
+                        tmp.write(content)
+                        tmp_path = tmp.name
+                    holdings = read_holdings(tmp_path)
+                    if not holdings:
+                        st.error(
+                            "No valid holdings found. Columns: symbol, quantity, "
+                            "book value (cad), exchange, account type."
+                        )
+                    else:
+                        st.session_state["book"] = holdings
+                        st.session_state.pop(_HOME_CASES_KEY, None)
+                        st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
+                        st.rerun()
+                except Exception as exc:  # noqa: BLE001
+                    st.error(f"Could not parse CSV: {exc}")
         if st.button("+ Add manually", key="ob_manual_btn", use_container_width=True):
             st.info("Manual holdings entry coming in a future sprint.", icon="ℹ️")
 
