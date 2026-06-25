@@ -235,7 +235,7 @@ honestly, whatever it is.
 
 For a recruiter: this project demonstrates pre-registered hypothesis testing, rigorous
 negative-result reporting, point-in-time enforcement as a code invariant, hexagonal
-architecture applied to a real data pipeline, and 1,628 tests covering domain logic,
+architecture applied to a real data pipeline, and 2,392 tests covering domain logic,
 adapters, use cases, and integration paths. The negative findings are the portfolio
 piece — a system that falsified its own thesis honestly is more credible than one that
 never tested it.
