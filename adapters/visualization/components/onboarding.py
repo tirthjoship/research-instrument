@@ -75,6 +75,50 @@ def render_landing_door_html(local: bool) -> str:
     )
 
 
+def render_sample_banner_html() -> str:
+    """Compact 3-column info banner for the Home tab.
+
+    Icon | sample-book description + ticker strip | (Streamlit upload widgets follow
+    in the adjacent st.column — they cannot live inside an HTML string).
+    """
+    return (
+        '<div style="'
+        "background:#FFFFFF;"
+        "border:1px solid #BFDBFE;"
+        "border-left:4px solid #1D4ED8;"
+        "border-radius:8px;"
+        "padding:12px 14px;"
+        "display:flex;"
+        "align-items:center;"
+        'gap:14px;margin-bottom:4px;">'
+        '<div style="font-size:22px;flex-shrink:0;">📋</div>'
+        '<div style="flex:1;">'
+        '<div style="'
+        "font-family:'Fraunces',serif;"
+        "font-size:14px;"
+        "font-weight:700;"
+        "color:#14181F;"
+        'margin-bottom:2px;">Sample book — 10 popular US stocks</div>'
+        '<div style="'
+        "font-family:'IBM Plex Sans',sans-serif;"
+        "font-size:11px;"
+        'color:#717885;">'
+        "Explore with real market data. Rules fire on real evidence — "
+        "this is what a weekly review looks like."
+        "</div>"
+        '<div style="'
+        "font-family:'IBM Plex Mono',monospace;"
+        "font-size:10px;"
+        "color:#1D4ED8;"
+        'margin-top:3px;">'
+        "AAPL · MSFT · NVDA · GOOGL · AMZN"
+        " · TSLA · META · JPM · V · BRK-B"
+        "</div>"
+        "</div>"
+        "</div>"
+    )
+
+
 def should_show_onboarding(
     has_scan_results: bool,
     has_trades: bool,

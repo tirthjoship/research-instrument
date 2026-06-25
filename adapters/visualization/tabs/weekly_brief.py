@@ -19,7 +19,7 @@ from adapters.visualization.components.decision_card import (
     render_expanded_card,
 )
 from adapters.visualization.components.formatters import status_pill_html
-from adapters.visualization.components.onboarding import render_landing_door_html
+from adapters.visualization.components.onboarding import render_sample_banner_html
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import (
@@ -46,16 +46,9 @@ _REPORTS_DIR = "data/reports"
 _SCREEN_COVERAGE_FLOOR = 0.5  # mirrors research_candidates.py
 
 
-def _render_onboarding_html(
-    has_book: bool,
-) -> str:  # noqa: ARG001 — has_book kept for API compat
-    """Return landing-door HTML — ALWAYS rendered so the user can always reach
-    Upload/Add-manually even when a book is already loaded (FIX A).
-
-    The ``has_book`` parameter is retained for call-site compatibility and may be
-    used in the future to adjust copy (e.g. "Switch book" vs "Load a book").
-    """
-    return render_landing_door_html(local=is_local_runtime())
+def _render_onboarding_html() -> str:
+    """Return compact sample-book banner HTML for the Home tab."""
+    return render_sample_banner_html()
 
 
 def _parse_screen_diagnostics(
@@ -455,28 +448,28 @@ def _render_honesty_line_html() -> str:
     )
 
 
-def _render_book_actions() -> None:
-    """Two-column action row: sample book OR upload CSV."""
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.markdown(
-            '<div style="font-size:13px;color:#64748B;margin-bottom:6px;">'
-            "10 popular stocks — AAPL, MSFT, NVDA, GOOGL, AMZN, TSLA, META, JPM, V, BRK-B"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-        if st.button("▸ Explore sample book", key="ob_sample", type="primary"):
-            st.session_state["book"] = load_sample_book()
-            st.session_state.pop(_HOME_CASES_KEY, None)
-            st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
-            st.rerun()
-    with col2:
+def _handle_onboarding() -> None:
+    """Auto-load sample book on first visit; always show compact banner.
+
+    First visit (no book): auto-loads sample book + shows info banner.
+    Return visit: shows same banner so user can switch or upload a CSV.
+    Upload controls live in the adjacent Streamlit column (not in HTML).
+    """
+    if "book" not in st.session_state:
+        st.session_state["book"] = load_sample_book()
+        st.session_state.pop(_HOME_CASES_KEY, None)
+        st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
+
+    col_banner, col_btn = st.columns([4, 1])
+    with col_banner:
+        st.markdown(_render_onboarding_html(), unsafe_allow_html=True)
+    with col_btn:
         if is_local_runtime():
             uploaded = st.file_uploader(
                 "Upload your holdings CSV",
                 type=["csv"],
                 key="ob_csv",
-                label_visibility="visible",
+                label_visibility="collapsed",
             )
             if uploaded is not None:
                 try:
@@ -502,29 +495,7 @@ def _render_book_actions() -> None:
                 except Exception as exc:  # noqa: BLE001
                     st.error(f"Could not parse CSV: {exc}")
         else:
-            st.info("CSV upload available in local mode only.")
-
-
-def _handle_onboarding() -> None:
-    """Render landing door + action row.
-
-    - First landing (no book): show door HTML + 2-column action row.
-    - Book already loaded: show collapsed "Switch book" expander only.
-
-    Returns nothing — caller proceeds to render Front-Desk afterwards.
-    """
-    has_book = "book" in st.session_state
-
-    if has_book:
-        # Collapsed state: just a small "Switch book" expander
-        with st.expander("Switch book / upload new CSV", expanded=False):
-            _render_book_actions()
-        return
-
-    # First landing: show the door + actions
-    door_html = _render_onboarding_html(has_book=False)
-    st.markdown(door_html, unsafe_allow_html=True)
-    _render_book_actions()
+            st.caption("CSV upload: local mode only.")
 
 
 def _compute_vs_market_1y(holdings: list[dict[str, Any]]) -> float | None:
