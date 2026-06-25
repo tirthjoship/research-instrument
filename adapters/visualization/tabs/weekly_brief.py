@@ -449,6 +449,16 @@ def _render_honesty_line_html() -> str:
 
 @st.dialog("Upload your holdings CSV")
 def _csv_upload_dialog() -> None:
+    # Suppress the browser-native file-input button that overlaps Streamlit's button.
+    st.markdown(
+        "<style>"
+        "input[type='file']::file-selector-button{display:none!important}"
+        "input[type='file']::-webkit-file-upload-button{display:none!important}"
+        "input[type='file']{color:transparent!important}"
+        "[data-testid='stFileUploaderDropzone'] small{display:none!important}"
+        "</style>",
+        unsafe_allow_html=True,
+    )
     uploaded = st.file_uploader(
         "Select CSV  (columns: symbol, quantity, book value, exchange, account type)",
         type=["csv"],
