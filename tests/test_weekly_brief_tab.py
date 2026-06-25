@@ -641,16 +641,14 @@ def test_home_cards_loader_returns_one_per_needs_review(monkeypatch: object) -> 
 def test_home_shows_door_when_no_book(monkeypatch: object) -> None:  # type: ignore[no-untyped-def]
     from adapters.visualization.tabs import weekly_brief as wb
 
-    monkeypatch.setattr(wb, "is_local_runtime", lambda: True)  # type: ignore[attr-defined]
     html = wb._render_onboarding_html()  # type: ignore[attr-defined]
     assert "Sample book" in html
 
 
-def test_home_door_always_present_even_with_book(monkeypatch: object) -> None:
+def test_home_door_always_present_even_with_book() -> None:
     """Banner renders the same regardless of book state — always visible."""
     from adapters.visualization.tabs import weekly_brief as wb
 
-    monkeypatch.setattr(wb, "is_local_runtime", lambda: True)  # type: ignore[attr-defined]
     html = wb._render_onboarding_html()  # type: ignore[attr-defined]
     assert "Sample book" in html, "Banner must always be present"
 
@@ -706,7 +704,6 @@ def test_home_render_shows_door_and_book_vitals_together(tmp_path: object) -> No
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
         patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
-        patch.object(wb, "is_local_runtime", return_value=False),
         patch(
             "adapters.visualization.price_cache.fetch_price_history",
             return_value=None,
@@ -878,7 +875,6 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
         patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
-        patch.object(wb, "is_local_runtime", return_value=False),
         patch(
             "adapters.visualization.price_cache.fetch_prices", return_value=fake_prices
         ),
