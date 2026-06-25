@@ -397,7 +397,11 @@ def load_brief_summary(
     path: str = "data/personal/brief_summary.json",
 ) -> dict[str, Any] | None:
     """Structured weekly-brief summary written by the weekly-brief CLI."""
+    import os  # noqa: PLC0415
+
     import streamlit as st  # noqa: PLC0415
+
+    abs_path = os.path.abspath(path)
 
     @st.cache_data(ttl=300)
     def _load(p: str) -> dict[str, Any] | None:
@@ -409,7 +413,7 @@ def load_brief_summary(
         except (json.JSONDecodeError, OSError):
             return None
 
-    return _load(path)
+    return _load(abs_path)
 
 
 def load_screen_history(reports_dir: str = "data/reports") -> list[dict[str, Any]]:
@@ -436,7 +440,11 @@ def load_screen_history(reports_dir: str = "data/reports") -> list[dict[str, Any
 
 def load_latest_screen(reports_dir: str = "data/reports") -> dict[str, Any] | None:
     """Newest screen_<date>.json (full ranked distribution). Excludes screen_ic_*."""
+    import os  # noqa: PLC0415
+
     import streamlit as st  # noqa: PLC0415
+
+    abs_dir = os.path.abspath(reports_dir)
 
     @st.cache_data(ttl=300)
     def _load(d: str) -> dict[str, Any] | None:
@@ -452,7 +460,7 @@ def load_latest_screen(reports_dir: str = "data/reports") -> dict[str, Any] | No
         except (json.JSONDecodeError, OSError):
             return None
 
-    return _load(reports_dir)
+    return _load(abs_dir)
 
 
 def load_latest_screened(reports_dir: str = "data/reports") -> dict[str, Any] | None:
