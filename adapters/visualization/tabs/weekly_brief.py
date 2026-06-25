@@ -447,6 +447,38 @@ def _render_honesty_line_html() -> str:
     )
 
 
+@st.dialog("Upload your holdings CSV")
+def _csv_upload_dialog() -> None:
+    uploaded = st.file_uploader(
+        "Select CSV  (columns: symbol, quantity, book value, exchange, account type)",
+        type=["csv"],
+        key="ob_csv_dialog",
+    )
+    if uploaded is not None:
+        try:
+            content = uploaded.read().decode("utf-8")
+            import tempfile  # noqa: PLC0415
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as tmp:
+                tmp.write(content)
+                tmp_path = tmp.name
+            holdings = read_holdings(tmp_path)
+            if not holdings:
+                st.error(
+                    "No valid holdings found. Columns: symbol, quantity, "
+                    "book value (cad), exchange, account type."
+                )
+            else:
+                st.session_state["book"] = holdings
+                st.session_state.pop(_HOME_CASES_KEY, None)
+                st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
+                st.rerun()
+        except Exception as exc:  # noqa: BLE001
+            st.error(f"Could not parse CSV: {exc}")
+
+
 def _handle_onboarding() -> None:
     """Auto-load sample book on first visit; always show compact banner.
 
@@ -459,50 +491,17 @@ def _handle_onboarding() -> None:
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
 
-    # Strip Streamlit file-uploader drop-zone clutter so only Browse button shows.
-    st.markdown(
-        "<style>"
-        "[data-testid='stFileUploaderDropzone']{"
-        "border:none!important;background:transparent!important;padding:2px 0!important}"
-        "[data-testid='stFileUploaderDropzone']>div:first-child{display:none!important}"
-        "[data-testid='stFileUploaderDropzone'] small{display:none!important}"
-        "</style>",
-        unsafe_allow_html=True,
-    )
-
     col_banner, col_btn = st.columns([4, 1])
     with col_banner:
         st.markdown(_render_onboarding_html(), unsafe_allow_html=True)
     with col_btn:
-        with st.popover("⬆ Upload your CSV", use_container_width=True):
-            uploaded = st.file_uploader(
-                "Select your holdings CSV",
-                type=["csv"],
-                key="ob_csv",
-            )
-            if uploaded is not None:
-                try:
-                    content = uploaded.read().decode("utf-8")
-                    import tempfile  # noqa: PLC0415
-
-                    with tempfile.NamedTemporaryFile(
-                        mode="w", suffix=".csv", delete=False
-                    ) as tmp:
-                        tmp.write(content)
-                        tmp_path = tmp.name
-                    holdings = read_holdings(tmp_path)
-                    if not holdings:
-                        st.error(
-                            "No valid holdings found. Columns: symbol, quantity, "
-                            "book value (cad), exchange, account type."
-                        )
-                    else:
-                        st.session_state["book"] = holdings
-                        st.session_state.pop(_HOME_CASES_KEY, None)
-                        st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
-                        st.rerun()
-                except Exception as exc:  # noqa: BLE001
-                    st.error(f"Could not parse CSV: {exc}")
+        if st.button(
+            "⬆ Upload your CSV",
+            key="ob_csv_btn",
+            type="primary",
+            use_container_width=True,
+        ):
+            _csv_upload_dialog()
         if st.button("+ Add manually", key="ob_manual_btn", use_container_width=True):
             st.info("Manual holdings entry coming in a future sprint.", icon="ℹ️")
 
