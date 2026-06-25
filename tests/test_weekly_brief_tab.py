@@ -864,6 +864,11 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
     fake_history = {"closes": fake_closes, "atr": 1.5, "ma200": 110.0, "vs_spy": None}
     fake_prices = {"YUMC": {"price": 44.63, "change_pct": 0.5}}
 
+    # Pre-populate case cache so _render_one_holding renders the full expanded card
+    # (case=None → data_gap placeholder, but price/returns still wired from fetched data)
+    st.session_state[wb._HOME_CASES_KEY] = {"YUMC": None}
+    st.session_state[wb._HOME_FETCH_STARTED_KEY] = True
+
     with (
         patch.object(
             st, "markdown", side_effect=lambda c, **k: captured.append(str(c))

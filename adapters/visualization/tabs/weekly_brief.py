@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from typing import Any
 
 import streamlit as st
@@ -163,6 +164,9 @@ def _gauge(share: float) -> Any:
 
 
 _NEEDS_REVIEW: set[str] = {"REDUCE", "TRIM", "REVIEW"}
+_CASE_PENDING: object = (
+    object()
+)  # sentinel: background thread not yet done for this ticker
 
 
 def _render_book_strip_html(
@@ -254,17 +258,49 @@ def _needs_review_cards(
     return [(h["ticker"], h) for h in holdings if h.get("verdict") in _NEEDS_REVIEW]
 
 
-def _render_one_holding(ticker: str, h: dict[str, Any], summarizer: object) -> None:
+def _launch_case_fetcher(
+    cards: list[tuple[str, dict[str, Any]]],
+    summarizer: object,
+    cases: dict[str, Any],
+) -> None:
+    """Start a daemon thread that pre-fetches Gemini case data into `cases` dict.
+
+    The thread runs independently of tab navigation — the user can switch tabs
+    while it works.  Results land in `cases` (same object held in session_state)
+    so subsequent Home renders use cached data with zero Gemini re-calls.
+    """
+
+    def _worker() -> None:
+        for ticker, _h in cards:
+            if ticker in cases:
+                continue
+            try:
+                card = fetch_card(ticker)
+                result = get_case_on_expand(
+                    ticker, card, news=[], expanded=True, summarizer=summarizer
+                )
+                cases[ticker] = result
+            except Exception:  # noqa: BLE001
+                cases[ticker] = None  # mark attempted; expander shows honest "—"
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
+def _render_one_holding(
+    ticker: str,
+    h: dict[str, Any],
+    summarizer: object,
+    cached_case: object = _CASE_PENDING,
+) -> None:
     """Render one holding row: collapsed row + expander with expanded card.
 
     This is the inner implementation.  Production callers must use
     ``_render_one_holding_fragment`` (the ``st.fragment``-wrapped version) so
     that each row gets an isolated render cycle in Streamlit (spec §7).
 
-    FIX B: wires real price (from fetch_prices), implied cost (back-calculated),
-    and windowed returns (from fetch_price_history closes) into the expanded card.
-    Where data is genuinely unavailable, passes None/() so the card shows "—"
-    honestly — never fabricates.
+    ``cached_case``: when provided (not ``_CASE_PENDING``), skips the Gemini
+    call and uses the pre-fetched result.  Pass ``_CASE_PENDING`` (default)
+    to fall back to the live path (tests and first-render edge cases only).
     """
     from adapters.visualization.price_cache import (  # noqa: PLC0415
         fetch_price_history,
@@ -277,7 +313,6 @@ def _render_one_holding(ticker: str, h: dict[str, Any], summarizer: object) -> N
     unrealized_f = float(unrealized) if unrealized is not None else None
     oneliner = str(h.get("why", ""))
 
-    # ── FIX B: fetch real price + history ─────────────────────────────────────
     price_data = fetch_prices((ticker,)).get(ticker, {})
     live_price: float | None = price_data.get("price")
 
@@ -298,27 +333,32 @@ def _render_one_holding(ticker: str, h: dict[str, Any], summarizer: object) -> N
         unsafe_allow_html=True,
     )
     with st.expander(f"{ticker} — {verdict.value} (expand for full evidence)"):
-        # Inside expander body — fetch lazy case (always expanded=True here)
-        case = get_case_on_expand(
-            ticker, card, news=[], expanded=True, summarizer=summarizer
-        )
-        # data_gap: pass case=None so _case_html shows honest "loads on open" placeholder
-        case_to_render = None if (case is None or case.data_gap) else case
-        st.markdown(
-            render_expanded_card(
-                card,
-                case=case_to_render,
-                verdict=verdict,
-                name=ticker,
-                unrealized_pct=unrealized_f,
-                means=oneliner,
-                price=live_price,
-                cost=cost,
-                returns=rets,
-                reliability="measured forward; see Trust",
-            ),
-            unsafe_allow_html=True,
-        )
+        if cached_case is _CASE_PENDING:
+            # Background thread not yet done for this ticker — show placeholder
+            st.caption(
+                "⟳  Case loading in background — return to this tab to see full analysis."
+            )
+        else:
+            case = cached_case  # may be None if fetch failed or data_gap
+            # data_gap: pass case=None so _case_html shows honest "—" placeholder
+            case_to_render = (
+                None if (case is None or getattr(case, "data_gap", False)) else case
+            )
+            st.markdown(
+                render_expanded_card(
+                    card,
+                    case=case_to_render,
+                    verdict=verdict,
+                    name=ticker,
+                    unrealized_pct=unrealized_f,
+                    means=oneliner,
+                    price=live_price,
+                    cost=cost,
+                    returns=rets,
+                    reliability="measured forward; see Trust",
+                ),
+                unsafe_allow_html=True,
+            )
 
 
 # Fragment-wrapped version for production use (each row independent render cycle).
@@ -352,35 +392,56 @@ def _render_needs_review_html(holdings: list[dict[str, Any]]) -> str:
     return f'<div class="ws-card" style="padding:0">{"".join(rows)}</div>'
 
 
-_HOME_LOADED_KEY = "_home_holdings_loaded"
+_HOME_CASES_KEY = "_home_holding_cases"  # dict[ticker -> CaseResult|None]
+_HOME_FETCH_STARTED_KEY = (
+    "_home_fetch_started"  # bool — thread launched for current book
+)
 
 
 def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
-    """Progressive render: progress bar + per-holding fragment render + lazy case.
+    """Render holdings using background-fetched case data.
 
-    Progress bar shown only on first load per session. Subsequent renders (tab
-    switches) skip the bar — price data is already cached in st.cache_data so
-    re-rendering the fragments is fast. Avoids Gemini summarizer being called
-    again on every tab switch.
+    On first visit: starts a daemon thread that fetches Gemini case data into
+    session_state while the user can freely navigate other tabs.  Collapsed rows
+    render immediately (price data is fast/cached); expanders show a loading
+    placeholder until the background thread finishes their ticker.
+
+    On subsequent renders (tab switch + return): all rows render from session_state
+    cache — zero Gemini re-calls, no progress bar restart.
     """
     cards = _needs_review_cards(holdings)
     if not cards:
         st.markdown(_render_needs_review_html([]), unsafe_allow_html=True)
         return
+
     summarizer = select_case_summarizer()
-    already_loaded = _HOME_LOADED_KEY in st.session_state
-    if not already_loaded:
-        # Mark BEFORE the loop — tab-switch mid-load won't restart the bar
-        st.session_state[_HOME_LOADED_KEY] = True
-        bar = st.progress(0.0, text=f"Fetching 0 / {len(cards)} holdings…")
-    else:
-        bar = None
-    for i, (ticker, h) in enumerate(cards, 1):
-        _render_one_holding_fragment(ticker, h, summarizer)
-        if bar is not None:
-            bar.progress(i / len(cards), text=f"Fetching {i} / {len(cards)} holdings…")
-    if bar is not None:
-        bar.empty()
+
+    # Init per-book cache on first Home render
+    if _HOME_CASES_KEY not in st.session_state:
+        st.session_state[_HOME_CASES_KEY] = {}
+        st.session_state[_HOME_FETCH_STARTED_KEY] = False
+
+    cases: dict[str, Any] = st.session_state[_HOME_CASES_KEY]
+
+    # Launch background fetch exactly once per book load
+    if not st.session_state.get(_HOME_FETCH_STARTED_KEY, False):
+        st.session_state[_HOME_FETCH_STARTED_KEY] = True
+        _launch_case_fetcher(cards, summarizer, cases)
+
+    # Non-blocking progress readout
+    done = sum(1 for t, _ in cards if t in cases)
+    total = len(cards)
+    if done < total:
+        st.info(
+            f"⟳  Fetching {done} / {total} holdings in background — "
+            "switch tabs freely and return here for updates.",
+            icon="ℹ️",
+        )
+
+    # Render all rows — cached ones show full data, pending ones show placeholder
+    for ticker, h in cards:
+        cached = cases.get(ticker, _CASE_PENDING)
+        _render_one_holding_fragment(ticker, h, summarizer, cached)
 
 
 def _render_honesty_line_html() -> str:
@@ -406,7 +467,8 @@ def _render_book_actions() -> None:
         )
         if st.button("▸ Explore sample book", key="ob_sample", type="primary"):
             st.session_state["book"] = load_sample_book()
-            st.session_state.pop(_HOME_LOADED_KEY, None)
+            st.session_state.pop(_HOME_CASES_KEY, None)
+            st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
             st.rerun()
     with col2:
         if is_local_runtime():
@@ -434,7 +496,8 @@ def _render_book_actions() -> None:
                         )
                     else:
                         st.session_state["book"] = holdings
-                        st.session_state.pop(_HOME_LOADED_KEY, None)
+                        st.session_state.pop(_HOME_CASES_KEY, None)
+                        st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
                         st.rerun()
                 except Exception as exc:  # noqa: BLE001
                     st.error(f"Could not parse CSV: {exc}")
