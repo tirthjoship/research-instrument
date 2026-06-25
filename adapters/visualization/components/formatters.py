@@ -99,8 +99,10 @@ _GRADE_CSS_CLASSES: dict[str, str] = {
 }
 
 
-def grade_display_name(grade_value: str) -> str:
+def grade_display_name(grade_value: str | None) -> str:
     """Convert enum value 'strong_buy' → 'Strong Buy'."""
+    if grade_value is None:
+        return "—"
     if grade_value in _GRADE_DISPLAY_NAMES:
         return _GRADE_DISPLAY_NAMES[grade_value]
     if grade_value in _GRADE_DISPLAY_NAMES.values():

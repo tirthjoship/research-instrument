@@ -28,7 +28,7 @@ from adapters.visualization.data_loader import (
     staleness_days,
 )
 from application.card_loading import select_case_summarizer
-from application.holdings_reader import make_manual_holding, read_holdings
+from application.holdings_reader import read_holdings
 from application.runtime_guard import is_local_runtime
 from application.sample_book import load_sample_book
 from domain.discipline import Verdict
@@ -384,110 +384,108 @@ def _render_honesty_line_html() -> str:
     )
 
 
-def _handle_onboarding() -> None:
-    """Render landing door + 3-button action row — ALWAYS (FIX A: persistent).
-
-    Layout:
-    - Banner (render_landing_door_html) — heading + copy only, no action buttons.
-    - 3-column button row (equal width):
-        col1: "▸ Explore sample book" → loads sample book immediately.
-        col2: "↓ Upload holdings CSV" (local only) → toggles _show_csv_upload.
-        col3: "+ Add manually" → toggles _show_manual_form.
-    - Below the row (full width): file_uploader appears when _show_csv_upload is
-      True AND is_local_runtime(). This avoids the garbled cramped dropzone.
-    - Below: manual-entry form when _show_manual_form is True.
-
-    Returns nothing — caller always proceeds to render Front-Desk afterwards.
-    """
-    has_book = "book" in st.session_state
-    door_html = _render_onboarding_html(has_book=has_book)
-    st.markdown(door_html, unsafe_allow_html=True)
-
-    # ── 3-button action row ───────────────────────────────────────────────────
-    col1, col2, col3 = st.columns([1, 1, 1])
+def _render_book_actions() -> None:
+    """Two-column action row: sample book OR upload CSV."""
+    col1, col2 = st.columns([1, 1])
     with col1:
-        if st.button(
-            "▸ Explore sample book (10 stocks)", key="ob_sample", type="primary"
-        ):
+        st.markdown(
+            '<div style="font-size:13px;color:#64748B;margin-bottom:6px;">'
+            "10 popular stocks — AAPL, MSFT, NVDA, GOOGL, AMZN, TSLA, META, JPM, V, BRK-B"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        if st.button("▸ Explore sample book", key="ob_sample", type="primary"):
             st.session_state["book"] = load_sample_book()
             st.rerun()
-
     with col2:
         if is_local_runtime():
-            if st.button("↓ Upload holdings CSV", key="ob_csv_toggle"):
-                st.session_state["_show_csv_upload"] = not st.session_state.get(
-                    "_show_csv_upload", False
-                )
-
-    with col3:
-        if st.button("+ Add manually", key="ob_manual"):
-            st.session_state["_show_manual_form"] = not st.session_state.get(
-                "_show_manual_form", False
+            uploaded = st.file_uploader(
+                "Upload your holdings CSV",
+                type=["csv"],
+                key="ob_csv",
+                label_visibility="visible",
             )
+            if uploaded is not None:
+                try:
+                    content = uploaded.read().decode("utf-8")
+                    import tempfile  # noqa: PLC0415
 
-    # ── Full-width CSV uploader — revealed on toggle (outside narrow columns) ─
-    if st.session_state.get("_show_csv_upload", False) and is_local_runtime():
-        uploaded = st.file_uploader(
-            "Drop a CSV with columns: symbol, quantity, book value (cad), exchange, account type",
-            type=["csv"],
-            key="ob_csv",
-            label_visibility="visible",
-        )
-        if uploaded is not None:
-            try:
-                content = uploaded.read().decode("utf-8")
-                import tempfile  # noqa: PLC0415
+                    with tempfile.NamedTemporaryFile(
+                        mode="w", suffix=".csv", delete=False
+                    ) as tmp:
+                        tmp.write(content)
+                        tmp_path = tmp.name
+                    holdings = read_holdings(tmp_path)
+                    if not holdings:
+                        st.error(
+                            "No valid holdings found. Columns: symbol, quantity, "
+                            "book value (cad), exchange, account type."
+                        )
+                    else:
+                        st.session_state["book"] = holdings
+                        st.rerun()
+                except Exception as exc:  # noqa: BLE001
+                    st.error(f"Could not parse CSV: {exc}")
+        else:
+            st.info("CSV upload available in local mode only.")
 
-                with tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".csv", delete=False
-                ) as tmp:
-                    tmp.write(content)
-                    tmp_path = tmp.name
-                holdings = read_holdings(tmp_path)
-                if not holdings:
-                    st.error(
-                        "No valid holdings found. Check columns: "
-                        "symbol, quantity, book value (cad), exchange, account type."
-                    )
-                else:
-                    st.session_state["book"] = holdings
-                    st.session_state["_show_csv_upload"] = False
-                    st.rerun()
-            except Exception as exc:  # noqa: BLE001
-                st.error(f"Could not parse holdings CSV: {exc}")
 
-    # Manual-entry form — toggled by the button above
-    if st.session_state.get("_show_manual_form", False):
-        with st.form("manual_holding_form", clear_on_submit=True):
-            st.markdown(
-                '<div class="ri-sec">Add holding manually</div>',
-                unsafe_allow_html=True,
-            )
-            f_ticker = st.text_input("Ticker symbol", placeholder="e.g. AAPL")
-            f_shares = st.number_input("Shares", min_value=0.0, step=1.0, value=1.0)
-            f_cost = st.number_input(
-                "Cost basis / book value", min_value=0.0, step=0.01, value=0.0
-            )
-            f_account = st.text_input(
-                "Account type", value="TFSA", placeholder="e.g. TFSA, RRSP, Non-reg"
-            )
-            submitted = st.form_submit_button("Add to book")
-            if submitted:
-                ticker_clean = f_ticker.strip().upper()
-                if not ticker_clean:
-                    st.error("Ticker symbol is required.")
-                else:
-                    holding = make_manual_holding(
-                        ticker=ticker_clean,
-                        shares=float(f_shares),
-                        cost_basis=float(f_cost),
-                        account_type=f_account.strip() or "TFSA",
-                    )
-                    existing: list[object] = list(st.session_state.get("book", []))
-                    existing.append(holding)
-                    st.session_state["book"] = existing
-                    st.session_state["_show_manual_form"] = False
-                    st.rerun()
+def _handle_onboarding() -> None:
+    """Render landing door + action row.
+
+    - First landing (no book): show door HTML + 2-column action row.
+    - Book already loaded: show collapsed "Switch book" expander only.
+
+    Returns nothing — caller proceeds to render Front-Desk afterwards.
+    """
+    has_book = "book" in st.session_state
+
+    if has_book:
+        # Collapsed state: just a small "Switch book" expander
+        with st.expander("Switch book / upload new CSV", expanded=False):
+            _render_book_actions()
+        return
+
+    # First landing: show the door + actions
+    door_html = _render_onboarding_html(has_book=False)
+    st.markdown(door_html, unsafe_allow_html=True)
+    _render_book_actions()
+
+
+def _compute_vs_market_1y(holdings: list[dict[str, Any]]) -> float | None:
+    """Compute approximate portfolio 1Y return minus SPY 1Y return.
+
+    Uses 252-day window returns (index 4 from window_returns).
+    Returns None if SPY data unavailable or no holdings have history.
+    """
+    from adapters.visualization.price_cache import fetch_price_history  # noqa: PLC0415
+
+    spy_hist = fetch_price_history("SPY") or {}
+    spy_closes: list[float] = spy_hist.get("closes") or []
+    spy_rets = window_returns(spy_closes)
+    if len(spy_rets) < 5 or spy_rets[4] is None:
+        return None
+    spy_1y = spy_rets[4]
+
+    weighted_returns: list[float] = []
+    weights: list[float] = []
+    for h in holdings:
+        ticker = h.get("ticker", "")
+        if not ticker:
+            continue
+        book_val = float(h.get("book_value") or h.get("cost_basis") or 1.0)
+        hist = fetch_price_history(ticker) or {}
+        closes: list[float] = hist.get("closes") or []
+        rets = window_returns(closes)
+        if len(rets) >= 5 and rets[4] is not None:
+            weighted_returns.append(float(rets[4]) * book_val)
+            weights.append(book_val)
+
+    if not weights:
+        return None
+
+    portfolio_1y = sum(weighted_returns) / sum(weights)
+    return round(portfolio_1y - spy_1y, 2)
 
 
 def render(
@@ -544,7 +542,7 @@ def render(
     spy_beta = macro.get("net_beta_by_factor", {}).get("SPY")
     net_beta_val: float | None = float(spy_beta) if spy_beta is not None else None
     need = sum(1 for h in holdings if h.get("verdict") in _NEEDS_REVIEW)
-    vs_market = summary.get("vs_market_1y")
+    vs_market = summary.get("vs_market_1y") or _compute_vs_market_1y(holdings)
 
     st.markdown('<div class="ri-sec">YOUR BOOK — TODAY</div>', unsafe_allow_html=True)
     st.markdown(

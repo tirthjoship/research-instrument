@@ -397,13 +397,19 @@ def load_brief_summary(
     path: str = "data/personal/brief_summary.json",
 ) -> dict[str, Any] | None:
     """Structured weekly-brief summary written by the weekly-brief CLI."""
-    p = Path(path)
-    if not p.exists():
-        return None
-    try:
-        return cast(dict[str, Any], json.loads(p.read_text()))
-    except (json.JSONDecodeError, OSError):
-        return None
+    import streamlit as st  # noqa: PLC0415
+
+    @st.cache_data(ttl=300)
+    def _load(p: str) -> dict[str, Any] | None:
+        _p = Path(p)
+        if not _p.exists():
+            return None
+        try:
+            return cast(dict[str, Any], json.loads(_p.read_text()))
+        except (json.JSONDecodeError, OSError):
+            return None
+
+    return _load(path)
 
 
 def load_screen_history(reports_dir: str = "data/reports") -> list[dict[str, Any]]:
@@ -430,17 +436,23 @@ def load_screen_history(reports_dir: str = "data/reports") -> list[dict[str, Any
 
 def load_latest_screen(reports_dir: str = "data/reports") -> dict[str, Any] | None:
     """Newest screen_<date>.json (full ranked distribution). Excludes screen_ic_*."""
-    candidates = sorted(
-        f
-        for f in Path(reports_dir).glob("screen_*.json")
-        if not f.name.startswith("screen_ic_")
-    )
-    if not candidates:
-        return None
-    try:
-        return cast(dict[str, Any], json.loads(candidates[-1].read_text()))
-    except (json.JSONDecodeError, OSError):
-        return None
+    import streamlit as st  # noqa: PLC0415
+
+    @st.cache_data(ttl=300)
+    def _load(d: str) -> dict[str, Any] | None:
+        candidates = sorted(
+            f
+            for f in Path(d).glob("screen_*.json")
+            if not f.name.startswith("screen_ic_")
+        )
+        if not candidates:
+            return None
+        try:
+            return cast(dict[str, Any], json.loads(candidates[-1].read_text()))
+        except (json.JSONDecodeError, OSError):
+            return None
+
+    return _load(reports_dir)
 
 
 def load_latest_screened(reports_dir: str = "data/reports") -> dict[str, Any] | None:
