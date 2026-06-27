@@ -23,3 +23,43 @@ def test_read_holdings_missing_file_returns_empty(tmp_path):
     from application.holdings_reader import read_holdings
 
     assert read_holdings(str(tmp_path / "nope.csv")) == []
+
+
+def test_aggregate_to_book_sums_duplicate_tickers_across_accounts():
+    """Same ticker in two accounts → one domain Holding, shares + cost summed,
+    purchase_price = total_cost / total_shares (book-value weighted)."""
+    from application.holdings_reader import Holding, aggregate_to_book
+
+    csv_holdings = [
+        Holding(ticker="AC.TO", shares=30.0, cost_basis=600.0, account_type="FHSA"),
+        Holding(ticker="AC.TO", shares=70.0, cost_basis=1400.0, account_type="TFSA"),
+        Holding(ticker="WMT", shares=10.0, cost_basis=1000.0, account_type="RRSP"),
+    ]
+    book = aggregate_to_book(csv_holdings)
+    by = {h.symbol: h for h in book}
+    assert set(by) == {"AC.TO", "WMT"}
+    # 100 shares total, $2000 total cost → $20.00/share weighted
+    assert by["AC.TO"].quantity == 100.0
+    assert by["AC.TO"].purchase_price == 20.0
+    assert by["WMT"].quantity == 10.0
+    assert by["WMT"].purchase_price == 100.0
+
+
+def test_aggregate_to_book_skips_non_positive_cost():
+    """Rows that can't yield a positive purchase_price are dropped (domain Holding
+    forbids purchase_price <= 0), not fabricated."""
+    from application.holdings_reader import Holding, aggregate_to_book
+
+    csv_holdings = [
+        Holding(ticker="CASH.TO", shares=5.0, cost_basis=0.0, account_type="TFSA"),
+        Holding(ticker="RY.TO", shares=10.0, cost_basis=500.0, account_type="TFSA"),
+    ]
+    book = aggregate_to_book(csv_holdings)
+    symbols = {h.symbol for h in book}
+    assert symbols == {"RY.TO"}
+
+
+def test_aggregate_to_book_empty_returns_empty():
+    from application.holdings_reader import aggregate_to_book
+
+    assert aggregate_to_book([]) == []
