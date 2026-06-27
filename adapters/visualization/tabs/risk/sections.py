@@ -50,7 +50,7 @@ def _sector_section(macro: dict[str, Any]) -> str:
             f"color:{_FAINT};margin-top:8px;border-top:1px dashed {_LINE};"
             'padding-top:9px;display:flex;align-items:center">'
             f'{tooltip("HHI", "Concentration (HHI)")}&nbsp;= {sector_hhi:.2f} &middot; {hhi_label}'
-            "</div>"
+            "</div>" + _metric_evidence("sector_hhi")
         )
 
     gap_note = ""
@@ -186,6 +186,99 @@ def _who_owns(macro: dict[str, Any]) -> str:
         + rows
         + gap_note
         + "</div>"
+    )
+
+
+def _decision_levers(macro: dict[str, Any]) -> str:
+    """Impact-ranked leverage on the concentration metrics — descriptive, not advice.
+
+    Reuses the existing Euler risk-contribution decomposition (``risk_contribution``)
+    and dollar weights (``holdings_meta``).  Ranks holdings by their share of
+    portfolio risk (impact) and annotates risk-per-dollar leverage.  Frames each as
+    *what moves the metric* (toward more spread / the 60% line), explicitly NOT a
+    trade recommendation.  Returns ``""`` when the decomposition is unavailable.
+    """
+    risk_contribution: dict[str, float] = macro.get("risk_contribution") or {}
+    if not risk_contribution:
+        return ""
+
+    holdings_meta: list[dict[str, Any]] = macro.get("holdings_meta") or []
+    meta_lookup: dict[str, dict[str, Any]] = {
+        str(m.get("ticker", "")): m for m in holdings_meta
+    }
+    sys_share = macro.get("systematic_share")
+
+    sorted_rc = sorted(risk_contribution.items(), key=lambda kv: kv[1], reverse=True)
+
+    # Gap framing: how far systematic share sits from the 60% line (directional only).
+    gap_html = ""
+    if sys_share is not None:
+        share_pct = float(sys_share) * 100.0
+        if share_pct >= 60.0:
+            gap_html = (
+                f'<p style="font-size:12px;color:#33474c;line-height:1.55;margin:0 0 12px">'
+                f"Systematic share sits at <b>{share_pct:.0f}%</b> &#8212; "
+                f"<b>{share_pct - 60.0:.0f} points</b> past the 60% line. "
+                "The names below own the most of that risk, so reducing the heaviest "
+                "is where any change has the <b>most leverage</b> on every concentration "
+                "metric above &#8212; directionally toward more spread.</p>"
+            )
+        else:
+            gap_html = (
+                f'<p style="font-size:12px;color:#33474c;line-height:1.55;margin:0 0 12px">'
+                f"Systematic share sits at <b>{share_pct:.0f}%</b> &#8212; "
+                f"<b>{60.0 - share_pct:.0f} points</b> of headroom under the 60% line. "
+                "The names below own the most of the book's risk, so they are where any "
+                "change has the <b>most leverage</b> on the concentration metrics above.</p>"
+            )
+
+    rows = ""
+    for rank, (ticker, rc) in enumerate(sorted_rc[:3], start=1):
+        meta = meta_lookup.get(ticker, {})
+        name = str(meta.get("name", ticker))
+        weight = meta.get("weight")
+        if weight is not None and float(weight) > 0.0:
+            ratio = rc / float(weight)
+            lev_txt = (
+                f"owns <b>{rc:.0%} of portfolio risk</b> on "
+                f"~{float(weight):.0%} of dollars "
+                f"(&times;{ratio:.1f} risk-per-dollar)"
+            )
+        else:
+            lev_txt = f"owns <b>{rc:.0%} of portfolio risk</b>"
+        rows += (
+            '<div class="act">'
+            f'<span class="ic" style="background:{_PETROL};color:#fff;'
+            "border-radius:6px;width:22px;height:22px;display:flex;align-items:center;"
+            f'justify-content:center;font-weight:700">{rank}</span>'
+            f"<div><b>{_html.escape(ticker)}</b> "
+            f'<span style="color:{_FAINT};font-size:11px">{_html.escape(name)}</span> '
+            f"&#8212; {lev_txt}. "
+            + (
+                "The single highest-leverage point on the concentration metrics."
+                if rank == 1
+                else "A secondary lever."
+            )
+            + "</div></div>"
+        )
+
+    return (
+        '<div class="ri-sec" style="color:var(--risk-amber)">'
+        "What moves the metric &middot; impact-ranked levers "
+        f"{tooltip('Risk contribution', 'ⓘ')}</div>"
+        '<div class="levers" style="border-left-color:var(--risk-amber)">'
+        '<div class="lvh">Where a change has the most leverage</div>'
+        + gap_html
+        + rows
+        + '<div class="act">'
+        '<span class="ic">i</span>'
+        "<div><b>This is descriptive leverage, not advice.</b> "
+        "It ranks where the book's risk is concentrated &#8212; it does <b>not</b> tell "
+        "you to trim any position or forecast what a change would return. "
+        "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;"
+        "background:#eef1f4;color:var(--risk-mut);padding:1px 6px;border-radius:5px;"
+        'letter-spacing:.05em">DESCRIPTIVE &middot; NOT A TRADE CALL</span></div></div>'
+        "</div>"
     )
 
 

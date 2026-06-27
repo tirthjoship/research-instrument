@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from adapters.visualization.components.evidence_chip import render_evidence_chip_by_key
 from adapters.visualization.components.tooltip import tooltip
 from domain.risk_rubric import classify_net_beta
 
@@ -203,6 +204,94 @@ def _evidence_bands(macro: dict[str, Any]) -> str:
         "Shaded band = 90% bootstrap range around the needle.</p>"
         + beta_strip
         + share_strip_final
+        + "</div>"
+    )
+
+
+def _benchmark(macro: dict[str, Any]) -> str:
+    """Descriptive benchmark card — the book's headline metrics vs reference points.
+
+    Pure context, not advice: each row places one of the book's numbers next to
+    well-known reference points (a broad index / a 60-40 blend) and the registry's
+    healthy band.  Reference points are descriptive facts, not targets; the chip
+    carries the verdict + caveat so nothing reads as a recommendation.
+    """
+    sys_share = macro.get("systematic_share")
+    enb = macro.get("enb")
+    sector_hhi = macro.get("sector_hhi")
+
+    # Each entry: (registry key, book-value HTML, reference-point HTML)
+    rows_spec: list[tuple[str, str, str]] = []
+    if sys_share is not None:
+        rows_spec.append(
+            (
+                "systematic_share",
+                f"{float(sys_share):.0%}",
+                "A broad index fund is ~all-systematic by construction; "
+                "a 60/40 stock-bond blend sits lower. Your 60% line marks where "
+                "the dial flags.",
+            )
+        )
+    if enb is not None and float(enb) > 0.0:
+        rows_spec.append(
+            (
+                "enb",
+                f"{float(enb):.1f}",
+                "SPY behaves like a few dozen independent bets; a 60/40 blend "
+                "adds a bond axis on top.",
+            )
+        )
+    if sector_hhi is not None and float(sector_hhi) > 0.0:
+        rows_spec.append(
+            (
+                "sector_hhi",
+                f"{float(sector_hhi):.2f}",
+                "SPY sits near 0.10 (broad); a 60/40 blend is lower still on the "
+                "equity sleeve.",
+            )
+        )
+
+    if not rows_spec:
+        return ""
+
+    cards = ""
+    for key, book_html, ref_html in rows_spec:
+        chip = render_evidence_chip_by_key(key)
+        band = _band_text(key)
+        band_html = (
+            f'<div style="font-size:11px;color:{_MUT};line-height:1.5;margin-top:6px">'
+            f"<b>Healthy band:</b> {band}</div>"
+            if band
+            else ""
+        )
+        cards += (
+            f'<div style="background:#f7fafb;border:1px solid {_LINE};'
+            f"border-left:4px solid {_PETROL};border-radius:11px;padding:13px 15px;"
+            'margin-bottom:10px">'
+            '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
+            f"<span style=\"font-family:'Fraunces',serif;font-size:22px;font-weight:700;"
+            f'color:{_INK}">{book_html}</span>'
+            f"<span style=\"font-family:'IBM Plex Mono',monospace;font-size:9px;"
+            f"font-weight:600;letter-spacing:.06em;text-transform:uppercase;"
+            f'color:{_FAINT}">your book</span>'
+            f'<span style="margin-left:auto">{chip}</span>'
+            "</div>"
+            f'<div style="font-size:12px;color:#33474c;line-height:1.55;margin-top:8px">'
+            f"<b>Reference points:</b> {ref_html}</div>" + band_html + "</div>"
+        )
+
+    return (
+        '<div class="ri-sec">How you compare &middot; reference points</div>'
+        f'<div class="barwrap" style="background:{_CARD};border:1px solid {_LINE};'
+        'border-radius:14px;padding:18px 20px">'
+        f'<p class="bcap" style="font-size:12px;color:{_MUT};line-height:1.55;margin:0 0 14px">'
+        "Where your headline numbers sit next to a broad index (SPY) and a classic "
+        "60/40 blend. These are <b>reference points for context</b>, not targets &#8212; "
+        "your risk character is your choice. "
+        "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;"
+        "background:#eef1f4;color:var(--risk-mut);padding:1px 6px;border-radius:5px;"
+        'letter-spacing:.05em">DESCRIPTIVE &middot; NOT A TRADE CALL</span></p>'
+        + cards
         + "</div>"
     )
 

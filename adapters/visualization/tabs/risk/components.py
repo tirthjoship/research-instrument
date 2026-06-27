@@ -158,7 +158,8 @@ def _vitals(macro: dict[str, Any]) -> str:
             f'<div class="risk-vk">{tooltip("Effective bets")}</div>'
             f'<div class="risk-vv">{enb:.1f}<small> / {total_h}</small></div>'
             f'<div class="risk-vs">{total_h} names, ~{enb:.0f} independent bets</div>'
-            "</div>"
+            + _metric_evidence("enb")
+            + "</div>"
         )
     else:
         cards.append(
@@ -178,7 +179,8 @@ def _vitals(macro: dict[str, Any]) -> str:
             f'<div class="risk-vk">Net beta (SPY){tooltip("Net beta", "ⓘ")}</div>'
             f'<div class="risk-vv">{spy_beta:.2f}<small>&times;</small></div>'
             f'<div class="risk-vs">{ci_text}&nbsp;&middot; grey = no line</div>'
-            "</div>"
+            + _metric_evidence("net_beta")
+            + "</div>"
         )
 
     # Downside beta
@@ -188,7 +190,8 @@ def _vitals(macro: dict[str, Any]) -> str:
             f'<div class="risk-vk">{tooltip("Downside beta")}</div>'
             f'<div class="risk-vv">{float(downside_beta):.2f}<small>&times;</small></div>'
             f'<div class="risk-vs">falls harder than it rises</div>'
-            "</div>"
+            + _metric_evidence("downside_beta")
+            + "</div>"
         )
 
     # Systematic share
@@ -202,7 +205,8 @@ def _vitals(macro: dict[str, Any]) -> str:
         f'<div class="risk-vv">{sys_share:.0%}<small>{ci_note}</small></div>'
         f'<div class="risk-vs">adj. {sys_share_adj:.0%} &middot; '
         f'{"over 60% line" if sys_over else "within line"}</div>'
-        "</div>"
+        + _metric_evidence("systematic_share")
+        + "</div>"
     )
 
     # Diversification ratio
@@ -212,7 +216,8 @@ def _vitals(macro: dict[str, Any]) -> str:
             f'<div class="risk-vk">{tooltip("Diversification ratio")}</div>'
             f'<div class="risk-vv">{float(div_ratio):.1f}<small>&times;</small></div>'
             f'<div class="risk-vs">low = names co-move</div>'
-            "</div>"
+            + _metric_evidence("diversification_ratio")
+            + "</div>"
         )
 
     return '<div class="risk-vitals">' + "".join(cards) + "</div>"
