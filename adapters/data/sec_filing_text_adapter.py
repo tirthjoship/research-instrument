@@ -5,9 +5,10 @@ signals). This one pulls the actual periodic-report DOCUMENT text via the SEC su
 API, so the domain ``filing_textchange_service`` can diff consecutive comparable filings.
 
 Point-in-time discipline: ``list_filings(..., as_of)`` returns only filings whose
-``filed_date <= as_of``. Section extraction from raw 10-K/10-Q HTML is deliberately a
-focused, hardening-pending step (see EXTRACTION TODO) — the URL/fetch plumbing and the
-point-in-time contract are real so the rig is runnable end-to-end once extraction lands.
+``filed_date <= as_of``. Section extraction (``fetch_sections``) parses the real
+10-K/10-Q HTML with an HTML-aware text extractor (drops <script>/<style>/inline-XBRL
+markup, decodes entities) and an item-heading splitter that is robust to the document's
+table of contents — so the rig is runnable end-to-end against live EDGAR.
 """
 
 from __future__ import annotations
@@ -19,18 +20,29 @@ from datetime import date
 from typing import Any
 
 import requests
+from bs4 import BeautifulSoup
 from loguru import logger
 
 _SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
 _ARCHIVE_DOC = "https://www.sec.gov/Archives/edgar/data/{cik}/{accession_nodash}/{doc}"
 _PERIODIC_FORMS = ("10-K", "10-Q")
 
-# Naive section anchors — production hardening should replace with item-tag parsing.
+# Section anchors keyed on the canonical ITEM heading, deliberately item-NUMBER-agnostic
+# (``item\s+\d+[a-z]?``) so the SAME patterns find a section in both a 10-K (Risk Factors =
+# Item 1A, Legal = Item 3, MD&A = Item 7) and a 10-Q (Risk Factors = Part II Item 1A, Legal
+# = Part II Item 1, MD&A = Part I Item 2). The required "Item N" prefix is what keeps these
+# from matching incidental body prose (e.g. "...the following risk factors..."), and the
+# table-of-contents copy of each heading is defeated by max-span selection in _split_sections.
+_ITEM_HEADING = r"item\s+\d{1,2}[a-z]?[.):\s]"
 _SECTION_ANCHORS: dict[str, re.Pattern[str]] = {
-    "risk_factors": re.compile(r"item\s+1a[\.\s].{0,40}risk\s+factors", re.I),
-    "litigation": re.compile(r"item\s+3[\.\s].{0,40}legal\s+proceedings", re.I),
-    "management": re.compile(r"item\s+7[\.\s].{0,60}management.{0,20}discussion", re.I),
+    "risk_factors": re.compile(_ITEM_HEADING + r"\s{0,4}risk\s+factors", re.I),
+    "litigation": re.compile(_ITEM_HEADING + r"\s{0,4}legal\s+proceedings", re.I),
+    "management": re.compile(
+        _ITEM_HEADING + r".{0,6}management['’\s]{0,4}s?\s*discussion", re.I
+    ),
 }
+# Any item heading marks a section BOUNDARY (where the previous section ends).
+_ITEM_BOUNDARY = re.compile(_ITEM_HEADING, re.I)
 
 
 @dataclass(frozen=True)
@@ -131,11 +143,11 @@ class SECFilingTextAdapter:
     def fetch_sections(self, ref: FilingRef) -> dict[str, str]:
         """Return {section_name: text} for the informative sections of one filing.
 
-        EXTRACTION TODO (hardening): the current splitter is anchor-regex based and
-        will mis-handle some inline-XBRL 10-Ks. Replace with EDGAR financial-statement
-        item parsing (e.g. sec-parsers / edgartools) before the verdict run. The
-        point-in-time contract and pairing logic above do NOT depend on this and are
-        already correct.
+        HTML is reduced to visible text with an HTML-aware extractor (``_strip_html``)
+        that drops <script>/<style> and unwraps inline-XBRL markup, then the cleaned
+        text is carved into item sections (``_split_sections``). A section whose item
+        heading is absent is OMITTED — the domain service treats it as missing, never
+        empty-imputed, so coverage accounting stays honest.
         """
         resp = self._get(ref.document_url)
         if resp is None:
@@ -145,26 +157,42 @@ class SECFilingTextAdapter:
 
 
 def _strip_html(html: str) -> str:
-    text = re.sub(r"<[^>]+>", " ", html)
-    text = re.sub(r"&[a-z]+;", " ", text)
+    """Reduce filing HTML to visible text, robust to inline-XBRL and entities.
+
+    Uses an HTML parser (not tag-regex stripping): <script>/<style> bodies are removed
+    rather than dumped into the text, inline-XBRL wrapper tags (``<ix:nonNumeric>`` …)
+    are unwrapped to their displayed value, and HTML entities (``&#160;``, ``&amp;`` …)
+    are decoded — none of which the old ``<[^>]+>`` regex handled correctly.
+    """
+    soup = BeautifulSoup(html, "lxml")
+    for tag in soup(["script", "style", "head"]):
+        tag.decompose()
+    text = soup.get_text(separator=" ")
     return re.sub(r"\s+", " ", text).strip()
 
 
 def _split_sections(text: str) -> dict[str, str]:
     """Carve out each informative section from the cleaned document text.
 
-    Finds each section's anchor, then takes text up to the next anchor. Best-effort:
-    a section whose anchor is absent is simply omitted (the domain service then treats
-    it as missing rather than empty-imputed).
+    A 10-K/10-Q prints each item heading TWICE — once in the table of contents (where
+    the next heading follows almost immediately) and once at the real section body
+    (followed by paragraphs of text). For each section we therefore take ALL anchor
+    matches and keep the one with the largest span to the next item boundary — the body
+    copy, never the TOC line. A section whose anchor never appears is omitted entirely.
     """
-    hits: list[tuple[int, str]] = []
-    for name, pat in _SECTION_ANCHORS.items():
-        m = pat.search(text)
-        if m:
-            hits.append((m.start(), name))
-    hits.sort()
+    boundaries = sorted(m.start() for m in _ITEM_BOUNDARY.finditer(text))
+    boundaries.append(len(text))
+
     sections: dict[str, str] = {}
-    for idx, (start, name) in enumerate(hits):
-        end = hits[idx + 1][0] if idx + 1 < len(hits) else len(text)
-        sections[name] = text[start:end]
+    for name, pat in _SECTION_ANCHORS.items():
+        best: tuple[int, int] | None = None  # (span, start)
+        for m in pat.finditer(text):
+            start = m.start()
+            end = next((b for b in boundaries if b > start), len(text))
+            span = end - start
+            if best is None or span > best[0]:
+                best = (span, start)
+        if best is not None:
+            span, start = best
+            sections[name] = text[start : start + span]
     return sections
