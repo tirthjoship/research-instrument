@@ -69,7 +69,6 @@ def render(db_path: str = DB_PATH) -> None:
     from adapters.visualization.components.treemap import LENSES, build_treemap_html
     from adapters.visualization.data_loader import (
         load_brief_summary,
-        load_outcomes,
         load_trades,
     )
     from adapters.visualization.portfolio_view import (
@@ -83,7 +82,6 @@ def render(db_path: str = DB_PATH) -> None:
 
     holdings, book_source = _resolve_book(db_path)
     trades = load_trades(db_path)
-    outcomes = load_outcomes(db_path)
 
     if not holdings and not trades:
         _render_empty_state()
@@ -240,12 +238,6 @@ def render(db_path: str = DB_PATH) -> None:
     )
 
     st.markdown('<div class="ri-sec">Manage</div>', unsafe_allow_html=True)
-    if outcomes:
-        with st.expander("Trade history & outcome tracker", expanded=False):
-            _render_trade_history(trades, outcomes)
-        with st.expander("Closed positions", expanded=False):
-            _render_pnl_chart(outcomes)
-            _render_closed_positions_table(outcomes)
     with st.expander("Watchlist", expanded=False):
         _render_watchlist_section(db_path)
     with st.expander("Record a Trade", expanded=False):

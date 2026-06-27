@@ -1,50 +1,41 @@
 # STATUS — multi-modal-stock-recommender
 
-**As of:** 2026-06-24
-**Branch:** `feat/sp5-forward-gate` (ready for PR → develop)
-**Phase:** SP5 COMPLETE — ready for PR
+> Single source of truth. Overwrite each session — never append. History in PHASE_LOG.md.
 
-## NEXT ACTION (fresh session — start here)
+## Current Phase: SP6 complete — PR #80 open
 
-Create PR: `feat/sp5-forward-gate` → `develop`
-- 8 commits, 2364 tests pass, mypy strict clean, verification SHIP
-- Then: cut `feat/sp6-dashboard-tabs` off develop (SP6 is next)
+**Branch:** `feat/sp6-dashboard-tabs` → develop (PR #80)
+**Last updated:** 2026-06-24
 
-## SP Status Summary
+## SP Status
 
-| SP | Name | Status | Branch / PR |
-|----|------|--------|-------------|
-| SP1 | Corroboration core | PR #73 OPEN | `feat/corroboration-engine` |
-| SP2 | Candidate surfacing | ✅ merged to develop | — |
-| SP3 | Screener revamp | ✅ merged to develop | — |
-| SP4 | Portfolio verdict | ✅ merged to develop | — |
-| SP5 | Forward gate | ✅ COMPLETE | `feat/sp5-forward-gate` (PR pending) |
-| SP6 | Dashboard tabs | brief only | — |
-| SP7 | Weekly job reliability | ✅ merged to develop | — |
+| SP | What | Status |
+|----|------|--------|
+| SP1 | Corroboration engine (harvest + verify + SQLite store) | ✅ merged (PR #73) |
+| SP2 | Candidate surfacing + TickerResolver + SurfacingUseCase | ✅ merged |
+| SP3+SP7 | Screener corroboration overlay + weekly-job reliability | ✅ merged |
+| SP4 | Portfolio verdict corroboration integration | ✅ merged |
+| SP5 | SP5 forward gate (resolve + calibration status) | ✅ merged (PR #79, 2364 tests) |
+| SP6 | Stock Analysis tab decomposition + corroboration surface | 🔄 PR #80 open, 2392 tests |
 
-## Open PRs
+## SP6 Gate Decisions (locked 2026-06-24)
 
-- PR #73 (SP1 corroboration core) — open, develop deferred by user
-- PR #76 (efficiency pass) — open
+- `CorroborationTabView` is a visualization-layer DTO in `data_loader.py` — NOT a domain type
+- Pure HTML builder functions must be importable without Streamlit (lazy import in renderers)
+- `group_kind` = "sector" (not "sources") — domain contract from `DirectionalView`
+- `_SECTION_LABELS` = 10 items ending in "Corroboration"
+- `stock_analysis.py` monolith deleted via `git rm`; replaced by 6-file package
 
-## SP5 Key Decisions (locked — ADR-064)
+## Deferred Items
 
-- Unit: per-ticker-snapshot `(ticker, snapshot_date)`
-- Gate: STRONG-tier only, mean 21d excess vs SPY ≥ 50 bps AND bootstrap 95% CI lower bound > 0
-- n_min: 30 resolved pairs
-- KILL: permanent at first evaluation where n≥30 and gate fails
-- Storage: `data/corroboration_samples.jsonl` + `data/corroboration_gate_log.jsonl` (gitignored)
-- Weekly job: `scripts/corroboration_weekly_resolve.sh` (Sunday 18:00, launchd)
+- `date.today()` in `_build_corroboration_view` not injected — display-only, not leakage. Defer.
 
-## Future Enhancement (deferred from SP5)
+## NEXT ACTION
 
-Source reliability learning loop: update `HarvestedClaim.reliability_weight` per-source based on
-proven 21d forward hit-rates. Track as SP5b when SP5 gate verdict is known.
+Merge PR #80 to develop, then run `/sp-close SP=sp6` to finalize docs.
 
-## Gotchas
+After merge: no active SP. Next would be scoped via new brainstorm session.
 
-- `uv run pytest` required (bare pytest fails — pyproject.toml injects --timeout flags)
-- `make test-fast` runs ~21s parallel (2364 tests on SP5 branch)
-- SP5 depends on SP1 (CorroborationStore weekly snapshots) — note PR #73 still open
-- `corroborate` job must run BEFORE `resolve-corroboration` each week
-- `store: Any` in CorroborationResolverUseCase — intentional hexagonal compromise (no store port yet)
+## Test Count
+
+2392 passing | coverage 92.85% | gate 90%

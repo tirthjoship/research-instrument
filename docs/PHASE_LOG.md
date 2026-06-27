@@ -343,4 +343,55 @@
   live `analyze_ticker` run, NOT a screenshot — Streamlit's controlled-input can't be driven
   to populate under headless CDP automation (documented limitation, not a defect).
 - Plan: `docs/superpowers/plans/2026-06-13-research-instrument-redesign.md`. ADR-055/056.
-  **Returns to maintenance.** Standing watch unchanged: ADR-048/051 forward gate ~mid-July 2026.
+
+## 2026-06-22 — SP1: Corroboration Engine (PR #73, merged to develop)
+
+- Built the corroboration domain layer: `HarvestedClaim`, `CorroboratedCandidate`, `DirectionalView`, `OurReadout`, `Agreement`, `Uncertainty`, `CandidateSnapshot`, `ConvergenceTier` (STRONG/MODERATE/WEAK/CONFLICTED/NONE), `Stance`, `TrendHealth`.
+- `domain/corroboration_service.py`: `build_candidate()`, `build_directional_views()` — pure domain logic, stdlib-only.
+- `adapters/data/corroboration_store.py`: SQLite persistence for runs, claims, candidate snapshots, discovered tickers. Methods: `save_run`, `load_run`, `load_candidates`, `latest_run_id`, `save_candidates`, `upsert_discovered`, `active_discovered`.
+- `application/corroboration_use_case.py`: `CorroborationUseCase` — orchestrates harvesting + verification.
+- RESEARCH_ONLY framing enforced throughout — no return forecasts, evidence strength only.
+- ADR-057 (corroboration architecture), ADR-058 (lazy tab loading). Spec/plan archived.
+
+## 2026-06-22 — SP2: Candidate Surfacing (merged to develop)
+
+- `SurfaceCandidatesUseCase`: consumes `CorroborationStore`, surfaces STRONG/MODERATE candidates to screener and weekly brief.
+- CLI command: `surface-candidates`.
+- `domain/brief.py` extended with `directional_views: tuple[DirectionalView, ...]` field.
+- Candidate snapshots persisted via `store.save_candidates()` for downstream SP3/SP4 consumption.
+- Spec/plan archived.
+
+## 2026-06-22 — SP3: Screener Revamp + SP7: Weekly Job Reliability (both merged to develop)
+
+- **SP3**: Research Candidates tab redesigned — renders `CorroborationSnapshot` rows with convergence tier chips, source count, verification status. Replaces old flat score list. `adapters/visualization/tabs/research_candidates.py` (1257 lines).
+- **SP7**: Weekly job reliability hardening — `scripts/corroboration_weekly_resolve.sh` added, launchd plist documented, retry logic in harvesting adapters, CI dedup trigger fix (PR #72 open).
+- Combined: ~370 tests passing post-merge.
+
+## 2026-06-22 — SP4: Portfolio Verdict (merged to develop)
+
+- `PortfolioVerdictUseCase`: joins `CorroboratedCandidate` signals with holdings to produce `OurReadout.discipline_flag` (REDUCE / HOLD / ADD_OK) per held ticker.
+- `domain/brief.py` wired: `build_weekly_brief()` now accepts `directional_views` and surfaces them in the weekly brief narrative.
+- Trust tab unchanged — no new hypothesis, no new forward gate.
+
+## 2026-06-23 — SP5: Hypothesis #9 Forward Validation Gate (PR #79, merged to develop)
+
+- Pre-registered forward gate for corroboration-engine evidence quality (Hypothesis #9, ADR-063/ADR-064).
+- Unit: per-ticker-snapshot `(ticker, snapshot_date)`. Gate: STRONG-tier only, mean 21d excess vs SPY ≥ 50 bps AND bootstrap 95% CI lower bound > 0. n_min: 30 resolved pairs.
+- KILL: permanent at first evaluation where n ≥ 30 and gate fails.
+- `application/corroboration_resolver_use_case.py`: `CorroborationResolverUseCase.resolve()` — scores 21d outcomes, stores results.
+- `adapters/data/forward_gate_store.py`: JSONL persistence (`data/corroboration_samples.jsonl`, `data/corroboration_gate_log.jsonl`).
+- CLI commands added: `resolve-corroboration`, `corroboration-calibration-status`.
+- Weekly resolve script: `scripts/corroboration_weekly_resolve.sh` (Sunday 18:00 launchd).
+- **2364 tests passing**. ADR-063/064. Spec/plan archived.
+
+## 2026-06-24 — SP6: Dashboard Tabs — Stock Analysis Decomposition + Corroboration Surface (PR #80)
+
+- Brainstorm + grill-me complete (10 design decisions locked). `/sp-close` project command added.
+- **Task 1** — `tests/fakes/corroboration_store_fake.py`: FakeCorroborationStore + FAKE_CLAIM_BULLISH/BEARISH/WEAK/FAKE_SNAPSHOT.
+- **Task 2** — `adapters/visualization/data_loader.py`: `CorroborationTabView` frozen DTO + `load_corroboration_snapshot()` (lazy import, connection-safe SQLite, `DirectionalView` by sector).
+- **Task 3** — `adapters/visualization/tabs/stock_analysis/corroboration_section.py`: pure HTML builders (no module-level Streamlit) + claim tier bucketing (strong ≥0.70 verified, moderate ≥0.45 or verified, weak = rest) + `render_corroboration_section()`.
+- **Task 4** — Decomposed `stock_analysis.py` (1055 lines) → 6-file package: `compose.py`, `verdict_section.py`, `financials_section.py`, `market_section.py`, `signals_section.py`, `__init__.py`. Page-level RESEARCH_ONLY amber banner. `_SECTION_LABELS` = 10 items.
+- **Task 5** — Convergence badge on Verdict header: `_convergence_badge_html(tier)` pure helper + 9 smoke tests.
+- All pre-commit hooks pass. **2392 tests passing**, coverage 92.85%. Spec/plan archived.
+- Deferred: `date.today()` injection in `_build_corroboration_view` (display-only, not leakage).
+- Standing watch: ADR-048/051 forward gate resolves ~mid-July 2026.
