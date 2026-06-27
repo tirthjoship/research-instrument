@@ -6,7 +6,6 @@ It does NOT predict returns — we tested that across 18 years of data and every
 failed.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-2185%20passing-success)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
 
@@ -143,8 +142,7 @@ Plain-English definitions for every term used in this project.
 
 Hexagonal (ports and adapters): the core business logic in `domain/` has zero
 external library imports. Any data source, ML model, or dashboard can be swapped
-without touching the rules. See [AGENTS.md](AGENTS.md) for coding standards and the
-dependency contract.
+without touching the rules.
 
 ```
 domain/                          # Pure business logic (stdlib only)

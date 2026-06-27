@@ -72,4 +72,4 @@ PASS does not mean "buy signal" — corroboration remains attributed evidence, n
 1. If SP5 KILLs the signal, the learning loop was never needed
 2. Feedback cycles with unvalidated weights add correctness risk before signal is proven
 
-Future enhancement tracked in `docs/STATUS.md`.
+Future enhancement (tracked internally).
