@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import threading
+from collections.abc import Callable
+from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
@@ -28,15 +31,28 @@ from adapters.visualization.data_loader import (
     load_weekly_brief,
     staleness_days,
 )
+from adapters.visualization.holdings_syncer import (
+    rebuild_weekly_brief_cached,
+    save_and_sync_holdings,
+)
 from application.card_loading import select_case_summarizer
 from application.holdings_reader import read_holdings
+from application.runtime_guard import holdings_upload_enabled
 from application.sample_book import load_sample_book
 from domain.discipline import Verdict
 from domain.risk_rubric import classify_net_beta, classify_systematic_share
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
 
+
 # st.fragment fallback: no-op decorator if the Streamlit version doesn't have it.
-_fragment = getattr(st, "fragment", lambda f: f)
+def _fragment_noop(*_args: object, **_kwargs: object) -> Callable[[Any], Any]:
+    def _wrap(func: Any) -> Any:
+        return func
+
+    return _wrap
+
+
+_fragment: Callable[..., Callable[[Any], Any]] = getattr(st, "fragment", _fragment_noop)
 
 _SUMMARY_PATH = "data/personal/brief_summary.json"
 _BRIEF_MD_PATH = "data/personal/weekly_brief.md"
@@ -48,6 +64,23 @@ _SCREEN_COVERAGE_FLOOR = 0.5  # mirrors research_candidates.py
 def _render_onboarding_html() -> str:
     """Return compact sample-book banner HTML for the Home tab."""
     return render_sample_banner_html()
+
+
+def _clear_tab_loading_overlay() -> None:
+    """Remove stuck cross-tab loading overlay so Home stays interactive."""
+    import streamlit.components.v1 as components
+
+    components.html(
+        """<script>
+        (function () {
+          var doc = window.parent.document;
+          var overlay = doc.getElementById("scr-load-overlay");
+          if (overlay) overlay.remove();
+          delete doc.body.dataset.scrPending;
+        })();
+        </script>""",
+        height=0,
+    )
 
 
 def _parse_screen_diagnostics(
@@ -385,22 +418,118 @@ def _render_needs_review_html(holdings: list[dict[str, Any]]) -> str:
 
 
 _HOME_CASES_KEY = "_home_holding_cases"  # dict[ticker -> CaseResult|None]
-_HOME_FETCH_STARTED_KEY = (
-    "_home_fetch_started"  # bool — thread launched for current book
-)
+_HOME_FETCH_STARTED_KEY = "_home_fetch_started"
+_HOME_BRIEF_PROCESSING_KEY = "home_brief_processing"
+_UPLOAD_KEY_VER = "ob_upload_key_ver"
+_HOME_AUTO_FETCH_KEY = "home_brief_auto_fetch"
+
+
+def _start_dashboard_rebuild_background() -> None:
+    """Rebuild brief_summary.json in a daemon thread (non-blocking)."""
+    if st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
+        return
+    st.session_state[_HOME_BRIEF_PROCESSING_KEY] = True
+    st.session_state.pop("home_brief_rebuild_error", None)
+
+    def _worker() -> None:
+        try:
+            rebuild_weekly_brief_cached()
+        except Exception:  # noqa: BLE001
+            st.session_state["home_brief_rebuild_error"] = True
+        finally:
+            st.session_state[_HOME_BRIEF_PROCESSING_KEY] = False
+            st.session_state["home_brief_rebuild_done"] = True
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
+@_fragment(run_every=timedelta(seconds=2))
+def _poll_dashboard_rebuild() -> None:
+    """Rerun Home when background brief rebuild finishes."""
+    if st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
+        return
+    if st.session_state.pop("home_brief_rebuild_done", None):
+        st.session_state.pop(_HOME_CASES_KEY, None)
+        st.session_state[_HOME_FETCH_STARTED_KEY] = False
+        st.rerun()
+
+
+def _maybe_auto_start_evidence_fetch(
+    cards: list[tuple[str, dict[str, Any]]],
+    summarizer: object,
+    cases: dict[str, Any],
+) -> None:
+    """After CSV upload + brief rebuild, start needs-review evidence fetch."""
+    if not st.session_state.pop(_HOME_AUTO_FETCH_KEY, False):
+        return
+    if st.session_state.get(_HOME_FETCH_STARTED_KEY, False):
+        return
+    st.session_state[_HOME_FETCH_STARTED_KEY] = True
+    _launch_case_fetcher(cards, summarizer, cases)
+
+
+def _render_needs_review_fetch_bar(
+    cards: list[tuple[str, dict[str, Any]]],
+    summarizer: object,
+    cases: dict[str, Any],
+) -> None:
+    """Fetch / refresh controls for the needs-review evidence loader."""
+    total = len(cards)
+    done = sum(1 for ticker, _ in cards if ticker in cases)
+    started = st.session_state.get(_HOME_FETCH_STARTED_KEY, False)
+
+    bar_col, btn_col = st.columns([5, 1], vertical_alignment="center")
+    with bar_col:
+        if not started:
+            st.caption(
+                "Click **Fetch** to pull live prices and evidence for holdings "
+                "that need review."
+            )
+        elif done < total:
+            st.info(
+                f"⟳  Fetching {done} / {total} holdings in background — "
+                "switch tabs freely, then hit **Refresh** for updates.",
+                icon="ℹ️",
+            )
+        else:
+            st.success(f"Evidence ready for {total} holdings.", icon="✅")
+
+    with btn_col:
+        if not started:
+            if st.button(
+                "⟳ Fetch",
+                key="home_fetch_evidence",
+                type="primary",
+                use_container_width=True,
+            ):
+                st.session_state[_HOME_FETCH_STARTED_KEY] = True
+                _launch_case_fetcher(cards, summarizer, cases)
+                st.rerun()
+        elif done < total:
+            if st.button(
+                "↻ Refresh",
+                key="home_fetch_refresh",
+                use_container_width=True,
+            ):
+                st.rerun()
+
+
+@_fragment(run_every=timedelta(seconds=4))
+def _auto_refresh_fetch_progress(
+    cards: list[tuple[str, dict[str, Any]]],
+) -> None:
+    """Poll while background evidence fetch is running."""
+    if not st.session_state.get(_HOME_FETCH_STARTED_KEY, False):
+        return
+    cases: dict[str, Any] = st.session_state.get(_HOME_CASES_KEY, {})
+    done = sum(1 for ticker, _ in cards if ticker in cases)
+    total = len(cards)
+    if done < total:
+        st.caption(f"Auto-refreshing… {done} / {total} loaded")
 
 
 def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
-    """Render holdings using background-fetched case data.
-
-    On first visit: starts a daemon thread that fetches Gemini case data into
-    session_state while the user can freely navigate other tabs.  Collapsed rows
-    render immediately (price data is fast/cached); expanders show a loading
-    placeholder until the background thread finishes their ticker.
-
-    On subsequent renders (tab switch + return): all rows render from session_state
-    cache — zero Gemini re-calls, no progress bar restart.
-    """
+    """Render holdings using background-fetched case data (user-initiated)."""
     cards = _needs_review_cards(holdings)
     if not cards:
         st.markdown(_render_needs_review_html([]), unsafe_allow_html=True)
@@ -408,29 +537,16 @@ def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
 
     summarizer = select_case_summarizer()
 
-    # Init per-book cache on first Home render
     if _HOME_CASES_KEY not in st.session_state:
         st.session_state[_HOME_CASES_KEY] = {}
         st.session_state[_HOME_FETCH_STARTED_KEY] = False
 
     cases: dict[str, Any] = st.session_state[_HOME_CASES_KEY]
 
-    # Launch background fetch exactly once per book load
-    if not st.session_state.get(_HOME_FETCH_STARTED_KEY, False):
-        st.session_state[_HOME_FETCH_STARTED_KEY] = True
-        _launch_case_fetcher(cards, summarizer, cases)
+    _maybe_auto_start_evidence_fetch(cards, summarizer, cases)
+    _render_needs_review_fetch_bar(cards, summarizer, cases)
+    _auto_refresh_fetch_progress(cards)
 
-    # Non-blocking progress readout
-    done = sum(1 for t, _ in cards if t in cases)
-    total = len(cards)
-    if done < total:
-        st.info(
-            f"⟳  Fetching {done} / {total} holdings in background — "
-            "switch tabs freely and return here for updates.",
-            icon="ℹ️",
-        )
-
-    # Render all rows — cached ones show full data, pending ones show placeholder
     for ticker, h in cards:
         cached = cases.get(ticker, _CASE_PENDING)
         _render_one_holding_fragment(ticker, h, summarizer, cached)
@@ -447,73 +563,81 @@ def _render_honesty_line_html() -> str:
     )
 
 
-@st.dialog("Upload your holdings CSV")
-def _csv_upload_dialog() -> None:
-    # Suppress the browser-native file-input button that overlaps Streamlit's button.
-    st.markdown(
-        "<style>"
-        "input[type='file']::file-selector-button{display:none!important}"
-        "input[type='file']::-webkit-file-upload-button{display:none!important}"
-        "input[type='file']{color:transparent!important}"
-        "[data-testid='stFileUploaderDropzone'] small{display:none!important}"
-        "</style>",
-        unsafe_allow_html=True,
-    )
-    uploaded = st.file_uploader(
-        "Select CSV  (columns: symbol, quantity, book value, exchange, account type)",
-        type=["csv"],
-        key="ob_csv_dialog",
-    )
-    if uploaded is not None:
-        try:
-            content = uploaded.read().decode("utf-8")
-            import tempfile  # noqa: PLC0415
+def _stage_csv_upload(uploaded: Any) -> None:
+    """Save uploaded CSV, then kick off background dashboard rebuild + analysis."""
+    try:
+        content = uploaded.getvalue().decode("utf-8")
+        holdings = read_holdings_from_string(content)
+        if not holdings:
+            st.error(
+                "No valid holdings found. Columns: symbol, quantity, "
+                "book value (cad), exchange, account type."
+            )
+            return
+        save_and_sync_holdings(content, uploaded.name)
+        st.session_state["book"] = read_holdings("data/personal/holdings.csv")
+        st.session_state["is_sample_book"] = False
+        st.session_state.pop(_HOME_CASES_KEY, None)
+        st.session_state[_HOME_FETCH_STARTED_KEY] = False
+        st.session_state[_HOME_AUTO_FETCH_KEY] = True
+        st.session_state[_UPLOAD_KEY_VER] = (
+            int(st.session_state.get(_UPLOAD_KEY_VER, 0)) + 1
+        )
+        _start_dashboard_rebuild_background()
+        st.toast(f"Processing {len(holdings)} holdings from {uploaded.name}")
+        st.rerun()
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"Could not parse or sync CSV: {exc}")
 
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".csv", delete=False
-            ) as tmp:
-                tmp.write(content)
-                tmp_path = tmp.name
-            holdings = read_holdings(tmp_path)
-            if not holdings:
-                st.error(
-                    "No valid holdings found. Columns: symbol, quantity, "
-                    "book value (cad), exchange, account type."
-                )
-            else:
-                st.session_state["book"] = holdings
-                st.session_state.pop(_HOME_CASES_KEY, None)
-                st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
-                st.rerun()
-        except Exception as exc:  # noqa: BLE001
-            st.error(f"Could not parse CSV: {exc}")
+
+def read_holdings_from_string(content: str) -> list[Any]:
+    """Parse holdings CSV text via a temp file (read_holdings expects a path)."""
+    import tempfile  # noqa: PLC0415
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+    return read_holdings(tmp_path)
 
 
 def _handle_onboarding() -> None:
-    """Auto-load sample book on first visit; always show compact banner.
-
-    First visit (no book): auto-loads sample book + shows info banner.
-    Return visit: shows same banner so user can switch or upload a CSV.
-    Upload controls live in the adjacent Streamlit column (not in HTML).
-    """
+    """Auto-load sample or saved book; show sample banner + inline upload CTA."""
     if "book" not in st.session_state:
-        st.session_state["book"] = load_sample_book()
+        import os  # noqa: PLC0415
+
+        custom_csv = Path("data/personal/holdings.csv")
+        history_json = Path("data/personal/upload_history.json")
+        if (
+            custom_csv.exists()
+            and history_json.exists()
+            and "PYTEST_CURRENT_TEST" not in os.environ
+        ):
+            st.session_state["book"] = read_holdings(str(custom_csv))
+            st.session_state["is_sample_book"] = False
+        else:
+            st.session_state["book"] = load_sample_book()
+            st.session_state["is_sample_book"] = True
+
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
 
-    col_banner, col_btn = st.columns([4, 1])
-    with col_banner:
+    ver = int(st.session_state.get(_UPLOAD_KEY_VER, 0))
+    upload_key = f"ob_csv_uploader_{ver}"
+
+    with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
         st.markdown(_render_onboarding_html(), unsafe_allow_html=True)
-    with col_btn:
-        if st.button(
-            "⬆ Upload your CSV",
-            key="ob_csv_btn",
-            type="primary",
-            use_container_width=True,
-        ):
-            _csv_upload_dialog()
-        if st.button("+ Add manually", key="ob_manual_btn", use_container_width=True):
-            st.info("Manual holdings entry coming in a future sprint.", icon="ℹ️")
+        if holdings_upload_enabled():
+            uploaded = st.file_uploader(
+                "Upload your holdings",
+                type=["csv"],
+                key=upload_key,
+                label_visibility="collapsed",
+            )
+            if uploaded is not None:
+                file_sig = f"{uploaded.name}:{getattr(uploaded, 'size', 0)}"
+                if st.session_state.get("_ob_last_csv_sig") != file_sig:
+                    st.session_state["_ob_last_csv_sig"] = file_sig
+                    _stage_csv_upload(uploaded)
 
 
 def _compute_vs_market_1y(holdings: list[dict[str, Any]]) -> float | None:
@@ -564,6 +688,19 @@ def render(
     #    st.session_state["book"] and call st.rerun() so the Front-Desk below
     #    picks up the new book on the next cycle. ──────────────────────────────
     _handle_onboarding()
+    _clear_tab_loading_overlay()
+    _poll_dashboard_rebuild()
+
+    if st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
+        st.info(
+            "⟳ Processing your uploaded holdings — fetching tickers and rebuilding metrics…",
+            icon="ℹ️",
+        )
+    elif st.session_state.get("home_brief_rebuild_error"):
+        st.error(
+            "Dashboard rebuild failed. Check terminal logs or run "
+            "`python -m application.cli weekly-brief --holdings data/personal/holdings.csv`."
+        )
 
     # ── If no brief and no session book, nothing to show below the door ──────
     if summary is None and "book" not in st.session_state:

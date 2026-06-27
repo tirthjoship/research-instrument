@@ -111,3 +111,40 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
         from adapters.visualization.components.lens_scroll import render_lens_scroll
 
         render_lens_scroll()
+
+    # Render holdings upload history table at the bottom of the Risk tab
+    import json
+    from pathlib import Path
+
+    import pandas as pd
+
+    upload_history_path = Path("data/personal/upload_history.json")
+    if upload_history_path.exists():
+        try:
+            with open(upload_history_path, encoding="utf-8") as f:
+                history = json.load(f)
+            if history:
+                st.write("---")
+                st.subheader("Holdings CSV Upload History")
+                df = pd.DataFrame(history)
+                # Rename columns for presentation
+                df = df.rename(
+                    columns={
+                        "timestamp": "Timestamp",
+                        "filename": "Filename",
+                        "positions_count": "Positions Count",
+                        "total_cost_basis": "Total Cost Basis (CAD)",
+                    }
+                )
+                # Select/reorder columns
+                df = df[
+                    [
+                        "Timestamp",
+                        "Filename",
+                        "Positions Count",
+                        "Total Cost Basis (CAD)",
+                    ]
+                ]
+                st.dataframe(df, use_container_width=True, hide_index=True)
+        except Exception:
+            pass

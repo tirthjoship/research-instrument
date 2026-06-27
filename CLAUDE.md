@@ -30,6 +30,9 @@ make setup            # uv sync + pre-commit install
 
 # Single test
 pytest tests/test_domain_models.py::test_signal_valid_creation -q
+
+# Run dashboard (canonical — kills stale process, logs to /tmp, port 8507)
+bash scripts/run-dashboard-8507.sh
 ```
 
 ## Model Routing (this project)
@@ -123,6 +126,38 @@ Five hard stops — see `AGENTS.md` for full details:
 3. **Evaluate with Sharpe ratio + precision/recall** — never raw returns or accuracy alone
 4. **No direct commits to main or dev** — feature branches only, PR to dev
 5. **Tests use small fixtures** — never hit real APIs (yfinance, Reddit) in CI tests. Use fakes.
+
+## Streamlit CSS Debugging Protocol (mandatory — not advisory)
+
+Blind CSS iteration against Streamlit widgets burns tokens fast (10+ turns, $8+ per session).
+**Source-first, one-shot** rule:
+
+1. **Read the compiled component JS first** — find the exact `data-testid` and element structure.
+   ```bash
+   # Streamlit ships compiled component JS here:
+   .venv/lib/python3.12/site-packages/streamlit/static/static/js/
+   # For file uploader: FileUploader.*.js  (small — read it fully)
+   # For other widgets: index.*.js (large — grep for your widget name)
+   ```
+2. **Write one CSS rule** targeting the exact selector found. No guesses.
+3. **Restart on a new port** (not the same port — browser caches CSS).
+4. **Get a screenshot before iterating** — never restart without visual confirmation.
+
+**Never** inject CSS inside `st.markdown()` scoped to a widget — it runs after React renders.
+CSS must be in `inject_global_css()` → `styles.py` to apply before widget paint.
+
+**Known selectors (Streamlit 1.58):**
+
+| Element | Selector |
+|---|---|
+| File uploader outer div | `div[data-testid="stFileUploader"]` |
+| Dropzone section | `section[data-testid="stFileUploaderDropzone"]` |
+| Native file input | `input[data-testid="stFileUploaderDropzoneInput"]` |
+| Button label span | `section[data-testid="stFileUploaderDropzone"] button span` |
+| Material icon span | `[data-testid="stIconMaterial"]` |
+| File size hint | `[data-testid="stFileUploaderDropzoneInstructions"]` |
+
+**aria-label scoping**: `section[aria-label="Your label text"]` targets a specific uploader by its Python label — use this to avoid affecting other uploaders on other tabs.
 
 ## External Documentation — context7
 

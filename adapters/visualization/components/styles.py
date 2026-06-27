@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from adapters.visualization.components.onboarding import CSV_UPLOAD_TIP
+
+_OB_CSV_UPLOAD_TIP = CSV_UPLOAD_TIP.replace("\\", "\\\\").replace('"', '\\"')
+
 GLOBAL_CSS = """
 <style>
 /* ===== Fonts ===== */
@@ -10,6 +14,7 @@ GLOBAL_CSS = """
 
 /* ===== CSS Variables ===== */
 :root {
+    --ob-csv-upload-tip: "__OB_CSV_UPLOAD_TIP__";
     --bg-page: #FAFAF8;
     --bg-primary: #FFFFFF;
     --bg-secondary: #F8FAFC;
@@ -927,25 +932,151 @@ div.stButton > button[kind="secondary"]:hover {
     background: rgba(15,110,128,.07) !important;
     transform: translateY(-1px) !important;
 }
-/* File uploader — full-width, dashed petrol border, light tint */
+/* File uploader — strip Streamlit dropzone chrome (global) */
 div[data-testid="stFileUploader"] {
-    border: 1.5px dashed rgba(15,110,128,.45) !important;
-    border-radius: 10px !important;
-    padding: 8px 12px !important;
-    background: rgba(15,110,128,.04) !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
     width: 100% !important;
 }
 section[data-testid="stFileUploaderDropzone"] {
     background: transparent !important;
     border: none !important;
-    padding: 6px 0 !important;
+    padding: 0 !important;
+    min-height: unset !important;
+    gap: 0 !important;
 }
-/* Hide noisy file-size hint; keep the Browse button */
-[data-testid="stFileUploaderDropzoneInstructions"] small { display: none !important; }
-div[data-testid="stFileUploader"] span {
-    font-family: 'IBM Plex Sans', sans-serif !important;
-    font-size: 12.5px !important;
+[data-testid="stFileUploaderDropzoneInstructions"] { display: none !important; }
+input[data-testid="stFileUploaderDropzoneInput"] {
+    opacity: 0 !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    cursor: pointer !important;
+}
+input[data-testid="stFileUploaderDropzoneInput"]::file-selector-button,
+input[data-testid="stFileUploaderDropzoneInput"]::-webkit-file-upload-button {
+    display: none !important;
+}
+[data-testid="stFileUploaderDropzone"] button [data-testid="stIconMaterial"],
+[data-testid="stFileUploaderDropzone"] button svg {
+    display: none !important;
+}
+/* Home onboarding row — sample banner + upload as one card */
+[data-testid="stHorizontalBlock"]:has(.ob-sample-banner) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+    background: #FFFFFF !important;
+    border-radius: 8px !important;
+    margin-bottom: 4px !important;
+    padding: 0 18px 0 0 !important;
+    overflow: visible !important;
+    border: 1px solid #BFDBFE !important;
+    border-left: 4px solid #1D4ED8 !important;
+}
+[data-testid="stHorizontalBlock"]:has(.ob-sample-banner) > * {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+}
+[data-testid="stHorizontalBlock"]:has(.ob-sample-banner) > *:first-child {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+[data-testid="stHorizontalBlock"]:has(.ob-sample-banner) > *:last-child {
+    flex: 0 0 auto !important;
+    align-self: center !important;
+    margin-left: auto !important;
+    padding: 14px 0 14px 20px !important;
+}
+.ob-sample-banner {
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+}
+/* Home holdings uploader — single outline button, CSV tooltip on hover */
+div[data-testid="stFileUploader"]:has(section[aria-label="Upload your holdings"]) {
+    margin: 0 !important;
+    width: auto !important;
+    max-width: 100% !important;
+}
+div[data-testid="stFileUploader"]:has(section[aria-label="Upload your holdings"]) [data-testid="stWidgetLabel"] {
+    display: none !important;
+}
+section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"] {
+    display: block !important;
+    width: auto !important;
+    position: relative !important;
+    cursor: help !important;
+}
+section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]:hover::after {
+    content: var(--ob-csv-upload-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    background: #1b2733;
+    color: #eef3f6;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 1.45;
+    padding: 10px 12px;
+    border-radius: 10px;
+    width: 280px;
+    white-space: normal;
+    text-align: left;
+    box-shadow: 0 10px 30px rgba(15,30,45,.22);
+    z-index: 1001;
+    pointer-events: none;
+}
+section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]:hover::before {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 2px);
+    right: 20px;
+    border: 6px solid transparent;
+    border-top-color: #1b2733;
+    z-index: 1002;
+    pointer-events: none;
+}
+section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"] button {
+    width: auto !important;
+    min-width: unset !important;
+    max-width: 100% !important;
+    min-height: 38px !important;
+    margin: 0 !important;
+    padding: 7px 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid #0F6E80 !important;
+    border-radius: 8px !important;
     color: #0F6E80 !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    box-shadow: none !important;
+    white-space: nowrap !important;
+}
+section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"] button * {
+    display: none !important;
+}
+section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"] button::after {
+    content: "Upload your holdings";
+    display: block !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    color: #0F6E80 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+}
+section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"] button:hover {
+    background: rgba(15,110,128,.07) !important;
 }
 
 /* ===== Risk Tab — Status-First Design Tokens (Task 10 / ADR-052) ===== */
@@ -1515,6 +1646,8 @@ div[data-testid="stFileUploader"] span {
 .pf-tip-row b{color:#fff;}
 </style>
 """
+
+GLOBAL_CSS = GLOBAL_CSS.replace("__OB_CSV_UPLOAD_TIP__", _OB_CSV_UPLOAD_TIP)
 
 
 def inject_global_css() -> None:
