@@ -3,7 +3,6 @@
 Architecture: pure `build_*_html(...)` helpers (testable without Streamlit)
 compose the rendered output. `render()` wires them with `st.session_state`.
 
-Design tokens match `.superpowers/brainstorm/screener-FINAL-v2.html` (canonical mockup).
 All colours come from CSS var() — no raw hex in this module.
 Honesty: no FORBIDDEN_WORDS; DATA-GAP never faked; includes "not a forecast" disclosure.
 """

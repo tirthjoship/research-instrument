@@ -48,5 +48,3 @@ A June-2026 evidence review separated what is achievable from what is hype (sour
 ## Related
 
 - ADR-039 (no OOS conviction edge), ADR-043 (conviction dims dead), ADR-044 (divergence IC verdict)
-- Spec: `docs/superpowers/specs/2026-06-07-personal-momentum-exit-discipline-backtest-design.md`
-- Plan: `docs/superpowers/plans/2026-06-07-momentum-exit-discipline-phase1.md`

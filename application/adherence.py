@@ -1,8 +1,7 @@
 """Unit C weekly adherence report: holdings-diff trades, discretionary
 throttle, CAD cash buffer, obligation matching + 21d counterfactual gap.
 Appends idempotently to a gitignored adherence_log.jsonl. PRIVACY: all inputs
-and outputs live under data/personal/. Spec:
-docs/superpowers/specs/2026-06-10-unit-c-adherence-design.md (v4)."""
+and outputs live under data/personal/."""
 
 from __future__ import annotations
 
