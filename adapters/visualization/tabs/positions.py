@@ -67,10 +67,7 @@ def render(db_path: str = DB_PATH) -> None:
         build_table_html,
     )
     from adapters.visualization.components.treemap import LENSES, build_treemap_html
-    from adapters.visualization.data_loader import (
-        load_brief_summary,
-        load_trades,
-    )
+    from adapters.visualization.data_loader import load_brief_summary, load_trades
     from adapters.visualization.portfolio_view import (
         enrich_holdings,
         split_flagged_healthy,
