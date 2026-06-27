@@ -1069,3 +1069,165 @@ def test_expanded_card_shows_1y_label() -> None:
         reliability="n/a",
     )
     assert "1y" in html, "expanded card must contain '1y' label after FIX 2"
+
+
+# ---------------------------------------------------------------------------
+# P2-Home: inline evidence chips on the 5 book tiles + the credibility panel
+# ("What we know / don't know / still testing") driven by the evidence registry.
+# ---------------------------------------------------------------------------
+
+
+def _fake_entry(key: str, label: str, verdict):  # type: ignore[no-untyped-def]
+    """Build a tiny EvidenceEntry fixture (no registry / API dependency)."""
+    from domain.evidence_registry import EvidenceEntry
+
+    return EvidenceEntry(
+        key=key,
+        label=label,
+        meaning=f"meaning of {label}",
+        healthy_band=f"band for {label}",
+        verdict=verdict,
+        adr="ADR-099",
+        caveat=f"caveat for {label}",
+    )
+
+
+def test_book_strip_tiles_carry_evidence_chips() -> None:
+    """Each of the 4 book-strip tiles must render an inline evidence chip with its
+    verdict badge sourced from the registry."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_book_strip_html(
+        need_review=4,
+        total=10,
+        vs_market=3.2,
+        net_beta=1.21,
+        regime="RISK_ON",
+        screen_cleared=304,
+        screen_universe=512,
+    )
+    # The shared chip component is present on the strip...
+    assert "ri-chip" in html
+    # ...and the strip carries one chip per tile (need_review / vs_market /
+    # net_beta / screen_cleared) — at least 4 chip spans.
+    assert html.count('class="ri-chip"') >= 4
+    # Verdict badges from the registry surface (e.g. descriptive + research-only).
+    assert "v-descriptive" in html and "v-research" in html
+    # Registry meaning text rides along for the screen tile.
+    assert "pre-registered gate" in html.lower() or "ADR-049" in html
+
+
+def test_book_health_tile_carries_systematic_share_chip() -> None:
+    """The systematic-share book-health tile must carry its registry chip."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_book_health_html(systematic_share=0.628)
+    assert "ri-chip" in html
+    # systematic_share is RESEARCH_ONLY in the registry → amber badge.
+    assert "v-research" in html
+    # Existing behaviour preserved.
+    assert "63%" in html and "60%" in html
+
+
+def test_evidence_record_row_renders_entry_chips() -> None:
+    from adapters.visualization.tabs import weekly_brief as wb
+    from domain.evidence_registry import Verdict
+
+    entries = [
+        _fake_entry("a", "Alpha Fact", Verdict.DESCRIPTIVE),
+        _fake_entry("b", "Beta Fact", Verdict.VALIDATED),
+    ]
+    html = wb._evidence_record_row_html("What we know", "blurb here", entries)
+    assert "What we know" in html and "blurb here" in html
+    assert html.count('class="ri-chip"') == 2
+    assert "Alpha Fact" in html and "Beta Fact" in html
+    assert "— none —" not in html
+
+
+def test_evidence_record_row_empty_shows_none() -> None:
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._evidence_record_row_html("Killed in testing", "blurb", [])
+    assert "Killed in testing" in html
+    assert "— none —" in html
+    assert "ri-chip" not in html
+
+
+def test_render_evidence_record_html_has_four_buckets() -> None:
+    from adapters.visualization.tabs import weekly_brief as wb
+    from domain.evidence_registry import Verdict
+
+    html = wb._render_evidence_record_html(
+        known=[_fake_entry("k", "Known One", Verdict.DESCRIPTIVE)],
+        unproven=[_fake_entry("u", "Unproven One", Verdict.RESEARCH_ONLY)],
+        killed=[_fake_entry("x", "Killed One", Verdict.FALSIFIED)],
+        testing=[_fake_entry("t", "Testing One", Verdict.FORWARD_PENDING)],
+    )
+    assert "ws-card" in html  # reuses the existing card class
+    assert "What we know" in html
+    assert "still researching" in html.lower()
+    assert "Killed in testing" in html
+    assert "Still testing" in html
+    # All four fixture entries render as chips.
+    for label in ("Known One", "Unproven One", "Killed One", "Testing One"):
+        assert label in html
+    assert html.count('class="ri-chip"') == 4
+
+
+def test_home_evidence_record_html_uses_live_registry() -> None:
+    """The assembled panel must pull the real registry: the forward-pending
+    discipline gate (ADR-048) and a falsified signal must both surface."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._home_evidence_record_html()
+    assert "ws-card" in html
+    # FORWARD_PENDING entry — the live discipline gate.
+    assert "ADR-048" in html and "Discipline gate" in html
+    # FALSIFIED entry — the killed sentiment signal.
+    assert "Sentiment" in html
+    # The four bucket headings are all present.
+    assert "What we know" in html
+    assert "Killed in testing" in html
+    assert "Still testing" in html
+
+
+def test_rendered_home_shows_evidence_record_panel(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """render() must emit the credibility panel into the page markup."""
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-13",
+                "regime": "RISK_ON",
+                "abstained": True,
+                "holdings": [],
+                "macro": {"systematic_share": 0.5},
+            }
+        )
+    )
+
+    collected_html: list[str] = []
+
+    import streamlit as st  # noqa: PLC0415
+
+    original_markdown = st.markdown
+
+    def capture_markdown(content: object, **kwargs: object) -> None:  # type: ignore[no-untyped-def]
+        if isinstance(content, str):
+            collected_html.append(content)
+        original_markdown(content, **kwargs)  # type: ignore[arg-type]
+
+    from adapters.visualization.tabs import weekly_brief
+
+    with patch.object(st, "markdown", side_effect=capture_markdown):
+        weekly_brief.render(
+            path=str(p),
+            adherence_path=str(tmp_path / "adherence_log.jsonl"),
+            reports_dir=str(tmp_path),
+        )
+
+    all_html = "\n".join(collected_html)
+    assert "What we know" in all_html
+    assert "Still testing" in all_html
+    # The panel pulls the live registry — the forward-pending gate is shown.
+    assert "ADR-048" in all_html

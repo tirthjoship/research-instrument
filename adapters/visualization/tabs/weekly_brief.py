@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -20,6 +20,10 @@ from adapters.visualization.card_fetch import (
 from adapters.visualization.components.decision_card import (
     render_collapsed_row,
     render_expanded_card,
+)
+from adapters.visualization.components.evidence_chip import (
+    render_evidence_chip,
+    render_evidence_chip_by_key,
 )
 from adapters.visualization.components.formatters import status_pill_html
 from adapters.visualization.components.onboarding import render_sample_banner_html
@@ -40,6 +44,9 @@ from application.holdings_reader import read_holdings
 from application.runtime_guard import holdings_upload_enabled
 from application.sample_book import load_sample_book
 from domain.discipline import Verdict
+from domain.evidence_registry import EvidenceEntry
+from domain.evidence_registry import Verdict as EvidenceVerdict
+from domain.evidence_registry import entries_by_verdict
 from domain.risk_rubric import classify_net_beta, classify_systematic_share
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
 
@@ -84,7 +91,7 @@ def _clear_tab_loading_overlay() -> None:
 
 
 def _parse_screen_diagnostics(
-    screen: dict[str, Any] | None
+    screen: dict[str, Any] | None,
 ) -> ScreenDiagnostics | None:
     """Parse ScreenDiagnostics from a screen JSON dict.
 
@@ -205,30 +212,34 @@ def _render_book_strip_html(
     screen_universe: int,
 ) -> str:
     t_review = render_tile(
-        label=tooltip("Need review"),
+        label=tooltip("Need review") + render_evidence_chip_by_key("need_review"),
         number=f"{need_review} / {total}",
         tone="crimson" if need_review else "muted",
         sub="holdings a rule fired on",
     )
     vm = "—" if vs_market is None else f"{vs_market:+.1f}%"
     t_vm = render_tile(
-        label=tooltip("vs Market (1y)"), number=vm, tone="muted", sub="realized, vs SPY"
+        label=tooltip("vs Market (1y)") + render_evidence_chip_by_key("vs_market_1y"),
+        number=vm,
+        tone="muted",
+        sub="realized, vs SPY",
     )
+    nb_label = tooltip("Net beta") + render_evidence_chip_by_key("net_beta")
     if net_beta is None:
         t_nb = render_tile(
-            label=tooltip("Net beta"), number="—", tone="muted", sub="no macro data"
+            label=nb_label, number="—", tone="muted", sub="no macro data"
         )
     else:
         band = classify_net_beta(net_beta).value
         t_nb = render_tile(
-            label=tooltip("Net beta"),
+            label=nb_label,
             number=f"{net_beta:.2f}",
             stamp=band.upper(),
             tone="muted",
             sub=f"moves ~{net_beta:.2f}x the market",
         )
     t_scr = render_tile(
-        label=tooltip("Screen"),
+        label=tooltip("Screen") + render_evidence_chip_by_key("screen_cleared"),
         number=str(screen_cleared),
         tone="green" if screen_cleared else "muted",
         sub=f"cleared of {screen_universe}",
@@ -270,14 +281,15 @@ def _render_book_health_html(systematic_share: float) -> str:
         f"{ring}"
         f"<div><div style=\"font-family:'IBM Plex Mono';font-size:10px;"
         f'text-transform:uppercase;color:#94a8ad">'
-        f'{tooltip("Systematic share", "Book health — systematic share")}</div>'
+        f'{tooltip("Systematic share", "Book health — systematic share")}'
+        f'{render_evidence_chip_by_key("systematic_share")}</div>'
         f'<div style="font-size:13px;margin-top:3px"><b>{pct}% {band.lower()}</b> &middot; {flag} &mdash; '
         f"adding another same-direction name won't diversify.</div></div></div>"
     )
 
 
 def _needs_review_cards(
-    holdings: list[dict[str, Any]]
+    holdings: list[dict[str, Any]],
 ) -> list[tuple[str, dict[str, Any]]]:
     """Return (ticker, holding) pairs for holdings that need review."""
     return [(h["ticker"], h) for h in holdings if h.get("verdict") in _NEEDS_REVIEW]
@@ -563,6 +575,93 @@ def _render_honesty_line_html() -> str:
     )
 
 
+def _evidence_record_row_html(
+    title: str, blurb: str, entries: Sequence[EvidenceEntry]
+) -> str:
+    """One row of the credibility panel: a heading + the entries as evidence chips.
+
+    *title* and *blurb* are trusted in-house literals; *entries* come straight from
+    the evidence registry and are rendered through the shared evidence-chip component
+    (so each carries its own meaning / band / ADR / caveat on hover).
+    """
+    if entries:
+        chips = "".join(render_evidence_chip(e) for e in entries)
+    else:
+        chips = '<span style="font-size:12px;color:#94a8ad">— none —</span>'
+    return (
+        f'<div style="padding:9px 0;border-top:1px solid #eef2f3">'
+        f"<div style=\"font-family:'IBM Plex Mono';font-size:10px;text-transform:uppercase;"
+        f'letter-spacing:.04em;color:#5b7178">{title}</div>'
+        f'<div style="font-size:12px;color:#5b7178;margin:2px 0 6px">{blurb}</div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:6px">{chips}</div>'
+        f"</div>"
+    )
+
+
+def _render_evidence_record_html(
+    *,
+    known: Sequence[EvidenceEntry],
+    unproven: Sequence[EvidenceEntry],
+    killed: Sequence[EvidenceEntry],
+    testing: Sequence[EvidenceEntry],
+) -> str:
+    """The 'What we know / don't know / still testing' credibility panel.
+
+    A living view of the research record: every product metric, grouped by how much
+    trust it has earned. Pure HTML builder — drive it from
+    :func:`domain.evidence_registry.entries_by_verdict`. Descriptive only.
+    """
+    rows = (
+        _evidence_record_row_html(
+            "What we know",
+            "Facts about today, and gates already cleared.",
+            known,
+        )
+        + _evidence_record_row_html(
+            "Don't know yet — still researching",
+            "Surfaced for research; no measured edge demonstrated.",
+            unproven,
+        )
+        + _evidence_record_row_html(
+            "Killed in testing",
+            "Tested against a pre-registered gate and discarded.",
+            killed,
+        )
+        + _evidence_record_row_html(
+            "Still testing — live gate",
+            "Pre-registered, thresholds locked, verdict not yet in.",
+            testing,
+        )
+    )
+    return (
+        f'<div class="ws-card" style="padding:12px 16px;margin-top:12px">'
+        f'<div style="font-family:Fraunces,serif;font-weight:800;font-size:14px;'
+        f'margin-bottom:2px">What we know &middot; don&rsquo;t know &middot; '
+        f"still testing</div>"
+        f'<div style="font-size:12px;color:#5b7178;margin-bottom:2px">'
+        f"Every number on this page, graded by how much it has earned. "
+        f"Hover any chip for its meaning, healthy band, ADR and caveat. "
+        f"Descriptive only.</div>"
+        f"{rows}</div>"
+    )
+
+
+def _home_evidence_record_html() -> str:
+    """Assemble the credibility panel from the live evidence registry."""
+    return _render_evidence_record_html(
+        known=(
+            entries_by_verdict(EvidenceVerdict.VALIDATED)
+            + entries_by_verdict(EvidenceVerdict.DESCRIPTIVE)
+        ),
+        unproven=(
+            entries_by_verdict(EvidenceVerdict.RESEARCH_ONLY)
+            + entries_by_verdict(EvidenceVerdict.INCONCLUSIVE)
+        ),
+        killed=entries_by_verdict(EvidenceVerdict.FALSIFIED),
+        testing=entries_by_verdict(EvidenceVerdict.FORWARD_PENDING),
+    )
+
+
 def _stage_csv_upload(uploaded: Any) -> None:
     """Save uploaded CSV, then kick off background dashboard rebuild + analysis."""
     try:
@@ -761,6 +860,9 @@ def render(
     if sys_share is not None:
         st.markdown(_render_book_health_html(float(sys_share)), unsafe_allow_html=True)
     st.markdown(_render_honesty_line_html(), unsafe_allow_html=True)
+
+    # ── Credibility panel: what we know / don't know / still testing ─────────
+    st.markdown(_home_evidence_record_html(), unsafe_allow_html=True)
 
     # ── Concentration flags (optional — keep if present) ─────────────────────
     concentration = summary.get("concentration", [])
