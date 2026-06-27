@@ -2,8 +2,7 @@
 
 Holdings-diff trade detection, discretionary-trade throttle, CAD cash-buffer
 floor, one-obligation-per-ticker adherence matching, and the canonical
-21d-counterfactual gap formula (f = 0.5). Spec:
-docs/superpowers/specs/2026-06-10-unit-c-adherence-design.md. The deterministic
+21d-counterfactual gap formula (f = 0.5). The deterministic
 core computes verdicts; nothing here fetches data or touches files."""
 
 from __future__ import annotations

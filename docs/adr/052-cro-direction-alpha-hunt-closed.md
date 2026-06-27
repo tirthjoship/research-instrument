@@ -40,7 +40,7 @@ Rationale: deterministic value before the speculative swing (A is useful regardl
 
 - The alpha hunt is **formally closed** — three independent honest assessments agree. The product is an honest CRO (risk + behavior + abstaining screen + discipline), not a market-beater.
 - The disposition-auditor idea both external models proposed is **already built** — it is `resolve-discipline-flags` + the ADR-048 forward gate; do not rebuild it.
-- Each Unit follows the established flow: brainstorm → spec → plan → Sonnet implementers → Opus verification-before-completion; LOW effort for mechanical build, MAX for verdict/verification.
+- Each Unit follows the established flow: brainstorm → spec → plan → implement → verification before completion, with extra rigor reserved for verdict/verification steps.
 - Honesty rails locked: recommender abstains; no FinBERT / LangChain / Neo4j / paid data; deterministic ideas claim no alpha; predictive ideas are pre-registered and killable.
 
 ## Unit A — Macro-Beta Scrubber (DONE 2026-06-09)

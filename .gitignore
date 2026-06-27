@@ -5,11 +5,21 @@ LOCAL_PROJECT_STORY.md
 # Personal financial data — never commit
 data/personal/
 
-# Internal AI config — keep locally (agent scaffolding is implementation detail)
-.claude/settings.json
-.claude/settings.local.json
-# docs/superpowers/ — plans/specs/archive all tracked in git (design record)
-# Agents must NOT auto-read archive/ — see CLAUDE.md do-not-auto-read list
+# AI assistant scaffolding & internal process docs — keep local, never push
+.claude/
+CLAUDE.md
+CONTEXT.md
+AGENTS.md
+MEMORY.md
+docs/superpowers/
+docs/fix-targets/
+docs/external-review/
+docs/design-references/
+research/
+docs/STATUS.md
+docs/PHASE_LOG.md
+docs/SKILL_ROUTING.md
+sentiment_audit_results.csv
 
 # Coverage artifacts
 .coverage

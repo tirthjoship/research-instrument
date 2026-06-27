@@ -11,11 +11,11 @@ ADR-045 pivoted the engine from return prediction to exit discipline and locked 
 
 > PROCEED iff the strategy beats buy-and-hold on **Sharpe** (bootstrap CI on the Sharpe difference excludes 0, positive) **AND** cuts max drawdown by **≥ 30%**, out of sample on US+TSX, 2018-01-01 → 2026-06-01. KILL → stop, same discipline as ADR-044.
 
-Phase 1 was implemented (pure rule primitives → `MomentumExitBacktestUseCase` → verdict gate → `validate-momentum-discipline` CLI → `PortfolioVerdictUseCase` → `portfolio-verdict` CLI) via subagent-driven development (Sonnet implementers, Opus reviewers, TDD). Frozen params: 200-day trend filter, 3×ATR(22) Chandelier trailing stop, 12-1 momentum, top tercile, monthly rebalance, long-only equal-weight.
+Phase 1 was implemented (pure rule primitives → `MomentumExitBacktestUseCase` → verdict gate → `validate-momentum-discipline` CLI → `PortfolioVerdictUseCase` → `portfolio-verdict` CLI) with TDD. Frozen params: 200-day trend filter, 3×ATR(22) Chandelier trailing stop, 12-1 momentum, top tercile, monthly rebalance, long-only equal-weight.
 
 ### Two correctness bugs were found and fixed before the verdict was trustworthy
 
-Both caught in Opus review; both would have produced a flattering, invalid verdict.
+Both caught in review; both would have produced a flattering, invalid verdict.
 
 1. **Wrong gate statistic.** The CLI computed the bootstrap CI on the mean daily *return* difference (`moving_block_bootstrap` over the diff series), not the pre-registered CI on the **Sharpe difference**. The spec explicitly disavows the raw-return test ("Raw CAGR may be lower… that is expected and acceptable; the thesis is risk-adjusted improvement"). Because the strategy ~ties buy-hold on raw return, the wrong statistic was near-zero by construction. Fixed with `sharpe_difference_bootstrap` — a paired block bootstrap that resamples **shared** index-blocks applied to both legs, preserving cross-leg correlation so the Sharpe-difference variance is correct.
 

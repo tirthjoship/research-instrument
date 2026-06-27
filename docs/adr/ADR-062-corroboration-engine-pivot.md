@@ -10,7 +10,7 @@
 
 Eight pre-registered alpha/prediction hypotheses have now been run; **every one failed an honest
 out-of-sample bar** (1 NULL, 3 KILL, 3 INCONCLUSIVE, 1 RESEARCH_ONLY — full table in the research doc).
-Several "passing-looking" results were falsified only after Opus fixed gate-math / transaction-cost bugs
+Several "passing-looking" results were falsified only after fixing gate-math / transaction-cost bugs
 that had made them look better — so the nulls are conservative. The one hypothesis with a structural
 edge argument (sub-$1B insider clusters, ADR-053) showed gross signal but dies on costs and needs paid
 survivorship-complete data.
@@ -48,9 +48,3 @@ Build a **Corroboration Engine** (sub-project 1 of 5) and treat it as the projec
 - Risk: corroboration may itself prove to have no forward edge (#9 could be the 9th null). That is an
   acceptable, honest outcome — the engine is still a useful attributed decision-support instrument with
   no predictive claim, and #9 settles the alpha question without self-deception.
-
-## Spec/plan artifacts
-
-- Spec: `docs/superpowers/specs/2026-06-20-corroboration-engine-design.md`
-- Plan: `docs/superpowers/plans/2026-06-20-corroboration-engine.md`
-- Forward briefs: `docs/superpowers/specs/2026-06-20-sp2..sp7-*.md`

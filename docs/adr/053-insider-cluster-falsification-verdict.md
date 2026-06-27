@@ -9,7 +9,7 @@
 
 ADR-052 closed the alpha hunt and sanctioned exactly one remaining predictive test: **sub-$1B non-routine insider-buy clusters** — the only idea with a *structural* non-arbitrage argument (institutions cannot fit into ~$300M names, so a retail-size investor has a real execution advantage). It was pre-registered as low-odds and killable: **KILL ⇒ prediction permanently off the table.** "The danger is a false positive, not build difficulty" — so the gate, not the build, is the integrity core.
 
-Design + pre-registration: `docs/superpowers/specs/2026-06-09-insider-cluster-falsification-design.md` (thresholds LOCKED before any run). Plan: `docs/superpowers/plans/2026-06-09-insider-cluster-falsification.md`. Built via subagent-driven-development (Sonnet implementers, Opus phase-gate review), LOW build / MAX verify.
+Thresholds were LOCKED via pre-registration before any run, with build and verification kept as separate phases (heavier rigor on verification).
 
 ## Methodology (LOCKED — pre-registered, unchanged after seeing data)
 

@@ -3,7 +3,7 @@
 Some CLI tests invoke the click entrypoint, which loads the project-root .env
 (application.dotenv_loader) into os.environ — that would leak a real
 GEMINI_API_KEY into the in-process environment for subsequent tests and let them
-make live API calls. CLAUDE.md rule #5: tests must never hit real APIs. This
+make live API calls. Project rule: tests must never hit real APIs. This
 autouse fixture strips live API keys before every test so summarizer selection
 deterministically uses the offline template path unless a test sets its own key.
 """
@@ -45,7 +45,7 @@ _SMOKE_FILES = frozenset(
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
-    """Apply smoke + tab markers without editing every test module (ADR-061 / T9)."""
+    """Apply smoke + tab markers without editing every test module (T9)."""
     for item in items:
         path = str(item.path)
         fname = item.path.name

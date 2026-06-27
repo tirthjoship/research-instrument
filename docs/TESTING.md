@@ -111,7 +111,7 @@ coverage comes from testing real behaviour paths, not line-touching.
 
 ---
 
-## Why the smoke suite exists (2026-06-17, ADR-061)
+## Why the smoke suite exists (2026-06-17)
 
 Before the efficiency overhaul, the only gate was `make check` at 484s (serial +
 verbose). Developers were either skipping it (CI surprise) or running it after every

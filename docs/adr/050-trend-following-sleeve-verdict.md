@@ -17,7 +17,7 @@ Five pre-registered tests had falsified *prediction* edges in public signals (AD
 
 **Frozen gate (spec §5):** PASS if Sharpe-diff bootstrap CI excludes 0 (positive) OR drawdown reduction ≥25%. KILL if blended is strictly worse on both axes (lower point Sharpe AND deeper drawdown). INCONCLUSIVE otherwise.
 
-Built inline (TDD, executing-plans): pure-domain `trend_following.py` (momentum / inverse-vol / turnover / blend / equity-curve) + `TrendSleeveBacktestUseCase` (point-in-time monthly loop, look-ahead-safe, reusing `sharpe_difference_bootstrap` / `DrawdownTracker` / `backtest_metrics`) + `backtest-trend-sleeve` CLI. 1343 tests, 93.74% coverage, `make check` green. An Opus gate-math review (dd_reduction sign, Sharpe-diff CI branch, KILL condition, no-look-ahead in `build_series`) found **no bug** — the implementation matches spec §5 verbatim.
+Built inline (TDD): pure-domain `trend_following.py` (momentum / inverse-vol / turnover / blend / equity-curve) + `TrendSleeveBacktestUseCase` (point-in-time monthly loop, look-ahead-safe, reusing `sharpe_difference_bootstrap` / `DrawdownTracker` / `backtest_metrics`) + `backtest-trend-sleeve` CLI. 1343 tests, 93.74% coverage, `make check` green. A gate-math review (dd_reduction sign, Sharpe-diff CI branch, KILL condition, no-look-ahead in `build_series`) found **no bug** — the implementation matches spec §5 verbatim.
 
 ## Decision
 
