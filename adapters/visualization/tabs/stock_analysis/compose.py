@@ -144,6 +144,7 @@ def render() -> None:
             unsafe_allow_html=True,
         )
         _render_decision_lead(result)
+        _render_story_banner(result)
         _render_verdict(result, corr_view=corr_view)
         # Evidence-status framing header — make explicit this is attributed
         # evidence, not a forecast, before any data panels.
@@ -332,3 +333,91 @@ def _render_decision_lead(result: Any) -> None:
         _render_decision_lead_html(result, verdict_value, with_case=True),
         unsafe_allow_html=True,
     )
+
+
+# ---------------------------------------------------------------------------
+# "Story this week" — a 1-2 sentence DESCRIPTIVE synthesis of the current
+# sentiment / flow / valuation state. No predictions.
+# ---------------------------------------------------------------------------
+
+
+def _build_story_phrases(result: Any) -> list[str]:
+    """Build the descriptive story phrases for a ticker. Pure — no Streamlit.
+
+    Synthesises three already-computed, attributed facts — buzz mix, insider net
+    stance last quarter, and valuation percentile vs peers — into short descriptive
+    clauses. Returns only the phrases for which data exists; never a forecast.
+    """
+    from adapters.visualization.stock_analyzer import aggregate_insider_by_quarter
+    from adapters.visualization.tabs.stock_analysis.market_section import (
+        _build_ownership_delta,
+    )
+    from adapters.visualization.tabs.stock_analysis.signals_section import (
+        _build_sentiment_digest,
+    )
+
+    phrases: list[str] = []
+
+    # 1. Sentiment mix across sources.
+    digest = _build_sentiment_digest(getattr(result, "buzz_signals", []) or [])
+    if digest is not None:
+        n = len(digest.sources)
+        src_word = "source" if n == 1 else "sources"
+        if digest.positive > digest.negative * 1.5:
+            mix = "leans positive"
+        elif digest.negative > digest.positive * 1.5:
+            mix = "leans negative"
+        else:
+            mix = "mixed"
+        phrases.append(f"sentiment {mix} across {n} {src_word}")
+
+    # 2. Insider net stance last quarter.
+    txns = getattr(result, "insider_transactions", []) or []
+    delta = _build_ownership_delta(aggregate_insider_by_quarter(txns))
+    if delta is not None:
+        if delta.net_value > 0:
+            phrases.append(f"insiders net buyers in {delta.latest_quarter}")
+        elif delta.net_value < 0:
+            phrases.append(f"insiders net sellers in {delta.latest_quarter}")
+        else:
+            phrases.append(f"insider activity balanced in {delta.latest_quarter}")
+
+    # 3. Valuation percentile vs peers.
+    percs = getattr(result, "peer_percentiles", {}) or {}
+    pe_pct = percs.get("P/E")
+    if pe_pct is not None:
+        phrases.append(f"P/E at {float(pe_pct):.0f}th percentile vs peers")
+
+    return phrases
+
+
+def _build_story_banner_html(result: Any) -> str:
+    """Build the 'story this week' synthesis banner HTML. Pure — testable.
+
+    Returns an empty string when no descriptive facts are available, so the caller
+    can splice it unconditionally.
+    """
+    phrases = _build_story_phrases(result)
+    if not phrases:
+        return ""
+    sentence = "; ".join(phrases)
+    sentence = sentence[0].upper() + sentence[1:] + "."
+    return (
+        '<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;'
+        'border-left:3px solid var(--ri-teal,#0F6E80);">'
+        '<span style="font-size:11px;font-weight:700;letter-spacing:0.8px;'
+        'text-transform:uppercase;color:var(--ri-teal,#0F6E80);">Story this week</span>'
+        f'<div style="font-size:14px;color:#1A202C;margin-top:4px;">{sentence}</div>'
+        '<div style="font-size:11px;color:#94A3B8;margin-top:4px;">'
+        "A description of today&apos;s attributed facts — not a forecast.</div>"
+        "</div>"
+    )
+
+
+def _render_story_banner(result: Any) -> None:
+    """Render the descriptive 'story this week' banner via st.markdown."""
+    import streamlit as st
+
+    html = _build_story_banner_html(result)
+    if html:
+        st.markdown(html, unsafe_allow_html=True)
