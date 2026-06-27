@@ -110,6 +110,143 @@ def backtest_trend_sleeve(start: str, end: str, report_dir: str) -> None:
     click.echo(f"Report -> {out_file}")
 
 
+@cli.command("lazy-prices")
+@click.option("--start", default="2015-01-01", show_default=True)
+@click.option("--end", default="2024-12-31", show_default=True)
+@click.option("--report-dir", default="data/reports/", show_default=True)
+@click.option("--cache-dir", default="data/cache/lazy_prices/", show_default=True)
+@click.option(
+    "--ticker-file",
+    "ticker_files",
+    multiple=True,
+    default=("config/tickers/sp500.txt", "config/tickers/nasdaq100.txt"),
+    show_default=True,
+)
+@click.option(
+    "--limit",
+    type=int,
+    default=0,
+    show_default=True,
+    help="Cap universe size for a SMOKE test (0 = full). limit>0 is NOT a verdict run.",
+)
+def lazy_prices(
+    start: str,
+    end: str,
+    report_dir: str,
+    cache_dir: str,
+    ticker_files: tuple[str, ...],
+    limit: int,
+) -> None:
+    """Pre-registered Lazy Prices (ADR-057) verdict run — filing text-change vs forward excess.
+
+    LOCKED gate (do NOT tune): primary rank-IC ci_low>0 AND mean_ic>=0.02; secondary net-of-50bps
+    long-short ci_low>0; full PASS needs BOTH. 63d horizon, quarterly cohorts, static survivor
+    universe (survivor-biased on purpose — see docs/runbooks/lazy-prices.md). Section text is
+    cached under --cache-dir so the one-time SEC fetch survives restarts and the run is re-runnable.
+    """
+    import json
+    from datetime import date
+
+    from adapters.data.sec_cik_resolver import SECCikResolver
+    from adapters.data.sec_filing_text_adapter import FilingRef, SECFilingTextAdapter
+    from application import price_returns as pr
+    from application.lazy_prices_backtest import LazyPricesBacktestUseCase
+    from application.lazy_prices_runner import (
+        build_forward_excess_return_fn,
+        build_similarity_fn,
+        build_universe_fn,
+        quarterly_cohorts,
+    )
+
+    horizon_days = 63  # ADR-057 PRIMARY horizon — locked, not an option
+    start_dt = datetime.fromisoformat(start)
+    end_dt = datetime.fromisoformat(end)
+    cohorts = quarterly_cohorts(start_dt, end_dt)
+
+    cache_root = Path(cache_dir)
+    sections_dir = cache_root / "sections"
+
+    # --- adapters (composition root) ---
+    cik = SECCikResolver(cache_path=cache_root / "company_tickers.json")
+    filings = SECFilingTextAdapter()
+
+    # Disk-cached section fetch — keyed by accession, so the long one-time fetch persists.
+    def _fetch_sections_cached(ref: FilingRef) -> dict[str, str]:
+        path = sections_dir / f"{ref.accession_nodash}.json"
+        if path.exists():
+            try:
+                cached: dict[str, str] = json.loads(path.read_text())
+                return cached
+            except (ValueError, OSError):
+                pass
+        sections = filings.fetch_sections(ref)
+        if sections:
+            sections_dir.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(sections))
+        return sections
+
+    # Price series cached per ticker over the full window (+ forward buffer).
+    price_start = start_dt - timedelta(days=400)
+    price_end = end_dt + timedelta(days=150)
+    price_cache: dict[str, list[tuple[datetime, float]]] = {}
+
+    def _series(ticker: str) -> list[tuple[datetime, float]]:
+        if ticker not in price_cache:
+            price_cache[ticker] = pr.load_price_series(ticker, price_start, price_end)
+        return price_cache[ticker]
+
+    # --- the three injected callables ---
+    base_tickers = build_universe_fn([Path(f) for f in ticker_files])(start_dt)
+    run_tickers = base_tickers[:limit] if limit > 0 else base_tickers
+    if limit > 0:
+        click.echo(f"[SMOKE] universe capped to {len(run_tickers)} — NOT a verdict run")
+
+    def universe_fn(_cohort: datetime) -> list[str]:
+        return run_tickers
+
+    similarity_fn = build_similarity_fn(
+        filings.list_filings, _fetch_sections_cached, cik.resolve
+    )
+    forward_fn = build_forward_excess_return_fn(_series, horizon_days)
+
+    uc = LazyPricesBacktestUseCase(similarity_fn, forward_fn, universe_fn)
+    click.echo(
+        f"Lazy Prices run: {len(cohorts)} quarterly cohorts "
+        f"({start}→{end}), universe={len(universe_fn(start_dt))}, horizon={horizon_days}d"
+    )
+    click.echo(
+        "Fetching filings (cached) + prices — one-time fetch can take a while..."
+    )
+    result = uc.execute(cohorts, horizon_label=f"{horizon_days}d")
+
+    as_of = date.today().isoformat()
+    out_dir = Path(report_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = out_dir / f"lazy_prices_ic_{horizon_days}d_{as_of}.json"
+    report = {
+        "as_of": as_of,
+        "window": {"start": start, "end": end},
+        "universe_size": len(universe_fn(start_dt)),
+        "smoke_limit": limit,
+        "adr": "057",
+        **result,
+    }
+    out_file.write_text(json.dumps(report, indent=2, default=str))
+
+    click.echo(f"\nLazy Prices ({as_of})  verdict={result['verdict']}")
+    click.echo(
+        f"  mean_ic={result['mean_ic']:+.4f}  n_cohorts={result['n_cohorts']}"
+        f"  n_events={result['n_events']}  coverage={result['coverage']:.2%}"
+    )
+    boot = result.get("ic_bootstrap") or {}
+    click.echo(f"  IC bootstrap CI=[{boot.get('ci_low')}, {boot.get('ci_high')}]")
+    if limit > 0:
+        click.echo(
+            "  [SMOKE RUN — not a verdict; re-run with no --limit for the real gate]"
+        )
+    click.echo(f"Report -> {out_file}")
+
+
 @cli.command("backtest-insider-clusters")
 @click.option("--start-year", type=int, default=2006, show_default=True)
 @click.option("--end-year", type=int, required=True)
