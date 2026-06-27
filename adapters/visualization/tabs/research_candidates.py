@@ -32,7 +32,9 @@ from adapters.visualization.data_loader import (
     staleness_days,
 )
 from application.runtime_guard import is_local_runtime
+from domain.evidence_registry import get_evidence
 from domain.factor_bands import Band, band_for_percentile, plain_read
+from domain.factor_scores import factor_caveat, factor_display_label
 from domain.screen_buckets import PRIORITY, BucketInput, assign_buckets
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
 
@@ -96,9 +98,9 @@ def _bucket_sub(bucket: Any) -> str:
 
     return {
         Bucket.ALL_ROUNDER: "top-quartile on 3+ factors — rare",
-        Bucket.MOMENTUM_LEADERS: "top-quartile momentum AND analyst spread",
+        Bucket.MOMENTUM_LEADERS: "top-quartile momentum AND analyst dispersion",
         Bucket.QUALITY_FAIR_PRICE: "top-quartile quality AND value",
-        Bucket.VALUE_CATALYST: "top-quartile value AND analyst spread",
+        Bucket.VALUE_CATALYST: "top-quartile value AND analyst dispersion",
         Bucket.QUALITY_COMPOUNDERS: "top-quartile quality, not cheap",
         Bucket.LOWVOL_DEFENSIVES: "top-quartile low-volatility — empty until T2",
     }.get(bucket, "")
@@ -112,11 +114,13 @@ _GRADE_PILL: dict[str, str] = {
     "WEAK": "background:#FEE2E2;color:var(--danger)",
 }
 
-# Friendly factor names for the plain row summary.
+# Friendly factor names for the plain row summary. The "revision" factor is
+# labelled honestly from the evidence registry ("analyst dispersion") — it
+# measures analyst target-price spread, not estimate-revision drift.
 _FRIENDLY: dict[str, str] = {
     "quality": "quality",
     "value": "value",
-    "revision": "analyst signal",
+    "revision": factor_display_label("revision").lower(),  # "analyst dispersion"
     "lowvol": "low-vol",
 }
 
@@ -311,7 +315,7 @@ def build_header_html(
         label=tooltip("Factors"),
         number=str(_factor_count),
         tone="muted",
-        sub="momentum · analyst spread · quality · value",
+        sub="momentum · analyst dispersion · quality · value",
     )
 
     # Tile 4: Trust — IC gate verdict (honest)
@@ -406,8 +410,13 @@ def build_legend_html() -> str:
         'background:#DBEAFE;color:var(--accent);">MODERATE</span> 50&ndash;80% &nbsp;'
         '<span style="font-weight:700;font-size:10px;padding:2px 7px;border-radius:11px;'
         'background:#FEE2E2;color:var(--danger);">WEAK</span> below half.<br>'
-        "&bull; Track-1 factors: Quality &middot; Value &middot; Analyst spread &middot; Momentum. "
-        "Low-vol now live (5th factor)."
+        "&bull; Track-1 factors: Quality &middot; Value &middot; Analyst dispersion &middot; Momentum. "
+        "Low-vol now live (5th factor).<br>"
+        "&bull; <b>Analyst dispersion</b> measures the SPREAD of analyst price targets "
+        "(how much they disagree) &mdash; not estimate-revision drift. "
+        "No published evidence it anticipates returns.<br>"
+        "&bull; <b>Quality</b> &amp; <b>Value</b> use a current snapshot, "
+        "NOT point-in-time data &mdash; never validated in backtest, descriptive of today only."
         "</div>"
     )
 
@@ -427,6 +436,117 @@ def build_disclosure_html() -> str:
         "CI spans zero); some factors can&#39;t be back-tested without look-ahead bias. "
         "Score = evidence-standing, not a forecast."
         "</div>"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Honesty disclosures: universe scope · per-factor coverage · factor caveats
+# (P0b — relabel + disclose only; no math changed). All copy that names what a
+# factor IS/IS-NOT is pulled from domain.evidence_registry (single source).
+# ---------------------------------------------------------------------------
+
+
+def build_universe_scope_html(screen: dict[str, Any] | None = None) -> str:
+    """Return the universe-scope disclosure box.
+
+    The screen does NOT scan the whole market: the universe is large-cap US
+    (S&P 500 ∪ Nasdaq-100, ~570 names) and survivor-biased — today's index
+    membership applied to every date. The live scanned count is appended when
+    the screen carries it (from diagnostics.scanned / universe_size).
+    """
+    scanned = 0
+    if screen is not None:
+        raw_diag = screen.get("diagnostics")
+        if isinstance(raw_diag, dict):
+            try:
+                scanned = int(raw_diag.get("scanned", 0) or 0)
+            except (ValueError, TypeError):
+                scanned = 0
+        if not scanned:
+            try:
+                scanned = int(screen.get("universe_size", 0) or 0)
+            except (ValueError, TypeError):
+                scanned = 0
+    scanned_note = f" This week: <b>{scanned}</b> names scanned." if scanned else ""
+    # Pull the screen-scope caveat from the registry (single source of truth).
+    entry = get_evidence("screen_cleared")
+    registry_caveat = f" {_html.escape(entry.caveat)}" if entry is not None else ""
+    return (
+        '<div style="background:var(--bg-secondary);border:1px solid var(--border);'
+        "border-radius:10px;padding:9px 12px;font-size:11px;"
+        'color:var(--text-secondary);margin-bottom:12px;line-height:1.6;">'
+        "&#9888;&#65038; <b>Universe scope:</b> Large-cap US "
+        "(S&amp;P&nbsp;500 + Nasdaq-100, ~570 names), survivor-biased "
+        "&mdash; not the whole market." + scanned_note + registry_caveat + "</div>"
+    )
+
+
+def build_coverage_html(screen: dict[str, Any]) -> str:
+    """Return a per-factor coverage line for the names shown.
+
+    Coverage = share of shown candidates that carry live (non DATA-GAP) data
+    for each factor. A DATA-GAP is the screen's all-zeros shape (value and
+    percentile both 0.0) or a missing value. Returns "" when nothing is shown.
+    """
+    candidates = screen.get("rows") or screen.get("candidates") or []
+    rows = [c for c in candidates if isinstance(c, dict)]
+    total = len(rows)
+    if total == 0:
+        return ""
+
+    present: dict[str, int] = {}
+    for c in rows:
+        for fd in c.get("factor_scores", []):
+            if not isinstance(fd, dict):
+                continue
+            rv, rp = fd.get("value"), fd.get("percentile")
+            if rv is None or rp is None:
+                continue
+            if float(rv) == 0.0 and float(rp) == 0.0:
+                continue  # DATA-GAP shape
+            name = str(fd.get("name", ""))
+            present[name] = present.get(name, 0) + 1
+
+    parts: list[str] = []
+    for key in _ALL_FACTORS:
+        label = "Low-vol" if key == "lowvol" else factor_display_label(key)
+        n = present.get(key, 0)
+        pct = round(100 * n / total)
+        gap = " (DATA-GAP)" if n == 0 else ""
+        parts.append(f"{_html.escape(label)} {pct}%{gap}")
+
+    return (
+        "<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10.5px;"
+        "color:var(--text-secondary);letter-spacing:.03em;"
+        "background:var(--bg-secondary);border:1px solid var(--border);"
+        'border-radius:9px;padding:8px 12px;margin-bottom:12px;">'
+        f"COVERAGE (of {total} shown) &mdash; " + " &middot; ".join(parts) + "</div>"
+    )
+
+
+def build_factor_honesty_html() -> str:
+    """Return the per-factor honest caveats, sourced from the evidence registry.
+
+    Surfaces exactly what each named factor measures and what it does NOT:
+    Analyst dispersion (target spread, not revision drift — no published edge),
+    and Value/Quality (current snapshot, not point-in-time validated).
+    """
+    items: list[str] = []
+    for key in ("revision", "value", "quality"):
+        label = factor_display_label(key)
+        caveat = factor_caveat(key) or ""
+        items.append(
+            f'<li style="margin-bottom:4px;"><b>{_html.escape(label)}</b> '
+            f"&mdash; {_html.escape(caveat)}</li>"
+        )
+    return (
+        '<div style="background:#FEFAF0;border:1px solid #F5E3B3;'
+        "border-radius:10px;padding:9px 12px;font-size:11px;"
+        'color:#6B4D12;margin-bottom:12px;line-height:1.55;">'
+        "&#9888;&#65038; <b>What each factor really is:</b>"
+        '<ul style="margin:6px 0 0;padding-left:18px;">'
+        + "".join(items)
+        + "</ul></div>"
     )
 
 
@@ -1214,6 +1334,12 @@ def render(reports_dir: str = "data/reports") -> None:
 
     # Honest disclosure
     st.markdown(build_disclosure_html(), unsafe_allow_html=True)
+
+    # P0b: honest universe scope + per-factor caveats (relabel/disclose only).
+    st.markdown(build_universe_scope_html(screen), unsafe_allow_html=True)
+    st.markdown(build_factor_honesty_html(), unsafe_allow_html=True)
+    if candidates:
+        st.markdown(build_coverage_html(screen), unsafe_allow_html=True)
 
     if not candidates:
         # Abstention / under-powered path

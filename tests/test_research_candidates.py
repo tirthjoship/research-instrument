@@ -194,6 +194,82 @@ def test_legend_and_disclosure() -> None:
     assert "momentum" in dis.lower() and "no proven edge" in dis.lower()
 
 
+# ---------------------------------------------------------------------------
+# P0b: screener honesty — relabel "revision" → Analyst dispersion, disclose
+# universe scope + per-factor coverage + snapshot caveats.
+# ---------------------------------------------------------------------------
+
+
+def test_universe_scope_disclosure() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_universe_scope_html(_FAKE_SCREEN)
+    assert "Large-cap US" in html
+    assert "Nasdaq-100" in html
+    assert "570" in html
+    assert "survivor-biased" in html
+    assert "not the whole market" in html
+    # the live scanned count from diagnostics is surfaced
+    assert "512" in html
+
+
+def test_universe_scope_no_screen_omits_count() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_universe_scope_html(None)
+    assert "Large-cap US" in html
+    assert "names scanned" not in html
+
+
+def test_factor_honesty_dispersion_and_snapshot() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_factor_honesty_html()
+    assert "Analyst dispersion" in html
+    assert "DISPERSION" in html and "not revision drift" in html
+    # value + quality flagged as current snapshot, not point-in-time
+    assert "snapshot" in html.lower()
+    assert "point-in-time" in html.lower()
+
+
+def test_coverage_line_per_factor() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_coverage_html(_FAKE_SCREEN)
+    assert "COVERAGE" in html
+    # honest dispersion label, not "spread"/"signal"
+    assert "Analyst dispersion" in html
+    # lowvol absent in the fixture → DATA-GAP
+    assert "Low-vol" in html and "DATA-GAP" in html
+
+
+def test_coverage_line_empty_when_no_candidates() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    assert rc.build_coverage_html(_EMPTY_SCREEN) == ""
+
+
+def test_legend_relabels_dispersion_and_marks_snapshot() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_legend_html()
+    assert "Analyst dispersion" in html
+    assert "point-in-time" in html.lower()
+
+
+def test_friendly_label_is_dispersion() -> None:
+    from adapters.visualization.tabs.research_candidates import _FRIENDLY
+
+    assert _FRIENDLY["revision"] == "analyst dispersion"
+
+
+def test_factors_tile_subtitle_says_dispersion() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_header_html(_FAKE_SCREEN)
+    assert "analyst dispersion" in html
+
+
 def test_legend_has_grade_section() -> None:
     """Fix 2: legend must include Grade line with STRONG / MODERATE labels."""
     from adapters.visualization.tabs import research_candidates as rc
