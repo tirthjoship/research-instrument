@@ -261,6 +261,29 @@ def test_surface_calls_evidence_maps_factors() -> None:
         assert dim in dimension_names, f"Missing evidence dimension: {dim}"
 
 
+def test_surface_calls_note_uses_honest_dispersion_label() -> None:
+    """The human-readable note must surface the registry label 'Analyst dispersion'
+    for the 'revision' factor — the internal key must not leak into the note.
+
+    The dimension key stays 'revision' (downstream contract); only the note text
+    is relabelled. (P0b screener-honesty: relabel + disclose, no math change.)
+    """
+    from datetime import timezone
+
+    uc = EvidenceScreenUseCase(FakePrice(), FakeAnalyst(), FakeFund(), FakeNarrator())
+    # MU has analyst data → its 'revision' factor is present (non-zero note).
+    result = uc.run(universe=["MU"], as_of="2026-06-08", top_n=10)
+    store = FakeCallStore()
+    as_of_dt = __import__("datetime").datetime(2026, 6, 8, tzinfo=timezone.utc)
+    uc.surface_calls(result, as_of_dt=as_of_dt, store=store)
+
+    notes = " ".join(
+        e.note for c in store.saved for e in c.evidence  # type: ignore[attr-defined]
+    )
+    assert "Analyst dispersion z-score" in notes
+    assert "revision z-score" not in notes
+
+
 def test_surface_calls_skipped_when_store_is_none() -> None:
     """surface_calls(store=None) must not raise — existing run() tests stay green."""
     from datetime import timezone

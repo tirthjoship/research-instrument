@@ -105,3 +105,50 @@ def test_composite_lowvol_none_averages_over_four():
     subs["lowvol"] = None
     expected = (1.0 + 2.0 + 3.0 + 4.0) / 4
     assert abs(composite_score(subs) - expected) < 1e-9
+
+
+# ── P0b: honest factor labels/caveats sourced from the evidence registry ──────
+
+
+def test_factor_display_label_revision_is_dispersion():
+    """The 'revision' factor must surface the registry label 'Analyst dispersion'."""
+    from domain.factor_scores import factor_display_label
+
+    assert factor_display_label("revision") == "Analyst dispersion"
+    assert factor_display_label("quality") == "Quality (ROE/margin)"
+    assert factor_display_label("value") == "Value (1/PE)"
+
+
+def test_factor_display_label_falls_back_for_unregistered():
+    """lowvol has no registry entry yet — fall back to a title-cased key."""
+    from domain.factor_scores import factor_display_label
+
+    assert factor_display_label("lowvol") == "Lowvol"
+
+
+def test_factor_caveat_dispersion_states_not_revision_drift():
+    """Dispersion caveat must say it is target DISPERSION, not revision drift."""
+    from domain.factor_scores import factor_caveat
+
+    c = factor_caveat("revision")
+    assert c is not None
+    assert "DISPERSION" in c
+    assert "not revision drift" in c
+    assert "no published evidence it predicts returns" in c
+
+
+def test_factor_caveat_value_quality_are_snapshot_not_pit():
+    """Value/Quality caveats must flag current-snapshot, not point-in-time."""
+    from domain.factor_scores import factor_caveat
+
+    for key in ("value", "quality"):
+        c = factor_caveat(key)
+        assert c is not None
+        assert "snapshot" in c.lower()
+        assert "point-in-time" in c.lower()
+
+
+def test_factor_caveat_none_for_unregistered():
+    from domain.factor_scores import factor_caveat
+
+    assert factor_caveat("lowvol") is None
