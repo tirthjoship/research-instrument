@@ -1,8 +1,23 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from adapters.visualization.components.onboarding import render_landing_door_html
+import streamlit as st
+
+from adapters.visualization.components.onboarding import (
+    render_landing_door_html,
+    render_sample_banner_html,
+)
+from adapters.visualization.components.styles import GLOBAL_CSS
+from adapters.visualization.tabs.weekly_brief import _handle_onboarding
+
+
+class _StreamlitCtx:
+    def __enter__(self) -> "_StreamlitCtx":
+        return self
+
+    def __exit__(self, *_args: object) -> bool:
+        return False
 
 
 def test_door_local_shows_privacy_copy() -> None:
@@ -10,44 +25,28 @@ def test_door_local_shows_privacy_copy() -> None:
     html = render_landing_door_html(local=True)
     assert "stays on your machine" in html.lower()
     assert "Load a book to begin" in html
-    # Dead decorative buttons removed — no <button in the HTML banner
     assert "<button" not in html
 
 
 def test_door_hosted_hides_privacy_and_upload() -> None:
     html = render_landing_door_html(local=False)
-    assert "stays on your machine" not in html.lower()  # no false promise
-    assert "isn't running local-only" in html  # honest notice
-    assert "Load a book to begin" in html  # heading still present
-    # Dead decorative buttons removed from the banner HTML
+    assert "stays on your machine" not in html.lower()
+    assert "isn't running local-only" in html
+    assert "Load a book to begin" in html
     assert "<button" not in html
 
 
 def test_door_no_dead_html_buttons_local() -> None:
-    """render_landing_door_html(local=True) must not contain <button elements."""
     html = render_landing_door_html(local=True)
-    assert "<button" not in html, (
-        "Dead HTML buttons must be removed from the door banner; "
-        "real actions are rendered as st.button / st.file_uploader"
-    )
+    assert "<button" not in html
 
 
 def test_door_no_dead_html_buttons_hosted() -> None:
-    """render_landing_door_html(local=False) must not contain <button elements."""
     html = render_landing_door_html(local=False)
-    assert (
-        "<button" not in html
-    ), "Dead HTML buttons must be removed from the door banner (hosted mode)"
-
-
-# ---------------------------------------------------------------------------
-# Task 5: belt-and-suspenders privacy tripwire + forbidden-word scans
-# ---------------------------------------------------------------------------
+    assert "<button" not in html
 
 
 def test_privacy_copy_never_shown_when_not_local() -> None:
-    from adapters.visualization.components.onboarding import render_landing_door_html
-
     assert "stays on your machine" not in render_landing_door_html(local=False).lower()
 
 
@@ -64,210 +63,97 @@ def test_onboarding_no_forbidden_words() -> None:
             assert w not in src, f"forbidden word {w!r} in {mod.__name__}"
 
 
-# ---------------------------------------------------------------------------
-# Fix 2: 3-button action row + reveal-on-click CSV uploader
-# ---------------------------------------------------------------------------
+def test_sample_banner_has_ob_class() -> None:
+    html = render_sample_banner_html()
+    assert "ob-sample-banner" in html
+    assert "Sample book" in html
+    assert "Active book" not in html
 
 
-def test_three_buttons_rendered_in_onboarding_row() -> None:
-    """_handle_onboarding must render exactly 3 st.button calls in the action row."""
-    import streamlit as st
+def test_sample_book_loaded_on_first_landing() -> None:
+    """_handle_onboarding loads sample book and inline uploader when local."""
+    uploader_labels: list[str] = []
+    session_state: dict[str, object] = {}
 
-    from adapters.visualization.tabs.weekly_brief import _handle_onboarding
-
-    button_keys: list[str] = []
-
-    def capture_button(label: str, **kwargs: object) -> bool:
-        button_keys.append(str(kwargs.get("key", "")))
-        return False
+    def capture_uploader(label: str, **kwargs: object) -> None:
+        uploader_labels.append(label)
+        return None
 
     with (
         patch.object(st, "markdown"),
-        patch.object(
-            st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
-        ),
-        patch.object(st, "button", side_effect=capture_button),
-        patch.object(st, "file_uploader", return_value=None),
-        patch.object(st, "form", MagicMock()),
+        patch.object(st, "container", return_value=_StreamlitCtx()),
+        patch.object(st, "file_uploader", side_effect=capture_uploader),
         patch(
-            "adapters.visualization.tabs.weekly_brief.is_local_runtime",
-            return_value=False,
-        ),
-        patch(
-            "adapters.visualization.tabs.weekly_brief._render_onboarding_html",
-            return_value="",
-        ),
-        patch.dict(st.session_state, {}, clear=True),
-    ):
-        _handle_onboarding()
-
-    # 3 buttons must always be attempted: ob_sample, (ob_csv_toggle skipped when not local), ob_manual
-    assert "ob_sample" in button_keys, "ob_sample button missing"
-    assert "ob_manual" in button_keys, "ob_manual button missing"
-
-
-def test_csv_toggle_button_only_rendered_when_local() -> None:
-    """ob_csv_toggle button must only be rendered when is_local_runtime() is True."""
-    import streamlit as st
-
-    from adapters.visualization.tabs.weekly_brief import _handle_onboarding
-
-    button_keys_local: list[str] = []
-    button_keys_remote: list[str] = []
-
-    def capture_button_local(label: str, **kwargs: object) -> bool:
-        button_keys_local.append(str(kwargs.get("key", "")))
-        return False
-
-    def capture_button_remote(label: str, **kwargs: object) -> bool:
-        button_keys_remote.append(str(kwargs.get("key", "")))
-        return False
-
-    # Local runtime — ob_csv_toggle must appear
-    with (
-        patch.object(st, "markdown"),
-        patch.object(
-            st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
-        ),
-        patch.object(st, "button", side_effect=capture_button_local),
-        patch.object(st, "file_uploader", return_value=None),
-        patch(
-            "adapters.visualization.tabs.weekly_brief.is_local_runtime",
+            "adapters.visualization.tabs.weekly_brief.holdings_upload_enabled",
             return_value=True,
         ),
         patch(
-            "adapters.visualization.tabs.weekly_brief._render_onboarding_html",
-            return_value="",
+            "adapters.visualization.tabs.weekly_brief.load_sample_book",
+            return_value=[],
         ),
-        patch.dict(st.session_state, {}, clear=True),
+        patch("streamlit.session_state", session_state),
     ):
         _handle_onboarding()
 
-    assert "ob_csv_toggle" in button_keys_local, "ob_csv_toggle missing when local"
+    assert "book" in session_state
+    assert session_state.get("is_sample_book") is True
+    assert uploader_labels == ["Upload your holdings"]
 
-    # Remote runtime — ob_csv_toggle must NOT appear (privacy gate)
+
+def test_user_holdings_still_shows_sample_banner_upload() -> None:
+    """Uploaded holdings use user book data but keep the sample-book banner + upload CTA."""
+    uploader_labels: list[str] = []
+    session_state: dict[str, object] = {"book": [], "is_sample_book": False}
+
+    def capture_uploader(label: str, **kwargs: object) -> None:
+        uploader_labels.append(label)
+        return None
+
     with (
         patch.object(st, "markdown"),
-        patch.object(
-            st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
-        ),
-        patch.object(st, "button", side_effect=capture_button_remote),
-        patch.object(st, "file_uploader", return_value=None),
+        patch.object(st, "container", return_value=_StreamlitCtx()),
+        patch.object(st, "file_uploader", side_effect=capture_uploader),
         patch(
-            "adapters.visualization.tabs.weekly_brief.is_local_runtime",
-            return_value=False,
+            "adapters.visualization.tabs.weekly_brief.holdings_upload_enabled",
+            return_value=True,
         ),
-        patch(
-            "adapters.visualization.tabs.weekly_brief._render_onboarding_html",
-            return_value="",
-        ),
-        patch.dict(st.session_state, {}, clear=True),
+        patch("streamlit.session_state", session_state),
     ):
         _handle_onboarding()
 
-    assert (
-        "ob_csv_toggle" not in button_keys_remote
-    ), "ob_csv_toggle must NOT render when not local (privacy gate breach)"
+    assert uploader_labels == ["Upload your holdings"]
 
 
-def test_csv_uploader_revealed_only_when_toggle_on_and_local() -> None:
-    """file_uploader must only be called when _show_csv_upload is True AND local."""
-    import streamlit as st
-
-    from adapters.visualization.tabs.weekly_brief import _handle_onboarding
-
+def test_csv_uploader_hidden_when_not_local() -> None:
     uploader_calls: list[int] = []
+    session_state: dict[str, object] = {}
 
-    def capture_uploader(*args: object, **kwargs: object) -> None:
+    def capture_uploader(*_args: object, **_kwargs: object) -> None:
         uploader_calls.append(1)
         return None
 
-    # Toggle ON + local → uploader renders
     with (
         patch.object(st, "markdown"),
-        patch.object(
-            st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
-        ),
-        patch.object(st, "button", return_value=False),
+        patch.object(st, "container", return_value=_StreamlitCtx()),
         patch.object(st, "file_uploader", side_effect=capture_uploader),
         patch(
-            "adapters.visualization.tabs.weekly_brief.is_local_runtime",
-            return_value=True,
-        ),
-        patch(
-            "adapters.visualization.tabs.weekly_brief._render_onboarding_html",
-            return_value="",
-        ),
-        patch.dict(st.session_state, {"_show_csv_upload": True}, clear=True),
-    ):
-        _handle_onboarding()
-
-    assert (
-        len(uploader_calls) == 1
-    ), "file_uploader must render when toggle=ON and local"
-
-    uploader_calls.clear()
-
-    # Toggle OFF + local → uploader does NOT render
-    with (
-        patch.object(st, "markdown"),
-        patch.object(
-            st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
-        ),
-        patch.object(st, "button", return_value=False),
-        patch.object(st, "file_uploader", side_effect=capture_uploader),
-        patch(
-            "adapters.visualization.tabs.weekly_brief.is_local_runtime",
-            return_value=True,
-        ),
-        patch(
-            "adapters.visualization.tabs.weekly_brief._render_onboarding_html",
-            return_value="",
-        ),
-        patch.dict(st.session_state, {"_show_csv_upload": False}, clear=True),
-    ):
-        _handle_onboarding()
-
-    assert len(uploader_calls) == 0, "file_uploader must NOT render when toggle=OFF"
-
-    # Toggle ON + NOT local → uploader does NOT render (privacy gate)
-    with (
-        patch.object(st, "markdown"),
-        patch.object(
-            st, "columns", return_value=[MagicMock(), MagicMock(), MagicMock()]
-        ),
-        patch.object(st, "button", return_value=False),
-        patch.object(st, "file_uploader", side_effect=capture_uploader),
-        patch(
-            "adapters.visualization.tabs.weekly_brief.is_local_runtime",
+            "adapters.visualization.tabs.weekly_brief.holdings_upload_enabled",
             return_value=False,
         ),
         patch(
-            "adapters.visualization.tabs.weekly_brief._render_onboarding_html",
-            return_value="",
+            "adapters.visualization.tabs.weekly_brief.load_sample_book",
+            return_value=[],
         ),
-        patch.dict(st.session_state, {"_show_csv_upload": True}, clear=True),
+        patch("streamlit.session_state", session_state),
     ):
         _handle_onboarding()
 
-    assert (
-        len(uploader_calls) == 0
-    ), "file_uploader must NOT render when not local, even if toggle=ON (privacy gate)"
+    assert len(uploader_calls) == 0
 
 
-def test_css_buttons_full_width_and_petrol() -> None:
-    """CSS description: buttons are full-width, 46px min-height, IBM Plex Sans, petrol."""
-    from adapters.visualization.components.styles import GLOBAL_CSS
-
-    # Full-width rule
-    assert (
-        "width: 100% !important" in GLOBAL_CSS
-    ), "button width:100% missing from GLOBAL_CSS"
-    assert "min-height: 46px !important" in GLOBAL_CSS, "button min-height:46px missing"
-    # Primary petrol fill
-    assert "#0F6E80" in GLOBAL_CSS, "petrol #0F6E80 missing from GLOBAL_CSS"
-    # File uploader has dashed petrol border and hides size hint small
-    assert (
-        "stFileUploaderDropzoneInstructions" in GLOBAL_CSS
-    ), "file uploader size-hint hide rule missing"
-    assert "dashed" in GLOBAL_CSS, "file uploader dashed border missing"
+def test_css_onboarding_row_and_upload_tooltip() -> None:
+    assert "ob-sample-banner" in GLOBAL_CSS
+    assert 'aria-label="Upload your holdings"' in GLOBAL_CSS
+    assert "--ob-csv-upload-tip" in GLOBAL_CSS
+    assert "book value (cad)" in GLOBAL_CSS
+    assert "button *" in GLOBAL_CSS

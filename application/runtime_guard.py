@@ -21,10 +21,19 @@ def _client_is_loopback() -> bool:
     try:
         import streamlit as st
 
-        host = getattr(getattr(st, "context", None), "headers", {}) or {}
-        # best-effort: if Streamlit doesn't expose the client host, treat as NOT loopback (fail-safe)
-        forwarded = host.get("Host", "") if hasattr(host, "get") else ""
-        return any(lb in forwarded for lb in _LOOPBACK)
+        ctx = getattr(st, "context", None)
+        if ctx is not None:
+            ip = getattr(ctx, "ip_address", None)
+            if ip in ("127.0.0.1", "::1"):
+                return True
+            headers = getattr(ctx, "headers", None)
+            if headers is not None:
+                host = ""
+                if hasattr(headers, "get"):
+                    host = str(headers.get("host", "") or headers.get("Host", "") or "")
+                if host and any(lb in host.lower() for lb in _LOOPBACK):
+                    return True
+        return False
     except Exception:  # noqa: BLE001
         return False
 
@@ -32,8 +41,21 @@ def _client_is_loopback() -> bool:
 def is_local_runtime() -> bool:
     if os.environ.get("STOCKREC_LOCAL_ONLY") != "1":
         return False
-    if _server_address() not in _LOOPBACK:
+    addr = _server_address()
+    # Empty address = Streamlit default (localhost). Only reject explicit remote binds.
+    if addr and addr not in _LOOPBACK:
         return False
     if not _client_is_loopback():
         return False
     return True
+
+
+def holdings_upload_enabled() -> bool:
+    """Whether the Home tab may show the holdings CSV uploader.
+
+    Uses STOCKREC_LOCAL_ONLY for local dev (reliable) and falls back to the full
+    loopback guard when the env flag is unset.
+    """
+    if os.environ.get("STOCKREC_LOCAL_ONLY") == "1":
+        return True
+    return is_local_runtime()
