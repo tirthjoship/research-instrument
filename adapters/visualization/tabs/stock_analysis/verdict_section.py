@@ -134,14 +134,19 @@ def _render_fit_card(verdict: FitVerdict, screen_as_of: str | None = None) -> No
     """Evidence grade + fit flags. Descriptive arithmetic only — never a forecast."""
     import streamlit as st
 
+    from adapters.visualization.components.evidence_chip import (
+        render_evidence_chip_by_key,
+    )
     from adapters.visualization.components.formatters import grade_badge_html
 
     stale = f" · screen as of {screen_as_of}" if screen_as_of else ""
+    grade_chip = render_evidence_chip_by_key("evidence_grade")
     st.markdown(
         f'<div class="ws-card" style="padding:12px 16px;margin-bottom:12px;">'
         f"{grade_badge_html(verdict.evidence_grade)} "
         f'<span style="font-weight:700;">Evidence + fit vs your book</span>'
-        f'<span style="color:#64748B;font-size:12px;">{stale}</span>'
+        f'<span style="color:#64748B;font-size:12px;">{stale}</span> '
+        f"{grade_chip}"
         f'<div style="font-size:14px;margin-top:8px;">{verdict.summary}</div>'
         "</div>",
         unsafe_allow_html=True,
