@@ -12,11 +12,12 @@ import html as _html
 from domain.factor_bands import Band, band_for_percentile, band_tone_key
 
 # ── Factor key → (display label, glossary term) ───────────────────────────────
-# "revision" is honestly labelled "Analyst spread" (it measures target spread,
-# not estimate drift — see spec §3 / ADR note).  Data key unchanged.
+# "revision" is honestly labelled "Analyst dispersion" (it measures target-price
+# spread/dispersion, not estimate drift — see evidence_registry factor_analyst_dispersion).
+# Data key unchanged for the downstream contract.
 _FACTOR_META: dict[str, tuple[str, str]] = {
     "momentum": ("Momentum", "Momentum factor"),
-    "revision": ("Analyst spread", "Analyst spread"),
+    "revision": ("Analyst dispersion", "Analyst dispersion"),
     "quality": ("Quality", "Quality factor"),
     "value": ("Value", "Value factor"),
     "lowvol": ("Low-vol", "Low-vol factor"),

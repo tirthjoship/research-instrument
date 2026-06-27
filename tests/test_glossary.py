@@ -11,7 +11,7 @@ import pytest
         "Evidence score",
         "Percentile",
         "Low-vol factor",
-        "Analyst spread",
+        "Analyst dispersion",
         "Trend gate",
         "Reason bucket",
     ],
