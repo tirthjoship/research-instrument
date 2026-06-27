@@ -102,10 +102,14 @@ Stages 0–1 are ordinary engineering you can do freely. Stages 2–3 are the **
 
 - **Stage 0 — DONE.** Pre-registration (ADR-057), the backtest engine, the similarity service, and
   the hardened filing-text extraction are all on `develop` and tested.
-- **Stage 1 — BUILD (in progress).** Write: (a) the ticker→CIK resolver, (b) the three callables,
-  (c) a `lazy-prices` CLI command that wires them together and writes a JSON report. Model the
-  command on the existing backtests in `application/cli/backtest_commands.py`. Unit-test with
-  fakes (no live SEC/yfinance in tests). Pass the deterministic gate, land on `develop`.
+- **Stage 1 — BUILD: DONE (2026-06-27).** Landed on `develop`: the ticker→CIK resolver
+  (`adapters/data/sec_cik_resolver.py`), the three callables + cohort/pairing helpers
+  (`application/lazy_prices_runner.py`), and the `lazy-prices` CLI command
+  (`application/cli/backtest_commands.py`) that wires them, disk-caches filing text, and writes the
+  JSON report. 20 offline tests; deterministic gate green. **You can dry-run it now** with
+  `uv run python -m application.cli lazy-prices --limit 60` — this hits live SEC/yfinance for a
+  60-name slice to prove the pipe end-to-end. It is a SMOKE run (the report is stamped
+  `smoke_limit`), **not** a verdict.
 - **Stage 2 — ONE-TIME FETCH (supervised).** Run a cached download of ~512 names × ~40 quarterly
   filings. The SEC rate-limits to ~1 request/second, so this takes **hours**. Cache it on disk so
   the actual run is fast and repeatable. *Kick this off knowingly — it's a long network job.*
