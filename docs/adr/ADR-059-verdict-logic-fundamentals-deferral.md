@@ -4,14 +4,14 @@
 **Status:** Accepted
 **Deciders:** Tirth Joshi
 **Builds on:** ADR-045 (pivot prediction → discipline), ADR-046 (KILL standard), ADR-048 (pre-registered
-forward-calibration gate), ADR-051 (calibration readiness), ADR-057 (decision card v9, 5 RAG evidence squares)
+forward-calibration gate), ADR-051 (calibration readiness)
 
 ## Context
 
 The per-stock verdict (`REDUCE / TRIM / REVIEW / HOLD / ADD_OK`) is produced by
 `domain/discipline.grade_position` — the **trend-break rule v1**. It is already multi-signal
 (trend_health vs 200-day ATR, trailing-stop breach, disposition risk, volatility, relative strength,
-market-wide context). The v9 redesign (ADR-057) surfaces this rubric and presents earnings / valuation /
+market-wide context). The v9 redesign surfaces this rubric and presents earnings / valuation /
 financials as **attributed evidence** — the 5 RAG squares — *alongside* the trend-driven verdict.
 
 **The question (raised 2026-06-14, deferred):** should the verdict logic be **extended** to fold
@@ -79,5 +79,4 @@ holdings (weekly vs monthly) — that, not impatience, would justify a re-regist
 
 ## Related
 
-- ADR-048 (forward gate), ADR-051 (calibration readiness), ADR-057 (decision card v9 / 5 RAG squares)
-- Memory: `project-verdict-logic-extension-question` (now resolved by this ADR)
+- ADR-048 (forward gate), ADR-051 (calibration readiness)

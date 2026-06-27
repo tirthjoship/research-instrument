@@ -45,6 +45,5 @@ Four independent, pre-registered falsification tests have now rejected every var
 
 - The product's honest identity is settled: an **evidence-aggregator + risk/discipline co-pilot that abstains**, consistent with ADR-039/041. No alpha claim is made anywhere in the UI/output.
 - The validation harness from ADR-044/046 (block-bootstrap, Sharpe-diff CI, cost model, look-ahead guards) is retained as a protected baseline for any future pre-registered candidate.
-- Spec: `docs/superpowers/specs/2026-06-08-holdings-discipline-risk-engine-design.md`. Plan: `docs/superpowers/plans/2026-06-08-holdings-discipline-risk-engine.md` (13 TDD tasks). Branch: `feat/holdings-discipline-risk-engine` (off develop).
 - Reopening the alpha search requires a *new* pre-registered hypothesis with its own locked gate and ADR — not tuning a dead one.
 - **Honest framing to the user, recorded:** this is a "lose less / mess up less" tool, not a "win more" engine; its largest leg (behavior) only pays off if the user acts on the flags, and proof accrues over weeks of forward-tracking.

@@ -16,8 +16,6 @@ A live source-health probe (2026-06-05) found: **StockTwits dead** (HTTP 403 on 
 
 The honest reading: abstention was the engine truthfully telling us it could not see mid-cap attention. Lowering thresholds to manufacture large-cap calls would re-run the exact setup the conviction backtest rejected out-of-sample (ADR-039) — the self-deception those ADRs exist to prevent. The fix is to repair the engine's eyesight (sources + an honest historical base) and the miscalibrated bar (compute all dims), *then* track.
 
-Full design: `docs/superpowers/specs/2026-06-05-leg2-subproject-a-honest-opportunity-engine-design.md`.
-
 ## Decision
 
 Build **Leg-2 Sub-Project A — the Honest Opportunity Engine ("make the engine see honestly")**. Seven decisions:

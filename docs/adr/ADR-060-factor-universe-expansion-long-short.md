@@ -3,7 +3,7 @@
 **Date:** 2026-06-17
 **Status:** Accepted — **BUILT 2026-06-17** (9 factors live; see "Build outcome" below)
 **Deciders:** Tirth Joshi
-**Builds on:** Risk-tab v8 (ADR-052), the R03 fix-sprint item, CLAUDE.md non-negotiable #2 (no look-ahead bias)
+**Builds on:** Risk-tab v8 (ADR-052), the R03 fix-sprint item, the project's non-negotiable on no look-ahead bias
 
 ## Context
 
@@ -35,7 +35,7 @@ only version that actually answers "what drives the book."
      new dependency; the scrubber `risk_stats_analyzer` is already source-agnostic and consumes a
      `factor_returns` dict, so the analysis layer needs no change).
    - **Point-in-time / leakage handling** — Ken French factors publish with a lag; every factor return used at
-     `as_of` must have been published on/before `as_of`. This is CLAUDE.md non-negotiable #2; getting it wrong
+     `as_of` must have been published on/before `as_of`. This is the project's no-look-ahead non-negotiable; getting it wrong
      makes backtests lie. This is the bulk of the work and why it is NOT bolted onto a UI fix sprint.
    - Config schema update (factor names, not tickers), `weekly-brief` re-run to populate betas/CIs/VIFs,
      real-beta eyeball, and a methodology review before adoption.
