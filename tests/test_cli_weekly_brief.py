@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Any
 
 import pytest
 from click.testing import CliRunner
@@ -75,7 +76,7 @@ def test_weekly_brief_cli_masks_stdout_and_writes_gitignored_file(tmp_path, monk
     )
 
     def _fake_build(
-        market: str, holdings: list[Holding], report_dir: str
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
     ) -> tuple[WeeklyBriefUseCase, list[str]]:  # noqa: ANN001
         uc = WeeklyBriefUseCase(
             screen=_FakeScreen(),
@@ -145,7 +146,7 @@ def test_cite_cases_flag_writes_cache(
     cache_path = str(tmp_path / "cited_cases.json")
 
     def _fake_build(
-        market: str, holdings: list[Holding], report_dir: str
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
     ) -> tuple[WeeklyBriefUseCase, list[str]]:
         uc = WeeklyBriefUseCase(
             screen=_FakeScreen(),
@@ -206,7 +207,7 @@ def test_no_cite_cases_skips_prefetch(
     )
 
     def _fake_build(
-        market: str, holdings: list[Holding], report_dir: str
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
     ) -> tuple[WeeklyBriefUseCase, list[str]]:
         uc = WeeklyBriefUseCase(
             screen=_FakeScreen(),
@@ -262,7 +263,7 @@ def test_cite_cases_progress_line_in_output(
     cache_path = str(tmp_path / "cited_cases.json")
 
     def _fake_build(
-        market: str, holdings: list[Holding], report_dir: str
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
     ) -> tuple[WeeklyBriefUseCase, list[str]]:
         uc = WeeklyBriefUseCase(
             screen=_FakeScreen(),

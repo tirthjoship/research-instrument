@@ -24,6 +24,20 @@ def test_all_conditions_true_is_local(monkeypatch):  # type: ignore[no-untyped-d
     assert is_local_runtime() is True
 
 
+def test_empty_server_address_allowed_when_loopback_client(monkeypatch):  # type: ignore[no-untyped-def]
+    monkeypatch.setenv("STOCKREC_LOCAL_ONLY", "1")
+    monkeypatch.setattr("application.runtime_guard._server_address", lambda: "")
+    monkeypatch.setattr("application.runtime_guard._client_is_loopback", lambda: True)
+    assert is_local_runtime() is True
+
+
+def test_holdings_upload_enabled_with_env_flag(monkeypatch):  # type: ignore[no-untyped-def]
+    from application.runtime_guard import holdings_upload_enabled
+
+    monkeypatch.setenv("STOCKREC_LOCAL_ONLY", "1")
+    assert holdings_upload_enabled() is True
+
+
 def test_risk_tab_omits_ai_panel_when_not_local(monkeypatch):  # type: ignore[no-untyped-def]
     """INTEGRATION TRIPWIRE: risk tab must never embed AI HTML when not running locally.
 

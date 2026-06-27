@@ -22,7 +22,7 @@ from ._deps import (
 
 
 def _build_weekly_brief(
-    market: str, holdings: "list[Any]", report_dir: str
+    market: str, holdings: "list[Any]", report_dir: str, use_cache: bool = True
 ) -> "tuple[Any, list[str]]":
     """Wire real adapters into a WeeklyBriefUseCase. Returns (use_case, universe)."""
     from datetime import timezone
@@ -35,7 +35,7 @@ def _build_weekly_brief(
     from domain.trend_rules import sma as _sma
     from domain.trend_rules import trend_health as _trend_health
 
-    deps = _build_dependencies(market)
+    deps = _build_dependencies(market, use_cache=use_cache)
     store = deps["store"]
     market_data = deps["market_data"]
     universe = _get_backtest_universe(market)
@@ -276,8 +276,20 @@ def _prefetch_cited_cases(brief: "Any", as_of: datetime) -> None:
         "Enable only when GEMINI_API_KEY is set and you want to refresh the weekly cache."
     ),
 )
+@click.option(
+    "--use-cache/--no-use-cache",
+    default=True,
+    show_default=True,
+    help="Use local cached yfinance responses",
+)
 def weekly_brief(
-    market: str, holdings: str, out: str, report_dir: str, top_n: int, cite_cases: bool
+    market: str,
+    holdings: str,
+    out: str,
+    report_dir: str,
+    top_n: int,
+    cite_cases: bool,
+    use_cache: bool,
 ) -> None:
     """Generate the unified weekly brief (masked stdout + gitignored full markdown).
 
@@ -296,7 +308,7 @@ def weekly_brief(
     from domain.brief import to_markdown, to_stdout_masked
 
     held = read_holdings(holdings)
-    uc, universe = _build_weekly_brief(market, held, report_dir)
+    uc, universe = _build_weekly_brief(market, held, report_dir, use_cache=use_cache)
     as_of = datetime.now()
     brief = uc.execute(
         universe=universe,

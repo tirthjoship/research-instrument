@@ -261,7 +261,23 @@ def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-de
         patch.object(st, "expander"),
         patch.object(st, "divider"),
         # _handle_onboarding now uses 2-column layout (_render_book_actions)
-        patch.object(st, "columns", return_value=[MagicMock(), MagicMock()]),
+        patch.object(
+            st,
+            "container",
+            return_value=MagicMock(
+                __enter__=MagicMock(return_value=MagicMock()),
+                __exit__=MagicMock(return_value=False),
+            ),
+        ),
+        patch.object(
+            st,
+            "popover",
+            return_value=MagicMock(
+                __enter__=MagicMock(return_value=MagicMock()),
+                __exit__=MagicMock(return_value=False),
+            ),
+        ),
+        patch.object(st, "caption"),
         patch.object(st, "progress", return_value=progress_mock),
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
@@ -699,7 +715,23 @@ def test_home_render_shows_door_and_book_vitals_together(tmp_path: object) -> No
         patch.object(st, "expander"),
         patch.object(st, "divider"),
         # _handle_onboarding now uses 2-column layout (_render_book_actions)
-        patch.object(st, "columns", return_value=[MagicMock(), MagicMock()]),
+        patch.object(
+            st,
+            "container",
+            return_value=MagicMock(
+                __enter__=MagicMock(return_value=MagicMock()),
+                __exit__=MagicMock(return_value=False),
+            ),
+        ),
+        patch.object(
+            st,
+            "popover",
+            return_value=MagicMock(
+                __enter__=MagicMock(return_value=MagicMock()),
+                __exit__=MagicMock(return_value=False),
+            ),
+        ),
+        patch.object(st, "caption"),
         patch.object(st, "progress", return_value=progress_mock),
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
@@ -870,7 +902,23 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
         patch.object(st, "expander"),
         patch.object(st, "divider"),
         # _handle_onboarding now uses 2-column layout (_render_book_actions)
-        patch.object(st, "columns", return_value=[MagicMock(), MagicMock()]),
+        patch.object(
+            st,
+            "container",
+            return_value=MagicMock(
+                __enter__=MagicMock(return_value=MagicMock()),
+                __exit__=MagicMock(return_value=False),
+            ),
+        ),
+        patch.object(
+            st,
+            "popover",
+            return_value=MagicMock(
+                __enter__=MagicMock(return_value=MagicMock()),
+                __exit__=MagicMock(return_value=False),
+            ),
+        ),
+        patch.object(st, "caption"),
         patch.object(st, "progress", return_value=progress_mock),
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),

@@ -5,6 +5,13 @@ Pure functions returning HTML strings for use with st.markdown(..., unsafe_allow
 
 from __future__ import annotations
 
+from html import escape
+
+CSV_UPLOAD_TIP = (
+    "CSV columns: symbol · quantity · book value (cad) · exchange · account type. "
+    "Example: AAPL,10,2500,NASDAQ,TFSA"
+)
+
 
 def render_onboarding_html() -> str:
     """Return HTML for the 3-step onboarding card.
@@ -64,8 +71,6 @@ def render_landing_door_html(local: bool) -> str:
             "Explore the sample book. Holdings upload is disabled — "
             "this build isn't running local-only.</p>"
         )
-    # Note: .door CSS has border-radius:18px 18px 0 0 (square bottom) so it connects
-    # flush to the .door-actions panel / Streamlit column row that follows immediately.
     return (
         '<div class="door">'
         '<h2 style="font-family:Fraunces,serif;font-weight:700;font-size:18px;margin:0 0 6px">'
@@ -76,23 +81,18 @@ def render_landing_door_html(local: bool) -> str:
 
 
 def render_sample_banner_html() -> str:
-    """Compact 3-column info banner for the Home tab.
+    """Compact sample-book banner for the Home tab (left side of onboarding row).
 
-    Icon | sample-book description + ticker strip | (Streamlit upload widgets follow
-    in the adjacent st.column — they cannot live inside an HTML string).
+    Upload widget sits in the adjacent horizontal container — styled via CSS as one card.
     """
     return (
-        '<div style="'
-        "background:#FFFFFF;"
-        "border:1px solid #BFDBFE;"
-        "border-left:4px solid #1D4ED8;"
-        "border-radius:8px;"
-        "padding:12px 14px;"
+        '<div class="ob-sample-banner" style="'
+        "padding:16px 20px 16px 18px;"
         "display:flex;"
         "align-items:center;"
-        'gap:14px;margin-bottom:4px;">'
+        'gap:14px;">'
         '<div style="font-size:22px;flex-shrink:0;">📋</div>'
-        '<div style="flex:1;">'
+        '<div style="flex:1;min-width:0;">'
         '<div style="'
         "font-family:'Fraunces',serif;"
         "font-size:14px;"
@@ -110,7 +110,7 @@ def render_sample_banner_html() -> str:
         "font-family:'IBM Plex Mono',monospace;"
         "font-size:10px;"
         "color:#1D4ED8;"
-        'margin-top:3px;">'
+        'margin-top:6px;margin-bottom:2px;">'
         "AAPL · MSFT · NVDA · GOOGL · AMZN"
         " · TSLA · META · JPM · V · BRK-B"
         "</div>"
@@ -119,19 +119,21 @@ def render_sample_banner_html() -> str:
     )
 
 
+def render_csv_format_tip_html() -> str:
+    """Info icon with hover tooltip for holdings CSV format (legacy helper)."""
+    tip = escape(CSV_UPLOAD_TIP)
+    return (
+        '<span class="ri-ttip ob-csv-info">'
+        '<span class="ob-csv-info-icon">i</span>'
+        f'<span class="ri-tip">{tip}</span>'
+        "</span>"
+    )
+
+
 def should_show_onboarding(
     has_scan_results: bool,
     has_trades: bool,
     has_watchlist: bool,
 ) -> bool:
-    """Return True if all inputs are False (nothing has been done yet).
-
-    Args:
-        has_scan_results: True if at least one scan has been run.
-        has_trades: True if at least one trade has been recorded.
-        has_watchlist: True if at least one ticker is on the watchlist.
-
-    Returns:
-        True only when the user has not yet done anything.
-    """
+    """Return True if all inputs are False (nothing has been done yet)."""
     return not has_scan_results and not has_trades and not has_watchlist
