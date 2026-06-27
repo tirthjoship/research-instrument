@@ -380,7 +380,7 @@ def test_reason_view_factor_rows_present() -> None:
 
     html = rc.build_reason_view_html(_make_full_candidates_for_reason())
     # The 5 factor rows (4 live + 1 DATA-GAP for lowvol) should be in each card
-    for factor in ("Quality", "Value", "Analyst spread", "Momentum"):
+    for factor in ("Quality", "Value", "Analyst dispersion", "Momentum"):
         assert factor in html, f"Factor row {factor!r} missing from reason view"
     # Low-vol should appear as DATA-GAP (lowvol percentile=0.0)
     assert "Low-vol" in html
@@ -528,7 +528,13 @@ def test_zone2_card_has_factor_rows() -> None:
     from adapters.visualization.tabs import research_candidates as rc
 
     html = rc.build_check_your_own_html(_make_fake_batch_rows())
-    for factor_label in ("Momentum", "Analyst spread", "Quality", "Value", "Low-vol"):
+    for factor_label in (
+        "Momentum",
+        "Analyst dispersion",
+        "Quality",
+        "Value",
+        "Low-vol",
+    ):
         assert factor_label in html, f"Factor label {factor_label!r} missing"
 
 
@@ -814,7 +820,7 @@ def test_card_factor_order_momentum_last():
     }
     html = _build_candidate_row_html(rank=1, candidate=c)
     # canonical display order (render_factor_row labels): Quality, Value,
-    # Analyst spread (revision), Low-vol, Momentum — momentum LAST.
+    # Analyst dispersion (revision), Low-vol, Momentum — momentum LAST.
     iq = html.index(">Quality")
     iv = html.index(">Value")
     il = html.index(">Low-vol")
