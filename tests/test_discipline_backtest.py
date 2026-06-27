@@ -51,3 +51,31 @@ def test_backtest_calibration_empty_when_no_history():
         ["X"], lambda t: [], start, start + timedelta(days=10)
     )
     assert out["total_verdicts"] == 0
+
+
+def test_backtest_numpy_float_prices_do_not_crash():
+    """Regression: discipline_backtest._vol() uses statistics.pstdev which
+    raises AttributeError on numpy scalars in Python 3.12."""
+    from datetime import datetime, timedelta, timezone
+
+    import numpy as np
+
+    from application.discipline_backtest import backtest_discipline_calibration
+
+    start = datetime(2023, 1, 1, tzinfo=timezone.utc)
+    n = 300
+    numpy_up = [np.float64(100.0 + i * 0.5) for i in range(n)]
+    series = {
+        "NP": [(start + timedelta(days=i), v) for i, v in enumerate(numpy_up)],
+        "SPY": [(start + timedelta(days=i), 100.0 + i * 0.3) for i in range(n)],
+    }
+
+    out = backtest_discipline_calibration(
+        ["NP"],
+        lambda t: series.get(t, []),
+        start,
+        start + timedelta(days=n - 1),
+        step_days=21,
+        horizon_days=21,
+    )
+    assert out["total_verdicts"] >= 0

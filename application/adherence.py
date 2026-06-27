@@ -1,14 +1,13 @@
 """Unit C weekly adherence report: holdings-diff trades, discretionary
 throttle, CAD cash buffer, obligation matching + 21d counterfactual gap.
 Appends idempotently to a gitignored adherence_log.jsonl. PRIVACY: all inputs
-and outputs live under data/personal/. Spec:
-docs/superpowers/specs/2026-06-10-unit-c-adherence-design.md (v4)."""
+and outputs live under data/personal/."""
 
 from __future__ import annotations
 
 import json
 import os
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable
 
 from application.discipline_log import _price_on_or_after, read_assessments
@@ -42,12 +41,16 @@ def _snapshots(
     re-runs: keep only rows from the max as_of timestamp on that date."""
     # Key the same-day run dict by the PARSED datetime, not the raw string, so
     # max() compares chronologically even if formats/offsets ever differ
-    # (Z vs +00:00, variable microsecond width) — robust on the headline path.
+    # (Z vs +00:00, variable microsecond width). Date-only as_of values
+    # ("2026-06-11") parse as tz-naive; normalise them to UTC so max() never
+    # compares naive against aware (which raises TypeError).
     by_date: dict[date, dict[datetime, list[dict[str, Any]]]] = {}
     for r in rows:
         if r.get("quantity") is None:  # legacy rows: pre-Unit-C, no baseline
             continue
         ts = datetime.fromisoformat(str(r["as_of"]))
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
         d = ts.date()
         by_date.setdefault(d, {}).setdefault(ts, []).append(r)
     return {d: runs[max(runs)] for d, runs in by_date.items()}

@@ -21,10 +21,12 @@ __all__ = [
     "to_stdout_masked",
 ]
 
+from domain.corroboration_models import ConvergenceTier, DirectionalView, Stance
 from domain.discipline import Verdict
 from domain.models import BookMacroExposure, PortfolioRisk, PositionRisk
 from domain.regime import Regime
 from domain.screen_models import ScreenCandidate, ScreenLabel, ScreenResult
+from domain.screened_row import CorroborationSnapshot
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,9 @@ class HoldingVerdictLine:
     trend_state: str  # "uptrend" | "broken" | "unknown"
     verdict: Verdict
     why: str
+    convergence_tier: ConvergenceTier | None = None
+    n_sources: int | None = None
+    source_stance: Stance | None = None
 
 
 @dataclass(frozen=True)
@@ -87,6 +92,7 @@ class WeeklyBrief:
     # Single source of truth: threaded from ScreenResult.abstained at construction.
     # Never recomputed from len(candidates) — those are orthogonal concerns.
     abstained: bool = False
+    directional_views: tuple[DirectionalView, ...] = ()
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +144,8 @@ def assemble_brief(
     scorecard: ScorecardSnapshot,
     concentration_threshold: float = 0.20,
     macro: BookMacroExposure | None = None,
+    corroboration_map: dict[str, CorroborationSnapshot] | None = None,
+    directional_views: list[DirectionalView] | None = None,
 ) -> WeeklyBrief:
     """Compose a WeeklyBrief from already-fetched pieces (pure, IO-free).
 
@@ -156,18 +164,26 @@ def assemble_brief(
         for c in screen_result.candidates[:top_n]
     )
 
+    _corr = corroboration_map or {}
     holdings = tuple(
         sorted(
-            (
+            [
                 HoldingVerdictLine(
                     ticker=p.ticker,
                     unrealized_pct=p.unrealized_pct,
                     trend_state=_trend_state(p.trend_health),
                     verdict=p.verdict,
                     why=p.why,
+                    convergence_tier=(
+                        _corr[p.ticker].convergence_tier if p.ticker in _corr else None
+                    ),
+                    n_sources=_corr[p.ticker].n_sources if p.ticker in _corr else None,
+                    source_stance=(
+                        _corr[p.ticker].net_stance if p.ticker in _corr else None
+                    ),
                 )
                 for p in positions
-            ),
+            ],
             key=lambda h: _VERDICT_ORDER.get(h.verdict, 99),
         )
     )
@@ -208,12 +224,24 @@ def assemble_brief(
         screen_label=screen_label,
         macro=macro,
         abstained=screen_result.abstained,
+        directional_views=tuple(directional_views) if directional_views else (),
     )
 
 
 # ---------------------------------------------------------------------------
 # Markdown formatter
 # ---------------------------------------------------------------------------
+
+
+def _is_corroboration_conflict(h: HoldingVerdictLine) -> bool:
+    if h.source_stance is None:
+        return False
+    bullish_but_reduce = h.source_stance == Stance.BULLISH and h.verdict in (
+        Verdict.REDUCE,
+        Verdict.TRIM,
+    )
+    bearish_but_add = h.source_stance == Stance.BEARISH and h.verdict == Verdict.ADD_OK
+    return bullish_but_reduce or bearish_but_add
 
 
 def _candidates_header(label: ScreenLabel) -> str:
@@ -247,10 +275,31 @@ def to_markdown(brief: WeeklyBrief) -> str:
     lines.append("")
     lines.append("## HOLDINGS VERDICTS")
     for h in brief.holdings:
-        lines.append(
+        base = (
             f"- **{h.ticker}**  {h.unrealized_pct:+.0%}  {h.trend_state}  "
             f"**{h.verdict.value}** — {h.why}"
         )
+        if (
+            h.convergence_tier is not None
+            and h.n_sources is not None
+            and h.source_stance is not None
+        ):
+            src_line = f"│ sources: {h.source_stance.value.upper()} ×{h.n_sources} [{h.convergence_tier.value.upper()}]"
+            if _is_corroboration_conflict(h):
+                src_line += " ⚠ CONFLICT"
+            base = base + "  " + src_line
+        lines.append(base)
+    if brief.directional_views:
+        lines.append("")
+        lines.append("## Directional Tilts (RESEARCH_ONLY)")
+        for v in brief.directional_views:
+            lines.append(
+                f"- {v.group_name}: {v.tilt} ({v.net_stance.value}, your book {v.your_exposure_pct:.0%})"
+            )
+    missing = sum(1 for h in brief.holdings if h.convergence_tier is None)
+    if missing:
+        lines.append("")
+        lines.append(f"_{missing} holding(s) have no corroboration snapshot_")
     lines.append("")
     lines.append("## RESEARCH LINKS (research-only, Phase C pending)")
     if not brief.research_links:
@@ -352,6 +401,12 @@ def to_stdout_masked(brief: WeeklyBrief) -> str:
     lines.append(
         "HOLDINGS (masked): " + ", ".join(f"{v} {counts[v]}" for v in sorted(counts))
     )
+    if brief.directional_views:
+        lines.append("Directional Tilts (RESEARCH_ONLY):")
+        for v in brief.directional_views:
+            lines.append(
+                f"  {v.group_name}: {v.tilt} ({v.net_stance.value}, your book {v.your_exposure_pct:.0%})"
+            )
     if brief.concentration:
         lines.append(
             f"CONCENTRATION: {len(brief.concentration)} flag(s) — see full brief"

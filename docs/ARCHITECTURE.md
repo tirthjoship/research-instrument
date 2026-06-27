@@ -110,11 +110,11 @@ The core thesis (sentiment leads price) is under active test. Prediction models 
 killed when they fail pre-registered gates. Hexagonal architecture means each killed
 model is one adapter deletion — domain logic survives unchanged.
 
-### Why decompose cli.py and risk.py? (2026-06-17, ADR-061)
+### Why decompose cli.py and risk.py? (2026-06-17)
 
 **Before:** `cli.py` was 3440 LOC, `risk.py` 1710 LOC. Every targeted edit required
-reading an entire file (~32k / ~19k tokens). Claude and Cursor had to hold the whole
-file to change one command or one chart section.
+reading an entire file (~32k / ~19k tokens) just to change one command or one chart
+section.
 
 **After:** Largest file in `application/cli/` is `_deps.py` at 533 LOC. Largest in
 `adapters/visualization/tabs/risk/` is `sections.py` at 433 LOC. A targeted edit now

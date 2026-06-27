@@ -2,10 +2,18 @@
 
 from __future__ import annotations
 
+import os
+import sqlite3
+from datetime import date as _date
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import click
+
+from adapters.data.corroboration_store import CorroborationStore
+from domain.corroboration_models import ConvergenceTier as _CT
+from domain.screened_row import CorroborationSnapshot, ScreenedRow
+from domain.screener_composite_service import ScreenerCompositeService
 
 from ._cli_group import cli
 from ._deps import (
@@ -118,6 +126,52 @@ def screen_candidates(top: int, report_dir: str) -> None:
     }
     out_file.write_text(json.dumps(payload, indent=2))
 
+    # --- SP3: blend with corroboration snapshots ---
+    db_path = os.path.join(report_dir, "..", "recommendations.db")
+    corroboration_run_date: _date | None = None
+    snapshots: list[CorroborationSnapshot] = []
+    try:
+        conn = sqlite3.connect(db_path)
+        corr_store = CorroborationStore(conn)
+        corr_store.init_schema()
+        as_of_date = _date.fromisoformat(as_of)
+        snapshots = corr_store.get_snapshots(as_of_date, window_days=7)
+        if snapshots:
+            corroboration_run_date = snapshots[0].surfaced_at
+        conn.close()
+    except Exception as e:
+        click.echo(f"  WARNING: corroboration unavailable — {e}", err=True)
+
+    svc = ScreenerCompositeService()
+    screened_rows = svc.compose(result, snapshots, _date.fromisoformat(as_of))
+    screened_path = _write_screened_json(
+        screened_rows, as_of, corroboration_run_date, report_dir
+    )
+
+    n_corroborated = sum(1 for r in screened_rows if not r.factor_only)
+    if n_corroborated > 0:
+        strong = sum(
+            1
+            for r in screened_rows
+            if r.corroboration and r.corroboration.convergence_tier == _CT.STRONG
+        )
+        moderate = sum(
+            1
+            for r in screened_rows
+            if r.corroboration and r.corroboration.convergence_tier == _CT.MODERATE
+        )
+        weak = sum(
+            1
+            for r in screened_rows
+            if r.corroboration and r.corroboration.convergence_tier == _CT.WEAK
+        )
+        click.echo(
+            f"  corroboration: {n_corroborated}/{len(screened_rows)} tickers "
+            f"· {strong} STRONG  {moderate} MODERATE  {weak} WEAK"
+        )
+    else:
+        click.echo("  corroboration: no data this week — showing factor signals only")
+
     # --- masked stdout (counts + label distribution only) ---
     from collections import Counter
 
@@ -130,6 +184,60 @@ def screen_candidates(top: int, report_dir: str) -> None:
     for label, count in sorted(label_counts.items()):
         click.echo(f"  {label}: {count}")
     click.echo(f"Full distribution written to: {out_file}")
+    click.echo(f"Blended screened rows written to: {screened_path}")
+
+
+def _write_screened_json(
+    rows: tuple[ScreenedRow, ...],
+    as_of: str,
+    corroboration_run_date: _date | None,
+    report_dir: str,
+) -> str:
+    """Persist screened_<date>.json sidecar with blended rows. Returns file path."""
+    import json
+
+    # Factor percentiles from original composite scores — independent of blended rerank
+    _sorted_by_factor = sorted(rows, key=lambda r: r.candidate.composite)
+    _n = len(_sorted_by_factor)
+    _factor_pct: dict[str, float] = {
+        r.candidate.ticker: i / max(_n - 1, 1) for i, r in enumerate(_sorted_by_factor)
+    }
+
+    def _row_to_dict(r: ScreenedRow) -> dict[str, object]:
+        corr = r.corroboration
+        return {
+            "ticker": r.candidate.ticker,
+            "composite": r.candidate.composite,
+            "factor_percentile": round(_factor_pct[r.candidate.ticker], 4),
+            "blended_percentile": round(r.blended_percentile, 4),
+            "factor_only": r.factor_only,
+            "convergence_tier": corr.convergence_tier.value if corr else None,
+            "n_sources": corr.n_sources if corr else 0,
+            "corroboration_date": corr.surfaced_at.isoformat() if corr else None,
+            "why": r.candidate.why,
+            "label": r.candidate.label.value,
+            "factor_scores": [
+                {
+                    "name": fs.name,
+                    "value": round(fs.value, 4),
+                    "percentile": round(fs.percentile, 4),
+                }
+                for fs in r.candidate.factor_scores
+            ],
+        }
+
+    payload: dict[str, object] = {
+        "as_of": as_of,
+        "corroboration_run_date": (
+            corroboration_run_date.isoformat() if corroboration_run_date else None
+        ),
+        "rows": [_row_to_dict(r) for r in rows],
+    }
+    os.makedirs(report_dir, exist_ok=True)
+    path = os.path.join(report_dir, f"screened_{as_of}.json")
+    with open(path, "w") as f:
+        json.dump(payload, f, indent=2)
+    return path
 
 
 @cli.command("backtest-screen")

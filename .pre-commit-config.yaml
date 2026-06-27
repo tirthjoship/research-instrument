@@ -25,18 +25,15 @@ repos:
         args: ["--profile", "black"]
         stages: [pre-commit, pre-push]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+  - repo: local
     hooks:
       - id: mypy
-        args: ["--strict"]
-        exclude: "^(tests/|scripts/audit_sentiment\\.py)"
-        additional_dependencies:
-          - types-PyYAML
-          - types-click
-          - types-requests
-          - pandas-stubs
-          - loguru
+        name: mypy
+        entry: uv run mypy domain/ adapters/ application/ --strict
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit, pre-push]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.15
@@ -47,3 +44,16 @@ repos:
     rev: v8.18.4
     hooks:
       - id: gitleaks
+
+  # Local pre-push gate — run the fast suite on YOUR machine before pushing so
+  # failures don't burn GitHub Actions minutes upstream. Lint/format/mypy already
+  # run at pre-commit; this adds the test pass at pre-push.
+  - repo: local
+    hooks:
+      - id: test-fast
+        name: test-fast (pre-push gate)
+        entry: make test-fast
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true

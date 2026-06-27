@@ -66,6 +66,17 @@ def pretrain(market: str, start: str, end: str) -> None:
 def run_tournament(market: str, date: str | None) -> None:
     """Run weekly tournament and generate top 15 picks."""
     deps = _build_dependencies(market)
+
+    # Pre-flight: abort loud if any predictor not trained
+    for horizon, predictor in deps["predictors"].items():
+        if not predictor.is_fitted():
+            click.echo(
+                f"ERROR: {horizon} predictor is not trained. "
+                "Run `train-models` first to fit and save the ensemble.",
+                err=True,
+            )
+            raise SystemExit(1)
+
     config = deps["config"]
     tickers = _get_ticker_universe(config)
 
@@ -86,6 +97,15 @@ def run_tournament(market: str, date: str | None) -> None:
     )
 
     report = use_case.execute(prediction_date=prediction_date)
+
+    if not report.recommendations:
+        click.echo(
+            "run-tournament: 0 picks generated — predictors are not trained. "
+            "Run 'pretrain' first. This run is a no-op.",
+            err=True,
+        )
+        raise SystemExit(1)
+
     _print_report(report)
 
 

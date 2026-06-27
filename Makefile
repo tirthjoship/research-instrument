@@ -1,33 +1,35 @@
 .PHONY: test test-fast test-tab test-domain test-adapters test-smoke test-cov lint typecheck setup check
 
+PYTEST := uv run pytest
+
 # ── Iteration targets (fast, no coverage) ────────────────────────────────────
 
 test-fast:
-	pytest tests/ -q -n auto --tb=short
+	$(PYTEST) tests/ -q -n auto --tb=short
 
 # Usage: make test-tab tab=risk  |  make test-tab tab=weekly_brief
 test-tab:
 	@[ -n "$(tab)" ] || { echo "Usage: make test-tab tab=<name>  (e.g. tab=risk)"; exit 1; }
-	pytest tests/ -q -n auto -m "tab_$(tab)" --tb=short
+	$(PYTEST) tests/ -q -n auto -m "tab_$(tab)" --tb=short
 
 test-domain:
-	pytest tests/domain/ -q -n auto --tb=short
+	$(PYTEST) tests/domain/ -q -n auto --tb=short
 
 test-adapters:
-	pytest tests/adapters/ -q -n auto --tb=short
+	$(PYTEST) tests/adapters/ -q -n auto --tb=short
 
 test-smoke:
-	pytest tests/ -q -n auto -m smoke --tb=short
+	$(PYTEST) tests/ -q -n auto -m smoke --tb=short
 
 # ── Full suite, no coverage ───────────────────────────────────────────────────
 
 test:
-	pytest tests/ -n auto --tb=short
+	$(PYTEST) tests/ -q -n auto --tb=short
 
 # ── Coverage gate (CI + pre-PR only) ─────────────────────────────────────────
 
 test-cov:
-	pytest tests/ -n auto \
+	$(PYTEST) tests/ -n auto \
 	    --cov=domain --cov=adapters --cov=application \
 	    --cov-fail-under=90 --tb=short
 
@@ -37,11 +39,11 @@ lint:
 	pre-commit run --all-files
 
 typecheck:
-	mypy domain/ adapters/ application/ --strict
+	uv run mypy domain/ adapters/ application/ --strict
 
 # ── Full gate — CI and pre-PR only, NOT during iteration ─────────────────────
 
-check: lint typecheck test-cov
+check: lint test-cov
 
 # ── Environment setup ─────────────────────────────────────────────────────────
 

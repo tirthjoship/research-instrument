@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Any
 
 import pytest
 from click.testing import CliRunner
 
 from application import cli as cli_mod
+from application.cli import brief_commands as _brief_cmd
 from application.holdings_reader import Holding
 from application.weekly_brief_use_case import RegimeReadUseCase, WeeklyBriefUseCase
 from domain.case_models import CaseContext, CaseResult
@@ -74,7 +76,7 @@ def test_weekly_brief_cli_masks_stdout_and_writes_gitignored_file(tmp_path, monk
     )
 
     def _fake_build(
-        market: str, holdings: list[Holding], report_dir: str
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
     ) -> tuple[WeeklyBriefUseCase, list[str]]:  # noqa: ANN001
         uc = WeeklyBriefUseCase(
             screen=_FakeScreen(),
@@ -89,7 +91,7 @@ def test_weekly_brief_cli_masks_stdout_and_writes_gitignored_file(tmp_path, monk
         )
         return uc, ["AAPL", "RIVN"]
 
-    monkeypatch.setattr(cli_mod, "_build_weekly_brief", _fake_build)
+    monkeypatch.setattr(_brief_cmd, "_build_weekly_brief", _fake_build)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -144,7 +146,7 @@ def test_cite_cases_flag_writes_cache(
     cache_path = str(tmp_path / "cited_cases.json")
 
     def _fake_build(
-        market: str, holdings: list[Holding], report_dir: str
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
     ) -> tuple[WeeklyBriefUseCase, list[str]]:
         uc = WeeklyBriefUseCase(
             screen=_FakeScreen(),
@@ -161,7 +163,7 @@ def test_cite_cases_flag_writes_cache(
 
     fake_summarizer = _FakeCaseSummarizer()
 
-    monkeypatch.setattr(cli_mod, "_build_weekly_brief", _fake_build)
+    monkeypatch.setattr(_brief_cmd, "_build_weekly_brief", _fake_build)
     # Patch the select_case_summarizer used inside the CLI
     import application.card_loading as cl_mod
 
@@ -205,7 +207,7 @@ def test_no_cite_cases_skips_prefetch(
     )
 
     def _fake_build(
-        market: str, holdings: list[Holding], report_dir: str
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
     ) -> tuple[WeeklyBriefUseCase, list[str]]:
         uc = WeeklyBriefUseCase(
             screen=_FakeScreen(),
@@ -221,7 +223,7 @@ def test_no_cite_cases_skips_prefetch(
         return uc, ["AAPL", "RIVN"]
 
     fake_summarizer = _FakeCaseSummarizer()
-    monkeypatch.setattr(cli_mod, "_build_weekly_brief", _fake_build)
+    monkeypatch.setattr(_brief_cmd, "_build_weekly_brief", _fake_build)
     import application.card_loading as cl_mod
     import application.risk_second_opinion as _rso_mod
 
@@ -261,7 +263,7 @@ def test_cite_cases_progress_line_in_output(
     cache_path = str(tmp_path / "cited_cases.json")
 
     def _fake_build(
-        market: str, holdings: list[Holding], report_dir: str
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
     ) -> tuple[WeeklyBriefUseCase, list[str]]:
         uc = WeeklyBriefUseCase(
             screen=_FakeScreen(),
@@ -277,7 +279,7 @@ def test_cite_cases_progress_line_in_output(
         return uc, ["AAPL", "RIVN"]
 
     fake_summarizer = _FakeCaseSummarizer()
-    monkeypatch.setattr(cli_mod, "_build_weekly_brief", _fake_build)
+    monkeypatch.setattr(_brief_cmd, "_build_weekly_brief", _fake_build)
     import application.card_loading as cl_mod
 
     monkeypatch.setattr(cl_mod, "select_case_summarizer", lambda: fake_summarizer)

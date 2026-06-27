@@ -109,7 +109,7 @@ def detect_clusters(
                 used_accessions.add(t.accession)
                 if len(matched) >= CLUSTER_MIN_INSIDERS:
                     fire_date = t.filing_date
-                    # Point-in-time guard (spec sec.2 / CLAUDE.md look-ahead rule):
+                    # Point-in-time guard (look-ahead rule):
                     # no contributing filing may post-date the fire date. This is
                     # structurally guaranteed (txns sorted ascending; fire = the
                     # completing filing), asserted as defense-in-depth so a future

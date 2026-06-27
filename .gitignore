@@ -5,13 +5,21 @@ LOCAL_PROJECT_STORY.md
 # Personal financial data — never commit
 data/personal/
 
-# Internal AI config — keep locally (agent scaffolding is implementation detail)
-.claude/settings.json
-.claude/settings.local.json
-# Note: docs/superpowers/plans/ and specs/ are tracked in git
-# They contain design decisions and implementation plans that are project artifacts
-# Superseded plans/specs are moved to archive/ (local-only) to prevent agent drift
-archive/
+# AI assistant scaffolding & internal process docs — keep local, never push
+.claude/
+CLAUDE.md
+CONTEXT.md
+AGENTS.md
+MEMORY.md
+docs/superpowers/
+docs/fix-targets/
+docs/external-review/
+docs/design-references/
+research/
+docs/STATUS.md
+docs/PHASE_LOG.md
+docs/SKILL_ROUTING.md
+sentiment_audit_results.csv
 
 # Coverage artifacts
 .coverage
@@ -22,6 +30,14 @@ data/reports/backtest_report_*.json
 data/reports/screen_20*.json
 # Personal holdings review log — contains book-level output, never commit
 data/reports/discipline_weekly_review.log
+# Always-regenerating live reports — untracked to avoid pre-commit stash conflicts
+data/reports/divergence_ic_21d.json
+data/reports/momentum_discipline.json
+data/reports/corroboration_weekly_resolve.log
+
+# SP5 forward-gate resolution logs — local data, never commit
+data/corroboration_samples.jsonl
+data/corroboration_gate_log.jsonl
 
 # Raw data — never commit large files to Git
 data/raw/

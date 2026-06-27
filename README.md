@@ -6,9 +6,28 @@ It does NOT predict returns — we tested that across 18 years of data and every
 failed.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-2185%20passing-success)](./tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](http://mypy-lang.org/)
+
+---
+
+## The arc
+
+The project set out to beat the market, pre-registered its thesis, tried to kill it,
+and watched it die honestly — then kept only what survived.
+
+```mermaid
+flowchart LR
+    A["Thesis: can multi-modal signals<br/>predict returns"] --> B["Pre-register hypotheses<br/>pass-fail thresholds locked<br/>before any data is seen"]
+    B --> C["Walk-forward validation<br/>permutation tests + IC audits<br/>18 years of data, 2006-2024"]
+    C --> D{"Honest out-of-sample<br/>verdict"}
+    D -->|every return hypothesis| E["FALSIFIED<br/>no detectable edge<br/>sentiment-divergence IC near zero"]
+    E --> F["Pivot: prediction to<br/>discipline and decision-support"]
+    F --> G["Corroboration engine<br/>attribute evidence, never forecast"]
+    G --> H["Forward gate, Hypothesis 9<br/>verdict mid-July 2026"]
+```
+
+*We tried to kill our own thesis and it died. The rigor that killed it is the point.*
 
 ---
 
@@ -28,11 +47,26 @@ pass/fail bar was locked in writing before any data was examined). Results:
 | Do insider buying clusters predict returns? | Can't tell — too little clean data (treated as No) | Event study with survivorship-honest coverage guard ([ADR-053](docs/adr/053-insider-cluster-falsification-verdict.md)) |
 | Does the discipline tool beat your own behavior? | Verdict ~mid-July 2026 | Live forward gate, thresholds locked in advance ([ADR-048](docs/adr/048-discipline-forward-calibration-gate.md), [ADR-051](docs/adr/051-calibration-readiness-date-diversity.md)) |
 
+Every row above followed the same one-way pipeline. No threshold was ever moved after
+a result was visible:
+
+```mermaid
+flowchart TD
+    PR["Pre-register<br/>hypothesis + locked thresholds + kill condition"] --> RUN["Run on point-in-time data<br/>18 years, trading costs and slippage included"]
+    RUN --> TEST["Test against the locked bar<br/>walk-forward, permutation, bootstrap CI"]
+    TEST --> V{"Clears the<br/>pre-registered bar"}
+    V -->|yes| C["CONFIRMED<br/>survives as decision-support"]
+    V -->|no| K["FALSIFIED<br/>killed permanently, archived in an ADR"]
+    K --> BACKLOG["New ideas must re-enter through<br/>the hypothesis backlog, fully pre-registered"]
+```
+
+*Of the eight return hypotheses run, none cleared the bar; one forward gate is still open.*
+
 ---
 
 ## What the tool DOES do
 
-The dashboard (Streamlit, premium-light-terminal "v2" design) is organised into six tabs:
+The dashboard (Streamlit) is organised into six tabs:
 
 **Home** — a plain-English book-health summary: how many holdings need attention this
 week, a gauge for how much of the book's movement is one market-wide bet, the latest
@@ -50,11 +84,12 @@ leveraged market bet).
 
 **My Portfolio** — position tracking for the household's holdings.
 
-**Stock Analysis** — for any stock you look up: the portfolio-fit verdict (where it
-ranks on factual evidence — valuation, quality, financial health — relative to the
-~430-stock universe, and whether adding it would deepen an existing risk
-concentration), plus an evidence snowflake summarising those present-day facts. A
-description of today, never a forecast.
+**Stock Analysis** — for any stock you look up: the portfolio-fit verdict, an evidence
+snowflake (valuation, quality, financial health vs the ~430-stock universe), and a
+**Corroboration** section that surfaces external analyst claims harvested by the
+corroboration engine — bucketed by source reliability (strong / moderate / weak),
+with directional views by sector and a convergence badge on the verdict header.
+A description of today, never a forecast.
 
 **Trust** — the credibility wall: the full record of hypotheses tested with their
 pre-registered thresholds and mechanically-executed kill decisions, the four rules
@@ -82,6 +117,12 @@ bash scripts/discipline_weekly_review.sh
 
 # Generate the weekly brief from the CLI
 python -m application.cli weekly-brief --market us
+
+# Corroboration pipeline (SP1+SP5 — runs weekly via launchd)
+python -m application.cli corroborate                    # harvest + verify external claims
+python -m application.cli surface-candidates             # surface STRONG/MODERATE tickers
+python -m application.cli resolve-corroboration          # score resolved 21-day outcomes (SP5 gate)
+python -m application.cli corroboration-calibration-status  # check SP5 forward-gate status
 
 # Run tests (parallel, ~35s)
 make test-fast
@@ -143,8 +184,32 @@ Plain-English definitions for every term used in this project.
 
 Hexagonal (ports and adapters): the core business logic in `domain/` has zero
 external library imports. Any data source, ML model, or dashboard can be swapped
-without touching the rules. See [AGENTS.md](AGENTS.md) for coding standards and the
-dependency contract.
+without touching the rules.
+
+```mermaid
+flowchart LR
+    subgraph data["adapters/data — sources"]
+        P["Prices<br/>yfinance"]
+        S["Sentiment<br/>GDELT, RSS"]
+        A["Attention<br/>Google Trends, StockTwits"]
+        F["Filings<br/>SEC EDGAR"]
+    end
+    subgraph ml["adapters/ml"]
+        FE["Feature engineering<br/>101 features across 5 layers"]
+        EVAL["Evaluation framework<br/>walk-forward, permutation, IC audit"]
+    end
+    subgraph appl["application — orchestration"]
+        UC["Use cases + CLI<br/>discipline, evidence screen, corroboration"]
+    end
+    DOM["domain — pure business rules<br/>stdlib only; look-ahead bias halts the pipeline here"]
+    VIZ["adapters/visualization<br/>Streamlit dashboard, 6 tabs"]
+
+    data --> FE --> EVAL --> UC --> VIZ
+    DOM --- ml
+    DOM --- appl
+```
+
+*Data flows left to right; every dependency points inward to a domain that imports nothing.*
 
 ```
 domain/                          # Pure business logic (stdlib only)
@@ -228,7 +293,7 @@ honestly, whatever it is.
 
 For a recruiter: this project demonstrates pre-registered hypothesis testing, rigorous
 negative-result reporting, point-in-time enforcement as a code invariant, hexagonal
-architecture applied to a real data pipeline, and 1,628 tests covering domain logic,
+architecture applied to a real data pipeline, and 2,392 tests covering domain logic,
 adapters, use cases, and integration paths. The negative findings are the portfolio
 piece — a system that falsified its own thesis honestly is more credible than one that
 never tested it.

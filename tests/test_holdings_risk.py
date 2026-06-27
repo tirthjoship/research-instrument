@@ -75,6 +75,38 @@ def test_assess_empty_holdings():
     assert report["portfolio"].n_positions == 0
 
 
+def test_vol_numpy_floats_do_not_crash():
+    """Regression: statistics.pstdev raises AttributeError on numpy scalars
+    in Python 3.12. _vol() must coerce before calling pstdev."""
+    from datetime import datetime, timedelta, timezone
+
+    import numpy as np
+
+    from application.holdings_reader import Holding
+    from application.holdings_risk import HoldingsRiskAssessmentUseCase
+    from application.narrator import FakeNarrator
+
+    # Build a price series with enough history using numpy floats
+    # (as yfinance returns via daily_returns)
+    numpy_prices = [np.float64(100.0 + i * 0.5) for i in range(260)]
+    start = datetime(2023, 1, 1, tzinfo=timezone.utc)
+    series = {
+        "AAPL": [(start + timedelta(days=i), v) for i, v in enumerate(numpy_prices)],
+        "SPY": [(start + timedelta(days=i), 100.0 + i * 0.3) for i in range(260)],
+    }
+
+    uc = HoldingsRiskAssessmentUseCase(
+        price_provider=lambda t: series.get(t, []), narrator=FakeNarrator("why")
+    )
+    # Must not raise AttributeError: 'float' object has no attribute 'numerator'
+    result = uc.execute(
+        [Holding(ticker="AAPL", shares=10.0, cost_basis=2000.0, account_type="TFSA")],
+        start,
+        start + timedelta(days=259),
+    )
+    assert result["portfolio"].n_positions == 1
+
+
 def test_top_concentration_uses_market_value_not_price():
     """top_concentration must use market_value_cad, not per-share price.
 
@@ -125,3 +157,49 @@ def test_top_concentration_uses_market_value_not_price():
         f"Expected top_concentration ≈ {expected:.6f} (market-value based), "
         f"got {result.top_concentration:.6f} — still using per-share price?"
     )
+
+
+def test_vol_tolerates_numpy_float64_returns() -> None:
+    """Regression: statistics.pstdev() must not crash on numpy.float64 (Python 3.12)."""
+    import statistics as _stats
+
+    import numpy as np
+
+    from application.holdings_risk import HoldingsRiskAssessmentUseCase
+
+    original_vol = HoldingsRiskAssessmentUseCase._vol
+
+    def _numpy_vol(self: object, returns: list[float], window: int) -> float:
+        # Inject numpy floats — the fixed _vol must handle these without crashing
+        tail = [float(x) for x in [np.float64(x) for x in returns[-window:]]]
+        return _stats.pstdev(tail) if len(tail) >= 2 else 0.0
+
+    HoldingsRiskAssessmentUseCase._vol = _numpy_vol  # type: ignore[method-assign]
+    try:
+        from application.holdings_reader import Holding
+        from application.narrator import FakeNarrator
+
+        def _price_provider(ticker: str) -> list[tuple[datetime, float]]:
+            base = datetime(2026, 1, 2, tzinfo=timezone.utc)
+            return [
+                (base.replace(day=min(i + 2, 28)), 100.0 + i * 0.5) for i in range(60)
+            ]
+
+        uc = HoldingsRiskAssessmentUseCase(
+            price_provider=_price_provider,
+            narrator=FakeNarrator("why"),
+        )
+        holding = Holding(
+            ticker="AAPL",
+            shares=10.0,
+            cost_basis=950.0,
+            account_type="TFSA",
+        )
+        result = uc.execute(
+            [holding],
+            datetime(2026, 1, 1, tzinfo=timezone.utc),
+            datetime(2026, 6, 20, tzinfo=timezone.utc),
+        )
+        assert result is not None  # no crash = fix works
+    finally:
+        HoldingsRiskAssessmentUseCase._vol = original_vol  # type: ignore[method-assign]

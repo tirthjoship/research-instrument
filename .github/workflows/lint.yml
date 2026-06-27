@@ -2,9 +2,15 @@ name: Lint & Typecheck
 
 on:
   push:
-    branches: [main, develop, "feature/**", "feat/**", "fix/**"]
+    branches: [main, develop]
+    paths-ignore: ["**.md", "docs/**", "research/**"]
   pull_request:
     branches: [main, develop]
+    paths-ignore: ["**.md", "docs/**", "research/**"]
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:

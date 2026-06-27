@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import date as _date
 from datetime import datetime, timedelta
 from typing import Any, Callable
 
 from domain.brief import ScorecardSnapshot, WeeklyBrief, assemble_brief
+from domain.corroboration_models import ConvergenceTier, DirectionalView, Stance
 from domain.regime import Regime, classify_regime, screen_tilt
 from domain.screen_models import ScreenLabel
+from domain.screened_row import CorroborationSnapshot
 
 VixProvider = Callable[[], float]
 SpyTrendProvider = Callable[[], float]
@@ -21,8 +24,63 @@ ScreenScorecardFn = Callable[[], "tuple[float | None, float | None, int, bool]"]
 DisciplineScorecardFn = Callable[[], "tuple[float | None, int, str]"]
 # macro-beta fn -> BookMacroExposure | None (None = skip / unavailable)
 MacroFn = Callable[["list[Any]", datetime], "Any"]
+# corroboration snapshot fn -> list of snapshots for a given date
+CorroborationSnapshotFn = Callable[[_date], list[CorroborationSnapshot]]
 
 _HISTORY_DAYS = 400  # lookback for holdings-risk price windows
+
+_TIER_NUM: dict[ConvergenceTier, float] = {
+    ConvergenceTier.STRONG: 1.0,
+    ConvergenceTier.MODERATE: 0.6,
+    ConvergenceTier.WEAK: 0.3,
+    ConvergenceTier.CONFLICTED: 0.1,
+    ConvergenceTier.NONE: 0.0,
+}
+
+
+def _build_directional_views(
+    groups: dict[str, list[CorroborationSnapshot]],
+    exposure_pct: dict[str, float],
+) -> list[DirectionalView]:
+    """Compute DirectionalView per sector from snapshot groups. Pure — no IO."""
+    views: list[DirectionalView] = []
+    for sector, snaps in groups.items():
+        if not snaps:
+            continue
+        mean_conv = sum(_TIER_NUM[s.convergence_tier] for s in snaps) / len(snaps)
+        bullish_n = sum(1 for s in snaps if s.net_stance == Stance.BULLISH)
+        bearish_n = sum(1 for s in snaps if s.net_stance == Stance.BEARISH)
+        if bullish_n > bearish_n:
+            net_stance = Stance.BULLISH
+        elif bearish_n > bullish_n:
+            net_stance = Stance.BEARISH
+        else:
+            net_stance = Stance.NEUTRAL
+        yours = exposure_pct.get(sector, 0.0)
+        ev_weight = mean_conv * 100.0
+        # Tilt logic mirrors CorroborationService._tilt()
+        if net_stance is Stance.BEARISH and mean_conv >= 0.6:
+            tilt = "LEAN_OUT"
+        elif (
+            net_stance is Stance.BULLISH
+            and mean_conv >= 0.6
+            and yours * 100 < ev_weight * 0.5
+        ):
+            tilt = "LEAN_IN"
+        else:
+            tilt = "HOLD"
+        views.append(
+            DirectionalView(
+                group_kind="sector",
+                group_name=sector,
+                net_stance=net_stance,
+                mean_convergence=mean_conv,
+                your_exposure_pct=yours,
+                evidence_weight_pct=ev_weight,
+                tilt=tilt,
+            )
+        )
+    return views
 
 
 class RegimeReadUseCase:
@@ -57,6 +115,8 @@ class WeeklyBriefUseCase:
         screen_scorecard_fn: ScreenScorecardFn,
         discipline_scorecard_fn: DisciplineScorecardFn,
         macro_fn: "MacroFn | None" = None,
+        corroboration_fn: "CorroborationSnapshotFn | None" = None,
+        sector_provider: "Any | None" = None,
     ) -> None:
         self._screen = screen
         self._holdings = holdings_risk
@@ -66,6 +126,8 @@ class WeeklyBriefUseCase:
         self._screen_card = screen_scorecard_fn
         self._disc_card = discipline_scorecard_fn
         self._macro_fn = macro_fn
+        self._corroboration_fn = corroboration_fn
+        self._sector_provider = sector_provider
 
     def execute(
         self,
@@ -114,6 +176,32 @@ class WeeklyBriefUseCase:
 
         macro = self._macro_fn(holdings, as_of) if self._macro_fn else None
 
+        # SP4: corroboration enrichment
+        as_of_date = as_of.date()
+        corr_map: dict[str, CorroborationSnapshot] = {}
+        directional_views: list[DirectionalView] = []
+        if self._corroboration_fn is not None:
+            snapshots = self._corroboration_fn(as_of_date)
+            corr_map = {s.ticker: s for s in snapshots}
+            if self._sector_provider is not None and corr_map:
+                # Group held tickers that have corroboration by sector
+                sector_groups: dict[str, list[CorroborationSnapshot]] = {}
+                for h in holdings:
+                    if h.ticker in corr_map:
+                        sector = self._sector_provider.sector(h.ticker)
+                        sector_groups.setdefault(sector, []).append(corr_map[h.ticker])
+                # Equal-weight exposure per sector
+                total = len(holdings) or 1
+                sector_counts: dict[str, int] = {
+                    self._sector_provider.sector(h.ticker): 0 for h in holdings
+                }
+                for h in holdings:
+                    sector_counts[self._sector_provider.sector(h.ticker)] += 1
+                exposure_pct = {s: c / total for s, c in sector_counts.items()}
+                directional_views = _build_directional_views(
+                    sector_groups, exposure_pct
+                )
+
         return assemble_brief(
             as_of=as_of_iso,
             regime=regime,
@@ -128,4 +216,6 @@ class WeeklyBriefUseCase:
             scorecard=scorecard,
             concentration_threshold=concentration_threshold,
             macro=macro,
+            corroboration_map=corr_map,
+            directional_views=directional_views,
         )

@@ -8,13 +8,111 @@ from __future__ import annotations
 
 import json
 import logging
+import sqlite3
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any, cast
 
+from domain.corroboration_models import (
+    CandidateSnapshot,
+    DirectionalView,
+    HarvestedClaim,
+    OurReadout,
+    Stance,
+)
 from domain.models import Holding, StockRecommendation
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class CorroborationTabView:
+    """Visualization-layer DTO for corroboration data. Not a domain type."""
+
+    ticker: str
+    as_of: date
+    claims: tuple[HarvestedClaim, ...]
+    snapshot: CandidateSnapshot | None
+    our_readout: OurReadout | None  # populated by caller from AnalysisResult
+    directional_views: tuple[DirectionalView, ...]
+
+
+def _compute_directional_views(claims: list[HarvestedClaim]) -> list[DirectionalView]:
+    """Derive a single DirectionalView from claims (evidence-consensus level)."""
+    if not claims:
+        return []
+    total_w = sum(c.reliability_weight for c in claims)
+    if total_w == 0.0:
+        return []
+    bull_w = sum(c.reliability_weight for c in claims if c.stance == Stance.BULLISH)
+    bear_w = sum(c.reliability_weight for c in claims if c.stance == Stance.BEARISH)
+    evidence_weight_pct = bull_w / total_w
+    if evidence_weight_pct >= 0.70:
+        tilt = "LEAN_IN"
+    elif evidence_weight_pct >= 0.45:
+        tilt = "HOLD"
+    elif evidence_weight_pct >= 0.20:
+        tilt = "LEAN_OUT"
+    else:
+        tilt = "AVOID"
+    if bull_w > bear_w:
+        net_stance = Stance.BULLISH
+    elif bear_w > bull_w:
+        net_stance = Stance.BEARISH
+    else:
+        net_stance = Stance.NEUTRAL
+    return [
+        DirectionalView(
+            group_kind="sector",
+            group_name="Evidence consensus",
+            net_stance=net_stance,
+            mean_convergence=evidence_weight_pct,
+            your_exposure_pct=0.0,
+            evidence_weight_pct=evidence_weight_pct,
+            tilt=tilt,
+        )
+    ]
+
+
+def _build_corroboration_view(
+    ticker: str,
+    store: Any,
+) -> "CorroborationTabView | None":
+    """Build CorroborationTabView from a store instance (real or fake)."""
+    run_id = store.latest_run_id()
+    if run_id is None:
+        return None
+    all_claims: list[HarvestedClaim] = store.load_run(run_id)
+    ticker_claims = [c for c in all_claims if c.ticker == ticker]
+    candidates: list[CandidateSnapshot] = store.load_candidates(run_id)
+    snapshot = next((c for c in candidates if c.ticker == ticker), None)
+    return CorroborationTabView(
+        ticker=ticker,
+        as_of=date.today(),
+        claims=tuple(ticker_claims),
+        snapshot=snapshot,
+        our_readout=None,
+        directional_views=tuple(_compute_directional_views(ticker_claims)),
+    )
+
+
+def load_corroboration_snapshot(
+    ticker: str,
+    db_path: str = "data/corroboration.db",
+) -> "CorroborationTabView | None":
+    """Load latest corroboration snapshot for ticker. Returns None on missing DB or store error."""
+    if not Path(db_path).exists():
+        return None
+    try:
+        from adapters.data.corroboration_store import CorroborationStore
+
+        with sqlite3.connect(db_path) as conn:
+            store = CorroborationStore(conn)
+            return _build_corroboration_view(ticker=ticker, store=store)
+    except Exception as e:
+        logger.warning("corroboration snapshot load failed for %s: %s", ticker, e)
+        return None
 
 
 def load_backtest_reports(reports_dir: str) -> list[dict[str, Any]]:
@@ -299,13 +397,23 @@ def load_brief_summary(
     path: str = "data/personal/brief_summary.json",
 ) -> dict[str, Any] | None:
     """Structured weekly-brief summary written by the weekly-brief CLI."""
-    p = Path(path)
-    if not p.exists():
-        return None
-    try:
-        return cast(dict[str, Any], json.loads(p.read_text()))
-    except (json.JSONDecodeError, OSError):
-        return None
+    import os  # noqa: PLC0415
+
+    import streamlit as st  # noqa: PLC0415
+
+    abs_path = os.path.abspath(path)
+
+    @st.cache_data(ttl=300)
+    def _load(p: str) -> dict[str, Any] | None:
+        _p = Path(p)
+        if not _p.exists():
+            return None
+        try:
+            return cast(dict[str, Any], json.loads(_p.read_text()))
+        except (json.JSONDecodeError, OSError):
+            return None
+
+    return _load(abs_path)
 
 
 def load_screen_history(reports_dir: str = "data/reports") -> list[dict[str, Any]]:
@@ -332,17 +440,49 @@ def load_screen_history(reports_dir: str = "data/reports") -> list[dict[str, Any
 
 def load_latest_screen(reports_dir: str = "data/reports") -> dict[str, Any] | None:
     """Newest screen_<date>.json (full ranked distribution). Excludes screen_ic_*."""
-    candidates = sorted(
-        f
-        for f in Path(reports_dir).glob("screen_*.json")
-        if not f.name.startswith("screen_ic_")
-    )
-    if not candidates:
-        return None
-    try:
-        return cast(dict[str, Any], json.loads(candidates[-1].read_text()))
-    except (json.JSONDecodeError, OSError):
-        return None
+    import os  # noqa: PLC0415
+
+    import streamlit as st  # noqa: PLC0415
+
+    abs_dir = os.path.abspath(reports_dir)
+
+    @st.cache_data(ttl=300)
+    def _load(d: str) -> dict[str, Any] | None:
+        candidates = sorted(
+            f
+            for f in Path(d).glob("screen_*.json")
+            if not f.name.startswith("screen_ic_")
+        )
+        if not candidates:
+            return None
+        try:
+            return cast(dict[str, Any], json.loads(candidates[-1].read_text()))
+        except (json.JSONDecodeError, OSError):
+            return None
+
+    return _load(abs_dir)
+
+
+def load_latest_screened(reports_dir: str = "data/reports") -> dict[str, Any] | None:
+    """Load newest screened_<date>.json (SP3 blended). Falls back to screen_<date>.json.
+
+    Returns dict with key 'rows' (list of ScreenedRow dicts) if screened file found,
+    or standard screen dict with key 'candidates' if falling back.
+    The caller checks for 'rows' key to distinguish.
+    """
+    screened = sorted(Path(reports_dir).glob("screened_*.json"))
+    if screened:
+        try:
+            data = cast(dict[str, Any], json.loads(screened[-1].read_text()))
+            data["_source"] = "screened"
+            return data
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    screen = load_latest_screen(reports_dir)
+    if screen:
+        screen["_source"] = "screen"
+    return screen
 
 
 def staleness_days(iso_date: str) -> int | None:
