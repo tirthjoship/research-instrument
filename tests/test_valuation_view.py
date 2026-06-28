@@ -70,6 +70,27 @@ def test_panel_renders_with_chips_strip_and_drill():
     assert "sa-drill" not in html
 
 
+def test_valuation_ranges_render_pe_and_fair_value():
+    result = _result(
+        current_price=172.0,
+        info={"fiftyTwoWeekLow": 86.6, "fiftyTwoWeekHigh": 189.5},
+        analyst_panel=SimpleNamespace(
+            target_low=150.0, target_mean=200.0, target_high=260.0
+        ),
+    )
+    html = valuation_view.build_valuation_panel(result)
+    assert "P/E vs 1-yr range" in html
+    assert "Fair value · analyst target" in html
+    assert html.count("sa-rangebar") == 2  # P/E range + fair-value range
+    assert "data gap — no range available" not in html
+
+
+def test_valuation_ranges_datagap_when_no_data():
+    # sparse result (no 52-wk prices, no analyst targets) -> honest data gap
+    html = valuation_view.build_valuation_panel(_result())
+    assert "data gap — no range available" in html
+
+
 def test_no_streamlit_and_clean():
     src = inspect.getsource(valuation_view)
     assert "import streamlit" not in src
