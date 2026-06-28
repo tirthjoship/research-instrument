@@ -96,6 +96,7 @@ def get_sector_peers(
                     "name": pi.get("shortName", pt),
                     "pe": pi.get("trailingPE"),
                     "market_cap": float(pi.get("marketCap", 0) or 0),
+                    "revenue_growth": pi.get("revenueGrowth"),
                     "change_pct": 0.0,  # Would need separate price fetch
                     "role": (
                         "leader"

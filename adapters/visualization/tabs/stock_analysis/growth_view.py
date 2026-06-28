@@ -80,6 +80,109 @@ def _quarterly_series(result: Any) -> tuple[list[float], list[float]]:
         return [], []
 
 
+def _fcf_series(result: Any) -> list[float]:
+    """Chronological quarterly free-cash-flow series from result.quarterly_cashflow.
+
+    Prefers the 'Free Cash Flow' row; falls back to Operating CF − CapEx. Drops NaNs.
+    Empty list on any failure (caller treats as DATA-GAP).
+    """
+    try:
+        qcf = result.quarterly_cashflow
+        if qcf is None:
+            return []
+
+        def _row(name: str) -> list[float] | None:
+            if name in qcf.index:
+                return [float(v) for v in qcf.loc[name].values]
+            return None
+
+        fcf = _row("Free Cash Flow")
+        if fcf is None:
+            ocf = _row("Operating Cash Flow")
+            capex = _row("Capital Expenditure")
+            if ocf is not None and capex is not None and len(ocf) == len(capex):
+                fcf = [o + c for o, c in zip(ocf, capex)]  # capex is negative
+        if fcf is None:
+            return []
+        # yfinance columns are newest-first → reverse to chronological; drop NaN
+        return list(reversed([v for v in fcf if v == v]))
+    except Exception:
+        return []
+
+
+def _fcf_yoy(result: Any) -> float | None:
+    """YoY free-cash-flow growth (latest quarter vs the same quarter a year ago)."""
+    s = _fcf_series(result)
+    if len(s) >= 5 and s[-5] != 0:
+        return (s[-1] - s[-5]) / abs(s[-5])
+    return None
+
+
+def _peer_growth_rank(result: Any) -> float | None:
+    """Percentile of the subject's revenue growth vs its peers' (0-100)."""
+    info: dict[str, Any] = getattr(result, "info", {}) or {}
+    own = info.get("revenueGrowth")
+    if own is None:
+        return None
+    subject = getattr(result, "ticker", None)
+    peers = [
+        float(p["revenue_growth"])
+        for p in (getattr(result, "peer_data", []) or [])
+        if p.get("revenue_growth") is not None and p.get("ticker") != subject
+    ]
+    if not peers:
+        return None
+    beaten = sum(1 for g in peers if float(own) > g)
+    return beaten / len(peers) * 100
+
+
+def _yoy_trajectory(rev_series: list[float]) -> list[float]:
+    """YoY revenue-growth % per quarter (needs >=5 quarters); chronological."""
+    if len(rev_series) < 5:
+        return []
+    return [
+        (rev_series[i] - rev_series[i - 4]) / abs(rev_series[i - 4]) * 100
+        for i in range(4, len(rev_series))
+        if rev_series[i - 4]
+    ]
+
+
+def _fcf_yoy_metric(result: Any) -> Metric:
+    meaning = "Year-over-year free cash flow growth (latest quarter vs a year ago)."
+    y = _fcf_yoy(result)
+    if y is None:
+        return _data_gap(
+            "fcf_yoy", "FCF YoY", meaning, "needs >=5 quarters of cashflow"
+        )
+    return Metric(
+        "fcf_yoy",
+        "FCF YoY",
+        _pct(y),
+        "yoy",
+        "green" if y > 0 else "grey",
+        meaning,
+        "quarterly_cashflow · Free Cash Flow",
+    )
+
+
+def _peer_rank_metric(result: Any) -> Metric:
+    meaning = "Revenue-growth percentile versus the peer group."
+    r = _peer_growth_rank(result)
+    if r is None:
+        return _data_gap(
+            "peer_rank", "Peer rank", meaning, "needs peer growth — not wired"
+        )
+    return Metric(
+        "peer_rank",
+        "Peer rank",
+        f"{int(round(r))}th",
+        "vs peers",
+        "green" if r >= 50 else "grey",
+        meaning,
+        "rank of info.revenueGrowth vs peer revenue_growth",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Strip tile
 # ---------------------------------------------------------------------------
@@ -136,26 +239,16 @@ def build_growth_view(result: Any) -> dict[str, Any]:
             "rev_3y_cagr",
             "Rev 3y CAGR",
             "Three-year compounded annual growth rate of revenue.",
-            "no source wired",
+            "needs annual financials — not wired",
         ),
-        _data_gap(
-            "fcf_yoy",
-            "FCF YoY",
-            "Year-over-year free cash flow growth.",
-            "no source wired",
-        ),
+        _fcf_yoy_metric(result),
         _data_gap(
             "fwd_rev",
             "Fwd rev (3rd-party)",
             "Forward revenue growth from analyst consensus; a third-party figure, not our estimate.",
-            "attributed / analyst consensus — not wired",
+            "analyst revenue estimate — not wired",
         ),
-        _data_gap(
-            "peer_rank",
-            "Peer rank",
-            "Growth percentile vs peer group.",
-            "no source wired",
-        ),
+        _peer_rank_metric(result),
     ]
 
     rev_series, ni_series = _quarterly_series(result)
@@ -179,15 +272,18 @@ def build_growth_view(result: Any) -> dict[str, Any]:
         "metrics": metrics,
         "rev_series": rev_series,
         "ni_series": ni_series,
+        "yoy_traj": _yoy_trajectory(rev_series),
         "chips": chips,
         "claim": "Revenue and earnings expanding year-on-year.",
         "reframe": (
-            "YoY rates are trailing facts. "
-            "3y CAGR, FCF growth, forward estimates, and peer rank are not wired (data gap)."
+            "YoY rates, FCF growth, and peer rank are trailing facts. "
+            "3y CAGR and forward estimates need annual/analyst data (data gap)."
         ),
         "verdicts": [
             Verdict("pos", "Positive YoY revenue growth reported."),
-            Verdict("neu", "Longer-run CAGR and FCF trend require additional data."),
+            Verdict(
+                "neu", "Longer-run CAGR and forward estimates require additional data."
+            ),
         ],
     }
 
@@ -204,6 +300,18 @@ def build_growth_panel(result: Any) -> str:
     left = (
         '<div class="sa-pnl-subh">Quarterly revenue &amp; net income</div>' + trend_viz
     )
+    # Second graph: YoY revenue-growth trajectory (DATA-GAP caption when <2 points)
+    traj = v["yoy_traj"]
+    if len(traj) >= 2:
+        right = (
+            '<div class="sa-pnl-subh">YoY growth trajectory</div>'
+            + panel_charts.trend_lines([("YoY %", traj, "#2f9e44")])
+        )
+    else:
+        right = (
+            '<div class="sa-pnl-subh">YoY growth trajectory</div>'
+            '<div class="sa-pnl-cap">needs &gt;=5 quarters of revenue — data gap</div>'
+        )
     return build_panel(
         number=2,
         name="Growth",
@@ -217,7 +325,7 @@ def build_growth_panel(result: Any) -> str:
         reframe=v["reframe"],
         strip_html=_strip_html(v["metrics"]),
         viz_left=left,
-        viz_right="",
+        viz_right=right,
         verdicts=v["verdicts"],
-        drill="open full growth — 3y CAGR · FCF growth · forward estimates",
+        drill="",
     )
