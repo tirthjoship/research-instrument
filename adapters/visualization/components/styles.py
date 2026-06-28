@@ -1663,6 +1663,32 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .ri-chip-meaning{font-weight:600;color:#fff;}
 .ri-chip-band{color:#cbd5e1;}
 .ri-chip-caveat{color:#cbd5e1;font-style:italic;border-top:1px solid rgba(255,255,255,.14);padding-top:.4rem;}
+/* ===== Stock Analysis redesign — design system ===== */
+.sa-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:2px 0 13px}
+.sa-tile{border:1px solid var(--ri-line);border-top:3px solid var(--ri-muted);border-radius:8px;padding:7px 9px 8px;background:var(--ri-card)}
+.sa-tile.t-amber{border-top-color:var(--ri-amber)}.sa-tile.t-green{border-top-color:var(--ri-green)}
+.sa-tile.t-petrol{border-top-color:var(--ri-teal)}.sa-tile.t-crimson{border-top-color:var(--ri-crimson)}.sa-tile.t-grey{border-top-color:var(--ri-muted)}
+.sa-tile .lab{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.02em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:4px}
+.sa-tile .num{font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:var(--ri-ink);line-height:1.1;margin-top:3px}
+.sa-tile .sub{font-family:'IBM Plex Mono',monospace;font-size:8px;margin-top:2px;color:var(--ri-muted)}
+.sa-panel{padding:14px 0 6px;border-top:1px solid var(--ri-hair)}
+.sa-twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.sa-chip{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;cursor:help;position:relative;display:inline-flex;align-items:center;gap:5px}
+.sa-chip.t-amber{color:#7a4a08;background:rgba(180,83,9,.13)}.sa-chip.t-green{color:#1f5130;background:rgba(21,128,61,.15)}
+.sa-chip.t-petrol{color:#0c5563;background:rgba(15,110,128,.13)}.sa-chip.t-grey{color:#3f4a4e;background:rgba(91,113,120,.13)}.sa-chip.t-crimson{color:#7a1414;background:rgba(185,28,28,.1)}
+.sa-info{display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;border-radius:50%;border:1px solid currentColor;font-size:8px;opacity:.55;cursor:help}
+.sa-tw{position:relative;display:inline-flex;align-items:center}.sa-tw:hover .sa-info{opacity:1}
+.sa-tip{position:absolute;bottom:150%;left:50%;transform:translateX(-50%) translateY(4px);width:236px;background:var(--ri-ink);color:#eef2f3;font-family:'DM Sans',sans-serif;font-weight:400;font-size:11px;line-height:1.5;padding:9px 11px;border-radius:8px;box-shadow:0 10px 26px rgba(0,0,0,.25);opacity:0;visibility:hidden;transition:opacity .14s;z-index:90;text-align:left}
+.sa-tw:hover .sa-tip{opacity:1;visibility:visible}
+.sa-tip-basis{display:block;margin-top:5px;padding-top:5px;border-top:1px solid #34424a;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#bcd}
+.sa-pe-row{display:flex;align-items:center;gap:8px;margin:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9.5px}
+.sa-pe-row .tk{width:38px;color:var(--ri-ink2)}.sa-pe-row .bar{height:10px;border-radius:3px;background:#cdd7d9}.sa-pe-row.me .bar{background:var(--ri-amber)}.sa-pe-row.me .tk{color:var(--ri-ink);font-weight:700}
+.sa-rangebar{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,#dde4e5,#c4ced0);margin:18px 0 3px}
+.sa-rangebar .band{position:absolute;top:0;bottom:0;border-radius:4px}.sa-rangebar .mk{position:absolute;top:-4px;width:2px;height:16px}.sa-rangebar .lbl{position:absolute;top:-15px;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:8px;white-space:nowrap}
+.sa-group{border:1px solid var(--ri-line);border-radius:11px;margin:10px 0;overflow:visible;background:var(--ri-card)}
+.sa-gtiles{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
+.sa-claim{display:flex;gap:9px;padding:7px 9px;border:1px solid var(--ri-line);border-radius:8px;margin:5px 0;background:var(--ri-card)}
+/* ===== end Stock Analysis design system ===== */
 </style>
 """
 
