@@ -127,12 +127,31 @@ def build_valuation_view(result: Any) -> dict[str, Any]:
         if p.get("pe") and p.get("ticker") != subject
     ]
 
-    chips = render_status_chip(
-        "RICH",
-        f"{int(round(pe_pct))}th" if pe_pct else "n/a",
-        tone="amber",
-        rule="multiples cluster >=75th pct of peers; price level only, not over/undervalued",
-    )
+    # Percentile-aware label — never call a bottom-quartile stock "RICH".
+    chips = ""
+    if pe_pct is not None:
+        p = int(round(float(pe_pct)))
+        if pe_pct >= 75:
+            chips += render_status_chip(
+                "RICH",
+                f"{p}th",
+                tone="amber",
+                rule="multiples in the top quartile vs peers; price level only, not over/undervalued",
+            )
+        elif pe_pct <= 25:
+            chips += render_status_chip(
+                "LOW MULT",
+                f"{p}th",
+                tone="grey",
+                rule="multiples in the bottom quartile vs peers; price level only, descriptive",
+            )
+        else:
+            chips += render_status_chip(
+                "MID MULT",
+                f"{p}th",
+                tone="grey",
+                rule="mid-range multiples vs peers; price level only, descriptive",
+            )
     if peg_val is not None and peg_val < 1:
         chips += render_status_chip(
             "PEG",
@@ -141,15 +160,22 @@ def build_valuation_view(result: Any) -> dict[str, Any]:
             rule="PEG <1 = P/E below the growth rate; a fact, not a call",
         )
 
+    if pe_pct is not None and pe_pct >= 75:
+        claim = (
+            "Rich on price, fair on growth"
+            if (peg_val and peg_val < 1)
+            else "Top-quartile multiples"
+        )
+    elif pe_pct is not None and pe_pct <= 25:
+        claim = "Lower multiples than peers"
+    else:
+        claim = "Mid-range on its multiples"
+
     return {
         "metrics": metrics,
         "peer_rows": peer_rows,
         "chips": chips,
-        "claim": (
-            "Rich on price, fair on growth"
-            if (peg_val and peg_val < 1)
-            else "Priced on its multiples"
-        ),
+        "claim": claim,
         "reframe": "Top-quartile on raw multiples; shown vs its 1-yr P/E range and the analyst-target range.",
         "verdicts": [
             Verdict("cau", "Top-quartile multiples — little margin for a miss."),

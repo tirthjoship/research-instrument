@@ -15,6 +15,27 @@ class VitalsView:
     tiles: tuple[dict[str, Any], ...]
 
 
+def _df_row_series(df: Any, row: str) -> list[float]:
+    """Chronological values of a named row from a yfinance quarterly DataFrame."""
+    try:
+        if df is None or row not in df.index:
+            return []
+        return list(reversed([float(v) for v in df.loc[row].values if v == v]))
+    except Exception:
+        return []
+
+
+def _price_spark_series(result: Any) -> list[float]:
+    """Downsampled trailing price series for the in-tile sparkline (real, not faked)."""
+    ph = getattr(result, "price_history", None) or {}
+    cl = ph.get("closes") if isinstance(ph, dict) else None
+    if not cl:
+        return []
+    tail = list(cl[-252:])  # ~1 trading year
+    step = max(1, len(tail) // 40)
+    return [float(c) for c in tail[::step]]
+
+
 def _pe_tile(result: Any) -> dict[str, Any]:
     pct = (getattr(result, "peer_percentiles", {}) or {}).get("P/E")
     pe = (getattr(result, "info", {}) or {}).get("trailingPE")
@@ -62,7 +83,16 @@ def _rev_tile(result: Any) -> dict[str, Any]:
         tone="green" if pctg > 0 else "grey",
         meaning="Revenue versus a year ago — a trailing fact.",
         basis="info.revenueGrowth",
-        viz=sparkline([1.0, 1.3, 1.7, 2.1, 2.6], color="#1F9254"),
+        viz=(
+            sparkline(_rev_s, color="#1F9254")
+            if len(
+                _rev_s := _df_row_series(
+                    getattr(result, "quarterly_financials", None), "Total Revenue"
+                )
+            )
+            >= 2
+            else ""
+        ),
     )
 
 
@@ -89,7 +119,11 @@ def _vs_spy_tile(result: Any) -> dict[str, Any]:
         tone="green" if pct > 0 else "crimson",
         meaning="1-year price change versus the S&P 500 over the same window.",
         basis="info.52WeekChange / SandP52WeekChange",
-        viz=sparkline([1.0, 1.1, 1.4, 1.7, 2.0], color="#1F9254"),
+        viz=(
+            sparkline(_px, color="#1F9254" if pct > 0 else "#CE2F26")
+            if len(_px := _price_spark_series(result)) >= 2
+            else ""
+        ),
     )
 
 
@@ -166,7 +200,16 @@ def _fcf_tile(result: Any) -> dict[str, Any]:
         tone="green",
         meaning="Trailing-twelve-month free cash flow.",
         basis="info.freeCashflow",
-        viz=sparkline([1.0, 1.2, 1.4, 1.7, 2.0], color="#1F9254"),
+        viz=(
+            sparkline(_fcf_s, color="#1F9254")
+            if len(
+                _fcf_s := _df_row_series(
+                    getattr(result, "quarterly_cashflow", None), "Free Cash Flow"
+                )
+            )
+            >= 2
+            else ""
+        ),
     )
 
 
