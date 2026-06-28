@@ -22,9 +22,9 @@ from .components import (
     _vitals,
 )
 from .enb_section import _enb_section
-from .evidence import _evidence_bands, _flags_footer, _grill_drill
+from .evidence import _benchmark, _evidence_bands, _flags_footer, _grill_drill
 from .factor_chart import _factor_chart
-from .sections import _drift, _sector_section, _teach, _who_owns
+from .sections import _decision_levers, _drift, _sector_section, _teach, _who_owns
 
 
 def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
@@ -62,10 +62,12 @@ def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
         _dials(macro),
         _grill_drill(flags),
         _evidence_bands(macro),
+        _benchmark(macro),
         _factor_chart(macro),
         _enb_section(macro),
         _sector_section(macro),
         _who_owns(macro),
+        _decision_levers(macro),
         _drift(macro),
     ]
     # Mockup order: _drift → [Second opinion · Google AI] → _teach → _flags_footer

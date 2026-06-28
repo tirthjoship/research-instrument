@@ -51,11 +51,11 @@ def test_render_factor_row_weak_band() -> None:
 
 
 def test_render_factor_row_analyst_spread_display_label() -> None:
-    """revision key must show 'Analyst spread' as display label (honest label)."""
+    """revision key must show 'Analyst dispersion' as display label (honest label)."""
     from adapters.visualization.components.factor_row import render_factor_row
 
     html = render_factor_row("revision", value=0.9, percentile=0.88)
-    assert "Analyst spread" in html
+    assert "Analyst dispersion" in html
 
 
 # ── Fix 1: circle badge tooltip ───────────────────────────────────────────────
