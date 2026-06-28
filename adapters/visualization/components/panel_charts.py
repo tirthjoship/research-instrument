@@ -10,6 +10,16 @@ type_series = Sequence[tuple[str, list[float], str]]
 type_markers = Sequence[tuple[float, str, str]]
 
 
+def fmt_num(v: float) -> str:
+    """Display a metric value without raw-float noise.
+
+    1 decimal for |v|>=10, 2 for smaller ratios, trailing zeros stripped:
+    29.4839 -> '29.5', 52.0 -> '52', 0.59 -> '0.59', 172.139 -> '172.1'.
+    """
+    s = f"{v:.1f}" if abs(v) >= 10 else f"{v:.2f}"
+    return s.rstrip("0").rstrip(".") or "0"
+
+
 def peer_bars(rows: type_peer_rows, *, unit: str = "x", width: int = 150) -> str:
     vals = [abs(v) for _, v, _ in rows] or [1.0]
     hi = max(vals) or 1.0
@@ -18,12 +28,14 @@ def peer_bars(rows: type_peer_rows, *, unit: str = "x", width: int = 150) -> str
         w = int(round(abs(value) / hi * width))
         bar_bg = "var(--ri-amber)" if is_self else "#cdd7d9"
         weight = "700" if is_self else "400"
+        # whole numbers for percentage shares; 1-decimal for multiples/ratios
+        disp = f"{round(value)}" if unit == "%" else fmt_num(value)
         out.append(
             '<div style="display:flex;align-items:center;gap:8px;margin:3px 0;'
             "font-family:'IBM Plex Mono',monospace;font-size:9.5px\">"
             f'<span style="width:42px;color:var(--ri-ink2);font-weight:{weight}">{_html.escape(label)}</span>'
             f'<div style="height:10px;border-radius:3px;width:{w}px;background:{bar_bg}"></div>'
-            f"<span>{value:g}{_html.escape(unit)}</span></div>"
+            f"<span>{disp}{_html.escape(unit)}</span></div>"
         )
     return "".join(out)
 

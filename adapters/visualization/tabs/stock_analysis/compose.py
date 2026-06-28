@@ -114,9 +114,22 @@ def _snowflake_radar_axes(fit: object | None) -> list[RadarAxis]:
         axes_map = _snowflake_axes(fit)  # type: ignore[arg-type]
     except AttributeError:
         axes_map = {}
+    # Short display labels so they don't overflow/clip the radar SVG viewBox
+    # (the full names live in the legend/copy). Colour still keyed by full name.
+    _SHORT: dict[str, str] = {
+        "Valuation": "Value",
+        "Momentum": "Mom",
+        "Revision": "Rev",
+        "Trend filter": "Filter",
+        "Book fit": "Fit",
+    }
     out: list[RadarAxis] = []
     for name, value in axes_map.items():
-        out.append(RadarAxis(name, float(value), _AXIS_COLOUR.get(name, "#6b7d84")))
+        out.append(
+            RadarAxis(
+                _SHORT.get(name, name), float(value), _AXIS_COLOUR.get(name, "#6b7d84")
+            )
+        )
     return out
 
 

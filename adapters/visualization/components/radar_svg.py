@@ -93,5 +93,5 @@ def build_radar_svg(
     body = "".join(parts)
     return (
         f'<svg width="100%" viewBox="0 0 {size} {int(size * 0.74)}" '
-        f"style=\"font-family:'IBM Plex Mono',monospace\">{body}</svg>"
+        f"style=\"font-family:'IBM Plex Mono',monospace;overflow:visible\">{body}</svg>"
     )
