@@ -153,6 +153,29 @@ def _quarterly_margin_series(result: Any) -> tuple[list[float], list[float]]:
         return [], []
 
 
+def _margin_direction(series: list[float]) -> str:
+    """Slope of the gross-margin series: 'up' widening, 'down' narrowing, 'flat'
+    roughly steady, or '' when <2 points. Series are fractions; a +/-1pp net
+    change (0.01) is the flat band so quarter noise doesn't flip the badge."""
+    if len(series) < 2:
+        return ""
+    delta = series[-1] - series[0]
+    if delta > 0.01:
+        return "up"
+    if delta < -0.01:
+        return "down"
+    return "flat"
+
+
+# Gross-margin slope -> (chip label, chip tone) and a verb for the rule/caption.
+_MARGIN_CHIP = {
+    "up": ("WIDENING", "green"),
+    "down": ("NARROWING", "amber"),
+    "flat": ("STEADY", "grey"),
+}
+_MARGIN_WORD = {"up": "widening", "down": "narrowing", "flat": "roughly steady"}
+
+
 # ---------------------------------------------------------------------------
 # Strip tile
 # ---------------------------------------------------------------------------
@@ -224,20 +247,22 @@ def build_profitability_view(result: Any) -> dict[str, Any]:
     ]
 
     gross_series, op_series = _quarterly_margin_series(result)
+    margin_dir = _margin_direction(gross_series)
 
-    # EXPANDING chip: emitted only when gross margin genuinely rose three quarters in a row
+    # Direction chip driven by the gross-margin slope over the shown window, so
+    # it tracks the same line the trend chart plots (WIDENING / NARROWING / STEADY).
     chips = ""
-    if (
-        len(gross_series) >= 3
-        and gross_series[-1] > gross_series[-2] > gross_series[-3]
-    ):
+    if margin_dir:
+        label, tone = _MARGIN_CHIP[margin_dir]
         chips += render_status_chip(
-            "EXPANDING",
+            label,
             "",
-            tone="green",
+            tone=tone,
             rule=(
-                "Gross margin rose in each of the last three quarters — "
-                "measured from quarterly_financials Gross Profit / Total Revenue."
+                f"Gross margin {_MARGIN_WORD[margin_dir]} "
+                f"{gross_series[0] * 100:.0f}% → {gross_series[-1] * 100:.0f}% "
+                "across the shown window — measured from quarterly_financials "
+                "Gross Profit / Total Revenue."
             ),
         )
 
@@ -245,6 +270,7 @@ def build_profitability_view(result: Any) -> dict[str, Any]:
         "metrics": metrics,
         "gross_series": gross_series,
         "op_series": op_series,
+        "margin_dir": margin_dir,
         "chips": chips,
         "claim": "Margin levels and capital-return efficiency.",
         "reframe": (
@@ -297,19 +323,30 @@ def build_profitability_panel(result: Any) -> str:
 
     left = '<div class="sa-pnl-subh">Gross margin vs peers</div>' + margin_bar
 
-    # Trend viz: quarterly gross + operating margin
+    # Trend viz: quarterly gross + operating margin. Series are fractions
+    # (0.74) — scale to percent so the axis reads 74%, matching the tiles.
+    gross_pct = [g * 100 for g in v["gross_series"]]
+    op_pct = [o * 100 for o in v["op_series"]]
     trend_viz = panel_charts.trend_lines(
         [
-            ("Gross %", v["gross_series"], "#7c5cbf"),
-            ("Op %", v["op_series"], "#5c8cbf"),
+            ("Gross %", gross_pct, "#7c5cbf"),
+            ("Op %", op_pct, "#5c8cbf"),
         ],
         unit="%",
     )
-    right = (
-        '<div class="sa-pnl-subh">Quarterly margin trend</div>' + trend_viz
-        if trend_viz
-        else ""
-    )
+    if trend_viz:
+        mdir = v["margin_dir"]
+        cap = ""
+        if mdir and gross_pct:
+            cap = (
+                '<div class="sa-pnl-cap">gross margin '
+                f"{gross_pct[0]:.0f}% → {gross_pct[-1]:.0f}% — {_MARGIN_WORD[mdir]}</div>"
+            )
+        right = (
+            '<div class="sa-pnl-subh">Quarterly margin trend</div>' + trend_viz + cap
+        )
+    else:
+        right = ""
 
     return build_panel(
         number=3,

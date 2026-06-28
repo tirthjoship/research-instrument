@@ -168,10 +168,18 @@ def _qf6():
     import pandas as pd
 
     revs = [57e9, 44e9, 35e9, 30e9, 26e9, 22e9]  # newest-first
+    # gross/op margins drift up over time (newest-first highest) -> widening trend
+    gm = [0.76, 0.75, 0.74, 0.73, 0.72, 0.70]
+    om = [0.64, 0.63, 0.62, 0.60, 0.58, 0.56]
     return pd.DataFrame(
         {
-            c: {"Total Revenue": r, "Net Income": r * 0.55}
-            for c, r in zip(_qcols(), revs)
+            c: {
+                "Total Revenue": r,
+                "Net Income": r * 0.55,
+                "Gross Profit": r * g,
+                "Operating Income": r * o,
+            }
+            for c, r, g, o in zip(_qcols(), revs, gm, om)
         }
     )
 
