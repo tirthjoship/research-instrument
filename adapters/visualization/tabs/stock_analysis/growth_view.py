@@ -157,6 +157,35 @@ def _annual_yoy(result: Any) -> list[float]:
     ]
 
 
+def _traj_direction(traj: list[float]) -> str:
+    """Direction of the YoY-rate trajectory over the shown window.
+
+    'up' (accelerating), 'down' (decelerating), 'flat' (roughly steady), or ''
+    when fewer than 2 points. Net change first->last in percentage points;
+    a +/-3pp band counts as flat so noise doesn't flip the colour.
+    """
+    if len(traj) < 2:
+        return ""
+    delta = traj[-1] - traj[0]
+    if delta > 3.0:
+        return "up"
+    if delta < -3.0:
+        return "down"
+    return "flat"
+
+
+# Trajectory direction -> (line colour, chip label, chip tone). Colour is
+# descriptive of the slope, never a forecast: green rising, amber easing
+# (still positive but slowing), grey roughly flat — matches the colour key.
+_TRAJ_COLOUR = {"up": "#2f9e44", "down": "#b45309", "flat": "#9aa6aa"}
+_TRAJ_CHIP = {
+    "up": ("ACCELERATING", "green"),
+    "down": ("DECELERATING", "amber"),
+    "flat": ("STEADY", "grey"),
+}
+_TRAJ_WORD = {"up": "accelerating", "down": "decelerating", "flat": "roughly steady"}
+
+
 def _fcf_yoy_metric(result: Any) -> Metric:
     meaning = "Year-over-year free cash flow growth (latest quarter vs a year ago)."
     y = _fcf_yoy(result)
@@ -290,39 +319,78 @@ def build_growth_view(result: Any) -> dict[str, Any]:
 
     rev_series, ni_series = _quarterly_series(result)
 
-    # ACCELERATING chip: emitted only when the QoQ revenue increment genuinely rose
+    # prefer annual YoY (yfinance gives ~4 annual points -> 3-pt trajectory);
+    # fall back to quarterly YoY when annual statements are unavailable
+    traj = _annual_yoy(result) or _yoy_trajectory(rev_series)
+    traj_dir = _traj_direction(traj)
+
+    # Direction chip is driven by the SAME YoY-rate series the trajectory chart
+    # plots, so the badge can never contradict the line the user sees.
     chips = ""
-    if len(rev_series) >= 3:
-        qoq = [rev_series[i] - rev_series[i - 1] for i in range(1, len(rev_series))]
-        if len(qoq) >= 2 and qoq[-1] > qoq[-2]:
-            chips += render_status_chip(
-                "ACCELERATING",
-                "",
-                tone="green",
-                rule=(
-                    "Most recent quarterly revenue increment exceeds prior quarter's — "
-                    "acceleration measured from quarterly_financials."
-                ),
-            )
+    if traj_dir:
+        label, tone = _TRAJ_CHIP[traj_dir]
+        chips += render_status_chip(
+            label,
+            "",
+            tone=tone,
+            rule=(
+                f"YoY revenue-growth rate {_TRAJ_WORD[traj_dir]}: "
+                f"{traj[0]:+.0f}% → {traj[-1]:+.0f}% across the shown window "
+                "(annual statements, else quarterly_financials)."
+            ),
+        )
+
+    verdicts = _trajectory_verdicts(traj, traj_dir)
 
     return {
         "metrics": metrics,
         "rev_series": rev_series,
         "ni_series": ni_series,
-        # prefer annual YoY (yfinance gives ~4 annual points -> 3-pt trajectory);
-        # fall back to quarterly YoY when annual statements are unavailable
-        "yoy_traj": _annual_yoy(result) or _yoy_trajectory(rev_series),
+        "yoy_traj": traj,
+        "traj_dir": traj_dir,
         "chips": chips,
         "claim": "Revenue and earnings expanding year-on-year.",
         "reframe": (
             "Rates from trailing financials; 3y CAGR from annual statements; "
             "the forward estimate is third-party (shown when available)."
         ),
-        "verdicts": [
-            Verdict("pos", "Positive YoY revenue growth reported."),
-            Verdict("neu", "Forward estimate is a third-party figure, not adopted."),
-        ],
+        "verdicts": verdicts,
     }
+
+
+def _trajectory_verdicts(traj: list[float], traj_dir: str) -> list[Verdict]:
+    """Direction-aware footer verdicts: state the slope honestly, count the
+    positive periods, and keep the forward-estimate disclosure."""
+    out: list[Verdict] = []
+    if traj_dir == "up":
+        out.append(
+            Verdict(
+                "pos", f"YoY growth rate rising: {traj[0]:+.0f}% → {traj[-1]:+.0f}%."
+            )
+        )
+    elif traj_dir == "down":
+        tail = ", still positive" if traj[-1] > 0 else ""
+        out.append(
+            Verdict(
+                "cau",
+                f"YoY growth rate easing: {traj[0]:+.0f}% → {traj[-1]:+.0f}%{tail}.",
+            )
+        )
+    elif traj_dir == "flat":
+        out.append(
+            Verdict("neu", f"YoY growth rate roughly steady near {traj[-1]:+.0f}%.")
+        )
+    else:
+        out.append(Verdict("pos", "Positive YoY revenue growth reported."))
+    if traj:
+        npos = sum(1 for v in traj if v > 0)
+        out.append(
+            Verdict(
+                "neu", f"YoY growth positive in {npos} of {len(traj)} periods shown."
+            )
+        )
+    out.append(Verdict("neu", "Forward estimate is a third-party figure, not adopted."))
+    return out
 
 
 def build_growth_panel(result: Any) -> str:
@@ -350,18 +418,25 @@ def build_growth_panel(result: Any) -> str:
             '<div class="sa-pnl-subh">Revenue &amp; net income</div>'
             '<div class="sa-pnl-cap">quarterly financials unavailable — data gap</div>'
         )
-    # Second graph: YoY revenue-growth trajectory (annual YoY preferred)
+    # Second graph: YoY revenue-growth trajectory (annual YoY preferred).
+    # Line colour tracks the slope (green rising / amber easing / grey flat) so a
+    # decelerating-but-positive series isn't painted as if it were climbing.
     traj = v["yoy_traj"]
+    traj_dir = v["traj_dir"]
     if len(traj) >= 2:
+        colour = _TRAJ_COLOUR.get(traj_dir, "#9aa6aa")
+        word = _TRAJ_WORD.get(traj_dir, "")
+        tail = ", still positive" if traj_dir == "down" and traj[-1] > 0 else ""
+        descr = f" — {word}{tail}" if word else ""
         right = (
             '<div class="sa-pnl-subh">YoY growth trajectory (%)</div>'
             + panel_charts.trend_lines(
-                [("YoY %", traj, "#2f9e44")],
+                [("YoY %", traj, colour)],
                 unit="%",
                 x_labels=("earliest", "latest"),
             )
             + f'<div class="sa-pnl-cap">year-over-year revenue growth: '
-            f"{traj[0]:+.0f}% → {traj[-1]:+.0f}% (most recent at right)</div>"
+            f"{traj[0]:+.0f}% → {traj[-1]:+.0f}%{descr} (most recent at right)</div>"
         )
     else:
         right = (
