@@ -24,7 +24,7 @@ STOCK_METRICS: dict[str, tuple[str, str]] = {
     ),
     "p_fcf": ("Price divided by free cash flow.", "vs peer percentile"),
     "roic": (
-        "Return on invested capital; the cleanest efficiency measure, capital-structure neutral.",
+        "Return on invested capital; efficiency measure independent of how the company is financed.",
         "vs peer median",
     ),
     "net_debt_ebitda": (
