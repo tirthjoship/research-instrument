@@ -183,8 +183,55 @@ def _qcf6():
     return pd.DataFrame({c: {"Free Cash Flow": f} for c, f in zip(_qcols(), fcfs)})
 
 
+def _fit_fixture() -> object:
+    """A FitVerdict mirroring the mockup so the snowflake/fit section renders.
+
+    Without a fit object build_top_html degrades to the fit-card-only fallback
+    (no radar). Pair this with _install_screen_stub so _snowflake_axes also
+    finds the Value/Quality/Momentum/Revision/Trend factor scores.
+    """
+    from domain.fit import FitFlag, FitVerdict
+
+    return FitVerdict(
+        ticker="NVDA",
+        evidence_grade="B",
+        fit_flags=(
+            FitFlag(
+                "concentration", "Position would exceed your sector cap.", "WARNING"
+            ),
+            FitFlag("beta", "Beta 1.7 is above your portfolio target.", "CAUTION"),
+            FitFlag("liquidity", "Liquidity is ample for entry.", "INFO"),
+        ),
+        summary="Strong evidence shape; two fit cautions for your book.",
+    )
+
+
+def _install_screen_stub() -> None:
+    """Point load_latest_screen at an in-memory NVDA screen row so the radar's
+    factor axes (Value/Quality/Momentum/Revision/Trend) populate — matches the
+    mockup percentiles. Patches the data_loader symbol _snowflake_axes imports."""
+    from adapters.visualization import data_loader
+
+    screen = {
+        "candidates": [
+            {
+                "ticker": "NVDA",
+                "factor_scores": [
+                    {"name": "value", "percentile": 0.22},
+                    {"name": "quality", "percentile": 0.88},
+                    {"name": "momentum", "percentile": 0.95},
+                    {"name": "revision", "percentile": 0.80},
+                ],
+                "trend_health": 0.8,  # -> Trend filter 90
+            }
+        ]
+    }
+    data_loader.load_latest_screen = lambda *_a, **_k: screen  # type: ignore[assignment]
+
+
 def render_doc(*, open_groups: bool = True, tips: bool = False) -> str:
-    top = compose.build_top_html(nvda_result(), None, as_of="Jun 27 2026")
+    _install_screen_stub()
+    top = compose.build_top_html(nvda_result(), _fit_fixture(), as_of="Jun 27 2026")
     if open_groups:  # headless Chrome won't expand <details>; force-open for panel QA
         top = top.replace("<details", "<details open")
     # `tips` mode reproduces the live Streamlit nesting (stVerticalBlock >
