@@ -74,7 +74,8 @@ def render_corroboration_section(view: "CorroborationTabView | None") -> None:
         and view.snapshot.convergence == ConvergenceTier.CONFLICTED
     ):
         st.markdown(
-            '<div class="ws-card" style="border-left:3px solid #DC2626;padding:10px 14px;">'
+            '<div style="border:1px solid var(--ri-line);border-radius:9px;'
+            'background:var(--ri-card);border-left:3px solid #DC2626;padding:10px 14px;">'
             '<span style="font-weight:700;color:#DC2626;">⚠ CONFLICTED</span>'
             '<span style="font-size:13px;color:#64748B;margin-left:8px;">'
             "Sources disagree — treat with caution.</span></div>",
@@ -114,7 +115,8 @@ def _group_claims_by_weight(
 def _empty_state_html(ticker: str) -> str:
     label = f" for {ticker}" if ticker else ""
     return (
-        '<div class="ws-card" style="padding:16px;text-align:center;">'
+        '<div style="border:1px solid var(--ri-line);border-radius:9px;'
+        'background:var(--ri-card);padding:16px;text-align:center;">'
         f'<div style="font-size:14px;color:#64748B;">No corroboration data{label}.</div>'
         '<div style="font-size:13px;color:#94A3B8;margin-top:4px;">'
         "Run <code>corroborate</code> to surface external evidence.</div>"
@@ -134,8 +136,9 @@ def _claim_card_html(claim: HarvestedClaim) -> str:
     freshness = f"{claim.published_at.isoformat()}"
     icon = _STANCE_ICON.get(claim.stance, "→")
     return (
-        '<div class="ws-card" style="padding:12px 16px;margin-bottom:8px;">'
-        f'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        '<div class="sa-claim">'
+        '<div style="flex:1;min-width:0;">'
+        f'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">'
         f'<span style="font-weight:600;font-size:14px;color:#1A202C;">'
         f"{icon} {claim.source_name}</span>"
         f"{verified_badge}"
@@ -145,7 +148,7 @@ def _claim_card_html(claim: HarvestedClaim) -> str:
         f'<div style="margin-top:6px;">'
         f'<a href="{claim.url}" target="_blank" '
         f'style="font-size:12px;color:#0F6E80;">↗ Source</a></div>'
-        "</div>"
+        "</div></div>"
     )
 
 
@@ -177,7 +180,8 @@ def _our_readout_html(readout: OurReadout) -> str:
         "BROKEN": "#DC2626",
     }.get(trend, "#64748B")
     return (
-        '<div class="ws-card" style="padding:12px 16px;margin-top:12px;">'
+        '<div style="border:1px solid var(--ri-line);border-radius:9px;'
+        'background:var(--ri-card);padding:9px 11px;margin-top:12px;">'
         '<div style="font-size:12px;color:#94A3B8;text-transform:uppercase;'
         'letter-spacing:0.8px;margin-bottom:8px;">Our model says</div>'
         '<div style="display:flex;gap:24px;flex-wrap:wrap;">'
@@ -235,7 +239,8 @@ def _weighted_stance_html(
         )
 
     return (
-        '<div class="ws-card" style="padding:10px 14px;margin-bottom:8px;">'
+        '<div style="border:1px solid var(--ri-line);border-radius:9px;'
+        'background:var(--ri-card);padding:9px 11px;margin-bottom:8px;">'
         '<div style="font-size:11px;color:#94A3B8;text-transform:uppercase;'
         'letter-spacing:0.6px;margin-bottom:6px;">Stance distribution</div>'
         f"{rows}"
@@ -310,7 +315,8 @@ def _directional_views_html(views: list[DirectionalView]) -> str:
             f"{v.mean_convergence:.0%}</td></tr>"
         )
     return (
-        '<div class="ws-card" style="padding:12px 16px;margin-top:12px;">'
+        '<div style="border:1px solid var(--ri-line);border-radius:9px;'
+        'background:var(--ri-card);padding:9px 11px;margin-top:12px;">'
         '<div style="font-size:12px;color:#94A3B8;text-transform:uppercase;'
         'letter-spacing:0.8px;margin-bottom:8px;">Directional tilt</div>'
         '<table style="width:100%;border-collapse:collapse;">'
