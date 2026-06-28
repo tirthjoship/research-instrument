@@ -49,10 +49,11 @@
   `application/ticker_universe.py`. ticker→CIK = SEC `company_tickers.json` resolver (TO BUILD).
 - Runner: a `lazy-prices` CLI command modelled on `application/cli/backtest_commands.py` (inline adapter
   wiring + price cache, quarterly cohort gen, report → `data/reports/lazy_prices_ic_63d_<date>.json`).
-- **Status (2026-06-27):** rig + hardened extraction + the full runner (ticker→CIK resolver, the
-  three wiring callables, the `lazy-prices` CLI command with disk-cached fetch) all landed on
-  develop. Dry-runnable now via `lazy-prices --limit 60` (smoke, not a verdict). Remaining: the
-  one-time live historical fetch + ONE gate run (supervised) → write the verdict ADR-058.
+- **Status (2026-06-27):** rig + hardened extraction + full runner all on develop, and a live
+  60-name smoke **validated the whole pipe** (after two fixes — full SEC filing-history pagination
+  and class-share ticker normalization — coverage 63%→**89.5%**, **40/40 cohorts**, all guards
+  cleared, verdict INCONCLUSIVE on the slice). **Methodologically complete; ready for the
+  supervised full run.** Remaining: one-time live full-universe fetch + ONE gate run → ADR-058.
 
 ## Parked ideas
 

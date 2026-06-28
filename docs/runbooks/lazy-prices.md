@@ -77,8 +77,8 @@ not a fishing expedition. The exact numbers live in ADR-057; in words:
 
 ## 4. Where each callable's "fuel" comes from (the wiring)
 
-This is the part that's mostly built. The rig and the hardened data extraction already landed on
-`develop`; the remaining work is wiring the three callables to real data and writing the runner.
+All of this is **built, on `develop`, and smoke-validated** against live data (§5 Stage 1). The
+descriptions below are where each callable's data comes from.
 
 - **`similarity_fn`** ← `adapters/data/sec_filing_text_adapter.py` pulls the filing text
   (`list_filings` finds filings filed on/before the date — *point-in-time safe*; `fetch_sections`
@@ -102,14 +102,20 @@ Stages 0–1 are ordinary engineering you can do freely. Stages 2–3 are the **
 
 - **Stage 0 — DONE.** Pre-registration (ADR-057), the backtest engine, the similarity service, and
   the hardened filing-text extraction are all on `develop` and tested.
-- **Stage 1 — BUILD: DONE (2026-06-27).** Landed on `develop`: the ticker→CIK resolver
-  (`adapters/data/sec_cik_resolver.py`), the three callables + cohort/pairing helpers
+- **Stage 1 — BUILD + SMOKE-VALIDATED: DONE (2026-06-27).** Landed on `develop`: the ticker→CIK
+  resolver (`adapters/data/sec_cik_resolver.py`), the three callables + cohort/pairing helpers
   (`application/lazy_prices_runner.py`), and the `lazy-prices` CLI command
-  (`application/cli/backtest_commands.py`) that wires them, disk-caches filing text, and writes the
-  JSON report. 20 offline tests; deterministic gate green. **You can dry-run it now** with
-  `uv run python -m application.cli lazy-prices --limit 60` — this hits live SEC/yfinance for a
-  60-name slice to prove the pipe end-to-end. It is a SMOKE run (the report is stamped
-  `smoke_limit`), **not** a verdict.
+  (`application/cli/backtest_commands.py`) — wires the adapters, disk-caches filing text + filing
+  history, writes the JSON report. Dry-run: `uv run python -m application.cli lazy-prices --limit 60`
+  (SMOKE, stamped `smoke_limit`, **not** a verdict).
+  - **A live 60-name smoke validated the whole pipe end-to-end** and caught two real-world issues,
+    both fixed: (1) `list_filings` read only the SEC `recent` feed (~2–4 yrs) → 2015–2020 cohorts
+    starved (coverage 63%, 14/40 cohorts); now paginates the full submission history + caches per
+    CIK. (2) class-share tickers (BRK.B) needed yfinance's dash form (BRK-B). After the fixes the
+    smoke clears all guards: **coverage 89.5%, 40/40 cohorts, verdict INCONCLUSIVE** (the full gate
+    runs — it just doesn't hit PASS on a 60-name slice, as expected). The IC/basket numbers on a
+    smoke are noise and are deliberately not interpreted (ADR-057: no peeking/tuning).
+  - **→ The rig is methodologically complete and ready for the supervised full run (Stage 2).**
 - **Stage 2 — ONE-TIME FETCH (supervised).** Run a cached download of ~512 names × ~40 quarterly
   filings. The SEC rate-limits to ~1 request/second, so this takes **hours**. Cache it on disk so
   the actual run is fast and repeatable. *Kick this off knowingly — it's a long network job.*
