@@ -53,6 +53,18 @@ def render_corroboration_section(view: "CorroborationTabView | None") -> None:
         ticker = view.ticker if view is not None else ""
         st.markdown(_empty_state_html(ticker), unsafe_allow_html=True)
         return
+    # D13: reliability-weighted stance distribution + convergence chip
+    st.markdown(_weighted_stance_html(list(view.claims)), unsafe_allow_html=True)
+    _net_stance = (
+        view.directional_views[0].net_stance
+        if view.directional_views
+        else Stance.NEUTRAL
+    )
+    _conv_tier = view.snapshot.convergence if view.snapshot is not None else None
+    chip = _convergence_chip_html(list(view.claims), _net_stance, _conv_tier)
+    if chip:
+        st.markdown(chip, unsafe_allow_html=True)
+
     strong, moderate, weak = _group_claims_by_weight(view.claims)
     _render_strong_claims(strong)
     _render_moderate_claims(moderate)
@@ -174,6 +186,110 @@ def _our_readout_html(readout: OurReadout) -> str:
         f'<span style="font-size:13px;"><b>Divergence:</b> {div_icon}</span>'
         f'<span style="font-size:13px;"><b>Discipline:</b> {disc}</span>'
         "</div></div>"
+    )
+
+
+def _weighted_stance_html(
+    claims: list[HarvestedClaim] | tuple[HarvestedClaim, ...]
+) -> str:
+    """Reliability-weighted stance distribution bar (pure — no Streamlit).
+
+    Aggregates ``reliability_weight`` by stance and renders percentage bars.
+    Caption: "reliability-weighted — a weak source can't outvote a 10-K."
+    Empty or zero-weight list → data-gap message.
+    """
+    if not claims:
+        return (
+            '<div style="font-size:13px;color:#94A3B8;padding:8px 0;">'
+            "Stance distribution — data gap (no sources loaded).</div>"
+        )
+    total_w = sum(c.reliability_weight for c in claims)
+    if total_w == 0.0:
+        return (
+            '<div style="font-size:13px;color:#94A3B8;padding:8px 0;">'
+            "Stance distribution — data gap (zero weight).</div>"
+        )
+
+    bull_w = sum(c.reliability_weight for c in claims if c.stance == Stance.BULLISH)
+    bear_w = sum(c.reliability_weight for c in claims if c.stance == Stance.BEARISH)
+    neut_w = sum(c.reliability_weight for c in claims if c.stance == Stance.NEUTRAL)
+
+    rows = ""
+    for lbl, weight, colour in [
+        ("▲ Constructive", bull_w, "#16A34A"),
+        ("→ Neutral", neut_w, "#64748B"),
+        ("▼ Cautious", bear_w, "#DC2626"),
+    ]:
+        pct = weight / total_w * 100
+        if pct < 0.5:
+            continue
+        rows += (
+            f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+            f'<span style="font-size:12px;color:{colour};min-width:108px;">{lbl}</span>'
+            f'<div style="flex:1;background:#F1F5F9;border-radius:4px;height:8px;">'
+            f'<div style="background:{colour};width:{pct:.0f}%;height:8px;'
+            f'border-radius:4px;opacity:0.78;"></div></div>'
+            f'<span style="font-size:12px;color:#374151;min-width:34px;">'
+            f"{pct:.0f}%</span>"
+            f"</div>"
+        )
+
+    return (
+        '<div class="ws-card" style="padding:10px 14px;margin-bottom:8px;">'
+        '<div style="font-size:11px;color:#94A3B8;text-transform:uppercase;'
+        'letter-spacing:0.6px;margin-bottom:6px;">Stance distribution</div>'
+        f"{rows}"
+        '<div style="font-size:11px;color:#94A3B8;margin-top:6px;font-style:italic;">'
+        "reliability-weighted — a weak source can&#39;t outvote a 10-K.</div>"
+        "</div>"
+    )
+
+
+def _convergence_chip_html(
+    claims: list[HarvestedClaim] | tuple[HarvestedClaim, ...],
+    net_stance: Stance,
+    convergence_tier: ConvergenceTier | None = None,
+) -> str:
+    """Compact chip: TIER·N-of-M / K-dissent (pure — no Streamlit).
+
+    Parameters
+    ----------
+    claims:
+        All claims for this ticker.
+    net_stance:
+        The overall net stance (used to count agreement vs dissent).
+    convergence_tier:
+        Optional explicit tier; when None the tier is inferred from the N/M ratio.
+
+    Tone is grey/petrol — descriptive.  Convergence is NOT a forecast.
+    """
+    total_m = len(claims)
+    if total_m == 0:
+        return ""
+
+    n_agree = sum(1 for c in claims if c.stance == net_stance)
+    k_dissent = total_m - n_agree
+
+    if convergence_tier is not None:
+        tier_lbl = convergence_tier.value.upper()
+        tier_colour = _TIER_COLOUR.get(convergence_tier.value, "#64748B")
+    else:
+        ratio = n_agree / total_m
+        if ratio >= 0.80:
+            tier_lbl, tier_colour = "STRONG", _TIER_COLOUR["strong"]
+        elif ratio >= 0.60:
+            tier_lbl, tier_colour = "MODERATE", _TIER_COLOUR["moderate"]
+        elif ratio >= 0.40:
+            tier_lbl, tier_colour = "WEAK", _TIER_COLOUR["weak"]
+        else:
+            tier_lbl, tier_colour = "CONFLICTED", _TIER_COLOUR["conflicted"]
+
+    dissent_note = f"{k_dissent} dissent"
+    return (
+        f'<span class="sa-chip" style="font-size:11px;font-weight:600;'
+        f"color:{tier_colour};background:#F8FAFC;border:1px solid {tier_colour}40;"
+        f'border-radius:4px;padding:2px 8px;margin-right:6px;">'
+        f"{tier_lbl}·{n_agree}-of-{total_m} / {dissent_note}</span>"
     )
 
 
