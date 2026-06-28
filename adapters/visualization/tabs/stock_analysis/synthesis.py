@@ -157,8 +157,8 @@ def build_synthesis_view(result: Any) -> SynthesisView:
     val = chips[0].value
     gro = chips[1].value
     prose = (
-        f"On the evidence: valuation reads <b>{val}</b> and revenue growth <b>{gro}</b>; "
-        "the Street is reported below and insider activity is shown as a disclosed fact, not a signal."
+        f"Valuation reads <b>{val}</b> on revenue growth of <b>{gro}</b>; "
+        "the Street's view and insider activity appear below as disclosed facts — context, not a forecast."
     )
     return SynthesisView(prose=prose, chips=chips)
 
