@@ -14,10 +14,6 @@ from adapters.visualization.tabs.stock_analysis import (
     _SECTION_LABELS,
     _convergence_badge_html,
 )
-from adapters.visualization.tabs.stock_analysis.compose import (
-    _build_story_banner_html,
-    _build_story_phrases,
-)
 from adapters.visualization.tabs.stock_analysis.market_section import (
     _build_ownership_delta,
     _build_vs_market_card,
@@ -60,8 +56,8 @@ def _make_corr_view(snapshot=None):  # type: ignore[no-untyped-def]
 
 
 def test_section_labels_length() -> None:
-    """_SECTION_LABELS must have exactly 10 entries."""
-    assert len(_SECTION_LABELS) == 10
+    """_SECTION_LABELS must have exactly 5 entries."""
+    assert len(_SECTION_LABELS) == 5
 
 
 def test_section_labels_has_corroboration() -> None:
@@ -236,37 +232,3 @@ def test_ownership_delta_net_buyers_and_qoq() -> None:
     html = _ownership_delta_html(delta)
     assert "net buyers" in html
     assert "Q2 2026" in html
-
-
-# ---------------------------------------------------------------------------
-# Story-this-week synthesis banner (compose)
-# ---------------------------------------------------------------------------
-
-
-def test_story_phrases_empty_result() -> None:
-    result = SimpleNamespace(
-        buzz_signals=[], insider_transactions=[], peer_percentiles={}
-    )
-    assert _build_story_phrases(result) == []
-    assert _build_story_banner_html(result) == ""
-
-
-def test_story_banner_synthesises_facts() -> None:
-    result = SimpleNamespace(
-        buzz_signals=[
-            _buzz("reuters_rss", 0.5, 2, "2026-06-20"),
-            _buzz("reddit_wsb", 0.4, 3, "2026-06-21"),
-        ],
-        insider_transactions=[
-            {"Date": "2026-06-15", "Transaction": "Buy", "Value": 5e6},
-        ],
-        peer_percentiles={"P/E": 72.0},
-    )
-    phrases = _build_story_phrases(result)
-    joined = " ".join(phrases)
-    assert "sentiment" in joined
-    assert "insiders net buyers" in joined
-    assert "72th percentile" in joined
-    html = _build_story_banner_html(result)
-    assert "Story this week" in html
-    assert "not a forecast" in html
