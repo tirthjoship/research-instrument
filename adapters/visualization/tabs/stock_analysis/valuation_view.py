@@ -51,7 +51,9 @@ def _multiple(
         else "grey"
     )
     sub = f"{int(round(rich_pct))}th" if rich_pct is not None else ""
-    return Metric(mkey, label, f"{val:g}{suffix}", sub, tone, meaning, basis)
+    return Metric(
+        mkey, label, f"{panel_charts.fmt_num(val)}{suffix}", sub, tone, meaning, basis
+    )
 
 
 _STRIP_TILE = (
@@ -131,7 +133,7 @@ def build_valuation_view(result: Any) -> dict[str, Any]:
     if peg_val is not None and peg_val < 1:
         chips += render_status_chip(
             "PEG",
-            f"{peg_val:g}",
+            panel_charts.fmt_num(peg_val),
             tone="green",
             rule="PEG <1 = P/E below the growth rate; a fact, not a call",
         )

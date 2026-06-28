@@ -153,7 +153,16 @@ def _fetch_insider_transactions_impl(ticker: str) -> list[dict[str, Any]]:
         df = t.insider_transactions
         if df is None or (hasattr(df, "empty") and df.empty):
             return []
-        return cast(list[dict[str, Any]], df.to_dict(orient="records"))
+        records = cast(list[dict[str, Any]], df.to_dict(orient="records"))
+        # yfinance 'Value' is unsigned and the consumers read lowercase 'value'.
+        # Expose a signed 'value': disposals (Sale) reduce; awards/grants/
+        # purchases accumulate. Direction is in the free-text 'Text' field.
+        for r in records:
+            raw = r.get("Value", r.get("value", 0)) or 0
+            text = str(r.get("Text", "")).lower()
+            sign = -1 if ("sale" in text or "dispos" in text) else 1
+            r["value"] = sign * abs(float(raw))
+        return records
     except Exception as exc:
         logger.warning("Insider transactions fetch failed for {}: {}", ticker, exc)
         return []
