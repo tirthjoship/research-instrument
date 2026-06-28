@@ -330,12 +330,20 @@ def build_growth_panel(result: Any) -> str:
     v = build_growth_view(result)
     rev_b = [r / 1e9 for r in v["rev_series"]]
     ni_b = [n / 1e9 for n in v["ni_series"]]
-    combo = panel_charts.bars_and_line(rev_b, ni_b)
+    nq = len(rev_b)
+    combo = panel_charts.bars_and_line(
+        rev_b, ni_b, unit="B", x_labels=(f"{nq}q ago", "latest") if nq >= 2 else None
+    )
     if combo:
+        rev_txt = (
+            f"${panel_charts.fmt_num(rev_b[0])}B → ${panel_charts.fmt_num(rev_b[-1])}B"
+            if rev_b
+            else ""
+        )
         left = (
             '<div class="sa-pnl-subh">Revenue &amp; net income ($B, by quarter)</div>'
             + combo
-            + '<div class="sa-pnl-cap">bars = revenue · line = net income</div>'
+            + f'<div class="sa-pnl-cap">bars = revenue ({rev_txt}) · line = net income</div>'
         )
     else:
         left = (
@@ -348,7 +356,8 @@ def build_growth_panel(result: Any) -> str:
         right = (
             '<div class="sa-pnl-subh">YoY growth trajectory (%)</div>'
             + panel_charts.trend_lines([("YoY %", traj, "#2f9e44")])
-            + '<div class="sa-pnl-cap">year-over-year revenue growth, most recent at right</div>'
+            + f'<div class="sa-pnl-cap">year-over-year revenue growth: '
+            f"{traj[0]:+.0f}% → {traj[-1]:+.0f}% (most recent at right)</div>"
         )
     else:
         right = (

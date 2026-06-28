@@ -1670,7 +1670,10 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .sa-tile.t-petrol{border-top-color:var(--ri-teal)}.sa-tile.t-crimson{border-top-color:var(--ri-crimson)}.sa-tile.t-grey{border-top-color:var(--ri-muted)}
 .sa-tile .lab{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.02em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:4px}
 .sa-tile .num{font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:var(--ri-ink);line-height:1.1;margin-top:3px}
+/* colour-code the value by measured tone so momentum reads at a glance */
+.sa-tile.t-green .num{color:var(--ri-green)}.sa-tile.t-crimson .num{color:var(--ri-crimson)}.sa-tile.t-amber .num{color:var(--ri-amber)}
 .sa-tile .sub{font-family:'IBM Plex Mono',monospace;font-size:8px;margin-top:2px;color:var(--ri-muted)}
+.sa-tile.t-green .sub{color:var(--ri-green)}.sa-tile.t-crimson .sub{color:var(--ri-crimson)}.sa-tile.t-amber .sub{color:var(--ri-amber)}
 .sa-panel{padding:14px 0 6px;border-top:1px solid var(--ri-hair)}
 .sa-twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
 .sa-chip{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;cursor:help;position:relative;display:inline-flex;align-items:center;gap:5px}

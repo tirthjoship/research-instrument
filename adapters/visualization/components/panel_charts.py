@@ -70,6 +70,13 @@ def trend_lines(series: type_series, *, height: int = 70, width: int = 300) -> s
     )
 
 
+def _axis_label(text: str) -> str:
+    return (
+        "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:7.5px;"
+        f'color:var(--ri-muted)">{_html.escape(text)}</span>'
+    )
+
+
 def bars_and_line(
     bars: list[float],
     line: list[float],
@@ -78,11 +85,14 @@ def bars_and_line(
     width: int = 300,
     bar_color: str = "#bfe0c8",
     line_color: str = "#1971c2",
+    unit: str = "",
+    x_labels: tuple[str, str] | None = None,
 ) -> str:
-    """Revenue bars + net-income line on a shared chronological axis.
+    """Revenue bars + net-income line on a shared axis, with HTML axis numbers.
 
-    Far more interpretable than two overlaid thin lines: filled bars give scale,
-    the line tracks earnings, a zero baseline anchors them. Empty string if < 2 bars.
+    Filled bars give scale, the line tracks earnings, a zero baseline anchors them.
+    Crisp y-axis (max/min) and x-axis (first/last) labels are rendered as HTML around
+    the SVG so they aren't distorted by preserveAspectRatio="none". '' if < 2 bars.
     """
     bars = [float(v) for v in bars if v == v]
     line = [float(v) for v in line if v == v]
@@ -95,7 +105,7 @@ def bars_and_line(
     lo = min(0.0, min(allv))
     hi = max(allv) or 1.0
     span = (hi - lo) or 1.0
-    base = height - 12  # x baseline; leave room below
+    base = height - 6
 
     def y(v: float) -> float:
         return 6.0 + (hi - v) / span * (base - 6.0)
@@ -122,13 +132,36 @@ def bars_and_line(
     baseline = (
         f'<line x1="0" y1="{base:.1f}" x2="{width}" y2="{base:.1f}" stroke="#e2e2e2"/>'
     )
-    return (
+    svg = (
         f'<svg width="100%" height="{height}" viewBox="0 0 {width} {height}" '
         'preserveAspectRatio="none" style="overflow:visible">'
         + baseline
         + rects
         + line_svg
         + "</svg>"
+    )
+    ymax = f"{fmt_num(hi)}{unit}"
+    ymin = f"{fmt_num(lo)}{unit}"
+    yaxis = (
+        '<div style="display:flex;flex-direction:column;justify-content:space-between;'
+        'text-align:right;min-width:26px;padding:2px 2px 0 0">'
+        + _axis_label(ymax)
+        + _axis_label(ymin)
+        + "</div>"
+    )
+    xaxis = ""
+    if x_labels:
+        xaxis = (
+            '<div style="display:flex;justify-content:space-between;margin:1px 0 0 28px">'
+            + _axis_label(x_labels[0])
+            + _axis_label(x_labels[1])
+            + "</div>"
+        )
+    return (
+        '<div style="display:flex;gap:3px;align-items:stretch">'
+        + yaxis
+        + f'<div style="flex:1">{svg}</div></div>'
+        + xaxis
     )
 
 
