@@ -208,7 +208,7 @@ def _signals_tile_values(result: object) -> tuple[str, str, str]:
         signals = getattr(result, "buzz_signals", None) or []
         n = len(list(signals))
         if n > 0:
-            word = "src" if n == 1 else "src"
+            word = "src" if n == 1 else "srcs"
             buzz = f"{n} {word}"
     except (TypeError, ValueError, AttributeError):
         buzz = "—"

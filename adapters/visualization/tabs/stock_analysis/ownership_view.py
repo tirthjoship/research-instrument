@@ -1,8 +1,8 @@
 """Ownership panel (spec D11): holder composition + insider flow + short data.
 
-Insider-cluster signal is FALSIFIED (ADR-057): the Lazy Prices hypothesis run
-showed no systematic edge from institutional ownership changes.  All metrics
-here are descriptive, never directional.
+Insider-cluster signal is FALSIFIED (ADR-053): hypothesis tests found no
+systematic edge from insider-cluster ownership changes.  All metrics here are
+descriptive, never directional.
 """
 
 from __future__ import annotations
@@ -174,7 +174,7 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
     net_q_meaning = (
         "Net transaction value of insider activity reported for the latest quarter. "
         "Negative = net reducing; positive = net accumulating. "
-        "Insider-cluster signal is falsified (ADR-057) — descriptive only."
+        "Insider-cluster signal is falsified (ADR-053) — descriptive only."
     )
     net_q_basis = (
         "sum of insider_transactions[*].value; quarterly net position change in dollars"
@@ -284,7 +284,7 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
         net_q_direction,
         tone="grey",
         rule=(
-            "insider-cluster signal falsified (ADR-057); net transaction value is descriptive only — "
+            "insider-cluster signal falsified (ADR-053); net transaction value is descriptive only — "
             "reducing = net outflow, accumulating = net inflow; no directional inference drawn"
         ),
     )
@@ -295,7 +295,7 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
         "claim": "Holder composition and insider activity — descriptive ownership facts.",
         "reframe": (
             "Institutional ownership is a structural characteristic of large-cap equities, not a signal. "
-            "Insider-cluster signal is falsified (ADR-057): hypothesis tests found no systematic edge. "
+            "Insider-cluster signal is falsified (ADR-053): hypothesis tests found no systematic edge. "
             "Short data is absent for many tickers — shown as data gap."
         ),
         "verdicts": [
@@ -305,7 +305,7 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
             ),
             Verdict(
                 "cau",
-                "Insider-cluster signal falsified (ADR-057): net transaction value is descriptive only.",
+                "Insider-cluster signal falsified (ADR-053): net transaction value is descriptive only.",
             ),
         ],
     }
@@ -340,11 +340,11 @@ def build_ownership_panel(result: Any) -> str:
             '<div class="sa-pnl-cap">holder composition not available — data gap</div>'
         )
 
-    # Trend viz: insider net activity — DATA-GAP (signal falsified per ADR-057)
+    # Trend viz: insider net activity — DATA-GAP (signal falsified per ADR-053)
     right = (
         '<div class="sa-pnl-subh">Insider net activity</div>'
         '<div class="sa-pnl-cap">insider quarterly trend not wired — data gap; '
-        "signal falsified (ADR-057)</div>"
+        "signal falsified (ADR-053)</div>"
     )
 
     return build_panel(
