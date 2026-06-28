@@ -50,7 +50,7 @@ def test_top_html_assembles_locked_flow_in_order():
     i_vit = html.index("sa-grid6")
     i_fit = html.index("sa-twocol-fit")
     i_key = html.index("sa-ckey")
-    i_grp = html.index("sa-fundamentals")
+    i_grp = html.index('id="sa-fundamentals"')
     assert i_hero < i_syn < i_vit < i_fit < i_key < i_grp
 
 

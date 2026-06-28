@@ -166,12 +166,8 @@ def build_synthesis_view(result: Any) -> SynthesisView:
 def _chip_html(c: ClaimChip) -> str:
     e = _html.escape
     info = render_info(c.meaning, c.basis)
-    # Encode hyphens in the anchor as &#45; so the literal "sa-fundamentals" string
-    # does not appear in the chip href — the browser decodes &#45; to - for navigation
-    # (HTML named-character reference for HYPHEN-MINUS U+002D).
-    encoded_anchor = c.anchor.replace("-", "&#45;")
     return (
-        f'<a class="sa-cchip t-{c.tone}" href="#{encoded_anchor}">'
+        f'<a class="sa-cchip t-{c.tone}" href="#{e(c.anchor)}">'
         f"{e(c.label)} <b>{e(c.value)}</b>{info}</a>"
     )
 

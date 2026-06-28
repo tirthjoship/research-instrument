@@ -51,9 +51,7 @@ def test_html_has_prose_chips_jumpnav_and_tooltips():
     assert 'class="sa-prose"' in html
     assert html.count("sa-cchip") >= 5
     assert html.count("sa-tip") >= 5  # working tooltip on every chip
-    assert (
-        'href="#sa&#45;fundamentals"' in html
-    )  # hyphen encoded as &#45; to allow index-ordering tests
+    assert 'href="#sa-fundamentals"' in html
 
 
 def test_datagap_renders_grey_chip():
