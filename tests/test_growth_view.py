@@ -108,6 +108,37 @@ def test_3y_cagr_and_fwd_rev_wired() -> None:
     assert fwd.value == "+48%"
 
 
+def _result_annual(annual: list[float]) -> SimpleNamespace:
+    return SimpleNamespace(
+        info={"revenueGrowth": 0.69, "earningsGrowth": 0.82},
+        quarterly_financials=_df6(),
+        annual_revenue=annual,
+        ticker="NVDA",
+    )
+
+
+def test_declining_trajectory_is_amber_and_decelerating() -> None:
+    # YoY rate falls 200% -> 100% -> 50%: growth still positive but decelerating
+    result = _result_annual([10e9, 30e9, 60e9, 90e9])
+    v = growth_view.build_growth_view(result)
+    assert v["traj_dir"] == "down"
+    assert "DECELERATING" in v["chips"] and "t-amber" in v["chips"]
+    html = growth_view.build_growth_panel(result)
+    assert "#b45309" in html  # amber trajectory line, not green
+    assert "decelerating" in html.lower()
+
+
+def test_rising_trajectory_is_green_and_accelerating() -> None:
+    # YoY rate rises 10% -> 20% -> ~30%: accelerating
+    result = _result_annual([100e9, 110e9, 132e9, 172e9])
+    v = growth_view.build_growth_view(result)
+    assert v["traj_dir"] == "up"
+    assert "ACCELERATING" in v["chips"] and "t-green" in v["chips"]
+    html = growth_view.build_growth_panel(result)
+    assert "#2f9e44" in html  # green trajectory line
+    assert "accelerating" in html.lower()
+
+
 def test_panel_renders() -> None:
     html = growth_view.build_growth_panel(_result())
     assert "sa-pnl" in html and "Growth" in html and "sa-drill" not in html
