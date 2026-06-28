@@ -63,6 +63,10 @@ class AnalysisResult:
     price_history: dict[str, Any] | None = None
     # {r1..r5: int} latest analyst rating distribution (1=most positive)
     rating_distribution: dict[str, int] | None = None
+    annual_revenue: list[float] = field(
+        default_factory=list
+    )  # chronological, for 3y CAGR
+    forward_revenue_growth: float | None = None  # analyst +1y revenue growth estimate
     insider_transactions: list[dict[str, Any]] = field(default_factory=list)
     buzz_signals: list[Any] = field(default_factory=list)
     recommendation_data: Any = None

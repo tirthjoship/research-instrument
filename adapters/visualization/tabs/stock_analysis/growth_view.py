@@ -165,6 +165,43 @@ def _fcf_yoy_metric(result: Any) -> Metric:
     )
 
 
+def _rev_3y_cagr_metric(result: Any) -> Metric:
+    meaning = "Three-year compounded annual growth rate of revenue (annual financials)."
+    rev = list(getattr(result, "annual_revenue", []) or [])
+    if len(rev) >= 4 and rev[-4] > 0:
+        cagr = (rev[-1] / rev[-4]) ** (1 / 3) - 1
+        return Metric(
+            "rev_3y_cagr",
+            "Rev 3y CAGR",
+            _pct(cagr),
+            "3y annualized",
+            "green" if cagr > 0 else "grey",
+            meaning,
+            "income_stmt Total Revenue (3y)",
+        )
+    return _data_gap(
+        "rev_3y_cagr", "Rev 3y CAGR", meaning, "needs 4y of annual revenue"
+    )
+
+
+def _fwd_rev_metric(result: Any) -> Metric:
+    meaning = "Forward revenue growth from analyst consensus; a third-party figure, not our estimate."
+    g = getattr(result, "forward_revenue_growth", None)
+    if g is not None:
+        return Metric(
+            "fwd_rev",
+            "Fwd rev (3rd-party)",
+            _pct(float(g)),
+            "3rd-pty",
+            "green" if float(g) > 0 else "grey",
+            meaning,
+            "revenue_estimate +1y growth",
+        )
+    return _data_gap(
+        "fwd_rev", "Fwd rev (3rd-party)", meaning, "analyst estimate unavailable"
+    )
+
+
 def _peer_rank_metric(result: Any) -> Metric:
     meaning = "Revenue-growth percentile versus the peer group."
     r = _peer_growth_rank(result)
@@ -235,19 +272,9 @@ def build_growth_view(result: Any) -> dict[str, Any]:
             "Year-over-year earnings growth; trailing vs prior year.",
             "yfinance info.earningsGrowth",
         ),
-        _data_gap(
-            "rev_3y_cagr",
-            "Rev 3y CAGR",
-            "Three-year compounded annual growth rate of revenue.",
-            "needs annual financials — not wired",
-        ),
+        _rev_3y_cagr_metric(result),
         _fcf_yoy_metric(result),
-        _data_gap(
-            "fwd_rev",
-            "Fwd rev (3rd-party)",
-            "Forward revenue growth from analyst consensus; a third-party figure, not our estimate.",
-            "analyst revenue estimate — not wired",
-        ),
+        _fwd_rev_metric(result),
         _peer_rank_metric(result),
     ]
 
@@ -276,14 +303,12 @@ def build_growth_view(result: Any) -> dict[str, Any]:
         "chips": chips,
         "claim": "Revenue and earnings expanding year-on-year.",
         "reframe": (
-            "YoY rates, FCF growth, and peer rank are trailing facts. "
-            "3y CAGR and forward estimates need annual/analyst data (data gap)."
+            "Rates from trailing financials; 3y CAGR from annual statements; "
+            "the forward estimate is third-party (shown when available)."
         ),
         "verdicts": [
             Verdict("pos", "Positive YoY revenue growth reported."),
-            Verdict(
-                "neu", "Longer-run CAGR and forward estimates require additional data."
-            ),
+            Verdict("neu", "Forward estimate is a third-party figure, not adopted."),
         ],
     }
 
