@@ -59,6 +59,8 @@ class AnalysisResult:
     quarterly_financials: Any = None
     quarterly_balance_sheet: Any = None
     quarterly_cashflow: Any = None
+    # {closes: list[float], ma200, atr, vs_spy: list[float]|None} from price_cache
+    price_history: dict[str, Any] | None = None
     insider_transactions: list[dict[str, Any]] = field(default_factory=list)
     buzz_signals: list[Any] = field(default_factory=list)
     recommendation_data: Any = None

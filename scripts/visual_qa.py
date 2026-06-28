@@ -103,7 +103,15 @@ def nvda_result() -> SimpleNamespace:
         quarterly_financials=_qf6(),
         quarterly_cashflow=_qcf6(),
         quarterly_balance_sheet=None,
+        price_history=_price_history(),
     )
+
+
+def _price_history() -> dict[str, object]:
+    closes = [100 * (1.0009**i) for i in range(800)]
+    closes[600:640] = [c * 0.72 for c in closes[600:640]]  # a visible drawdown
+    spy = [400 * (1.0004**i) for i in range(800)]
+    return {"closes": closes, "spy_closes": spy, "ma200": closes[-1], "atr": 5.0}
 
 
 def _qcols() -> list[str]:

@@ -26,6 +26,27 @@ def test_six_metrics_and_excess() -> None:
     assert "+28" in ex.value or "28" in ex.value  # 42-14 = 28 pts
 
 
+def test_price_history_fills_long_return_drawdown_and_viz() -> None:
+    # ~3y of mostly-rising closes with a dip (for drawdown) + steadier SPY
+    closes = [100 * (1.0009**i) for i in range(800)]
+    closes[600:640] = [c * 0.7 for c in closes[600:640]]  # a drawdown
+    spy = [400 * (1.0004**i) for i in range(800)]
+    result = SimpleNamespace(
+        info={"52WeekChange": 0.42, "SandP52WeekChange": 0.14, "beta": 1.7},
+        current_price=closes[-1],
+        ticker="NVDA",
+        price_history={"closes": closes, "spy_closes": spy},
+    )
+    v = performance_view.build_performance_view(result)
+    long_m = next(m for m in v["metrics"] if m.key in ("ret_long", "ret_3y"))
+    assert long_m.value != "—" and "3Y return" in long_m.label  # 800 days -> 3Y
+    mdd = next(m for m in v["metrics"] if m.key == "max_drawdown")
+    assert mdd.value != "—" and mdd.value.startswith("-")
+    html = performance_view.build_performance_panel(result)
+    assert "Returns by horizon" in html and "Relative strength" in html
+    assert "returns-by-horizon — data gap" not in html
+
+
 def test_no_margins_or_roe_present() -> None:
     v = performance_view.build_performance_view(_result())
     labels = " ".join(m.label.lower() for m in v["metrics"])

@@ -30,6 +30,7 @@ def analyze_ticker(
     from adapters.visualization.price_cache import (
         _batch_fetch_prices_impl,
         _fetch_insider_transactions_impl,
+        _fetch_price_history_impl,
         _fetch_quarterly_financials_impl,
         _fetch_ticker_info_impl,
     )
@@ -65,6 +66,14 @@ def analyze_ticker(
     # 8. Fetch peer data for comparison
     peers = get_sector_peers(ticker, info, sc_group)
 
+    # 9. Fetch daily price history (+ SPY for relative strength). Best-effort:
+    #    None on failure so the panels degrade to honest DATA-GAP, never crash.
+    price_history = _fetch_price_history_impl(ticker)
+    if price_history is not None:
+        spy = _fetch_price_history_impl("SPY")
+        if spy is not None and spy.get("closes"):
+            price_history["spy_closes"] = spy["closes"]
+
     # Build result
     result = AnalysisResult(
         ticker=ticker,
@@ -77,6 +86,7 @@ def analyze_ticker(
         quarterly_financials=qf,
         quarterly_balance_sheet=qbs,
         quarterly_cashflow=qcf,
+        price_history=price_history,
         insider_transactions=insider_txns,
         buzz_signals=buzz,
         recommendation_data=rec,
