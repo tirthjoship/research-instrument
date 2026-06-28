@@ -378,7 +378,9 @@ def build_performance_panel(result: Any) -> str:
     if len(rs) >= 30:
         right = (
             '<div class="sa-pnl-subh">Relative strength vs S&P (100 = in line)</div>'
-            + panel_charts.trend_lines([("RS", rs, "#0F6E80")])
+            + panel_charts.trend_lines(
+                [("RS", rs, "#0F6E80")], x_labels=("start", "now")
+            )
         )
     else:
         right = (

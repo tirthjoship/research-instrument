@@ -14,11 +14,46 @@ def test_peer_bars_marks_self():
 
 def test_trend_lines_emit_polylines():
     svg = panel_charts.trend_lines([("gross", [70.0, 72.0, 75.0], "#1F9254")])
-    assert "<svg" in svg and "polyline" in svg and "gross" in svg
+    assert "<svg" in svg and "polyline" in svg
+    # end-of-line text must not be clipped by the axis-wrapper flex box
+    assert "overflow:visible" in svg
+
+
+def test_trend_lines_single_series_omits_inline_label():
+    # one line -> the subhead names it; an inline SVG label is redundant clutter
+    svg = panel_charts.trend_lines([("gross", [70.0, 72.0, 75.0], "#1F9254")])
+    assert "<text" not in svg
+
+
+def test_trend_lines_multi_series_labels_each_line():
+    svg = panel_charts.trend_lines(
+        [
+            ("Cash", [40.0, 45.0, 53.0], "#1F9254"),
+            ("Debt", [10.0, 11.0, 9.0], "#9aa6aa"),
+        ]
+    )
+    assert "Cash" in svg and "Debt" in svg and svg.count("<text") == 2
 
 
 def test_trend_lines_empty_is_blank():
     assert panel_charts.trend_lines([]) == ""
+
+
+def test_trend_lines_render_y_axis_minmax_with_unit():
+    html = panel_charts.trend_lines(
+        [("gross", [70.0, 72.0, 75.0], "#1F9254")], unit="%"
+    )
+    # max and min of the combined series shown as HTML axis numbers
+    assert "75%" in html and "70%" in html
+    # axis numbers use the small mono axis-label treatment, not SVG <text>
+    assert "font-size:7.5px" in html
+
+
+def test_trend_lines_render_x_labels_when_given():
+    html = panel_charts.trend_lines(
+        [("RS", [100.0, 104.0, 96.0], "#0F6E80")], x_labels=("3m ago", "now")
+    )
+    assert "3m ago" in html and "now" in html
 
 
 def test_marker_range_positions_and_band():

@@ -355,7 +355,11 @@ def build_growth_panel(result: Any) -> str:
     if len(traj) >= 2:
         right = (
             '<div class="sa-pnl-subh">YoY growth trajectory (%)</div>'
-            + panel_charts.trend_lines([("YoY %", traj, "#2f9e44")])
+            + panel_charts.trend_lines(
+                [("YoY %", traj, "#2f9e44")],
+                unit="%",
+                x_labels=("earliest", "latest"),
+            )
             + f'<div class="sa-pnl-cap">year-over-year revenue growth: '
             f"{traj[0]:+.0f}% → {traj[-1]:+.0f}% (most recent at right)</div>"
         )

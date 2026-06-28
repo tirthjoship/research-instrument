@@ -40,13 +40,27 @@ def peer_bars(rows: type_peer_rows, *, unit: str = "x", width: int = 150) -> str
     return "".join(out)
 
 
-def trend_lines(series: type_series, *, height: int = 70, width: int = 300) -> str:
+def trend_lines(
+    series: type_series,
+    *,
+    height: int = 70,
+    width: int = 300,
+    unit: str = "",
+    x_labels: tuple[str, str] | None = None,
+) -> str:
+    """One or more polylines on a shared y-scale, with HTML axis numbers.
+
+    Mirrors ``bars_and_line``: the crisp y-axis (max/min) and optional x-axis
+    (first/last period) labels are rendered as HTML around the SVG so they are
+    not distorted by ``preserveAspectRatio="none"``. '' if no series have data.
+    """
     series = [(lbl, vals, col) for lbl, vals, col in series if vals]
     if not series:
         return ""
     allv = [v for _, vals, _ in series for v in vals]
     lo, hi = min(allv), max(allv)
     span = (hi - lo) or 1.0
+    multi = len(series) > 1
     lines = []
     for lbl, vals, col in series:
         n = len(vals)
@@ -58,15 +72,40 @@ def trend_lines(series: type_series, *, height: int = 70, width: int = 300) -> s
         lines.append(
             f'<polyline points="{pts}" fill="none" stroke="{col}" stroke-width="2"/>'
         )
-        lines.append(
-            f'<text x="{width - 2}" y="{height - 6 - ((vals[-1] - lo) / span) * (height - 14):.1f}" '
-            f'font-size="7" fill="{col}" text-anchor="end">{_html.escape(lbl)}</text>'
-        )
-    return (
+        # inline series label only when there are 2+ lines to tell apart;
+        # a single line is already named by the panel subhead.
+        if multi:
+            lines.append(
+                f'<text x="{width - 2}" y="{height - 6 - ((vals[-1] - lo) / span) * (height - 14):.1f}" '
+                f'font-size="7" fill="{col}" text-anchor="end">{_html.escape(lbl)}</text>'
+            )
+    svg = (
         f'<svg width="100%" height="{height}" viewBox="0 0 {width} {height}" '
-        f'preserveAspectRatio="none" style="font-family:\'IBM Plex Mono\',monospace">'
+        'preserveAspectRatio="none" '
+        "style=\"font-family:'IBM Plex Mono',monospace;overflow:visible\">"
         + "".join(lines)
         + "</svg>"
+    )
+    yaxis = (
+        '<div style="display:flex;flex-direction:column;justify-content:space-between;'
+        'text-align:right;min-width:26px;padding:2px 2px 0 0">'
+        + _axis_label(f"{fmt_num(hi)}{unit}")
+        + _axis_label(f"{fmt_num(lo)}{unit}")
+        + "</div>"
+    )
+    xaxis = ""
+    if x_labels:
+        xaxis = (
+            '<div style="display:flex;justify-content:space-between;margin:1px 0 0 28px">'
+            + _axis_label(x_labels[0])
+            + _axis_label(x_labels[1])
+            + "</div>"
+        )
+    return (
+        '<div style="display:flex;gap:3px;align-items:stretch">'
+        + yaxis
+        + f'<div style="flex:1">{svg}</div></div>'
+        + xaxis
     )
 
 
