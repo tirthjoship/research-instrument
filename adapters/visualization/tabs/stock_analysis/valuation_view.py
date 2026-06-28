@@ -171,16 +171,28 @@ def build_valuation_view(result: Any) -> dict[str, Any]:
     else:
         claim = "Mid-range on its multiples"
 
+    is_rich = pe_pct is not None and pe_pct >= 75
+    verdicts: list[Verdict] = []
+    if is_rich:
+        verdicts.append(
+            Verdict("cau", "Top-quartile multiples — little margin for a miss.")
+        )
+    else:
+        verdicts.append(
+            Verdict(
+                "neu", "Multiples mid/low vs peers — a price-level fact, not a call."
+            )
+        )
+    if peg_val is not None and peg_val < 1:
+        verdicts.append(Verdict("pos", "PEG below 1 — P/E below the growth rate."))
+
     return {
         "metrics": metrics,
         "peer_rows": peer_rows,
         "chips": chips,
         "claim": claim,
-        "reframe": "Top-quartile on raw multiples; shown vs its 1-yr P/E range and the analyst-target range.",
-        "verdicts": [
-            Verdict("cau", "Top-quartile multiples — little margin for a miss."),
-            Verdict("pos", "PEG below 1 where growth supports the price."),
-        ],
+        "reframe": "Shown vs its 1-yr P/E range and the analyst-target range; multiples are a price-level fact, not over/undervalued.",
+        "verdicts": verdicts,
     }
 
 
