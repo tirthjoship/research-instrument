@@ -83,6 +83,9 @@ def test_valuation_ranges_render_pe_and_fair_value():
     assert "Fair value · analyst target" in html
     assert html.count("sa-rangebar") == 2  # P/E range + fair-value range
     assert "data gap — no range available" not in html
+    # bear/bull semantic end labels + bear→bull gradient on the fair-value bar
+    assert "bear $150" in html and "bull $260" in html
+    assert "bearbull" in html and "base $200" in html
 
 
 def test_valuation_ranges_datagap_when_no_data():
