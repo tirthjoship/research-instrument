@@ -531,16 +531,6 @@ def render() -> None:
         # Load corroboration snapshot (None if store empty / DB missing)
         corr_view = load_corroboration_snapshot(lookup_key, db_path=_CORR_DB_PATH)
 
-        st.markdown(
-            " ".join(
-                f'<a class="section-chip" href="#{_SECTION_ANCHORS[name]}"'
-                f' style="text-decoration:none;">{i}</a>'
-                f'<span style="margin-right:14px;font-size:13px;color:#5C6370;">'
-                f"{name}</span>"
-                for i, name in enumerate(_SECTION_LABELS, start=1)
-            ),
-            unsafe_allow_html=True,
-        )
         fit_key = f"fit_{lookup_key}"
 
         from datetime import datetime, timezone
