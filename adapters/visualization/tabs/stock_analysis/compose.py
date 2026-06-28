@@ -10,8 +10,8 @@ from loguru import logger
 if TYPE_CHECKING:
     from domain.fit import FitVerdict
 
-from adapters.visualization.components.charts import apply_dossier_template
-from adapters.visualization.components.snowflake import build_snowflake
+# Pure builder imports — no Streamlit, safe at module level
+from adapters.visualization.components.radar_svg import RadarAxis
 from adapters.visualization.data_loader import load_corroboration_snapshot
 from adapters.visualization.tabs.stock_analysis.corroboration_section import (
     render_corroboration_section,
@@ -21,6 +21,20 @@ from adapters.visualization.tabs.stock_analysis.financials_section import (
     _render_health,
     _render_valuation,
 )
+from adapters.visualization.tabs.stock_analysis.fit_card import (
+    COLOUR_KEY_HTML,
+    build_fit_card_html,
+    build_fit_card_view,
+    build_snowflake_fit_html,
+)
+from adapters.visualization.tabs.stock_analysis.group import (
+    MicroTile,
+    build_group_shell,
+)
+from adapters.visualization.tabs.stock_analysis.hero import (
+    build_hero_html,
+    build_hero_view,
+)
 from adapters.visualization.tabs.stock_analysis.market_section import (
     _render_ownership,
     _render_performance,
@@ -29,12 +43,18 @@ from adapters.visualization.tabs.stock_analysis.signals_section import (
     _render_sentiment,
     _render_supply_chain,
 )
+from adapters.visualization.tabs.stock_analysis.synthesis import (
+    build_synthesis_html,
+    build_synthesis_view,
+)
 from adapters.visualization.tabs.stock_analysis.verdict_section import (
     _render_analyst_panel,
-    _render_fit_card,
     _render_news_context,
-    _render_verdict,
     _snowflake_axes,
+)
+from adapters.visualization.tabs.stock_analysis.vitals import (
+    build_vitals_html,
+    build_vitals_view,
 )
 
 _SECTION_LABELS: list[str] = [
@@ -51,6 +71,114 @@ _SECTION_LABELS: list[str] = [
 ]
 
 _CORR_DB_PATH = "data/corroboration.db"
+
+# ---------------------------------------------------------------------------
+# Phase-2 answer-first top — pure assembler + Tier-2 wrapper
+# ---------------------------------------------------------------------------
+
+# Fixed navigation hues (spec D7) — category, never status
+_AXIS_COLOUR: dict[str, str] = {
+    "Valuation": "#d08218",
+    "Quality": "#0F6E80",
+    "Momentum": "#2f9e44",
+    "Revision": "#5c6bc0",
+    "Trend filter": "#2aa198",
+    "Book fit": "#6b7d84",
+}
+
+
+def _snowflake_radar_axes(fit: object | None) -> list[RadarAxis]:
+    """Adapt _snowflake_axes dict into a category-coloured RadarAxis list.
+
+    Degrades to an empty list when fit is None or lacks the attributes that
+    _snowflake_axes requires (e.g. ticker not present on a stub/simplified object).
+    """
+    if fit is None:
+        return []
+    try:
+        axes_map = _snowflake_axes(fit)  # type: ignore[arg-type]
+    except AttributeError:
+        axes_map = {}
+    out: list[RadarAxis] = []
+    for name, value in axes_map.items():
+        out.append(RadarAxis(name, float(value), _AXIS_COLOUR.get(name, "#6b7d84")))
+    return out
+
+
+def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> str:
+    """Pure assembler: produce the locked D0 answer-first top as a single HTML string.
+
+    Order: stage-wrapper → hero → synthesis → vitals → snowflake/fit → colour key
+    → 3 empty group shells (sa-fundamentals, sa-market, sa-signals).
+
+    Degrades gracefully when fit is None (no snowflake, fit-card-only fallback).
+    No Streamlit dependency — safe to call in tests.
+    """
+    grade = getattr(fit, "evidence_grade", None) if fit is not None else None
+    hero = build_hero_html(build_hero_view(result, grade=grade, as_of=as_of))
+    synth = build_synthesis_html(build_synthesis_view(result))
+    vit = build_vitals_html(build_vitals_view(result))
+    axes = _snowflake_radar_axes(fit)
+    fit_view = build_fit_card_view(fit)
+    # sa-twocol-fit wrapper is always present for consistent layout;
+    # radar only rendered when >= 3 axes are available.
+    snowfit = (
+        build_snowflake_fit_html(axes, fit_view)
+        if len(axes) >= 3
+        else f'<div class="sa-twocol-fit">{build_fit_card_html(fit_view)}</div>'
+    )
+    groups = (
+        build_group_shell(
+            anchor="sa-fundamentals",
+            name="Fundamentals",
+            grade=fit_view.grade,
+            week_delta="",
+            micro_tiles=[
+                MicroTile("Valuation", "—", "#d08218"),
+                MicroTile("Growth", "—", "#2f9e44"),
+                MicroTile("Health", "—", "#0F6E80"),
+            ],
+        )
+        + build_group_shell(
+            anchor="sa-market",
+            name="Market",
+            grade=fit_view.grade,
+            week_delta="",
+            micro_tiles=[
+                MicroTile("Performance", "—", "#2aa198"),
+                MicroTile("Ownership", "—", "#6b7d84"),
+            ],
+        )
+        + build_group_shell(
+            anchor="sa-signals",
+            name="Signals",
+            grade=fit_view.grade,
+            week_delta="",
+            micro_tiles=[
+                MicroTile("Analyst", "—", "#5c6bc0"),
+                MicroTile("Buzz", "—", "#5c6bc0"),
+                MicroTile("Sentiment", "—", "#b91c1c"),
+            ],
+        )
+    )
+    sep = '<hr style="border:none;border-top:1px solid var(--ri-hair);margin:20px 0">'
+    return (
+        '<div class="sa-stage">'
+        f"{hero}"
+        f"{sep}{synth}"
+        f"{sep}{vit}"
+        f"{sep}{snowfit}"
+        f"{sep}{COLOUR_KEY_HTML}"
+        f"{groups}"
+        "</div>"
+    )
+
+
+def _render_top(result: object, fit: object | None, *, as_of: str = "") -> None:
+    """Tier-2 wrapper: render the answer-first top via st.markdown (lazy Streamlit import)."""
+    import streamlit as st
+
+    st.markdown(build_top_html(result, fit, as_of=as_of), unsafe_allow_html=True)
 
 
 def _ensure_fit_cached(
@@ -143,26 +271,6 @@ def render() -> None:
             ),
             unsafe_allow_html=True,
         )
-        _render_decision_lead(result)
-        _render_story_banner(result)
-        _render_verdict(result, corr_view=corr_view)
-        # Evidence-status framing header — make explicit this is attributed
-        # evidence, not a forecast, before any data panels.
-        st.markdown(
-            '<div class="ri-sec" style="'
-            "background:var(--ri-surface,#F8FAFC);"
-            "border-left:3px solid var(--ri-teal,#0F6E80);"
-            "padding:10px 14px;margin-bottom:12px;"
-            'border-radius:4px;">'
-            '<span style="font-weight:700;color:var(--ri-teal,#0F6E80);">'
-            "Evidence Status: not a forecast</span>"
-            '<span style="font-size:13px;color:#64748B;margin-left:8px;">'
-            "All panels below surface attributed third-party data "
-            "(yfinance, analyst consensus, buzz sources). "
-            "This tool describes what is true today; it does not forecast returns."
-            "</span></div>",
-            unsafe_allow_html=True,
-        )
         fit_key = f"fit_{lookup_key}"
 
         from datetime import datetime, timezone
@@ -186,20 +294,8 @@ def render() -> None:
                 systematic_share_threshold=market_systematic_share_threshold(),
             ),
         )
-        if fit is not None:
-            _render_fit_card(fit)
-        else:
-            st.caption("Fit verdict unavailable (see logs).")
-        axes = _snowflake_axes(fit)
-        fig = build_snowflake(axes)
-        if fig is not None:
-            st.markdown("##### Evidence snowflake")
-            apply_dossier_template(fig)
-            st.plotly_chart(fig, use_container_width=True)
-            st.caption(
-                "Factual percentiles vs the screened universe + fit "
-                "arithmetic — a description of today, not a forecast."
-            )
+        # Answer-first top: hero → synthesis → vitals → snowflake/fit → colour key → group shells
+        _render_top(result, fit)
         _render_analyst_panel(result)
         _render_news_context(result)
         _render_valuation(result)
