@@ -137,3 +137,51 @@ def test_lazy_prices_smoke_limit_caps_universe(tmp_path: Path) -> None:
     report = json.loads(next(reports.glob("*.json")).read_text())
     assert report["universe_size"] == 1
     assert report["smoke_limit"] == 1
+
+
+def test_lazy_prices_normalizes_dotted_ticker_for_yfinance(tmp_path: Path) -> None:
+    """Class-share tickers (BRK.B) are fetched from yfinance as BRK-B, not BRK.B."""
+    uni = tmp_path / "u.txt"
+    uni.write_text("BRK.B\n")
+    seen: list[str] = []
+
+    def _capture_prices(
+        ticker: str, start: datetime, end: datetime
+    ) -> list[tuple[datetime, float]]:
+        seen.append(ticker)
+        return _prices(ticker, start, end)
+
+    with (
+        patch("adapters.data.sec_cik_resolver.SECCikResolver.resolve", return_value=1),
+        patch(
+            "adapters.data.sec_filing_text_adapter.SECFilingTextAdapter.list_filings",
+            side_effect=_filings,
+        ),
+        patch(
+            "adapters.data.sec_filing_text_adapter.SECFilingTextAdapter.fetch_sections",
+            side_effect=_sections,
+        ),
+        patch(
+            "application.price_returns.load_price_series", side_effect=_capture_prices
+        ),
+    ):
+        result = CliRunner().invoke(
+            cli,
+            [
+                "lazy-prices",
+                "--start",
+                "2015-01-01",
+                "--end",
+                "2015-06-30",
+                "--report-dir",
+                str(tmp_path / "r"),
+                "--cache-dir",
+                str(tmp_path / "c"),
+                "--ticker-file",
+                str(uni),
+            ],
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "BRK-B" in seen  # normalised for yfinance
+    assert "BRK.B" not in seen  # the dotted form was never sent to yfinance
