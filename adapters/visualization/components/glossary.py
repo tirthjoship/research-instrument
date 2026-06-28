@@ -315,7 +315,7 @@ GLOSSARY: dict[str, str] = {
         "How little the price swings (trailing volatility). Higher score = steadier, "
         "smaller drawdowns historically. Descriptive, not a forecast."
     ),
-    "Analyst spread": (
+    "Analyst dispersion": (
         "Width of today's analyst price-target range (high vs low). A dispersion "
         "signal, not estimate-revision over time."
     ),

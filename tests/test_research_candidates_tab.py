@@ -639,7 +639,7 @@ def test_missing_revision_renders_data_gap(tmp_path: Any, monkeypatch: Any) -> N
     # The row must appear even when data is missing.
     assert (
         "analyst spread" in joined
-    ), "Analyst spread (revision) row must appear even when data is missing"
+    ), "Analyst dispersion (revision) row must appear even when data is missing"
 
 
 def test_candidate_card_has_no_buy_sell_words(tmp_path: Any, monkeypatch: Any) -> None:

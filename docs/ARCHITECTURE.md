@@ -28,6 +28,7 @@ domain/
   risk_stats.py          Risk statistics value objects
   macro_beta.py          Macro-beta domain model
   fit.py                 Portfolio-fit verdict model
+  filing_textchange_service.py  Lazy Prices text-change signal (ADR-057, stdlib-only)
 
 adapters/data/
   yfinance_*             Price, analyst estimates
@@ -36,6 +37,7 @@ adapters/data/
   sqlite_store.py        Persistence (1093 LOC — decomp candidate)
   fama_french_provider.py  Factor data (295 LOC)
   sector_provider.py     Sector taxonomy
+  sec_filing_text_adapter.py  10-K/10-Q section text, point-in-time (Lazy Prices / ADR-057)
   …
 
 adapters/ml/
@@ -83,6 +85,10 @@ application/
   evidence_screen_use_case.py Evidence screen (RESEARCH_ONLY)
   holdings_risk.py       Holdings risk assessment
   risk_second_opinion.py Google-AI risk second-opinion (cache-first)
+  divergence_ic_backtest.py  Pre-registered IC falsification (injected callables)
+  lazy_prices_backtest.py    Lazy Prices IC + net-of-cost gate (ADR-057, injected callables)
+  price_returns.py       Forward-return + yfinance loader (point-in-time)
+  ticker_universe.py     Static S&P500 ∪ NASDAQ-100 loader
   …
 
 config/

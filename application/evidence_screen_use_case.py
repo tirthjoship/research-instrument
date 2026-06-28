@@ -15,6 +15,7 @@ from domain import trend_rules
 from domain.factor_scores import (
     FACTOR_KEYS,
     composite_score,
+    factor_display_label,
     revision_momentum,
     winsorize,
     zscore,
@@ -239,11 +240,14 @@ class EvidenceScreenUseCase:
 
         calls: list[SurfacedCall] = []
         for cand in result.candidates:
+            # dimension keeps the internal factor key (downstream contract);
+            # the human-readable note uses the registry-backed honest label
+            # (e.g. "revision" surfaces as "Analyst dispersion").
             evidence: tuple[EvidenceItem, ...] = tuple(
                 EvidenceItem(
                     dimension=fs.name,
                     score=max(0.0, min(10.0, (fs.value + 3.0) * (10.0 / 6.0))),
-                    note=f"{fs.name} z-score {fs.value:+.2f}",
+                    note=f"{factor_display_label(fs.name)} z-score {fs.value:+.2f}",
                 )
                 for fs in cand.factor_scores
             )

@@ -1644,6 +1644,25 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .pf-tip-tt{font-family:'Fraunces',serif;font-weight:700;font-size:.85rem;margin-bottom:3px;}
 .pf-tip-row{font-size:.69rem;color:#CBD5E1;display:flex;justify-content:space-between;margin-top:2px;}
 .pf-tip-row b{color:#fff;}
+
+/* ===== Research Instrument — Evidence Chip (P1) ===== */
+/* Inline backing for a metric: label + verdict badge + ADR ref + hover tooltip.
+   Rendered by adapters/visualization/components/evidence_chip.py. Additive only. */
+.ri-chip{position:relative;display:inline-flex;align-items:center;gap:.4rem;vertical-align:middle;cursor:help;font-family:'IBM Plex Mono',monospace;}
+.ri-chip-lab{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ri-muted);}
+.ri-chip-adr{font-size:.6rem;letter-spacing:.08em;color:var(--ri-muted);opacity:.85;}
+.ri-vbadge{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.16rem .44rem;border-radius:5px;border:1px solid currentColor;line-height:1;white-space:nowrap;}
+.ri-vbadge.v-validated{color:var(--ri-green);background:rgba(31,146,84,.10);}
+.ri-vbadge.v-descriptive{color:#475569;background:rgba(71,85,105,.10);}
+.ri-vbadge.v-research{color:var(--ri-amber);background:rgba(201,129,14,.10);}
+.ri-vbadge.v-inconclusive{color:var(--ri-muted);background:rgba(113,120,133,.10);border-style:dashed;}
+.ri-vbadge.v-falsified{color:var(--ri-crimson);background:rgba(206,47,38,.10);}
+.ri-vbadge.v-pending{color:#2563EB;background:rgba(37,99,235,.10);}
+.ri-chip-tip{position:absolute;bottom:142%;left:0;display:flex;flex-direction:column;gap:.4rem;background:#1b2733;color:#eef3f6;font-family:'IBM Plex Sans',sans-serif;font-size:.74rem;line-height:1.45;padding:.7rem .85rem;border-radius:10px;width:268px;box-shadow:0 10px 30px rgba(15,30,45,.22);opacity:0;visibility:hidden;transform:translateY(5px);transition:.15s;z-index:60;text-align:left;text-transform:none;letter-spacing:normal;}
+.ri-chip:hover .ri-chip-tip,.ri-chip:focus .ri-chip-tip,.ri-chip:focus-within .ri-chip-tip{opacity:1;visibility:visible;transform:translateY(0);}
+.ri-chip-meaning{font-weight:600;color:#fff;}
+.ri-chip-band{color:#cbd5e1;}
+.ri-chip-caveat{color:#cbd5e1;font-style:italic;border-top:1px solid rgba(255,255,255,.14);padding-top:.4rem;}
 </style>
 """
 
