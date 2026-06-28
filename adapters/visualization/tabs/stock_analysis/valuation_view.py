@@ -86,8 +86,8 @@ def build_valuation_view(result: Any) -> dict[str, Any]:
         _multiple(info, "forwardPE", "P/E fwd", "pe_fwd"),
         _multiple(info, "pegRatio", "PEG", "peg", suffix=""),
         _multiple(
-            info, "priceToSalesTrailingTwelveMonths", "P/S", "ev_ebitda"
-        ),  # P/S uses ev_ebitda copy
+            info, "priceToSalesTrailing12Months", "P/S", "ev_ebitda"
+        ),  # P/S uses ev_ebitda copy; yfinance key is ...Trailing12Months
         _multiple(info, "enterpriseToEbitda", "EV/EBITDA", "ev_ebitda"),
         Metric(
             "p_fcf",

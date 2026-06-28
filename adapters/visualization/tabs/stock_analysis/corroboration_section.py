@@ -46,9 +46,16 @@ def render_corroboration_section(view: "CorroborationTabView | None") -> None:
     """Render the full corroboration section. Handles empty state gracefully."""
     import streamlit as st
 
-    st.markdown('<div id="sa-corroboration"></div>', unsafe_allow_html=True)
-    st.divider()
-    st.markdown("#### Corroboration Evidence")
+    st.markdown(
+        '<div id="sa-corroboration"></div>'
+        '<hr style="border:none;border-top:1px solid var(--ri-hair);'
+        'margin:18px 0 12px">'
+        '<div class="sa-eyebrow">◆ Corroboration &nbsp;·&nbsp; '
+        '<span class="sa-tagmono">EXTERNAL EVIDENCE</span></div>'
+        '<div class="sa-gname" style="margin:5px 0 2px">'
+        "Outside evidence — sources &amp; weighting</div>",
+        unsafe_allow_html=True,
+    )
     if view is None or not view.claims:
         ticker = view.ticker if view is not None else ""
         st.markdown(_empty_state_html(ticker), unsafe_allow_html=True)

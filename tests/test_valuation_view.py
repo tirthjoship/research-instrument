@@ -10,7 +10,7 @@ def _result(**over):
         "trailingPE": 52.0,
         "forwardPE": 34.0,
         "pegRatio": 0.75,
-        "priceToSalesTrailingTwelveMonths": 28.0,
+        "priceToSalesTrailing12Months": 28.0,
         "enterpriseToEbitda": 45.0,
         "marketCap": 4.2e12,
         "freeCashflow": 72e9,

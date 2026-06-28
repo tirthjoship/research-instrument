@@ -52,28 +52,36 @@ def get_sector_peers(
     ticker: str, info: dict[str, Any], sc_group: dict[str, Any] | None
 ) -> list[dict[str, Any]]:
     """Return 4-5 peer dicts {ticker, name, pe, market_cap, change_pct, role}."""
-    # Determine peer tickers
+    # Determine peer tickers. Valuation peers must be same-industry/sector
+    # comparables — NOT supply-chain leaders/followers, which are co-movement
+    # relations (a follower's "leaders" are its suppliers, with very different
+    # valuation profiles). Supply-chain co-members are only a last resort.
     peer_tickers: list[str] = []
-
-    if sc_group:
-        leaders = sc_group.get("leaders", [])
-        followers = sc_group.get("followers", [])
-        candidates = leaders + followers
+    sector = info.get("sector", "")
+    industry = info.get("industry", "")
+    _INDUSTRY_PEERS: dict[str, list[str]] = {
+        "Semiconductors": ["AMD", "AVGO", "QCOM", "TXN", "INTC", "MU"],
+        "Semiconductor Equipment & Materials": ["AMAT", "LRCX", "KLAC", "ASML"],
+        "Software - Infrastructure": ["MSFT", "ORCL", "ADBE", "CRM"],
+        "Software - Application": ["CRM", "NOW", "INTU", "ADBE"],
+        "Consumer Electronics": ["AAPL", "SONY", "DELL", "HPQ"],
+    }
+    _SECTOR_PEERS: dict[str, list[str]] = {
+        "Technology": ["MSFT", "AAPL", "GOOGL", "META"],
+        "Healthcare": ["JNJ", "PFE", "ABBV", "MRK"],
+        "Financial Services": ["JPM", "BAC", "GS", "MS"],
+        "Consumer Cyclical": ["AMZN", "TSLA", "HD", "NKE"],
+        "Energy": ["XOM", "CVX", "COP", "SLB"],
+        "Industrials": ["CAT", "DE", "HON", "GE"],
+    }
+    pool = _INDUSTRY_PEERS.get(industry) or _SECTOR_PEERS.get(sector)
+    if pool:
+        peer_tickers = [t for t in pool if t != ticker][:4]
+    elif sc_group:
+        candidates = sc_group.get("leaders", []) + sc_group.get("followers", [])
         peer_tickers = [t for t in candidates if t != ticker][:4]
     else:
-        # Sector-based hardcoded fallback
-        sector = info.get("sector", "")
-        _SECTOR_PEERS: dict[str, list[str]] = {
-            "Technology": ["MSFT", "AAPL", "GOOGL", "META"],
-            "Healthcare": ["JNJ", "PFE", "ABBV", "MRK"],
-            "Financial Services": ["JPM", "BAC", "GS", "MS"],
-            "Consumer Cyclical": ["AMZN", "TSLA", "HD", "NKE"],
-            "Energy": ["XOM", "CVX", "COP", "SLB"],
-            "Industrials": ["CAT", "DE", "HON", "GE"],
-        }
-        peer_tickers = [
-            t for t in _SECTOR_PEERS.get(sector, ["SPY", "QQQ"]) if t != ticker
-        ][:4]
+        peer_tickers = [t for t in ["SPY", "QQQ"] if t != ticker][:4]
 
     # Fetch info for peers
     from adapters.visualization.price_cache import _fetch_ticker_info_impl

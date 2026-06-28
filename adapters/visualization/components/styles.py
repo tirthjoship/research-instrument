@@ -1690,7 +1690,7 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .sa-claim{display:flex;gap:9px;padding:7px 9px;border:1px solid var(--ri-line);border-radius:8px;margin:5px 0;background:var(--ri-card)}
 /* ===== end Stock Analysis design system ===== */
 /* ===== Stock Analysis redesign — top sections ===== */
-.sa-stage{max-width:800px;margin:0 auto}
+.sa-stage{max-width:800px;margin:0 auto;--ri-amber:#b45309;--ri-green:#15803d;--ri-crimson:#b91c1c}
 .sa-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ri-muted)}
 .sa-tagmono{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--ri-amber);background:rgba(201,129,14,.1);border:1px solid rgba(201,129,14,.3);padding:2px 7px;border-radius:4px}
 /* hero */
@@ -1725,7 +1725,7 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .sa-cchip.t-petrol{color:#0c5563;background:rgba(15,110,128,.08);border-color:rgba(15,110,128,.35)}
 /* vitals */
 .sa-grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
-.sa-vt{position:relative;border:1px solid var(--ri-line);border-left:4px solid var(--ri-muted);border-radius:9px;padding:9px 10px;background:var(--ri-app)}
+.sa-vt{position:relative;border:1px solid var(--ri-line);border-left:4px solid var(--ri-muted);border-radius:9px;padding:9px 10px;background:#fdfdfc}
 .sa-vt.t-amber{border-left-color:var(--ri-amber)}.sa-vt.t-green{border-left-color:var(--ri-green)}.sa-vt.t-crimson{border-left-color:var(--ri-crimson)}.sa-vt.t-petrol{border-left-color:var(--ri-teal)}.sa-vt.t-grey{border-left-color:var(--ri-muted)}
 .sa-vt .l{font-family:'IBM Plex Mono',monospace;font-size:8.5px;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:4px}
 .sa-vt .n{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:var(--ri-ink);margin-top:4px}
@@ -1733,7 +1733,7 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 /* snowflake + fit */
 .sa-twocol-fit{display:grid;grid-template-columns:.85fr 1.15fr;gap:20px;align-items:center}
 .sa-lgnd{display:flex;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--ri-ink2);margin-top:4px;justify-content:center}.sa-lgnd i{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin-right:4px}
-.sa-ckey{border:1px solid var(--ri-line);border-radius:9px;background:var(--ri-app);padding:8px 12px;font-size:10.5px;color:var(--ri-ink2)}.sa-ckey b{font-family:'IBM Plex Mono',monospace}.sa-ckey .sw{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin:0 3px 0 8px}
+.sa-ckey{border:1px solid var(--ri-line);border-radius:9px;background:#fbfbfa;padding:8px 12px;font-size:10.5px;color:var(--ri-ink2)}.sa-ckey b{font-family:'IBM Plex Mono',monospace}.sa-ckey .sw{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin:0 3px 0 8px}
 /* group shell header + micro-tiles */
 .sa-ghead{display:flex;align-items:center;gap:11px}
 .sa-chev{font-family:'IBM Plex Mono',monospace;color:var(--ri-muted);font-size:11px;transition:transform .15s}.sa-group[open] .sa-chev{transform:rotate(90deg)}
@@ -1741,7 +1741,7 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .sa-ggrade{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;color:#3a4a2e;background:rgba(31,146,84,.12);border:1px solid rgba(31,146,84,.3);padding:1px 6px;border-radius:4px}
 .sa-gweek{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:5px;margin-left:auto;color:var(--ri-amber);background:rgba(201,129,14,.07);border:1px solid rgba(201,129,14,.22)}
 .sa-group>summary{list-style:none;cursor:pointer;padding:12px 15px}.sa-group>summary::-webkit-details-marker{display:none}
-.sa-gt{display:flex;align-items:center;gap:8px;border:1px solid var(--ri-line);border-radius:8px;padding:6px 10px;background:var(--ri-app)}
+.sa-gt{display:flex;align-items:center;gap:8px;border:1px solid var(--ri-line);border-radius:8px;padding:6px 10px;background:#fdfdfc}
 .sa-gt .d{width:7px;height:7px;border-radius:2px;flex:0 0 auto}.sa-gt .col{display:flex;flex-direction:column;line-height:1.15}
 .sa-gt .gl{font-family:'IBM Plex Mono',monospace;font-size:8.5px;text-transform:uppercase;color:var(--ri-muted)}.sa-gt .gv{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--ri-ink)}
 /* ===== end Stock Analysis top sections ===== */
@@ -1761,6 +1761,27 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .sa-verdrow{display:flex;gap:22px;margin-top:13px;padding-top:11px;border-top:1px solid var(--ri-line)}
 .sa-drill{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--ri-teal);margin-top:10px;display:inline-block}
 /* ===== end Stock Analysis fundamentals panels ===== */
+/* ===== Stock Analysis redesign — responsive reflow ===== */
+/* grid children must be allowed to shrink below content width, else mono text forces overflow */
+.sa-grid6>*,.sa-strip>*,.sa-gtiles>*,.sa-pnl-two>*,.sa-twocol-fit>*,.sa-vt,.sa-tile,.sa-gt{min-width:0}
+.sa-htop{flex-wrap:wrap}
+.sa-pnl-head{flex-wrap:wrap}
+@media (max-width:820px){
+  .sa-twocol-fit{grid-template-columns:1fr;gap:14px}
+}
+@media (max-width:680px){
+  .sa-grid6,.sa-strip{grid-template-columns:repeat(3,1fr)}
+  .sa-pnl-two{grid-template-columns:1fr;gap:14px}
+  .sa-pnl-chips{margin-left:0;width:100%}
+}
+@media (max-width:480px){
+  .sa-grid6,.sa-strip,.sa-gtiles{grid-template-columns:repeat(2,1fr)}
+}
+/* ===== end Stock Analysis responsive reflow ===== */
+/* ===== Stock Analysis — ⓘ tooltip escape (don't clip the absolutely-positioned tip) ===== */
+.sa-stage,.sa-group,.sa-pnl,.sa-strip,.sa-grid6,.sa-gtiles,.sa-pnl-two,.sa-twocol-fit,.sa-vt,.sa-tile,.sa-gt{overflow:visible}
+[data-testid="stMarkdown"],[data-testid="stMarkdownContainer"]{overflow:visible!important}
+/* ===== end ⓘ tooltip escape ===== */
 </style>
 """
 
