@@ -9,6 +9,7 @@ tags, and HTML entities.
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -253,3 +254,101 @@ def test_extracted_sections_flow_into_textchange_signal() -> None:
     score = textchange_similarity(current, prior)
     assert score is not None
     assert score > 0.99  # identical text => non-changer
+
+
+# ---------------------------------------------------------------------------
+# Full-history pagination + per-CIK caching (the recent-feed fix)
+# ---------------------------------------------------------------------------
+
+# Main submissions JSON: a recent 10-K + an 8-K, and a pointer to one older page.
+_MAIN_SUBMISSIONS = {
+    "filings": {
+        "recent": {
+            "form": ["10-K", "8-K"],
+            "filingDate": ["2024-02-20", "2024-03-01"],
+            "accessionNumber": ["0001-24-000001", "0001-24-000002"],
+            "primaryDocument": ["k24.htm", "x.htm"],
+            "reportDate": ["2024-01-29", ""],
+        },
+        "files": [{"name": "CIK0000320193-submissions-001.json"}],
+    }
+}
+# Older page: arrays at the TOP level (no nested "recent"). Holds the 2015 filings that
+# the ~1000-entry recent feed no longer reaches for an active filer.
+_OLDER_PAGE = {
+    "form": ["10-K", "10-Q"],
+    "filingDate": ["2015-02-20", "2015-08-20"],
+    "accessionNumber": ["0001-15-000001", "0001-15-000002"],
+    "primaryDocument": ["k15.htm", "q15.htm"],
+    "reportDate": ["2015-01-29", "2015-07-31"],
+}
+
+
+def _router(url: str, **_kwargs: object) -> MagicMock:
+    if "-submissions-" in url:  # an older page
+        return _mock_response(json_data=_OLDER_PAGE)
+    return _mock_response(json_data=_MAIN_SUBMISSIONS)
+
+
+def test_list_filings_includes_older_pages_not_just_recent() -> None:
+    adapter = SECFilingTextAdapter(rate_limit_seconds=0.0)
+    with patch("requests.get", side_effect=_router):
+        refs = adapter.list_filings("NVDA", 320193, as_of=date(2024, 12, 31))
+    filed = [r.filed_date.isoformat() for r in refs]
+    # 8-K dropped; the 2015 filings from the OLDER page are present (proves pagination).
+    assert filed == ["2015-02-20", "2015-08-20", "2024-02-20"]
+    assert all(r.form in ("10-K", "10-Q") for r in refs)
+
+
+def test_list_filings_point_in_time_cutoff_spans_full_history() -> None:
+    adapter = SECFilingTextAdapter(rate_limit_seconds=0.0)
+    with patch("requests.get", side_effect=_router):
+        refs = adapter.list_filings("NVDA", 320193, as_of=date(2015, 12, 31))
+    # Only the two 2015 filings; the future 2024 10-K is hidden.
+    assert [r.filed_date.isoformat() for r in refs] == ["2015-02-20", "2015-08-20"]
+
+
+def test_history_fetched_once_per_cik_across_cohort_queries() -> None:
+    adapter = SECFilingTextAdapter(rate_limit_seconds=0.0)
+    with patch("requests.get", side_effect=_router) as g:
+        adapter.list_filings("NVDA", 320193, as_of=date(2016, 1, 1))
+        adapter.list_filings("NVDA", 320193, as_of=date(2020, 1, 1))
+        adapter.list_filings("NVDA", 320193, as_of=date(2024, 1, 1))
+    # 1 main + 1 older page = 2 fetches total, NOT 2-per-cohort — the caching fix.
+    assert g.call_count == 2
+
+
+def test_submissions_disk_cache_reused_without_refetch(tmp_path: Path) -> None:
+    cache = tmp_path / "submissions"
+    a1 = SECFilingTextAdapter(rate_limit_seconds=0.0, submissions_cache_dir=cache)
+    with patch("requests.get", side_effect=_router) as g1:
+        a1.list_filings("NVDA", 320193, as_of=date(2024, 12, 31))
+    assert g1.call_count == 2
+    assert (cache / "CIK0000320193.json").exists()
+
+    a2 = SECFilingTextAdapter(rate_limit_seconds=0.0, submissions_cache_dir=cache)
+    with patch("requests.get", side_effect=AssertionError("should not refetch")) as g2:
+        refs = a2.list_filings("NVDA", 320193, as_of=date(2024, 12, 31))
+    assert g2.call_count == 0
+    assert [r.filed_date.isoformat() for r in refs] == [
+        "2015-02-20",
+        "2015-08-20",
+        "2024-02-20",
+    ]
+
+
+def test_strip_html_handles_xml_declared_filing_without_warning() -> None:
+    import warnings
+
+    from bs4 import XMLParsedAsHTMLWarning
+
+    xml_doc = (
+        '<?xml version="1.0"?>'
+        "<html><body><h2>Item 1A. Risk Factors</h2>"
+        "<p>XMLBODY supply chain risk</p></body></html>"
+    )
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        text = _strip_html(xml_doc)
+    assert "XMLBODY supply chain risk" in text
+    assert not any(isinstance(w.message, XMLParsedAsHTMLWarning) for w in caught)

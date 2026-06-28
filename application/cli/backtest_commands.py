@@ -168,7 +168,7 @@ def lazy_prices(
 
     # --- adapters (composition root) ---
     cik = SECCikResolver(cache_path=cache_root / "company_tickers.json")
-    filings = SECFilingTextAdapter()
+    filings = SECFilingTextAdapter(submissions_cache_dir=cache_root / "submissions")
 
     # Disk-cached section fetch — keyed by accession, so the long one-time fetch persists.
     def _fetch_sections_cached(ref: FilingRef) -> dict[str, str]:
