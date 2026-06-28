@@ -160,13 +160,14 @@ def analyze_ticker(
             date_str = str(fetched)[:10] if fetched is not None else ""
             source = getattr(b, "source", "unknown")
             mention_count = getattr(b, "mention_count", 0)
-            sentiment = getattr(b, "sentiment_raw", 0.0)
+            _raw = getattr(b, "sentiment_raw", 0.0)
+            sentiment = float(_raw) if _raw is not None else 0.0  # guard: may be None
             sent_label = (
                 "positive"
-                if float(sentiment) > 0
-                else "negative" if float(sentiment) < 0 else "neutral"
+                if sentiment > 0.01
+                else "negative" if sentiment < -0.01 else "neutral"
             )
-            title = f"{source}: {mention_count} mention(s), sentiment {sent_label} ({float(sentiment):.2f})"
+            title = f"{source}: {mention_count} mention(s), sentiment {sent_label} ({sentiment:+.2f})"
             signal_dicts.append({"source": source, "title": title, "date": date_str})
         result.news_context = build_news_context(signal_dicts, 10)
     except Exception as exc:
