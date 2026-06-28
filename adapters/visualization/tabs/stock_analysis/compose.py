@@ -13,6 +13,12 @@ if TYPE_CHECKING:
 # Pure builder imports — no Streamlit, safe at module level
 from adapters.visualization.components.radar_svg import RadarAxis
 from adapters.visualization.data_loader import load_corroboration_snapshot
+from adapters.visualization.tabs.stock_analysis.analyst_view import (
+    build_analyst_panel as _build_analyst_panel,
+)
+from adapters.visualization.tabs.stock_analysis.buzz_view import (
+    build_buzz_panel as _build_buzz_panel,
+)
 from adapters.visualization.tabs.stock_analysis.corroboration_section import (
     render_corroboration_section,
 )
@@ -41,12 +47,24 @@ from adapters.visualization.tabs.stock_analysis.market_section import (
     _render_ownership,
     _render_performance,
 )
+from adapters.visualization.tabs.stock_analysis.ownership_view import (
+    build_ownership_panel as _build_ownership_panel,
+)
+from adapters.visualization.tabs.stock_analysis.performance_view import (
+    build_performance_panel as _build_performance_panel,
+)
 from adapters.visualization.tabs.stock_analysis.profitability_view import (
     build_profitability_panel,
+)
+from adapters.visualization.tabs.stock_analysis.sentiment_view import (
+    build_sentiment_panel as _build_sentiment_panel,
 )
 from adapters.visualization.tabs.stock_analysis.signals_section import (
     _render_sentiment,
     _render_supply_chain,
+)
+from adapters.visualization.tabs.stock_analysis.supply_chain_view import (
+    build_supply_chain_panel as _build_supply_chain_panel,
 )
 from adapters.visualization.tabs.stock_analysis.synthesis import (
     build_synthesis_html,
@@ -151,6 +169,79 @@ def _fundamentals_tile_values(result: object) -> tuple[str, str, str]:
     return val, grow, health
 
 
+def _market_tile_values(result: object) -> tuple[str, str]:
+    """Compute (performance_1y, ownership_inst) micro-tile glance values from result.
+
+    Pure + robust: guarded access; falls back to "—" when data is missing.
+    """
+    info = getattr(result, "info", None) or {}
+
+    perf = "—"
+    try:
+        chg = info.get("52WeekChange")
+        if chg is not None:
+            pct = round(float(chg) * 100)
+            perf = f"+{pct}%" if pct >= 0 else f"{pct}%"
+    except (TypeError, ValueError, AttributeError):
+        perf = "—"
+
+    own = "—"
+    try:
+        inst = info.get("heldPercentInstitutions")
+        if inst is not None:
+            own = f"{round(float(inst) * 100)}%"
+    except (TypeError, ValueError, AttributeError):
+        own = "—"
+
+    return perf, own
+
+
+def _signals_tile_values(result: object) -> tuple[str, str, str]:
+    """Compute (analyst_consensus, sentiment_ic, buzz_sources) micro-tile values.
+
+    Pure + robust: guarded access; falls back to "—" when data is missing.
+    Sentiment IC is always "IC 0" (the hypothesis was tested and FALSIFIED).
+    """
+    analyst = "—"
+    try:
+        panel = getattr(result, "analyst_panel", None)
+        if panel is not None:
+            rating = getattr(panel, "mean_rating", None)
+            if rating is not None:
+                analyst = f"{float(rating):.1f}"
+    except (TypeError, ValueError, AttributeError):
+        analyst = "—"
+
+    sentiment_ic = "IC 0"
+
+    buzz = "—"
+    try:
+        signals = getattr(result, "buzz_signals", None) or []
+        n = len(list(signals))
+        if n > 0:
+            word = "src" if n == 1 else "src"
+            buzz = f"{n} {word}"
+    except (TypeError, ValueError, AttributeError):
+        buzz = "—"
+
+    return analyst, sentiment_ic, buzz
+
+
+# D12 falsified banner — shown at the top of the Signals group.
+# Inline-styled amber/red. Must not contain any FORBIDDEN_WORDS
+# ({alpha, buy, conviction, outperform, predict, sell, winner}).
+_D12_FALSIFIED_BANNER = (
+    '<div style="background:#FEF3C7;border-left:4px solid #D97706;'
+    "padding:8px 14px;border-radius:4px;margin-bottom:10px;"
+    'font-size:12px;color:#92400E;">'
+    "<strong>Context only — not a signal:</strong> "
+    "These indicators were tested as return signals and FALSIFIED "
+    "(IC ≈ 0 across 2006–2024). They are shown here as context only, "
+    "never as a trade signal. See the Trust tab."
+    "</div>"
+)
+
+
 def build_fundamentals_inner(result: object) -> str:
     """Pure assembler: concatenate the 4 Fundamentals panels into one HTML string.
 
@@ -162,6 +253,31 @@ def build_fundamentals_inner(result: object) -> str:
         + build_growth_panel(result)
         + build_profitability_panel(result)
         + build_health_panel(result)
+    )
+
+
+def build_market_inner(result: object) -> str:
+    """Pure assembler: concatenate the 2 Market panels into one HTML string.
+
+    Returns the inner content for the Market group shell (sa-market).
+    No Streamlit dependency — safe to call in tests and at module level.
+    """
+    return _build_performance_panel(result) + _build_ownership_panel(result)
+
+
+def build_signals_inner(result: object) -> str:
+    """Pure assembler: D12 falsified banner + 4 Signals panels into one HTML string.
+
+    Returns the inner content for the Signals group shell (sa-signals).
+    The banner makes clear these indicators were FALSIFIED as return signals.
+    No Streamlit dependency — safe to call in tests and at module level.
+    """
+    return (
+        _D12_FALSIFIED_BANNER
+        + _build_analyst_panel(result)
+        + _build_buzz_panel(result)
+        + _build_sentiment_panel(result)
+        + _build_supply_chain_panel(result)
     )
 
 
@@ -188,6 +304,8 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
         else f'<div class="sa-twocol-fit">{build_fit_card_html(fit_view)}</div>'
     )
     val_tile, grow_tile, health_tile = _fundamentals_tile_values(result)
+    perf_tile, own_tile = _market_tile_values(result)
+    analyst_tile, sentiment_tile, buzz_tile = _signals_tile_values(result)
     groups = (
         build_group_shell(
             anchor="sa-fundamentals",
@@ -207,9 +325,10 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
             grade=fit_view.grade,
             week_delta="",
             micro_tiles=[
-                MicroTile("Performance", "—", "#2aa198"),
-                MicroTile("Ownership", "—", "#6b7d84"),
+                MicroTile("Performance", perf_tile, "#2aa198"),
+                MicroTile("Ownership", own_tile, "#6b7d84"),
             ],
+            inner_html=build_market_inner(result),
         )
         + build_group_shell(
             anchor="sa-signals",
@@ -217,10 +336,11 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
             grade=fit_view.grade,
             week_delta="",
             micro_tiles=[
-                MicroTile("Analyst", "—", "#5c6bc0"),
-                MicroTile("Buzz", "—", "#5c6bc0"),
-                MicroTile("Sentiment", "—", "#b91c1c"),
+                MicroTile("Analyst", analyst_tile, "#5c6bc0"),
+                MicroTile("Buzz", buzz_tile, "#5c6bc0"),
+                MicroTile("Sentiment", sentiment_tile, "#b91c1c"),
             ],
+            inner_html=build_signals_inner(result),
         )
     )
     sep = '<hr style="border:none;border-top:1px solid var(--ri-hair);margin:20px 0">'
