@@ -99,5 +99,5 @@ def marker_range(
         '<div class="sa-rangebar">' + band_html + "".join(mk) + "</div>"
         '<div style="display:flex;justify-content:space-between;'
         "font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--ri-muted)\">"
-        f"<span>{low:g}</span><span>{high:g}</span></div>"
+        f"<span>{fmt_num(low)}</span><span>{fmt_num(high)}</span></div>"
     )

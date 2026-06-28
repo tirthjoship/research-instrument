@@ -150,7 +150,7 @@ def build_valuation_view(result: Any) -> dict[str, Any]:
             if (peg_val and peg_val < 1)
             else "Priced on its multiples"
         ),
-        "reframe": "Top-quartile on raw multiples; P/E-vs-history and fair value are not wired (third-party).",
+        "reframe": "Top-quartile on raw multiples; shown vs its 1-yr P/E range and the analyst-target range.",
         "verdicts": [
             Verdict("cau", "Top-quartile multiples — little margin for a miss."),
             Verdict("pos", "PEG below 1 where growth supports the price."),
@@ -158,16 +158,68 @@ def build_valuation_view(result: Any) -> dict[str, Any]:
     }
 
 
+def _valuation_ranges_html(result: Any) -> str:
+    """Right-column visuals: P/E vs its 1-yr range + analyst-target fair-value range.
+
+    Both are built from data already on the result (52-wk prices + trailing P/E;
+    analyst target low/mean/high) — no new fetch. Honest labels: a 1-yr price-implied
+    P/E range (not a multi-year history) and analyst targets (a 3rd-party range, not DCF).
+    """
+    info: dict[str, Any] = getattr(result, "info", {}) or {}
+    price = getattr(result, "current_price", None) or _f(info, "currentPrice")
+    pe_now = _f(info, "trailingPE")
+    lo52 = _f(info, "fiftyTwoWeekLow")
+    hi52 = _f(info, "fiftyTwoWeekHigh")
+    parts: list[str] = []
+
+    # P/E vs 1-yr range: the 52-wk price range valued at the current trailing EPS.
+    if pe_now and price and lo52 and hi52 and hi52 > lo52:
+        pe_lo = lo52 / price * pe_now
+        pe_hi = hi52 / price * pe_now
+        parts.append('<div class="sa-pnl-subh">P/E vs 1-yr range</div>')
+        parts.append(
+            panel_charts.marker_range(
+                pe_lo,
+                pe_hi,
+                [(pe_now, f"now {panel_charts.fmt_num(pe_now)}×", "#0F6E80")],
+            )
+        )
+
+    # Fair value · analyst target range (third-party): low/mean/high vs current price.
+    panel = getattr(result, "analyst_panel", None)
+    t_lo = getattr(panel, "target_low", None) if panel is not None else None
+    t_mean = getattr(panel, "target_mean", None) if panel is not None else None
+    t_hi = getattr(panel, "target_high", None) if panel is not None else None
+    if t_lo and t_hi and t_hi > t_lo:
+        markers: list[tuple[float, str, str]] = []
+        if price:
+            markers.append(
+                (float(price), f"now ${panel_charts.fmt_num(price)}", "#0F6E80")
+            )
+        if t_mean:
+            markers.append(
+                (float(t_mean), f"target ${panel_charts.fmt_num(t_mean)}", "#C9810E")
+            )
+        parts.append(
+            '<div class="sa-pnl-subh" style="margin-top:12px">'
+            "Fair value · analyst target (3rd-party)</div>"
+        )
+        parts.append(panel_charts.marker_range(float(t_lo), float(t_hi), markers))
+
+    if not parts:
+        return (
+            '<div class="sa-pnl-subh">P/E vs history · fair value</div>'
+            + panel_charts.marker_range(0.0, 0.0, [])
+        )
+    return "".join(parts)
+
+
 def build_valuation_panel(result: Any) -> str:
     v = build_valuation_view(result)
     left = '<div class="sa-pnl-subh">P/E vs peers</div>' + panel_charts.peer_bars(
         v["peer_rows"]
     )
-    right = (
-        '<div class="sa-pnl-subh">P/E vs own history · fair value</div>'
-        # DATA-GAP: no point-in-time P/E history or third-party fair-value source is wired
-        + panel_charts.marker_range(0.0, 0.0, [])
-    )
+    right = _valuation_ranges_html(result)
     return build_panel(
         number=1,
         name="Valuation",
