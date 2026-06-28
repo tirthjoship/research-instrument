@@ -60,8 +60,8 @@ def _make_corr_view(snapshot=None):  # type: ignore[no-untyped-def]
 
 
 def test_section_labels_length() -> None:
-    """_SECTION_LABELS must have exactly 10 entries."""
-    assert len(_SECTION_LABELS) == 10
+    """_SECTION_LABELS must have exactly 5 entries."""
+    assert len(_SECTION_LABELS) == 5
 
 
 def test_section_labels_has_corroboration() -> None:

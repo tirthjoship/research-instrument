@@ -46,6 +46,7 @@ def render_corroboration_section(view: "CorroborationTabView | None") -> None:
     """Render the full corroboration section. Handles empty state gracefully."""
     import streamlit as st
 
+    st.markdown('<div id="sa-corroboration"></div>', unsafe_allow_html=True)
     st.divider()
     st.markdown("#### Corroboration Evidence")
     if view is None or not view.claims:

@@ -70,17 +70,20 @@ from adapters.visualization.tabs.stock_analysis.vitals import (
 )
 
 _SECTION_LABELS: list[str] = [
-    "Verdict",
-    "Fit",
-    "Valuation",
-    "Growth",
-    "Performance",
-    "Health",
-    "Ownership",
-    "Sentiment",
-    "Supply chain",
+    "Hero",
+    "Fundamentals",
+    "Market",
+    "Signals",
     "Corroboration",
 ]
+
+_SECTION_ANCHORS: dict[str, str] = {
+    "Hero": "sa-hero",
+    "Fundamentals": "sa-fundamentals",
+    "Market": "sa-market",
+    "Signals": "sa-signals",
+    "Corroboration": "sa-corroboration",
+}
 
 _CORR_DB_PATH = "data/corroboration.db"
 
@@ -444,7 +447,8 @@ def render() -> None:
 
         st.markdown(
             " ".join(
-                f'<span class="section-chip">{i}</span>'
+                f'<a class="section-chip" href="#{_SECTION_ANCHORS[name]}"'
+                f' style="text-decoration:none;">{i}</a>'
                 f'<span style="margin-right:14px;font-size:13px;color:#5C6370;">'
                 f"{name}</span>"
                 for i, name in enumerate(_SECTION_LABELS, start=1)
@@ -461,6 +465,7 @@ def render() -> None:
             market_systematic_share_threshold,
         )
 
+        now = datetime.now(timezone.utc)
         fit = _ensure_fit_cached(
             st.session_state,
             fit_key,
@@ -470,7 +475,7 @@ def render() -> None:
                 summary_path="data/personal/brief_summary.json",
                 holdings_path="data/personal/holdings.csv",
                 beta_fn=default_beta_fn,
-                as_of=datetime.now(timezone.utc),
+                as_of=now,
                 systematic_share_threshold=market_systematic_share_threshold(),
             ),
         )
@@ -478,7 +483,7 @@ def render() -> None:
         # Deep-dive sections (valuation, growth, health, performance, ownership,
         # sentiment, supply_chain, analyst_panel) now live inside the sa-* group
         # shells rendered by build_top_html — do NOT re-render them flat here.
-        _render_top(result, fit)
+        _render_top(result, fit, as_of=now.strftime("%b %d %Y"))
         _render_news_context(result)
         render_corroboration_section(corr_view)
     elif not ticker_input:
@@ -595,17 +600,6 @@ def _render_decision_lead_html(
     )
 
 
-def _render_decision_lead(result: Any) -> None:
-    """Render the v9 decision-card lead via st.markdown. Calls _render_decision_lead_html."""
-    import streamlit as st
-
-    verdict_value = getattr(result, "verdict", "REVIEW")
-    st.markdown(
-        _render_decision_lead_html(result, verdict_value, with_case=True),
-        unsafe_allow_html=True,
-    )
-
-
 # ---------------------------------------------------------------------------
 # "Story this week" — a 1-2 sentence DESCRIPTIVE synthesis of the current
 # sentiment / flow / valuation state. No predictions.
@@ -683,12 +677,3 @@ def _build_story_banner_html(result: Any) -> str:
         "A description of today&apos;s attributed facts — not a forecast.</div>"
         "</div>"
     )
-
-
-def _render_story_banner(result: Any) -> None:
-    """Render the descriptive 'story this week' banner via st.markdown."""
-    import streamlit as st
-
-    html = _build_story_banner_html(result)
-    if html:
-        st.markdown(html, unsafe_allow_html=True)

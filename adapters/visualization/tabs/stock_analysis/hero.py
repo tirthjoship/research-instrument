@@ -85,7 +85,7 @@ def build_hero_html(view: HeroView) -> str:
         eyebrow += f" · as of {e(view.as_of)}"
     chg_cls = "sa-chg dn" if view.change_down else "sa-chg"
     return (
-        '<div class="sa-hero">'
+        '<div class="sa-hero" id="sa-hero">'
         '<div class="sa-ribbon">RESEARCH_ONLY — surfaces attributed evidence · makes no trade call</div>'
         '<div class="sa-hbody">'
         '<div class="sa-htop"><div>'
