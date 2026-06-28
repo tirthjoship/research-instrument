@@ -194,6 +194,35 @@ def _fetch_rating_distribution_impl(ticker: str) -> dict[str, int] | None:
         return None
 
 
+def _fetch_annual_revenue_impl(ticker: str) -> list[float]:
+    """Chronological annual Total Revenue (from yfinance income_stmt). [] on error."""
+    try:
+        df = yf.Ticker(ticker).income_stmt
+        if df is None or df.empty or "Total Revenue" not in df.index:
+            return []
+        return list(
+            reversed([float(v) for v in df.loc["Total Revenue"].values if v == v])
+        )
+    except Exception as exc:
+        logger.warning("Annual revenue fetch failed for {}: {}", ticker, exc)
+        return []
+
+
+def _fetch_revenue_estimate_impl(ticker: str) -> float | None:
+    """Forward (+1y) revenue growth estimate from yfinance revenue_estimate. None on error."""
+    try:
+        df = yf.Ticker(ticker).revenue_estimate
+        if df is None or df.empty or "growth" not in df.columns:
+            return None
+        if "+1y" in df.index:
+            g = df.loc["+1y", "growth"]
+            return float(g) if g == g else None
+        return None
+    except Exception as exc:
+        logger.warning("Revenue estimate fetch failed for {}: {}", ticker, exc)
+        return None
+
+
 def _fetch_index_prices_impl() -> dict[str, dict[str, float]]:
     """Fetch prices for SPY, QQQ, DIA, IWM."""
     return _batch_fetch_prices_impl(_INDEX_TICKERS)

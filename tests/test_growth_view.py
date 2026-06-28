@@ -93,6 +93,21 @@ def test_fcf_yoy_peer_rank_and_trajectory_wired() -> None:
     assert "needs &gt;=5 quarters" not in html  # real graph, not the gap caption
 
 
+def test_3y_cagr_and_fwd_rev_wired() -> None:
+    result = SimpleNamespace(
+        info={"revenueGrowth": 0.69},
+        quarterly_financials=_df6(),
+        annual_revenue=[27e9, 60e9, 130e9, 200e9],  # ~3y span
+        forward_revenue_growth=0.48,
+        ticker="NVDA",
+    )
+    v = growth_view.build_growth_view(result)
+    cagr = next(m for m in v["metrics"] if "CAGR" in m.label)
+    assert cagr.value not in ("—", "") and cagr.value.startswith("+")
+    fwd = next(m for m in v["metrics"] if "Fwd rev" in m.label)
+    assert fwd.value == "+48%"
+
+
 def test_panel_renders() -> None:
     html = growth_view.build_growth_panel(_result())
     assert "sa-pnl" in html and "Growth" in html and "sa-drill" not in html

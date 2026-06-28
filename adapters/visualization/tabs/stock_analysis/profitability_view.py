@@ -250,14 +250,11 @@ def build_profitability_view(result: Any) -> dict[str, Any]:
         "reframe": (
             "Margins and ROE are trailing facts. "
             "ROIC computed from EBIT, debt, and equity when all inputs present. "
-            "Peer margin median not wired (data gap)."
+            "Gross margin shown vs peers with the peer median."
         ),
         "verdicts": [
             Verdict("pos", "Positive gross, operating, and net margins reported."),
-            Verdict(
-                "neu",
-                "Peer comparison for margins requires an additional data source.",
-            ),
+            Verdict("neu", "Gross margin compared against peers — a descriptive fact."),
         ],
     }
 

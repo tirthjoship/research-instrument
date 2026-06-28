@@ -29,10 +29,12 @@ def analyze_ticker(
     """Run full analysis for a single ticker. Returns AnalysisResult."""
     from adapters.visualization.price_cache import (
         _batch_fetch_prices_impl,
+        _fetch_annual_revenue_impl,
         _fetch_insider_transactions_impl,
         _fetch_price_history_impl,
         _fetch_quarterly_financials_impl,
         _fetch_rating_distribution_impl,
+        _fetch_revenue_estimate_impl,
         _fetch_ticker_info_impl,
     )
 
@@ -91,6 +93,10 @@ def analyze_ticker(
     # 10. Analyst rating distribution (latest period; None-safe)
     rating_distribution = _fetch_rating_distribution_impl(ticker)
 
+    # 11. Annual revenue (3y CAGR) + forward revenue estimate (best-effort)
+    annual_revenue = _fetch_annual_revenue_impl(ticker)
+    forward_revenue_growth = _fetch_revenue_estimate_impl(ticker)
+
     # Build result
     result = AnalysisResult(
         ticker=ticker,
@@ -105,6 +111,8 @@ def analyze_ticker(
         quarterly_cashflow=qcf,
         price_history=price_history,
         rating_distribution=rating_distribution,
+        annual_revenue=annual_revenue,
+        forward_revenue_growth=forward_revenue_growth,
         insider_transactions=insider_txns,
         buzz_signals=buzz,
         recommendation_data=rec,

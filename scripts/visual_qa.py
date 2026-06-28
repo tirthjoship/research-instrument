@@ -90,6 +90,8 @@ def nvda_result() -> SimpleNamespace:
             },
         ],
         rating_distribution={"r1": 30, "r2": 18, "r3": 8, "r4": 2, "r5": 0},
+        annual_revenue=[27e9, 60e9, 130e9, 200e9],  # ~3y -> strong CAGR
+        forward_revenue_growth=0.48,
         analyst_panel=SimpleNamespace(
             count=42,
             mean_rating=1.6,
