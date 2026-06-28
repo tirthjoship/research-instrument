@@ -32,6 +32,7 @@ def analyze_ticker(
         _fetch_insider_transactions_impl,
         _fetch_price_history_impl,
         _fetch_quarterly_financials_impl,
+        _fetch_rating_distribution_impl,
         _fetch_ticker_info_impl,
     )
 
@@ -60,8 +61,21 @@ def analyze_ticker(
     # 6. Fetch recommendation from DB
     rec = load_recommendation(ticker, db_path)
 
-    # 7. Find supply chain group
+    # 7. Find supply chain group (+ recent member moves for the panel bars)
     sc_group = find_supply_chain_group(ticker)
+    if sc_group is not None:
+        members = list(sc_group.get("leaders") or []) + list(
+            sc_group.get("followers") or []
+        )
+        if members:
+            mprices = _batch_fetch_prices_impl(tuple(members))
+            sc_group = {
+                **sc_group,
+                "member_moves": {
+                    t: float(mprices.get(t, {}).get("change_pct", 0.0) or 0.0)
+                    for t in members
+                },
+            }
 
     # 8. Fetch peer data for comparison
     peers = get_sector_peers(ticker, info, sc_group)
@@ -73,6 +87,9 @@ def analyze_ticker(
         spy = _fetch_price_history_impl("SPY")
         if spy is not None and spy.get("closes"):
             price_history["spy_closes"] = spy["closes"]
+
+    # 10. Analyst rating distribution (latest period; None-safe)
+    rating_distribution = _fetch_rating_distribution_impl(ticker)
 
     # Build result
     result = AnalysisResult(
@@ -87,6 +104,7 @@ def analyze_ticker(
         quarterly_balance_sheet=qbs,
         quarterly_cashflow=qcf,
         price_history=price_history,
+        rating_distribution=rating_distribution,
         insider_transactions=insider_txns,
         buzz_signals=buzz,
         recommendation_data=rec,

@@ -268,18 +268,33 @@ def build_profitability_panel(result: Any) -> str:
     info: dict[str, Any] = getattr(result, "info", {}) or {}
     ticker = getattr(result, "ticker", "") or ""
 
-    # Comparison viz: peer median not wired — show self-only gross-margin bar
+    # Comparison viz: subject gross margin vs peers + peer median (real)
     gross_val = _f(info, "grossMargins")
+    peers = getattr(result, "peer_data", []) or []
+    peer_margins = [
+        float(p["gross_margins"]) * 100
+        for p in peers
+        if p.get("gross_margins") is not None
+    ]
     if gross_val is not None:
         margin_rows: list[tuple[str, float, bool]] = [
             (ticker or "Self", round(gross_val * 100, 1), True)
         ]
+        margin_rows += [
+            (p.get("ticker", "?"), round(float(p["gross_margins"]) * 100, 1), False)
+            for p in peers
+            if p.get("gross_margins") is not None
+        ][:4]
         margin_bar = panel_charts.peer_bars(margin_rows, unit="%")
-        margin_bar += (
-            '<div class="sa-pnl-cap">'
-            "peer median not wired — self-only gross margin shown"
-            "</div>"
-        )
+        if peer_margins:
+            med = sorted(peer_margins)[len(peer_margins) // 2]
+            margin_bar += (
+                f'<div class="sa-pnl-cap">peer median gross margin {med:.0f}%</div>'
+            )
+        else:
+            margin_bar += (
+                '<div class="sa-pnl-cap">peer margins unavailable — self only</div>'
+            )
     else:
         margin_bar = '<div class="sa-pnl-cap">gross margin data gap</div>'
 

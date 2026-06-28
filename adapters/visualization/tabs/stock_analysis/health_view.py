@@ -25,6 +25,17 @@ def _f(info: dict[str, Any], key: str) -> float | None:
         return None
 
 
+def _bs_row(qbs: Any, names: list[str]) -> list[float]:
+    """Chronological values of the first matching balance-sheet row (NaNs dropped)."""
+    for n in names:
+        try:
+            if qbs is not None and n in qbs.index:
+                return list(reversed([float(v) for v in qbs.loc[n].values if v == v]))
+        except Exception:
+            continue
+    return []
+
+
 def _fmt_cash(val: float) -> str:
     """Format net cash as +$XB / -$XB (billions/millions/trillions)."""
     abs_val = abs(val)
@@ -326,11 +337,32 @@ def build_health_panel(result: Any) -> str:
 
     left = '<div class="sa-pnl-subh">Cash vs Total debt</div>' + comparison_bar
 
-    # Trend viz: DATA-GAP — no balance-sheet history wired
-    right = (
-        '<div class="sa-pnl-subh">Balance-sheet trend</div>'
-        '<div class="sa-pnl-cap">balance-sheet history not wired — data gap</div>'
+    # Trend viz: cash & debt over the quarterly balance sheet (real series)
+    qbs = getattr(result, "quarterly_balance_sheet", None)
+    cash_s = _bs_row(
+        qbs,
+        [
+            "Cash And Cash Equivalents",
+            "Cash Cash Equivalents And Short Term Investments",
+            "Cash",
+        ],
     )
+    debt_s = _bs_row(qbs, ["Total Debt", "Total Debt And Capital Lease Obligation"])
+    series = []
+    if len(cash_s) >= 2:
+        series.append(("Cash", [c / 1e9 for c in cash_s], "#1F9254"))
+    if len(debt_s) >= 2:
+        series.append(("Debt", [d / 1e9 for d in debt_s], "#9aa6aa"))
+    if series:
+        right = (
+            '<div class="sa-pnl-subh">Cash &amp; debt trend ($B)</div>'
+            + panel_charts.trend_lines(series)
+        )
+    else:
+        right = (
+            '<div class="sa-pnl-subh">Balance-sheet trend</div>'
+            '<div class="sa-pnl-cap">no quarterly balance-sheet history — data gap</div>'
+        )
 
     return build_panel(
         number=4,

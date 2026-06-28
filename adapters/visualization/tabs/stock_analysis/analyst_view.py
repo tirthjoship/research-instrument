@@ -14,6 +14,7 @@ from __future__ import annotations
 import html as _html
 from typing import Any
 
+from adapters.visualization.components import panel_charts
 from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.status_chip import render_status_chip
 from adapters.visualization.tabs.stock_analysis.panel import Verdict, build_panel
@@ -325,7 +326,7 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
         "verdicts": [
             Verdict(
                 "neu",
-                "Rating distribution not wired — data gap, no breakdown available.",
+                "Rating distribution shown when available; mean-target trend needs a history (data gap).",
             ),
             (
                 Verdict(
@@ -346,11 +347,21 @@ def build_analyst_panel(result: Any) -> str:
     """Compose the full Analyst deep-dive panel HTML (panel #1 in Signals group)."""
     v = build_analyst_view(result)
 
-    # Comparison viz: rating distribution — DATA-GAP (no breakdown wired)
-    left = (
-        '<div class="sa-pnl-subh">Rating distribution</div>'
-        '<div class="sa-pnl-cap">rating distribution not wired — data gap</div>'
-    )
+    # Comparison viz: rating distribution as numeric tiers 1..5 (slop-safe labels)
+    rd = getattr(result, "rating_distribution", None) or {}
+    total = sum(int(x or 0) for x in rd.values()) if rd else 0
+    if total > 0:
+        rows = [(str(i), float(rd.get(f"r{i}", 0) or 0), False) for i in range(1, 6)]
+        left = (
+            '<div class="sa-pnl-subh">Rating distribution</div>'
+            + panel_charts.peer_bars(rows, unit="")
+            + '<div class="sa-pnl-cap">analyst tiers 1 (most positive) → 5 (most negative)</div>'
+        )
+    else:
+        left = (
+            '<div class="sa-pnl-subh">Rating distribution</div>'
+            '<div class="sa-pnl-cap">rating distribution unavailable — data gap</div>'
+        )
 
     # Trend viz: mean-target trend — DATA-GAP (no time series wired)
     right = (

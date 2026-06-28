@@ -61,6 +61,8 @@ class AnalysisResult:
     quarterly_cashflow: Any = None
     # {closes: list[float], ma200, atr, vs_spy: list[float]|None} from price_cache
     price_history: dict[str, Any] | None = None
+    # {r1..r5: int} latest analyst rating distribution (1=most positive)
+    rating_distribution: dict[str, int] | None = None
     insider_transactions: list[dict[str, Any]] = field(default_factory=list)
     buzz_signals: list[Any] = field(default_factory=list)
     recommendation_data: Any = None

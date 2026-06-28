@@ -35,6 +35,29 @@ def _f(info: dict[str, Any], key: str) -> float | None:
         return None
 
 
+def _insider_quarterly_net(txns: list[dict[str, Any]]) -> list[tuple[str, float]]:
+    """Net signed insider transaction value per quarter (last 8), chronological."""
+    from collections import defaultdict
+    from datetime import datetime
+
+    buckets: dict[tuple[int, int], float] = defaultdict(float)
+    for t in txns:
+        d = t.get("Start Date") or t.get("Date") or t.get("startDate")
+        if d is None:
+            continue
+        try:
+            if hasattr(d, "year"):
+                y, m = int(d.year), int(d.month)
+            else:
+                dt = datetime.fromisoformat(str(d)[:10])
+                y, m = dt.year, dt.month
+            buckets[(y, (m - 1) // 3 + 1)] += float(t.get("value", 0) or 0)
+        except Exception:
+            continue
+    items = sorted(buckets.items())[-8:]
+    return [(f"Q{q} {y}", v) for (y, q), v in items]
+
+
 def _strip_html(metrics: list[Metric]) -> str:
     tiles = "".join(
         _STRIP_TILE.format(
@@ -340,12 +363,20 @@ def build_ownership_panel(result: Any) -> str:
             '<div class="sa-pnl-cap">holder composition not available — data gap</div>'
         )
 
-    # Trend viz: insider net activity — DATA-GAP (signal falsified per ADR-053)
-    right = (
-        '<div class="sa-pnl-subh">Insider net activity</div>'
-        '<div class="sa-pnl-cap">insider quarterly trend not wired — data gap; '
-        "signal falsified (ADR-053)</div>"
-    )
+    # Trend viz: net insider transaction value per quarter (signed; grey = falsified, ADR-053)
+    qn = _insider_quarterly_net(getattr(result, "insider_transactions", []) or [])
+    if len(qn) >= 2:
+        right = (
+            '<div class="sa-pnl-subh">Insider net activity ($M/qtr)</div>'
+            + panel_charts.trend_lines([("Net", [v / 1e6 for _, v in qn], "#9aa6aa")])
+            + '<div class="sa-pnl-cap">disclosed fact; insider-cluster signal falsified (ADR-053)</div>'
+        )
+    else:
+        right = (
+            '<div class="sa-pnl-subh">Insider net activity</div>'
+            '<div class="sa-pnl-cap">no quarterly insider history — data gap; '
+            "signal falsified (ADR-053)</div>"
+        )
 
     return build_panel(
         number=2,
