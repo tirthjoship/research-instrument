@@ -192,7 +192,12 @@ def lazy_prices(
 
     def _series(ticker: str) -> list[tuple[datetime, float]]:
         if ticker not in price_cache:
-            price_cache[ticker] = pr.load_price_series(ticker, price_start, price_end)
+            # yfinance uses '-' for class shares (BRK-B), but the universe files use '.'
+            # (BRK.B). Normalise at the price-fetch boundary so those names aren't starved.
+            yf_ticker = ticker.replace(".", "-")
+            price_cache[ticker] = pr.load_price_series(
+                yf_ticker, price_start, price_end
+            )
         return price_cache[ticker]
 
     # --- the three injected callables ---
