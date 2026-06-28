@@ -368,7 +368,11 @@ def build_ownership_panel(result: Any) -> str:
     if len(qn) >= 2:
         right = (
             '<div class="sa-pnl-subh">Insider net activity ($M/qtr)</div>'
-            + panel_charts.trend_lines([("Net", [v / 1e6 for _, v in qn], "#9aa6aa")])
+            + panel_charts.trend_lines(
+                [("Net", [v / 1e6 for _, v in qn], "#9aa6aa")],
+                unit="M",
+                x_labels=(qn[0][0], qn[-1][0]),
+            )
             + '<div class="sa-pnl-cap">disclosed fact; insider-cluster signal falsified (ADR-053)</div>'
         )
     else:

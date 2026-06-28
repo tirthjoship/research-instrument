@@ -302,7 +302,8 @@ def build_profitability_panel(result: Any) -> str:
         [
             ("Gross %", v["gross_series"], "#7c5cbf"),
             ("Op %", v["op_series"], "#5c8cbf"),
-        ]
+        ],
+        unit="%",
     )
     right = (
         '<div class="sa-pnl-subh">Quarterly margin trend</div>' + trend_viz

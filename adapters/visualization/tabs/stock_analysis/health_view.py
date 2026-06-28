@@ -356,7 +356,7 @@ def build_health_panel(result: Any) -> str:
     if series:
         right = (
             '<div class="sa-pnl-subh">Cash &amp; debt trend ($B)</div>'
-            + panel_charts.trend_lines(series)
+            + panel_charts.trend_lines(series, unit="B")
         )
     else:
         right = (
