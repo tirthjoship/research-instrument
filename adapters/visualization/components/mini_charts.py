@@ -36,7 +36,7 @@ def percentile_bar(pct: float, *, color: str = "#0F6E80") -> str:
         f'width:{p:.0f}%;background:{color}"></div>'
         f'<div style="position:absolute;top:-2px;left:{p:.0f}%;width:2px;height:9px;'
         f'background:{color}"></div>'
-        f"<!--{p:.0f}--></div>"
+        "</div>"
     )
 
 
