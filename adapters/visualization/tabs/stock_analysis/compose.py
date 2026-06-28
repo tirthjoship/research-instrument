@@ -22,11 +22,6 @@ from adapters.visualization.tabs.stock_analysis.buzz_view import (
 from adapters.visualization.tabs.stock_analysis.corroboration_section import (
     render_corroboration_section,
 )
-from adapters.visualization.tabs.stock_analysis.financials_section import (
-    _render_growth,
-    _render_health,
-    _render_valuation,
-)
 from adapters.visualization.tabs.stock_analysis.fit_card import (
     COLOUR_KEY_HTML,
     build_fit_card_html,
@@ -43,10 +38,6 @@ from adapters.visualization.tabs.stock_analysis.hero import (
     build_hero_html,
     build_hero_view,
 )
-from adapters.visualization.tabs.stock_analysis.market_section import (
-    _render_ownership,
-    _render_performance,
-)
 from adapters.visualization.tabs.stock_analysis.ownership_view import (
     build_ownership_panel as _build_ownership_panel,
 )
@@ -59,10 +50,6 @@ from adapters.visualization.tabs.stock_analysis.profitability_view import (
 from adapters.visualization.tabs.stock_analysis.sentiment_view import (
     build_sentiment_panel as _build_sentiment_panel,
 )
-from adapters.visualization.tabs.stock_analysis.signals_section import (
-    _render_sentiment,
-    _render_supply_chain,
-)
 from adapters.visualization.tabs.stock_analysis.supply_chain_view import (
     build_supply_chain_panel as _build_supply_chain_panel,
 )
@@ -74,7 +61,6 @@ from adapters.visualization.tabs.stock_analysis.valuation_view import (
     build_valuation_panel,
 )
 from adapters.visualization.tabs.stock_analysis.verdict_section import (
-    _render_analyst_panel,
     _render_news_context,
     _snowflake_axes,
 )
@@ -383,6 +369,18 @@ def _ensure_fit_cached(
     return verdict
 
 
+def _post_top_render_plan() -> list[str]:
+    """Return the ordered list of section names rendered AFTER _render_top().
+
+    Pure helper — no Streamlit, safe to call in tests.
+    Sections that live inside the sa-* group shells (build_top_html) must NOT
+    appear here; only the two sections not covered by the groups are kept:
+    news_context (verdict_section, not in any group) and
+    corroboration (its own section below the groups).
+    """
+    return ["news_context", "corroboration"]
+
+
 def render() -> None:
     """Render the Stock Analysis tab."""
     import streamlit as st
@@ -477,16 +475,11 @@ def render() -> None:
             ),
         )
         # Answer-first top: hero → synthesis → vitals → snowflake/fit → colour key → group shells
+        # Deep-dive sections (valuation, growth, health, performance, ownership,
+        # sentiment, supply_chain, analyst_panel) now live inside the sa-* group
+        # shells rendered by build_top_html — do NOT re-render them flat here.
         _render_top(result, fit)
-        _render_analyst_panel(result)
         _render_news_context(result)
-        _render_valuation(result)
-        _render_growth(result)
-        _render_performance(result)
-        _render_health(result)
-        _render_ownership(result)
-        _render_sentiment(result)
-        _render_supply_chain(result)
         render_corroboration_section(corr_view)
     elif not ticker_input:
         st.markdown(
