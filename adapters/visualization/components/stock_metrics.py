@@ -16,7 +16,7 @@ STOCK_METRICS: dict[str, tuple[str, str]] = {
     ),
     "peg": (
         "PEG = P/E divided by growth; below 1.0 means not expensive relative to its own growth.",
-        "<1.0 = growth-adjusted cheap",
+        "P/E relative to growth; <1.0 = P/E below the growth rate",
     ),
     "ev_ebitda": (
         "Enterprise value over EBITDA; capital-structure-neutral valuation multiple.",
@@ -28,8 +28,8 @@ STOCK_METRICS: dict[str, tuple[str, str]] = {
         "vs peer median",
     ),
     "net_debt_ebitda": (
-        "Net debt over EBITDA; negative means net cash. Under 3x is comfortable.",
-        "<3x = safe",
+        "Net debt over EBITDA; negative means net cash. Higher multiples mean more years of earnings would be needed to clear net debt.",
+        "net debt / EBITDA; lower = less leverage",
     ),
     "interest_coverage": (
         "Operating profit divided by interest expense; how many times interest is covered.",
