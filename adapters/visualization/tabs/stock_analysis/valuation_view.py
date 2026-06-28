@@ -45,7 +45,11 @@ def _multiple(
     meaning, basis = STOCK_METRICS.get(mkey, ("", key))
     if val is None:
         return Metric(mkey, label, "—", "data gap", "grey", meaning, basis)
-    tone = "amber" if (rich_pct is not None and rich_pct >= 75) else "grey"
+    tone = (
+        "amber"
+        if (rich_pct is not None and (rich_pct >= 75 or rich_pct <= 25))
+        else "grey"
+    )
     sub = f"{int(round(rich_pct))}th" if rich_pct is not None else ""
     return Metric(mkey, label, f"{val:g}{suffix}", sub, tone, meaning, basis)
 

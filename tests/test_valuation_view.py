@@ -56,6 +56,13 @@ def test_missing_multiple_is_datagap():
     assert pe.value == "—" and pe.tone == "grey"
 
 
+def test_low_percentile_multiple_also_amber():
+    r = _result(peer_percentiles={"P/E": 12.0})
+    v = valuation_view.build_valuation_view(r)
+    pe = next(m for m in v["metrics"] if m.label.startswith("P/E ttm"))
+    assert pe.tone == "amber"
+
+
 def test_panel_renders_with_chips_strip_and_drill():
     html = valuation_view.build_valuation_panel(_result())
     assert "sa-pnl" in html and "Valuation" in html
