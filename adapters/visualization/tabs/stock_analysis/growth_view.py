@@ -147,6 +147,16 @@ def _yoy_trajectory(rev_series: list[float]) -> list[float]:
     ]
 
 
+def _annual_yoy(result: Any) -> list[float]:
+    """Year-over-year revenue growth % from the annual-revenue series (chronological)."""
+    ann = [float(v) for v in (getattr(result, "annual_revenue", []) or []) if v == v]
+    return [
+        (ann[i] - ann[i - 1]) / abs(ann[i - 1]) * 100
+        for i in range(1, len(ann))
+        if ann[i - 1]
+    ]
+
+
 def _fcf_yoy_metric(result: Any) -> Metric:
     meaning = "Year-over-year free cash flow growth (latest quarter vs a year ago)."
     y = _fcf_yoy(result)
@@ -299,7 +309,9 @@ def build_growth_view(result: Any) -> dict[str, Any]:
         "metrics": metrics,
         "rev_series": rev_series,
         "ni_series": ni_series,
-        "yoy_traj": _yoy_trajectory(rev_series),
+        # prefer annual YoY (yfinance gives ~4 annual points -> 3-pt trajectory);
+        # fall back to quarterly YoY when annual statements are unavailable
+        "yoy_traj": _annual_yoy(result) or _yoy_trajectory(rev_series),
         "chips": chips,
         "claim": "Revenue and earnings expanding year-on-year.",
         "reframe": (
@@ -316,26 +328,32 @@ def build_growth_view(result: Any) -> dict[str, Any]:
 def build_growth_panel(result: Any) -> str:
     """Compose the full Growth deep-dive panel HTML (panel #2)."""
     v = build_growth_view(result)
-    trend_viz = panel_charts.trend_lines(
-        [
-            ("Rev", v["rev_series"], "#2f9e44"),
-            ("Net Inc", v["ni_series"], "#1971c2"),
-        ]
-    )
-    left = (
-        '<div class="sa-pnl-subh">Quarterly revenue &amp; net income</div>' + trend_viz
-    )
-    # Second graph: YoY revenue-growth trajectory (DATA-GAP caption when <2 points)
+    rev_b = [r / 1e9 for r in v["rev_series"]]
+    ni_b = [n / 1e9 for n in v["ni_series"]]
+    combo = panel_charts.bars_and_line(rev_b, ni_b)
+    if combo:
+        left = (
+            '<div class="sa-pnl-subh">Revenue &amp; net income ($B, by quarter)</div>'
+            + combo
+            + '<div class="sa-pnl-cap">bars = revenue · line = net income</div>'
+        )
+    else:
+        left = (
+            '<div class="sa-pnl-subh">Revenue &amp; net income</div>'
+            '<div class="sa-pnl-cap">quarterly financials unavailable — data gap</div>'
+        )
+    # Second graph: YoY revenue-growth trajectory (annual YoY preferred)
     traj = v["yoy_traj"]
     if len(traj) >= 2:
         right = (
-            '<div class="sa-pnl-subh">YoY growth trajectory</div>'
+            '<div class="sa-pnl-subh">YoY growth trajectory (%)</div>'
             + panel_charts.trend_lines([("YoY %", traj, "#2f9e44")])
+            + '<div class="sa-pnl-cap">year-over-year revenue growth, most recent at right</div>'
         )
     else:
         right = (
             '<div class="sa-pnl-subh">YoY growth trajectory</div>'
-            '<div class="sa-pnl-cap">needs &gt;=5 quarters of revenue — data gap</div>'
+            '<div class="sa-pnl-cap">needs multiple years/quarters of revenue — data gap</div>'
         )
     return build_panel(
         number=2,

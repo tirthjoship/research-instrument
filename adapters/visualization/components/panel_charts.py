@@ -70,6 +70,68 @@ def trend_lines(series: type_series, *, height: int = 70, width: int = 300) -> s
     )
 
 
+def bars_and_line(
+    bars: list[float],
+    line: list[float],
+    *,
+    height: int = 84,
+    width: int = 300,
+    bar_color: str = "#bfe0c8",
+    line_color: str = "#1971c2",
+) -> str:
+    """Revenue bars + net-income line on a shared chronological axis.
+
+    Far more interpretable than two overlaid thin lines: filled bars give scale,
+    the line tracks earnings, a zero baseline anchors them. Empty string if < 2 bars.
+    """
+    bars = [float(v) for v in bars if v == v]
+    line = [float(v) for v in line if v == v]
+    if len(bars) < 2:
+        return ""
+    n = len(bars)
+    slot = width / n
+    bw = slot * 0.6
+    allv = bars + line
+    lo = min(0.0, min(allv))
+    hi = max(allv) or 1.0
+    span = (hi - lo) or 1.0
+    base = height - 12  # x baseline; leave room below
+
+    def y(v: float) -> float:
+        return 6.0 + (hi - v) / span * (base - 6.0)
+
+    y0 = y(0.0)
+    rects = "".join(
+        f'<rect x="{i * slot + (slot - bw) / 2:.1f}" y="{y(v):.1f}" '
+        f'width="{bw:.1f}" height="{max(0.0, y0 - y(v)):.1f}" fill="{bar_color}" rx="1.5"/>'
+        for i, v in enumerate(bars)
+    )
+    centers = [i * slot + slot / 2 for i in range(n)]
+    line_svg = ""
+    if len(line) >= 2:
+        m = min(len(line), n)
+        pts = " ".join(f"{centers[i]:.1f},{y(line[i]):.1f}" for i in range(m))
+        dots = "".join(
+            f'<circle cx="{centers[i]:.1f}" cy="{y(line[i]):.1f}" r="1.6" fill="{line_color}"/>'
+            for i in range(m)
+        )
+        line_svg = (
+            f'<polyline points="{pts}" fill="none" stroke="{line_color}" stroke-width="1.8"/>'
+            + dots
+        )
+    baseline = (
+        f'<line x1="0" y1="{base:.1f}" x2="{width}" y2="{base:.1f}" stroke="#e2e2e2"/>'
+    )
+    return (
+        f'<svg width="100%" height="{height}" viewBox="0 0 {width} {height}" '
+        'preserveAspectRatio="none" style="overflow:visible">'
+        + baseline
+        + rects
+        + line_svg
+        + "</svg>"
+    )
+
+
 def marker_range(
     low: float,
     high: float,
