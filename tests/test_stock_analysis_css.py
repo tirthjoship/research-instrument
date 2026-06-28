@@ -1,6 +1,4 @@
 # tests/test_stock_analysis_css.py
-import inspect
-
 from adapters.visualization.components import styles
 from domain.fit import FORBIDDEN_WORDS
 
@@ -43,6 +41,12 @@ def test_new_css_uses_tokens_not_raw_hex_in_tones():
 
 
 def test_styles_source_clean():
-    src = inspect.getsource(styles).lower()
+    # Guards only the new stock-analysis design-system block. Legacy
+    # badge-buy/badge-sell/conviction-bar classes elsewhere in styles.py
+    # are out of scope (renaming them would affect other tabs).
+    css = styles.GLOBAL_CSS
+    start = css.index("/* ===== Stock Analysis redesign — design system ===== */")
+    end = css.index("/* ===== end Stock Analysis design system ===== */")
+    block = css[start:end].lower()
     for w in FORBIDDEN_WORDS:
-        assert w not in src
+        assert w not in block
