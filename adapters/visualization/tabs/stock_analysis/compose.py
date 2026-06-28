@@ -31,6 +31,8 @@ from adapters.visualization.tabs.stock_analysis.group import (
     MicroTile,
     build_group_shell,
 )
+from adapters.visualization.tabs.stock_analysis.growth_view import build_growth_panel
+from adapters.visualization.tabs.stock_analysis.health_view import build_health_panel
 from adapters.visualization.tabs.stock_analysis.hero import (
     build_hero_html,
     build_hero_view,
@@ -39,6 +41,9 @@ from adapters.visualization.tabs.stock_analysis.market_section import (
     _render_ownership,
     _render_performance,
 )
+from adapters.visualization.tabs.stock_analysis.profitability_view import (
+    build_profitability_panel,
+)
 from adapters.visualization.tabs.stock_analysis.signals_section import (
     _render_sentiment,
     _render_supply_chain,
@@ -46,6 +51,9 @@ from adapters.visualization.tabs.stock_analysis.signals_section import (
 from adapters.visualization.tabs.stock_analysis.synthesis import (
     build_synthesis_html,
     build_synthesis_view,
+)
+from adapters.visualization.tabs.stock_analysis.valuation_view import (
+    build_valuation_panel,
 )
 from adapters.visualization.tabs.stock_analysis.verdict_section import (
     _render_analyst_panel,
@@ -105,6 +113,20 @@ def _snowflake_radar_axes(fit: object | None) -> list[RadarAxis]:
     return out
 
 
+def build_fundamentals_inner(result: object) -> str:
+    """Pure assembler: concatenate the 4 Fundamentals panels into one HTML string.
+
+    Returns the inner content for the Fundamentals group shell (sa-fundamentals).
+    No Streamlit dependency — safe to call in tests and at module level.
+    """
+    return (
+        build_valuation_panel(result)
+        + build_growth_panel(result)
+        + build_profitability_panel(result)
+        + build_health_panel(result)
+    )
+
+
 def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> str:
     """Pure assembler: produce the locked D0 answer-first top as a single HTML string.
 
@@ -138,6 +160,7 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
                 MicroTile("Growth", "—", "#2f9e44"),
                 MicroTile("Health", "—", "#0F6E80"),
             ],
+            inner_html=build_fundamentals_inner(result),
         )
         + build_group_shell(
             anchor="sa-market",
