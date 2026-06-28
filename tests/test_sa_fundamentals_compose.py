@@ -74,7 +74,7 @@ def test_top_html_fundamentals_group_is_populated() -> None:
 def test_fundamentals_microtiles_show_gist() -> None:
     html = compose.build_top_html(_result(), None)
     i = html.index('id="sa-fundamentals"')
-    head = html[i : i + 800]  # the summary header region before the panels
+    head = html[i : html.index("</summary>", i)]  # the summary header (micro-tiles)
     # micro-tiles show the at-a-glance gist (D8), not "—" placeholders
     assert "78th" in head  # P/E peer percentile
     assert "+69%" in head  # revenueGrowth 0.69 → +69%

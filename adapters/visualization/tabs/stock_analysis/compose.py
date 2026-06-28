@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from domain.fit import FitVerdict
 
 # Pure builder imports — no Streamlit, safe at module level
+from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.radar_svg import RadarAxis
 from adapters.visualization.data_loader import load_corroboration_snapshot
 from adapters.visualization.tabs.stock_analysis.analyst_view import (
@@ -86,6 +87,54 @@ _SECTION_ANCHORS: dict[str, str] = {
 }
 
 _CORR_DB_PATH = "data/corroboration.db"
+
+# ⓘ glance-tooltips for each group micro-tile — say what the category measures,
+# in descriptive terms (no trade call). Keyed by tile label.
+_CAT_INFO: dict[str, tuple[str, str]] = {
+    "Valuation": (
+        "Where this stock's price multiples sit versus its sector peers. "
+        "Higher percentile = pricier than peers; descriptive, not a call.",
+        "trailing multiples vs 4-6 industry peers · percentile",
+    ),
+    "Growth": (
+        "Revenue growth rate, year over year. A trailing fact, not a forecast.",
+        "info.revenueGrowth",
+    ),
+    "Health": (
+        "Balance-sheet strength — net cash vs net debt and coverage ratios. "
+        "Structural fact, not directional.",
+        "totalCash − totalDebt; coverage from EBITDA",
+    ),
+    "Performance": (
+        "Trailing 1-year price change versus the S&P 500. A return fact, not a forecast.",
+        "info.52WeekChange − SandP52WeekChange",
+    ),
+    "Ownership": (
+        "Share of stock held by institutions versus insiders. Trailing structural fact.",
+        "info.heldPercentInstitutions / heldPercentInsiders",
+    ),
+    "Analyst": (
+        "Mean analyst consensus rating (1 = most positive). Third-party opinion, not a signal.",
+        "info.recommendationMean",
+    ),
+    "Buzz": (
+        "Count of attention sources mentioning this name. "
+        "Buzz-to-return was tested and falsified (ADR-044); context only.",
+        "distinct buzz sources · ADR-044",
+    ),
+    "Sentiment": (
+        "Aggregated tone of recent mentions. Sentiment-to-return tested IC=0 "
+        "and falsified (ADR-044); descriptive only.",
+        "mean tone · ADR-044 (IC=0)",
+    ),
+}
+
+
+def _cat_info(label: str) -> str:
+    """ⓘ tooltip HTML for a micro-tile category (empty when unknown)."""
+    pair = _CAT_INFO.get(label)
+    return render_info(pair[0], pair[1]) if pair else ""
+
 
 # ---------------------------------------------------------------------------
 # Phase-2 answer-first top — pure assembler + Tier-2 wrapper
@@ -308,6 +357,12 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
     val_tile, grow_tile, health_tile = _fundamentals_tile_values(result)
     perf_tile, own_tile = _market_tile_values(result)
     analyst_tile, sentiment_tile, buzz_tile = _signals_tile_values(result)
+    # Percentile-ish glance values (0-100) drive the micro-tile mini-bars; only
+    # set where the value is genuinely a 0-100 share/percentile (never faked).
+    _info = getattr(result, "info", None) or {}
+    val_pct = (getattr(result, "peer_percentiles", None) or {}).get("P/E")
+    inst_raw = _info.get("heldPercentInstitutions")
+    own_pct = float(inst_raw) * 100 if isinstance(inst_raw, (int, float)) else None
     groups = (
         build_group_shell(
             anchor="sa-fundamentals",
@@ -315,9 +370,15 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
             grade=fit_view.grade,
             week_delta="",
             micro_tiles=[
-                MicroTile("Valuation", val_tile, "#d08218"),
-                MicroTile("Growth", grow_tile, "#2f9e44"),
-                MicroTile("Health", health_tile, "#0F6E80"),
+                MicroTile(
+                    "Valuation",
+                    val_tile,
+                    "#d08218",
+                    pct=float(val_pct) if val_pct is not None else None,
+                    info=_cat_info("Valuation"),
+                ),
+                MicroTile("Growth", grow_tile, "#2f9e44", info=_cat_info("Growth")),
+                MicroTile("Health", health_tile, "#0F6E80", info=_cat_info("Health")),
             ],
             inner_html=build_fundamentals_inner(result),
         )
@@ -327,8 +388,16 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
             grade=fit_view.grade,
             week_delta="",
             micro_tiles=[
-                MicroTile("Performance", perf_tile, "#2aa198"),
-                MicroTile("Ownership", own_tile, "#6b7d84"),
+                MicroTile(
+                    "Performance", perf_tile, "#2aa198", info=_cat_info("Performance")
+                ),
+                MicroTile(
+                    "Ownership",
+                    own_tile,
+                    "#6b7d84",
+                    pct=own_pct,
+                    info=_cat_info("Ownership"),
+                ),
             ],
             inner_html=build_market_inner(result),
         )
@@ -338,9 +407,13 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
             grade=fit_view.grade,
             week_delta="",
             micro_tiles=[
-                MicroTile("Analyst", analyst_tile, "#5c6bc0"),
-                MicroTile("Buzz", buzz_tile, "#5c6bc0"),
-                MicroTile("Sentiment", sentiment_tile, "#b91c1c"),
+                MicroTile(
+                    "Analyst", analyst_tile, "#5c6bc0", info=_cat_info("Analyst")
+                ),
+                MicroTile("Buzz", buzz_tile, "#5c6bc0", info=_cat_info("Buzz")),
+                MicroTile(
+                    "Sentiment", sentiment_tile, "#b91c1c", info=_cat_info("Sentiment")
+                ),
             ],
             inner_html=build_signals_inner(result),
         )

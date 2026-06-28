@@ -45,7 +45,7 @@ def test_handles_missing_dataframe() -> None:
 
 def test_panel_renders() -> None:
     html = growth_view.build_growth_panel(_result())
-    assert "sa-pnl" in html and "Growth" in html and "sa-drill" in html
+    assert "sa-pnl" in html and "Growth" in html and "sa-drill" not in html
 
 
 def test_no_streamlit_and_clean() -> None:

@@ -44,6 +44,10 @@ def build_panel(
         if (viz_left or viz_right)
         else ""
     )
+    # NOTE: `drill` is intentionally not rendered — the deeper "open full …" view
+    # it described was never built (its data is DATA-GAP), so a non-functional
+    # link is misleading. Param kept for call-site compatibility.
+    _ = drill
     return (
         '<div class="sa-pnl"><div class="sa-pnl-head">'
         f'<span class="sa-pnl-eyebrow"><span class="sa-pnl-dot" style="color:{e(dot_colour)}">●</span> '
@@ -52,6 +56,5 @@ def build_panel(
         f'<div class="sa-pnl-claim">{e(claim)}</div>'
         f'<div class="sa-pnl-reline">{e(reframe)}</div>'
         f"{strip_html}{two}"
-        f'<div class="sa-verdrow">{verds}</div>'
-        f'<a class="sa-drill">▸ {e(drill)}</a></div>'
+        f'<div class="sa-verdrow">{verds}</div></div>'
     )
