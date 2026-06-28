@@ -15,7 +15,8 @@ def test_renders_label_value_tone_and_rule():
     )
     assert "RICH" in html and "P/E 78th" in html
     assert "sa-chip t-amber" in html
-    assert ">=75th pct" in html  # rule surfaced in tooltip
+    # rule is html-escaped via render_info, so assert on an escape-safe slice
+    assert "75th pct" in html  # rule surfaced in tooltip
 
 
 def test_rule_is_required():
