@@ -1745,6 +1745,22 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .sa-gt .d{width:7px;height:7px;border-radius:2px;flex:0 0 auto}.sa-gt .col{display:flex;flex-direction:column;line-height:1.15}
 .sa-gt .gl{font-family:'IBM Plex Mono',monospace;font-size:8.5px;text-transform:uppercase;color:var(--ri-muted)}.sa-gt .gv{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--ri-ink)}
 /* ===== end Stock Analysis top sections ===== */
+/* ===== Stock Analysis redesign — fundamentals panels ===== */
+.sa-pnl{padding:14px 0 6px;border-top:1px solid var(--ri-line)}.sa-pnl:first-child{border-top:none}
+.sa-pnl-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:6px}
+.sa-pnl-dot{font-size:10px}
+.sa-pnl-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sa-pnl-chips{margin-left:auto;display:flex;gap:7px}
+.sa-pnl-claim{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:var(--ri-ink);margin:5px 0 4px}
+.sa-pnl-reline{font-size:12px;color:var(--ri-ink2);font-style:italic;margin-bottom:12px}.sa-pnl-reline b{font-style:normal;font-family:'IBM Plex Mono',monospace}
+.sa-pnl-two{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.sa-pnl-subh{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;color:var(--ri-muted);margin-bottom:8px}
+.sa-pnl-cap{font-size:10px;color:var(--ri-ink2);font-style:italic;margin-top:7px}
+.sa-vb{font-size:11px;color:var(--ri-ink2);display:flex;gap:7px;margin:5px 0;line-height:1.4}.sa-vb .i{font-family:'IBM Plex Mono',monospace;font-weight:700;flex:0 0 auto}
+.sa-vb.pos .i{color:var(--ri-green)}.sa-vb.cau .i{color:var(--ri-amber)}.sa-vb.neu .i{color:var(--ri-muted)}.sa-vb.stop .i{color:var(--ri-crimson)}
+.sa-verdrow{display:flex;gap:22px;margin-top:13px;padding-top:11px;border-top:1px solid var(--ri-line)}
+.sa-drill{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--ri-teal);margin-top:10px;display:inline-block}
+/* ===== end Stock Analysis fundamentals panels ===== */
 </style>
 """
 
