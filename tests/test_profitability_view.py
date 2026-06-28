@@ -62,10 +62,33 @@ def test_fcf_margin_computed():
     assert "55%" in fcf.value or "55" in fcf.value  # 72/130 = 55%
 
 
-def test_roic_datagap_when_inputs_missing():
+def test_roic_when_equity_available():
+    v = profitability_view.build_profitability_view(
+        _result(totalStockholdersEquity=200e9)
+    )
+    cr = v["metrics"][4]
+    assert cr.label == "ROIC" and cr.value != "—"
+
+
+def test_capital_return_falls_back_to_roa_when_roic_gaps():
+    # no equity -> ROIC can't compute; ROA is available -> show ROA, not a gap
+    v = profitability_view.build_profitability_view(_result(returnOnAssets=0.45))
+    cr = v["metrics"][4]
+    assert cr.label == "ROA" and cr.value == "45%"
+
+
+def test_capital_return_falls_back_to_ebitda_margin():
+    # no equity, no ROA, but ebitda+revenue present -> EBITDA margin
+    v = profitability_view.build_profitability_view(_result(ebitda=90e9))
+    cr = v["metrics"][4]
+    assert "EBITDA" in cr.label and cr.value == "69%"  # 90/130
+
+
+def test_capital_return_datagap_only_when_all_missing():
+    # ebit None, no equity, no ROA, no ebitda -> genuine gap, keeps ROIC label
     v = profitability_view.build_profitability_view(_result(ebit=None))
-    roic = next(m for m in v["metrics"] if "ROIC" in m.label)
-    assert roic.value == "—"
+    cr = v["metrics"][4]
+    assert cr.label == "ROIC" and cr.value == "—"
 
 
 def test_margin_trend_axis_is_percent_not_fraction():
