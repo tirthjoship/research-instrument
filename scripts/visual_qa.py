@@ -57,6 +57,7 @@ def nvda_result() -> SimpleNamespace:
             "operatingMargins": 0.62,
             "profitMargins": 0.55,
             "returnOnEquity": 1.15,
+            "returnOnAssets": 0.45,  # ROIC has no equity here -> tile shows ROA
             "totalRevenue": 130e9,
             "ebit": 80e9,
             "debtToEquity": 12.0,

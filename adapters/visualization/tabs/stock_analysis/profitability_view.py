@@ -97,6 +97,47 @@ def _compute_roic(info: dict[str, Any], result: Any) -> Metric:
     return Metric("roic", "ROIC", _pct(val), "", tone, meaning, basis)
 
 
+def _capital_return_metric(info: dict[str, Any], result: Any) -> Metric:
+    """Capital-return tile: prefer ROIC, but degrade to a still-useful capital
+    metric rather than a dead '—'. ROIC needs equity (often absent); when it
+    can't be computed, fall back to ROA, then EBITDA margin, then a genuine gap.
+    Each fallback carries its own label + tooltip basis so it's never mislabelled.
+    """
+    roic = _compute_roic(info, result)
+    if roic.value != "—":
+        return roic
+
+    roa = _f(info, "returnOnAssets")
+    if roa is not None:
+        return Metric(
+            "roic",
+            "ROA",
+            _pct(roa),
+            "of assets",
+            "green" if roa > 0 else "grey",
+            "Net income as a fraction of total assets — capital efficiency shown "
+            "when ROIC inputs (equity) are unavailable.",
+            "yfinance info.returnOnAssets",
+        )
+
+    ebitda = _f(info, "ebitda")
+    rev = _f(info, "totalRevenue")
+    if ebitda is not None and rev:
+        val = ebitda / rev
+        return Metric(
+            "roic",
+            "EBITDA mgn",
+            _pct(val),
+            "ebitda/rev",
+            "green" if val > 0 else "grey",
+            "EBITDA as a fraction of revenue — cash operating profitability shown "
+            "when ROIC inputs (equity) are unavailable.",
+            "yfinance info.ebitda / info.totalRevenue",
+        )
+
+    return roic  # genuine data gap, keeps the ROIC label
+
+
 def _compute_fcf_margin(info: dict[str, Any]) -> Metric:
     """Compute FCF margin = freeCashflow/totalRevenue.  DATA-GAP if either missing."""
     meaning = (
@@ -242,7 +283,7 @@ def build_profitability_view(result: Any) -> dict[str, Any]:
             "Net income divided by shareholders' equity; return earned for equity holders.",
             "yfinance info.returnOnEquity",
         ),
-        _compute_roic(info, result),
+        _capital_return_metric(info, result),
         _compute_fcf_margin(info),
     ]
 
