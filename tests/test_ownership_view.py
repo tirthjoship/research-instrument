@@ -38,6 +38,19 @@ def test_panel_renders():
     assert "Ownership" in ownership_view.build_ownership_panel(_result())
 
 
+def test_insider_quarterly_net_aggregates_by_quarter():
+    qn = ownership_view._insider_quarterly_net(
+        [
+            {"value": -186e6, "Start Date": "2026-06-18"},
+            {"value": -120e6, "Start Date": "2026-03-15"},
+            {"value": -90e6, "Start Date": "2025-12-10"},
+        ]
+    )
+    assert len(qn) == 3
+    assert qn[0][0] == "Q4 2025" and qn[-1][0] == "Q2 2026"  # chronological
+    assert qn[-1][1] == -186e6  # latest quarter net is signed (reducing)
+
+
 def test_no_streamlit_and_clean():
     src = inspect.getsource(ownership_view)
     assert "import streamlit" not in src

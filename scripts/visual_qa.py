@@ -70,10 +70,26 @@ def nvda_result() -> SimpleNamespace:
         },
         peer_percentiles={"P/E": 78.0},
         peer_data=[
-            {"ticker": "AMD", "pe": 38.0, "revenue_growth": 0.30},
-            {"ticker": "AVGO", "pe": 34.0, "revenue_growth": 0.20},
-            {"ticker": "QCOM", "pe": 18.0, "revenue_growth": 0.10},
+            {
+                "ticker": "AMD",
+                "pe": 38.0,
+                "revenue_growth": 0.30,
+                "gross_margins": 0.50,
+            },
+            {
+                "ticker": "AVGO",
+                "pe": 34.0,
+                "revenue_growth": 0.20,
+                "gross_margins": 0.62,
+            },
+            {
+                "ticker": "QCOM",
+                "pe": 18.0,
+                "revenue_growth": 0.10,
+                "gross_margins": 0.56,
+            },
         ],
+        rating_distribution={"r1": 30, "r2": 18, "r3": 8, "r4": 2, "r5": 0},
         analyst_panel=SimpleNamespace(
             count=42,
             mean_rating=1.6,
@@ -83,7 +99,11 @@ def nvda_result() -> SimpleNamespace:
             as_of="2026-06-27",
             data_gap=False,
         ),
-        insider_transactions=[{"value": -48_000_000}],
+        insider_transactions=[
+            {"value": -186_000_000, "Start Date": "2026-06-18"},
+            {"value": -120_000_000, "Start Date": "2026-03-15"},
+            {"value": -90_000_000, "Start Date": "2025-12-10"},
+        ],
         buzz_signals=[
             SimpleNamespace(
                 source="reddit",
@@ -95,15 +115,29 @@ def nvda_result() -> SimpleNamespace:
         supply_chain_group={
             "group": "AI semis",
             "leaders": ["NVDA"],
-            "followers": ["AMD"],
+            "followers": ["AMD", "AVGO", "TSM"],
             "typical_lag_days": 3,
             "notes": "n",
             "_is_leader": True,
+            "member_moves": {"NVDA": 2.4, "AMD": -1.1, "AVGO": 0.8, "TSM": 1.5},
         },
         quarterly_financials=_qf6(),
         quarterly_cashflow=_qcf6(),
-        quarterly_balance_sheet=None,
+        quarterly_balance_sheet=_qbs6(),
         price_history=_price_history(),
+    )
+
+
+def _qbs6():
+    import pandas as pd
+
+    cash = [53e9, 48e9, 43e9, 38e9, 34e9, 30e9]  # newest-first
+    debt = [12e9, 12.5e9, 13e9, 9e9, 9.5e9, 10e9]
+    return pd.DataFrame(
+        {
+            c: {"Cash And Cash Equivalents": ca, "Total Debt": d}
+            for c, ca, d in zip(_qcols(), cash, debt)
+        }
     )
 
 
@@ -173,7 +207,7 @@ def main(widths: list[int]) -> None:
                 "--hide-scrollbars",
                 "--force-device-scale-factor=1",
                 f"--screenshot={png}",
-                f"--window-size={w},3000",
+                f"--window-size={w},6000",
                 f"file://{html_path}",
             ],
             check=False,

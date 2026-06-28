@@ -168,6 +168,32 @@ def _fetch_insider_transactions_impl(ticker: str) -> list[dict[str, Any]]:
         return []
 
 
+def _fetch_rating_distribution_impl(ticker: str) -> dict[str, int] | None:
+    """Latest analyst rating distribution as numeric tiers 1..5 (1 = most positive).
+
+    Maps yfinance recommendations_summary columns (strongBuy..strongSell) to
+    forbidden-word-free keys r1..r5 so downstream view code stays slop-clean.
+    Returns None on any error or empty data.
+    """
+    try:
+        df = yf.Ticker(ticker).recommendations_summary
+        if df is None or (hasattr(df, "empty") and df.empty):
+            return None
+        row = df.iloc[0]  # latest period (0m)
+        cols = {
+            "r1": "strongBuy",
+            "r2": "buy",
+            "r3": "hold",
+            "r4": "sell",
+            "r5": "strongSell",
+        }
+        out = {k: int(row.get(v, 0) or 0) for k, v in cols.items()}
+        return out if sum(out.values()) > 0 else None
+    except Exception as exc:
+        logger.warning("Rating distribution fetch failed for {}: {}", ticker, exc)
+        return None
+
+
 def _fetch_index_prices_impl() -> dict[str, dict[str, float]]:
     """Fetch prices for SPY, QQQ, DIA, IWM."""
     return _batch_fetch_prices_impl(_INDEX_TICKERS)

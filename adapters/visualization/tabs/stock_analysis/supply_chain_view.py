@@ -244,15 +244,21 @@ def build_supply_chain_panel(result: Any) -> str:
         pnl_leaders: list[str] = [str(t) for t in (grp.get("leaders") or [])]
         pnl_followers: list[str] = [str(t) for t in (grp.get("followers") or [])]
         all_tickers = pnl_leaders + pnl_followers
-        # 1-week price moves not wired — change_pct=0 placeholder for all members
+        moves: dict[str, Any] = grp.get("member_moves") or {}
+        subject = str(getattr(result, "ticker", "") or "")
         rows: list[tuple[str, float, bool]] = [
-            (ticker, 0.0, False) for ticker in all_tickers
+            (t, float(moves.get(t, 0.0) or 0.0), t == subject) for t in all_tickers
         ]
         bars_html = panel_charts.peer_bars(rows, unit="%")
+        cap = (
+            "recent (~5-day) price move per member"
+            if moves
+            else "member moves unavailable — data gap"
+        )
         left = (
             '<div class="sa-pnl-subh">Group members</div>'
             + bars_html
-            + '<div class="sa-pnl-cap">1-week moves not wired (change_pct=0)</div>'
+            + f'<div class="sa-pnl-cap">{cap}</div>'
         )
     else:
         left = (
