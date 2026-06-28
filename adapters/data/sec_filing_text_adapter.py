@@ -13,17 +13,21 @@ table of contents — so the rig is runnable end-to-end against live EDGAR.
 
 from __future__ import annotations
 
+import json
 import re
 import time
+import warnings
 from dataclasses import dataclass
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 from loguru import logger
 
 _SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
+_SUBMISSIONS_PAGE_URL = "https://data.sec.gov/submissions/{name}"
 _ARCHIVE_DOC = "https://www.sec.gov/Archives/edgar/data/{cik}/{accession_nodash}/{doc}"
 _PERIODIC_FORMS = ("10-K", "10-Q")
 
@@ -71,10 +75,13 @@ class SECFilingTextAdapter:
         self,
         rate_limit_seconds: float = 1.0,
         user_agent: str = "StockRecommender research@example.com",
+        submissions_cache_dir: Path | None = None,
     ) -> None:
         self._rate_limit_seconds = rate_limit_seconds
         self._last_request_time = 0.0
         self._user_agent = user_agent
+        self._submissions_cache_dir = submissions_cache_dir
+        self._rows_mem: dict[int, list[dict[str, str]]] = {}  # cik -> periodic rows
 
     def _throttle(self) -> None:
         elapsed = time.time() - self._last_request_time
@@ -96,31 +103,16 @@ class SECFilingTextAdapter:
     def list_filings(self, ticker: str, cik: int, as_of: date) -> list[FilingRef]:
         """Return 10-K/10-Q filings for *cik* filed on/before *as_of* (point-in-time).
 
-        Sorted oldest→newest so the caller can pair each filing with its prior
-        comparable (same form, one fiscal year earlier). Empty on any error.
+        Backed by the FULL filing history (``recent`` + every older submission page), cached
+        per CIK — so the SEC's ~1000-entry ``recent`` feed, which only reaches back a few years
+        for an active filer, never starves the early backtest cohorts, and repeated cohort
+        queries for the same CIK don't re-fetch. Sorted oldest→newest. Empty on any error.
         """
-        resp = self._get(_SUBMISSIONS_URL.format(cik=cik))
-        if resp is None:
-            return []
-        try:
-            recent = resp.json()["filings"]["recent"]
-        except (KeyError, ValueError) as exc:
-            logger.warning("SEC submissions parse failed for CIK {}: {}", cik, exc)
-            return []
-
-        forms = recent.get("form", [])
-        dates = recent.get("filingDate", [])
-        accns = recent.get("accessionNumber", [])
-        docs = recent.get("primaryDocument", [])
-        reports = recent.get("reportDate", [])
-
         out: list[FilingRef] = []
-        for i, form in enumerate(forms):
-            if form not in _PERIODIC_FORMS:
-                continue
+        for row in self._periodic_rows(cik):
             try:
-                filed = date.fromisoformat(dates[i])
-            except (ValueError, IndexError):
+                filed = date.fromisoformat(row["filed"])
+            except (ValueError, KeyError):
                 continue
             if filed > as_of:  # point-in-time guard — never see the future
                 continue
@@ -128,17 +120,78 @@ class SECFilingTextAdapter:
                 FilingRef(
                     ticker=ticker.upper(),
                     cik=cik,
-                    form=form,
+                    form=row["form"],
                     filed_date=filed,
-                    fiscal_period=reports[i] if i < len(reports) else "",
-                    accession_nodash=(
-                        accns[i].replace("-", "") if i < len(accns) else ""
-                    ),
-                    primary_doc=docs[i] if i < len(docs) else "",
+                    fiscal_period=row.get("fiscal", ""),
+                    accession_nodash=row.get("accession", ""),
+                    primary_doc=row.get("doc", ""),
                 )
             )
         out.sort(key=lambda f: f.filed_date)
         return out
+
+    def _periodic_rows(self, cik: int) -> list[dict[str, str]]:
+        """All 10-K/10-Q filing rows for *cik* over FULL history (as_of-independent).
+
+        Cached in memory and (if configured) on disk, so the full history is assembled once
+        per CIK no matter how many cohorts query it — and a re-run skips the network entirely.
+        """
+        if cik in self._rows_mem:
+            return self._rows_mem[cik]
+        rows = self._load_rows_from_disk(cik)
+        if rows is None:
+            rows = self._fetch_all_rows(cik)
+            self._write_rows_to_disk(cik, rows)
+        self._rows_mem[cik] = rows
+        return rows
+
+    def _fetch_all_rows(self, cik: int) -> list[dict[str, str]]:
+        """Fetch the main submissions JSON + every older page; return periodic rows."""
+        resp = self._get(_SUBMISSIONS_URL.format(cik=cik))
+        if resp is None:
+            return []
+        try:
+            data = resp.json()
+            recent = data["filings"]["recent"]
+        except (KeyError, ValueError) as exc:
+            logger.warning("SEC submissions parse failed for CIK {}: {}", cik, exc)
+            return []
+        rows = _extract_periodic_rows(recent)
+        for page in data.get("filings", {}).get("files", []) or []:
+            name = page.get("name") if isinstance(page, dict) else None
+            if not name:
+                continue
+            older = self._get(_SUBMISSIONS_PAGE_URL.format(name=name))
+            if older is None:
+                continue
+            try:
+                rows.extend(_extract_periodic_rows(older.json()))
+            except ValueError:
+                continue
+        return rows
+
+    def _load_rows_from_disk(self, cik: int) -> list[dict[str, str]] | None:
+        if self._submissions_cache_dir is None:
+            return None
+        path = self._submissions_cache_dir / f"CIK{cik:010d}.json"
+        if not path.exists():
+            return None
+        try:
+            rows: list[dict[str, str]] = json.loads(path.read_text())
+            return rows
+        except (ValueError, OSError) as exc:
+            logger.warning("submissions cache read failed for CIK {}: {}", cik, exc)
+            return None
+
+    def _write_rows_to_disk(self, cik: int, rows: list[dict[str, str]]) -> None:
+        if self._submissions_cache_dir is None or not rows:
+            return
+        try:
+            self._submissions_cache_dir.mkdir(parents=True, exist_ok=True)
+            path = self._submissions_cache_dir / f"CIK{cik:010d}.json"
+            path.write_text(json.dumps(rows))
+        except OSError as exc:
+            logger.warning("submissions cache write failed for CIK {}: {}", cik, exc)
 
     def fetch_sections(self, ref: FilingRef) -> dict[str, str]:
         """Return {section_name: text} for the informative sections of one filing.
@@ -164,11 +217,43 @@ def _strip_html(html: str) -> str:
     are unwrapped to their displayed value, and HTML entities (``&#160;``, ``&amp;`` …)
     are decoded — none of which the old ``<[^>]+>`` regex handled correctly.
     """
-    soup = BeautifulSoup(html, "lxml")
+    # Some filings (inline-XBRL) are XML-declared; lxml's HTML parser still extracts the
+    # visible text correctly, so suppress the (purely advisory) XMLParsedAsHTMLWarning.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", XMLParsedAsHTMLWarning)
+        soup = BeautifulSoup(html, "lxml")
     for tag in soup(["script", "style", "head"]):
         tag.decompose()
     text = soup.get_text(separator=" ")
     return re.sub(r"\s+", " ", text).strip()
+
+
+def _extract_periodic_rows(obj: Any) -> list[dict[str, str]]:
+    """Zip SEC submission column-arrays into per-filing rows, keeping only 10-K/10-Q.
+
+    Works for both the ``filings.recent`` object and an older ``*-submissions-NNN.json`` page
+    — both expose the same parallel arrays (``form`` / ``filingDate`` / ``accessionNumber`` /
+    ``primaryDocument`` / ``reportDate``).
+    """
+    forms = obj.get("form", []) if isinstance(obj, dict) else []
+    dates = obj.get("filingDate", [])
+    accns = obj.get("accessionNumber", [])
+    docs = obj.get("primaryDocument", [])
+    reports = obj.get("reportDate", [])
+    rows: list[dict[str, str]] = []
+    for i, form in enumerate(forms):
+        if form not in _PERIODIC_FORMS:
+            continue
+        rows.append(
+            {
+                "form": form,
+                "filed": dates[i] if i < len(dates) else "",
+                "accession": accns[i].replace("-", "") if i < len(accns) else "",
+                "doc": docs[i] if i < len(docs) else "",
+                "fiscal": reports[i] if i < len(reports) else "",
+            }
+        )
+    return rows
 
 
 def _split_sections(text: str) -> dict[str, str]:
