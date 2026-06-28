@@ -10,6 +10,9 @@ no network, fully deterministic.
 Usage:
     .venv/bin/python scripts/visual_qa.py            # widths 1280,768,414
     .venv/bin/python scripts/visual_qa.py 1280 600   # custom widths
+    .venv/bin/python scripts/visual_qa.py tips       # force-show ⓘ tooltips
+                                                     #   in the live Streamlit
+                                                     #   nesting -> tip_check.png
 """
 from __future__ import annotations
 
@@ -180,27 +183,45 @@ def _qcf6():
     return pd.DataFrame({c: {"Free Cash Flow": f} for c, f in zip(_qcols(), fcfs)})
 
 
-def render_doc(*, open_groups: bool = True) -> str:
+def render_doc(*, open_groups: bool = True, tips: bool = False) -> str:
     top = compose.build_top_html(nvda_result(), None, as_of="Jun 27 2026")
     if open_groups:  # headless Chrome won't expand <details>; force-open for panel QA
         top = top.replace("<details", "<details open")
+    # `tips` mode reproduces the live Streamlit nesting (stVerticalBlock >
+    # stMarkdown > stMarkdownContainer) and force-shows every .sa-tip, so the
+    # ⓘ tooltips can be checked for container clipping deterministically — the
+    # one thing a plain :hover-less screenshot can't otherwise confirm.
+    force = (
+        "<style>.sa-tip{opacity:1!important;visibility:visible!important;"
+        "transform:translateX(-50%) translateY(0)!important}</style>"
+        if tips
+        else ""
+    )
+    body_open, body_close = "", ""
+    if tips:
+        body_open = (
+            "<div data-testid='stVerticalBlock'>"
+            "<div data-testid='stMarkdown'><div data-testid='stMarkdownContainer'>"
+        )
+        body_close = "</div></div></div>"
     # Mimic Streamlit: block-container (1180px) wrapping the 800px sa-stage.
     return (
         "<!doctype html><html><head><meta charset=utf-8>"
-        f"<style>{GLOBAL_CSS}</style>"
+        f"<style>{GLOBAL_CSS}</style>{force}"
         "<style>body{margin:0;background:#F4F6F8}"
         ".block-container{max-width:1180px;margin:0 auto;padding:1rem 1.9rem 3rem}</style>"
         "</head><body><div class='block-container'>"
-        f"{top}</div></body></html>"
+        f"{body_open}{top}{body_close}</div></body></html>"
     )
 
 
-def main(widths: list[int]) -> None:
+def main(widths: list[int], *, tips: bool = False) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    html_path = OUT / "tab.html"
-    html_path.write_text(render_doc())
+    stem = "tip_check" if tips else "tab"
+    html_path = OUT / f"{stem}.html"
+    html_path.write_text(render_doc(tips=tips))
     for w in widths:
-        png = OUT / f"tab_{w}.png"
+        png = OUT / (f"{stem}.png" if tips else f"tab_{w}.png")
         subprocess.run(
             [
                 CHROME,
@@ -220,5 +241,9 @@ def main(widths: list[int]) -> None:
 
 
 if __name__ == "__main__":
-    args = [int(a) for a in sys.argv[1:]] or [1280, 768, 414]
-    main(args)
+    raw = sys.argv[1:]
+    tips = "tips" in raw
+    args = [int(a) for a in raw if a.isdigit()] or (
+        [1280] if tips else [1280, 768, 414]
+    )
+    main(args, tips=tips)
