@@ -113,6 +113,44 @@ def _snowflake_radar_axes(fit: object | None) -> list[RadarAxis]:
     return out
 
 
+def _fundamentals_tile_values(result: object) -> tuple[str, str, str]:
+    """Compute the (valuation, growth, health) micro-tile glance values from result.
+
+    Pure + robust: every access is guarded so a sparse result never raises;
+    each value falls back to "—" when its source data is missing.
+    """
+    val = "—"
+    try:
+        percs = getattr(result, "peer_percentiles", None) or {}
+        pct = percs.get("P/E")
+        if pct is not None:
+            val = f"{int(round(float(pct)))}th"
+    except (TypeError, ValueError, AttributeError):
+        val = "—"
+
+    grow = "—"
+    info = getattr(result, "info", None) or {}
+    try:
+        g = info.get("revenueGrowth")
+        if g is not None:
+            pct_g = round(float(g) * 100)
+            grow = f"+{pct_g}%" if pct_g >= 0 else f"{pct_g}%"
+    except (TypeError, ValueError, AttributeError):
+        grow = "—"
+
+    health = "—"
+    try:
+        cash = info.get("totalCash")
+        debt = info.get("totalDebt")
+        if cash is not None and debt is not None:
+            net = float(cash) - float(debt)
+            health = "net cash" if net > 0 else "net debt" if net < 0 else "—"
+    except (TypeError, ValueError, AttributeError):
+        health = "—"
+
+    return val, grow, health
+
+
 def build_fundamentals_inner(result: object) -> str:
     """Pure assembler: concatenate the 4 Fundamentals panels into one HTML string.
 
@@ -149,6 +187,7 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
         if len(axes) >= 3
         else f'<div class="sa-twocol-fit">{build_fit_card_html(fit_view)}</div>'
     )
+    val_tile, grow_tile, health_tile = _fundamentals_tile_values(result)
     groups = (
         build_group_shell(
             anchor="sa-fundamentals",
@@ -156,9 +195,9 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
             grade=fit_view.grade,
             week_delta="",
             micro_tiles=[
-                MicroTile("Valuation", "—", "#d08218"),
-                MicroTile("Growth", "—", "#2f9e44"),
-                MicroTile("Health", "—", "#0F6E80"),
+                MicroTile("Valuation", val_tile, "#d08218"),
+                MicroTile("Growth", grow_tile, "#2f9e44"),
+                MicroTile("Health", health_tile, "#0F6E80"),
             ],
             inner_html=build_fundamentals_inner(result),
         )

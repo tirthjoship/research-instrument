@@ -69,3 +69,32 @@ def test_top_html_fundamentals_group_is_populated() -> None:
     after = html[i:]
     assert "Valuation" in after
     assert 'class="sa-pnl"' in after
+
+
+def test_fundamentals_microtiles_show_gist() -> None:
+    html = compose.build_top_html(_result(), None)
+    i = html.index('id="sa-fundamentals"')
+    head = html[i : i + 800]  # the summary header region before the panels
+    # micro-tiles show the at-a-glance gist (D8), not "—" placeholders
+    assert "78th" in head  # P/E peer percentile
+    assert "+69%" in head  # revenueGrowth 0.69 → +69%
+
+
+def test_fundamentals_tile_values_sparse_result_falls_back() -> None:
+    from types import SimpleNamespace
+
+    sparse = SimpleNamespace(peer_percentiles=None, info=None)
+    assert compose._fundamentals_tile_values(sparse) == ("—", "—", "—")
+
+
+def test_fundamentals_tile_values_net_debt() -> None:
+    from types import SimpleNamespace
+
+    r = SimpleNamespace(
+        peer_percentiles={"P/E": 40.0},
+        info={"revenueGrowth": -0.05, "totalCash": 1e9, "totalDebt": 5e9},
+    )
+    val, grow, health = compose._fundamentals_tile_values(r)
+    assert val == "40th"
+    assert grow == "-5%"
+    assert health == "net debt"
