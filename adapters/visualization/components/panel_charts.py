@@ -76,7 +76,17 @@ def marker_range(
     markers: type_markers,
     *,
     band: tuple[float, float] | None = None,
+    left_label: str | None = None,
+    right_label: str | None = None,
+    gradient: bool = False,
 ) -> str:
+    """Horizontal range bar with point markers.
+
+    ``left_label``/``right_label`` override the plain numeric end labels (e.g.
+    "bear $150" / "bull $260"). ``gradient=True`` paints a bear→bull (warm→green)
+    track and colours the end labels accordingly — descriptive of the low/high
+    case, not a trade call.
+    """
     if high <= low:
         return '<div class="sa-pnl-cap">data gap — no range available</div>'
     span = high - low
@@ -95,9 +105,16 @@ def marker_range(
             f'<div class="mk" style="left:{x:.0f}%;background:{colour}"></div>'
             f'<div class="lbl" style="left:{x:.0f}%;color:{colour}">{_html.escape(label)}</div>'
         )
+    bar_cls = "sa-rangebar bearbull" if gradient else "sa-rangebar"
+    ll = _html.escape(left_label) if left_label is not None else fmt_num(low)
+    rl = _html.escape(right_label) if right_label is not None else fmt_num(high)
+    # bear end warm/amber, bull end green — only when the gradient semantics apply
+    lcol = "#7a4a08" if gradient else "var(--ri-muted)"
+    rcol = "#1f5130" if gradient else "var(--ri-muted)"
     return (
-        '<div class="sa-rangebar">' + band_html + "".join(mk) + "</div>"
+        f'<div class="{bar_cls}">' + band_html + "".join(mk) + "</div>"
         '<div style="display:flex;justify-content:space-between;'
-        "font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--ri-muted)\">"
-        f"<span>{fmt_num(low)}</span><span>{fmt_num(high)}</span></div>"
+        "font-family:'IBM Plex Mono',monospace;font-size:8px\">"
+        f'<span style="color:{lcol};font-weight:700">{ll}</span>'
+        f'<span style="color:{rcol};font-weight:700">{rl}</span></div>'
     )

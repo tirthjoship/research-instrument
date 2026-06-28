@@ -198,13 +198,22 @@ def _valuation_ranges_html(result: Any) -> str:
             )
         if t_mean:
             markers.append(
-                (float(t_mean), f"target ${panel_charts.fmt_num(t_mean)}", "#C9810E")
+                (float(t_mean), f"base ${panel_charts.fmt_num(t_mean)}", "#1a2226")
             )
         parts.append(
             '<div class="sa-pnl-subh" style="margin-top:12px">'
             "Fair value · analyst target (3rd-party)</div>"
         )
-        parts.append(panel_charts.marker_range(float(t_lo), float(t_hi), markers))
+        parts.append(
+            panel_charts.marker_range(
+                float(t_lo),
+                float(t_hi),
+                markers,
+                left_label=f"bear ${panel_charts.fmt_num(t_lo)}",
+                right_label=f"bull ${panel_charts.fmt_num(t_hi)}",
+                gradient=True,
+            )
+        )
 
     if not parts:
         return (

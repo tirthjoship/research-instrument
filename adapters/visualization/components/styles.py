@@ -1684,6 +1684,7 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .sa-pe-row{display:flex;align-items:center;gap:8px;margin:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9.5px}
 .sa-pe-row .tk{width:38px;color:var(--ri-ink2)}.sa-pe-row .bar{height:10px;border-radius:3px;background:#cdd7d9}.sa-pe-row.me .bar{background:var(--ri-amber)}.sa-pe-row.me .tk{color:var(--ri-ink);font-weight:700}
 .sa-rangebar{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,#dde4e5,#c4ced0);margin:18px 0 3px}
+.sa-rangebar.bearbull{background:linear-gradient(90deg,rgba(201,129,14,.34),rgba(201,129,14,.12) 38%,rgba(31,146,84,.14) 62%,rgba(31,146,84,.36))}
 .sa-rangebar .band{position:absolute;top:0;bottom:0;border-radius:4px}.sa-rangebar .mk{position:absolute;top:-4px;width:2px;height:16px}.sa-rangebar .lbl{position:absolute;top:-15px;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:8px;white-space:nowrap}
 .sa-group{border:1px solid var(--ri-line);border-radius:11px;margin:10px 0;overflow:visible;background:var(--ri-card)}
 .sa-gtiles{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
