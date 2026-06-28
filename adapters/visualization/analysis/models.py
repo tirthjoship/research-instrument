@@ -58,6 +58,7 @@ class AnalysisResult:
     info: dict[str, Any] = field(default_factory=dict)
     quarterly_financials: Any = None
     quarterly_balance_sheet: Any = None
+    quarterly_cashflow: Any = None
     insider_transactions: list[dict[str, Any]] = field(default_factory=list)
     buzz_signals: list[Any] = field(default_factory=list)
     recommendation_data: Any = None

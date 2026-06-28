@@ -49,6 +49,7 @@ def nvda_result() -> SimpleNamespace:
             "freeCashflow": 72e9,
             "marketCap": 4.2e12,
             "revenueGrowth": 0.69,
+            "earningsGrowth": 0.82,
             "grossMargins": 0.75,
             "operatingMargins": 0.62,
             "profitMargins": 0.55,
@@ -68,7 +69,11 @@ def nvda_result() -> SimpleNamespace:
             "enterpriseToEbitda": 45.0,
         },
         peer_percentiles={"P/E": 78.0},
-        peer_data=[{"ticker": "NVDA", "pe": 52.0}],
+        peer_data=[
+            {"ticker": "AMD", "pe": 38.0, "revenue_growth": 0.30},
+            {"ticker": "AVGO", "pe": 34.0, "revenue_growth": 0.20},
+            {"ticker": "QCOM", "pe": 18.0, "revenue_growth": 0.10},
+        ],
         analyst_panel=SimpleNamespace(
             count=42,
             mean_rating=1.6,
@@ -95,9 +100,40 @@ def nvda_result() -> SimpleNamespace:
             "notes": "n",
             "_is_leader": True,
         },
-        quarterly_financials=None,
+        quarterly_financials=_qf6(),
+        quarterly_cashflow=_qcf6(),
         quarterly_balance_sheet=None,
     )
+
+
+def _qcols() -> list[str]:
+    return [
+        "2026-03-31",
+        "2025-12-31",
+        "2025-09-30",
+        "2025-06-30",
+        "2025-03-31",
+        "2024-12-31",
+    ]
+
+
+def _qf6():
+    import pandas as pd
+
+    revs = [57e9, 44e9, 35e9, 30e9, 26e9, 22e9]  # newest-first
+    return pd.DataFrame(
+        {
+            c: {"Total Revenue": r, "Net Income": r * 0.55}
+            for c, r in zip(_qcols(), revs)
+        }
+    )
+
+
+def _qcf6():
+    import pandas as pd
+
+    fcfs = [46e9, 33e9, 28e9, 24e9, 20e9, 17e9]
+    return pd.DataFrame({c: {"Free Cash Flow": f} for c, f in zip(_qcols(), fcfs)})
 
 
 def render_doc(*, open_groups: bool = True) -> str:

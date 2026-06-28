@@ -76,6 +76,7 @@ def analyze_ticker(
         info=info,
         quarterly_financials=qf,
         quarterly_balance_sheet=qbs,
+        quarterly_cashflow=qcf,
         insider_transactions=insider_txns,
         buzz_signals=buzz,
         recommendation_data=rec,
