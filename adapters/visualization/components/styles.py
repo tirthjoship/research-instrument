@@ -1743,7 +1743,8 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .sa-group>summary{list-style:none;cursor:pointer;padding:12px 15px}.sa-group>summary::-webkit-details-marker{display:none}
 .sa-gt{display:flex;align-items:center;gap:8px;border:1px solid var(--ri-line);border-radius:8px;padding:6px 10px;background:#fdfdfc}
 .sa-gt .d{width:7px;height:7px;border-radius:2px;flex:0 0 auto}.sa-gt .col{display:flex;flex-direction:column;line-height:1.15}
-.sa-gt .gl{font-family:'IBM Plex Mono',monospace;font-size:8.5px;text-transform:uppercase;color:var(--ri-muted)}.sa-gt .gv{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--ri-ink)}
+.sa-gt .gl{font-family:'IBM Plex Mono',monospace;font-size:8.5px;text-transform:uppercase;color:var(--ri-muted);display:inline-flex;align-items:center;gap:4px}.sa-gt .gv{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--ri-ink)}
+.sa-gt .pb{width:30px;height:5px;border-radius:3px;background:var(--ri-hair);position:relative;margin-left:auto;flex:0 0 auto}.sa-gt .pf{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
 /* ===== end Stock Analysis top sections ===== */
 /* ===== Stock Analysis redesign — fundamentals panels ===== */
 .sa-pnl{padding:14px 0 6px;border-top:1px solid var(--ri-line)}.sa-pnl:first-child{border-top:none}

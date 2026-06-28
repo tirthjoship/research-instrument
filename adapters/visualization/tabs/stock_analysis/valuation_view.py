@@ -114,14 +114,17 @@ def build_valuation_view(result: Any) -> dict[str, Any]:
             metrics[2].basis,
         )
 
-    peer_rows: list[tuple[str, float, bool]] = [
-        (
-            p.get("ticker", "?"),
-            float(p.get("pe") or 0),
-            p.get("ticker") == getattr(result, "ticker", None),
-        )
+    # Put the subject ticker first (highlighted), then its peers — so the P/E-vs-peers
+    # bars actually show where THIS stock sits, not just the peer set.
+    subject = getattr(result, "ticker", "?")
+    own_pe = _f(info, "trailingPE")
+    peer_rows: list[tuple[str, float, bool]] = []
+    if own_pe:
+        peer_rows.append((subject, float(own_pe), True))
+    peer_rows += [
+        (p.get("ticker", "?"), float(p.get("pe") or 0), False)
         for p in (getattr(result, "peer_data", []) or [])
-        if p.get("pe")
+        if p.get("pe") and p.get("ticker") != subject
     ]
 
     chips = render_status_chip(

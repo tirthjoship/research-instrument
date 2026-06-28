@@ -67,7 +67,7 @@ def test_panel_renders_with_chips_strip_and_drill():
     html = valuation_view.build_valuation_panel(_result())
     assert "sa-pnl" in html and "Valuation" in html
     assert "sa-chip" in html and html.count("sa-tip") >= 3
-    assert "sa-drill" in html
+    assert "sa-drill" not in html
 
 
 def test_no_streamlit_and_clean():

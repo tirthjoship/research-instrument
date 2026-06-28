@@ -28,7 +28,8 @@ def test_build_panel_has_all_anatomy():
     assert "RICH" in html and "Rich on price" in html
     assert "sa-strip" in html and html.count("<svg") == 2
     assert html.count("sa-vb") == 2 and "Little margin" in html
-    assert "open full valuation" in html and "sa-drill" in html
+    # drill links removed — the "open full …" deeper view was never built (DATA-GAP)
+    assert "sa-drill" not in html and "open full" not in html
 
 
 def test_escapes_name_and_claim():
