@@ -22,10 +22,28 @@ def test_six_metrics_inst_and_netq():
     assert "66" in inst.value
 
 
-def test_short_interest_datagap_when_missing():
+def test_short_interest_datagap_when_no_short_shares():
+    # no shortPercentOfFloat AND no sharesShort -> genuine gap
     v = ownership_view.build_ownership_view(_result())
     si = next(m for m in v["metrics"] if "Short" in m.label)
     assert si.value == "—"
+
+
+def test_short_interest_computed_from_primitives():
+    # yfinance often omits shortPercentOfFloat but carries sharesShort + floatShares
+    v = ownership_view.build_ownership_view(
+        _result(sharesShort=250e6, floatShares=23.5e9)
+    )
+    si = next(m for m in v["metrics"] if "Short" in m.label)
+    assert si.value == "1.1%"  # 250M / 23.5B
+
+
+def test_days_to_cover_computed_from_primitives():
+    v = ownership_view.build_ownership_view(
+        _result(sharesShort=250e6, averageDailyVolume10Day=250e6)
+    )
+    dtc = next(m for m in v["metrics"] if "cover" in m.label.lower())
+    assert dtc.value == "1.0d"  # 250M / 250M
 
 
 def test_insiders_chip_grey_and_falsified():
