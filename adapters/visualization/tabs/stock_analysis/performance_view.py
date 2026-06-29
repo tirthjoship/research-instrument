@@ -234,7 +234,7 @@ def build_performance_view(result: Any) -> dict[str, Any]:
             Metric(
                 "beta",
                 "Beta",
-                f"{beta:.2f}×",
+                f"{beta:.1f}",
                 "vs market",
                 tone,
                 beta_meaning,
@@ -319,7 +319,7 @@ def build_performance_view(result: Any) -> dict[str, Any]:
     if beta is not None and beta > 1.3:
         chips += render_status_chip(
             "HIGH-BETA",
-            f"{beta:.1f}×",
+            f"{beta:.1f}",
             tone="amber",
             rule="beta>1.3 = amplified vs market; a risk characteristic, not good/bad",
         )
@@ -364,10 +364,19 @@ def build_performance_panel(result: Any) -> str:
     closes = _closes(result)
     hz = _horizon_returns(closes)
     if hz:
-        left = (
-            '<div class="sa-pnl-subh">Returns by horizon</div>'
-            + panel_charts.peer_bars([(lbl, r, lbl == "1Y") for lbl, r in hz], unit="%")
-        )
+        # Pair each horizon's stock return with the S&P's over the same window so
+        # the panel's "beat the market" claim is shown, not just asserted.
+        spy_map = dict(_horizon_returns(_spy_closes(result)))
+        if spy_map:
+            rows = [(lbl, r, spy_map.get(lbl, 0.0), lbl == "1Y") for lbl, r in hz]
+            chart = panel_charts.horizon_compare_bars(rows, unit="%")
+            subh = "Return vs S&P, by horizon"
+        else:
+            chart = panel_charts.peer_bars(
+                [(lbl, r, lbl == "1Y") for lbl, r in hz], unit="%"
+            )
+            subh = "Returns by horizon"
+        left = f'<div class="sa-pnl-subh">{subh}</div>' + chart
     else:
         left = (
             '<div class="sa-pnl-subh">Returns by horizon</div>'

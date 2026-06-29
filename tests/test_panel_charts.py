@@ -56,6 +56,16 @@ def test_trend_lines_render_x_labels_when_given():
     assert "3m ago" in html and "now" in html
 
 
+def test_horizon_compare_bars_show_stock_and_benchmark():
+    html = panel_charts.horizon_compare_bars(
+        [("1Y", 25.0, 14.0, True), ("3Y", 97.0, 40.0, False)]
+    )
+    assert "1Y" in html and "3Y" in html
+    assert "+25%" in html and "+14%" in html  # stock and S&P values both shown
+    assert "S&P" in html
+    assert "var(--ri-amber)" in html  # focus horizon highlighted
+
+
 def test_marker_range_positions_and_band():
     html = panel_charts.marker_range(
         28.0, 68.0, [(52.0, "now 52x", "#0F6E80")], band=(35.0, 55.0)
