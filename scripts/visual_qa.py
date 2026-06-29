@@ -74,6 +74,7 @@ def nvda_result() -> SimpleNamespace:
             "quickRatio": 3.5,
             "pegRatio": 0.75,
             "forwardPE": 34.0,
+            "forwardEps": 4.5,  # consensus forward EPS -> Analyst "Fwd EPS" tile
             "priceToSalesTrailing12Months": 28.0,
             "enterpriseToEbitda": 45.0,
         },
