@@ -85,6 +85,66 @@ def _fmt_net_q(net_q: float) -> str:
     return f"{sign}${abs_val:.0f}"
 
 
+def _short_interest_metric(info: dict[str, Any]) -> Metric:
+    """Short interest as % of float. Prefer shortPercentOfFloat; else compute
+    sharesShort / floatShares (or sharesOutstanding). yfinance often drops the
+    headline ratio while keeping the primitives, so this keeps the tile live."""
+    meaning = (
+        "Short interest as a percentage of float — shares short divided by shares "
+        "available to trade. High short interest raises borrowing costs; descriptive."
+    )
+    pct = _f(info, "shortPercentOfFloat")
+    basis = "yfinance info.shortPercentOfFloat; percentage of float; descriptive"
+    if pct is None:
+        shares_short = _f(info, "sharesShort")
+        base = _f(info, "floatShares") or _f(info, "sharesOutstanding")
+        if shares_short is not None and base:
+            pct = shares_short / base
+            basis = "sharesShort / floatShares (computed; shortPercentOfFloat absent)"
+    if pct is None:
+        return Metric(
+            "short_interest", "Short interest", "—", "data gap", "grey", meaning, basis
+        )
+    return Metric(
+        "short_interest",
+        "Short interest",
+        f"{pct * 100:.1f}%",
+        "of float",
+        "grey",
+        meaning,
+        basis,
+    )
+
+
+def _days_to_cover_metric(info: dict[str, Any]) -> Metric:
+    """Days-to-cover. Prefer shortRatio; else sharesShort / average daily volume."""
+    meaning = (
+        "Days-to-cover (short ratio): short interest divided by average daily volume — "
+        "how many trading days it would take to close all short positions."
+    )
+    dtc = _f(info, "shortRatio")
+    basis = "yfinance info.shortRatio; days to close short at average volume"
+    if dtc is None:
+        shares_short = _f(info, "sharesShort")
+        vol = _f(info, "averageDailyVolume10Day") or _f(info, "averageVolume")
+        if shares_short is not None and vol:
+            dtc = shares_short / vol
+            basis = "sharesShort / 10-day average volume (computed; shortRatio absent)"
+    if dtc is None:
+        return Metric(
+            "days_to_cover", "Days-to-cover", "—", "data gap", "grey", meaning, basis
+        )
+    return Metric(
+        "days_to_cover",
+        "Days-to-cover",
+        f"{dtc:.1f}d",
+        "to close short",
+        "grey",
+        meaning,
+        basis,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -234,63 +294,10 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
             net_q_basis,
         )
 
-    # 5. Short interest (% of float)
-    short_meaning = (
-        "Short interest as a percentage of float — shares short divided by shares available "
-        "to trade. High short interest raises borrowing costs; descriptive, not directional."
-    )
-    short_basis = "yfinance info.shortPercentOfFloat; percentage of float; descriptive"
-    short_raw = _f(info, "shortPercentOfFloat")
-    if short_raw is None:
-        m_short = Metric(
-            "short_interest",
-            "Short interest",
-            "—",
-            "data gap",
-            "grey",
-            short_meaning,
-            short_basis,
-        )
-    else:
-        m_short = Metric(
-            "short_interest",
-            "Short interest",
-            f"{short_raw * 100:.1f}%",
-            "of float",
-            "grey",
-            short_meaning,
-            short_basis,
-        )
-
-    # 6. Days-to-cover (short ratio)
-    dtc_meaning = (
-        "Days-to-cover (short ratio): current short interest divided by average daily volume. "
-        "Indicates how many trading days it would take to close all short positions."
-    )
-    dtc_basis = (
-        "yfinance info.shortRatio; days to close short at average volume; descriptive"
-    )
-    dtc_raw = _f(info, "shortRatio")
-    if dtc_raw is None:
-        m_dtc = Metric(
-            "days_to_cover",
-            "Days-to-cover",
-            "—",
-            "data gap",
-            "grey",
-            dtc_meaning,
-            dtc_basis,
-        )
-    else:
-        m_dtc = Metric(
-            "days_to_cover",
-            "Days-to-cover",
-            f"{dtc_raw:.1f}d",
-            "to close short",
-            "grey",
-            dtc_meaning,
-            dtc_basis,
-        )
+    # 5/6. Short interest + days-to-cover (computed from primitives when the
+    # yfinance convenience ratios are absent — they often are).
+    m_short = _short_interest_metric(info)
+    m_dtc = _days_to_cover_metric(info)
 
     metrics: list[Metric] = [m_inst, m_insider, m_float, m_netq, m_short, m_dtc]
 
@@ -319,7 +326,8 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
         "reframe": (
             "Institutional ownership is a structural characteristic of large-cap equities, not a signal. "
             "Insider-cluster signal is falsified (ADR-053): hypothesis tests found no systematic edge. "
-            "Short data is absent for many tickers — shown as data gap."
+            "Short interest and days-to-cover are computed from shares-short and float/volume when "
+            "the headline ratios are absent; data gap only when shares-short is unavailable."
         ),
         "verdicts": [
             Verdict(

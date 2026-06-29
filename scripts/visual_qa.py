@@ -48,6 +48,11 @@ def nvda_result() -> SimpleNamespace:
             "fiftyDayAverage": 160.0,
             "heldPercentInstitutions": 0.66,
             "heldPercentInsiders": 0.04,
+            # short primitives only (no shortPercentOfFloat/shortRatio) to exercise
+            # the computed-fallback path -> ~1.1% short, ~1.0d to cover
+            "sharesShort": 250e6,
+            "floatShares": 23.5e9,
+            "averageDailyVolume10Day": 250e6,
             "trailingPE": 52.0,
             "freeCashflow": 72e9,
             "marketCap": 4.2e12,
