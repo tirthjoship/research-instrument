@@ -40,6 +40,42 @@ def peer_bars(rows: type_peer_rows, *, unit: str = "x", width: int = 150) -> str
     return "".join(out)
 
 
+def horizon_compare_bars(
+    rows: Sequence[tuple[str, float, float, bool]], *, unit: str = "%", width: int = 150
+) -> str:
+    """Per-horizon stock-vs-benchmark bars: a bold stock bar over a muted S&P bar.
+
+    Each row is ``(label, stock_value, benchmark_value, is_focus)``. Bars share one
+    scale (max abs across both series). The focus row's stock bar is amber; others
+    petrol. Generalises the single "vs S&P" tile to every horizon — descriptive,
+    never a call.
+    """
+    vals = [abs(v) for _, s, p, _ in rows for v in (s, p)] or [1.0]
+    hi = max(vals) or 1.0
+    out = []
+    for label, sv, pv, focus in rows:
+        sw = int(round(abs(sv) / hi * width))
+        pw = int(round(abs(pv) / hi * width))
+        scol = "var(--ri-amber)" if focus else "#0F6E80"
+        weight = "700" if focus else "400"
+        out.append(
+            "<div style=\"margin:5px 0;font-family:'IBM Plex Mono',monospace;"
+            'font-size:9px">'
+            '<div style="display:flex;align-items:center;gap:8px">'
+            f'<span style="width:26px;color:var(--ri-ink2);font-weight:{weight}">'
+            f"{_html.escape(label)}</span>"
+            '<div style="flex:1">'
+            '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">'
+            f'<div style="height:8px;border-radius:3px;width:{sw}px;background:{scol}"></div>'
+            f'<span style="font-weight:700">{sv:+.0f}{_html.escape(unit)}</span></div>'
+            '<div style="display:flex;align-items:center;gap:6px">'
+            f'<div style="height:6px;border-radius:3px;width:{pw}px;background:#cdd7d9"></div>'
+            f'<span style="color:var(--ri-muted)">S&P {pv:+.0f}{_html.escape(unit)}</span>'
+            "</div></div></div></div>"
+        )
+    return "".join(out)
+
+
 def trend_lines(
     series: type_series,
     *,

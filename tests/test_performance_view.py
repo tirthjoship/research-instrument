@@ -43,7 +43,7 @@ def test_price_history_fills_long_return_drawdown_and_viz() -> None:
     mdd = next(m for m in v["metrics"] if m.key == "max_drawdown")
     assert mdd.value != "—" and mdd.value.startswith("-")
     html = performance_view.build_performance_panel(result)
-    assert "Returns by horizon" in html and "Relative strength" in html
+    assert "by horizon" in html and "Relative strength" in html
     assert "returns-by-horizon — data gap" not in html
 
 
@@ -63,6 +63,27 @@ def test_threeyear_and_drawdown_are_datagap() -> None:
 def test_high_beta_amber() -> None:
     v = performance_view.build_performance_view(_result())
     assert "HIGH-BETA" in v["chips"]
+
+
+def test_beta_formatted_without_multiplier_sign() -> None:
+    v = performance_view.build_performance_view(_result())
+    beta = next(m for m in v["metrics"] if m.label == "Beta")
+    assert beta.value == "1.7"  # one decimal, no '×'
+
+
+def test_returns_by_horizon_show_benchmark() -> None:
+    closes = [100 * (1.0009**i) for i in range(800)]
+    spy = [400 * (1.0004**i) for i in range(800)]
+    result = SimpleNamespace(
+        info={"52WeekChange": 0.42, "SandP52WeekChange": 0.14, "beta": 1.7},
+        current_price=closes[-1],
+        ticker="NVDA",
+        price_history={"closes": closes, "spy_closes": spy},
+    )
+    html = performance_view.build_performance_panel(result)
+    # one "S&P" is the relative-strength subhead; the per-horizon benchmark bars
+    # add several more (one label per horizon).
+    assert html.count("S&P") >= 3
 
 
 def test_panel_renders() -> None:
