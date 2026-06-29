@@ -40,6 +40,28 @@ def test_distribution_and_target90d_datagap():
     assert any(m.value == "—" for m in v["metrics"])
 
 
+def test_upside_tile_from_target_and_price():
+    result = SimpleNamespace(
+        analyst_panel=_panel(), ticker="NVDA", current_price=172.0, info={}
+    )
+    v = analyst_view.build_analyst_view(result)
+    up = next(m for m in v["metrics"] if "Upside" in m.label)
+    assert up.value == "+16%"  # (200-172)/172
+    assert up.tone == "petrol"  # Street-derived, never green
+
+
+def test_fwd_eps_tile_from_info():
+    result = SimpleNamespace(
+        analyst_panel=_panel(),
+        ticker="NVDA",
+        current_price=172.0,
+        info={"forwardEps": 4.5},
+    )
+    v = analyst_view.build_analyst_view(result)
+    eps = next(m for m in v["metrics"] if "EPS" in m.label)
+    assert eps.value == "$4.50" and eps.tone == "petrol"
+
+
 def test_datagap_panel_degrades():
     html = analyst_view.build_analyst_panel(_result(gap=True))
     assert "Analyst" in html

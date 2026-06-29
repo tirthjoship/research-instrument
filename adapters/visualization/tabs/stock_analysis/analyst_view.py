@@ -4,9 +4,9 @@ This panel reports third-party analyst ratings and price targets as facts.
 It does NOT adopt, endorse, or echo analyst recommendations as the project's view.
 All tone is petrol (never green): the data is attributed to the Street, not the model.
 
-DATA-GAP items: rating distribution (no breakdown wired), target 90 days ago
-(no historical series), EPS estimate 90 days ago (no EPS-estimate history wired),
-mean-target trend (no time series wired).
+DATA-GAP items: mean-target trend (no time series wired). The 90-day target and
+EPS-estimate history are unavailable, so those slots show the current implied
+upside to the mean target and the consensus forward EPS instead.
 """
 
 from __future__ import annotations
@@ -46,6 +46,46 @@ def _strip_html(metrics: list[Metric]) -> str:
     return f'<div class="sa-strip">{tiles}</div>'
 
 
+def _upside_metric(target_mean: float | None, current_price: float | None) -> Metric:
+    """Implied upside/downside to the Street's mean target. Petrol tone — it is
+    the Street's view (target), reported not adopted, so never green/amber."""
+    meaning = (
+        "Implied move to the analyst consensus mean target: (mean target − price) / price. "
+        "This is the Street's view, reported as context — not adopted as the project's call."
+    )
+    basis = "(analyst_panel.target_mean − current_price) / current_price; third-party"
+    if target_mean is None or not current_price:
+        return Metric("upside", "Upside", _DATA_GAP, "data gap", "grey", meaning, basis)
+    pct = (target_mean - current_price) / current_price * 100
+    return Metric(
+        "upside",
+        "Upside",
+        f"{pct:+.0f}%",
+        "to mean target",
+        "petrol",
+        meaning,
+        basis,
+    )
+
+
+def _fwd_eps_metric(info: dict[str, Any]) -> Metric:
+    """Consensus forward EPS estimate — an analyst output we do have, in place of
+    the unavailable 90-day EPS-estimate history. Petrol tone (Street's estimate)."""
+    meaning = (
+        "Consensus forward earnings-per-share estimate (next fiscal year). "
+        "A third-party analyst estimate, reported as context — not adopted."
+    )
+    basis = "yfinance info.forwardEps; Street consensus; reported not adopted"
+    eps = _safe_float((info or {}).get("forwardEps"))
+    if eps is None:
+        return Metric(
+            "fwd_eps", "Fwd EPS", _DATA_GAP, "data gap", "grey", meaning, basis
+        )
+    return Metric(
+        "fwd_eps", "Fwd EPS", f"${eps:.2f}", "consensus est", "petrol", meaning, basis
+    )
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -61,8 +101,8 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
       2. Consensus (mean_rating, e.g. 1.6)
       3. Mean target (target_mean in dollars)
       4. Dispersion (target_high − target_low; amber when wide ≥ 30% of mean target)
-      5. Target 90d ago (DATA-GAP — no historical series wired)
-      6. EPS est 90d (DATA-GAP — no EPS-estimate history wired)
+      5. Upside (implied move to the mean target; petrol — Street's view)
+      6. Fwd EPS (consensus forward EPS estimate; petrol — Street's view)
 
     Chips use petrol tone only — the Street's ratings are reported, not adopted.
     """
@@ -110,22 +150,22 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
                 "analyst_panel.target_high − target_low — data gap",
             ),
             Metric(
-                "target_90d",
-                "Target 90d",
+                "upside",
+                "Upside",
                 _DATA_GAP,
                 "data gap",
                 "grey",
-                "Analyst mean price target from 90 days ago; requires historical series not wired.",
-                "data gap — historical target series not wired",
+                "Implied move to the analyst consensus mean target; needs a target and price.",
+                "data gap — analyst target unavailable",
             ),
             Metric(
-                "eps_est_90d",
-                "EPS est 90d",
+                "fwd_eps",
+                "Fwd EPS",
                 _DATA_GAP,
                 "data gap",
                 "grey",
-                "EPS consensus estimate from 90 days ago; requires EPS-estimate history not wired.",
-                "data gap — EPS estimate history not wired",
+                "Consensus forward EPS estimate; a third-party analyst estimate.",
+                "data gap — forward EPS unavailable",
             ),
         ]
         chips = render_status_chip(
@@ -256,35 +296,21 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             dispersion_basis,
         )
 
-    # 5. Target 90d ago — DATA-GAP
-    m_target_90d = Metric(
-        "target_90d",
-        "Target 90d",
-        _DATA_GAP,
-        "data gap",
-        "grey",
-        "Analyst mean price target from 90 days ago; requires historical series not wired.",
-        "data gap — historical target series not wired",
+    # 5. Upside to mean target (replaces the unavailable 90-day target history)
+    m_upside = _upside_metric(
+        target_mean, _safe_float(getattr(result, "current_price", None))
     )
 
-    # 6. EPS est 90d — DATA-GAP
-    m_eps_est_90d = Metric(
-        "eps_est_90d",
-        "EPS est 90d",
-        _DATA_GAP,
-        "data gap",
-        "grey",
-        "EPS consensus estimate from 90 days ago; requires EPS-estimate history not wired.",
-        "data gap — EPS estimate history not wired",
-    )
+    # 6. Forward EPS consensus (replaces the unavailable 90-day EPS-estimate history)
+    m_fwd_eps = _fwd_eps_metric(getattr(result, "info", {}) or {})
 
     metrics = [
         m_analysts,
         m_consensus,
         m_mean_target,
         m_dispersion,
-        m_target_90d,
-        m_eps_est_90d,
+        m_upside,
+        m_fwd_eps,
     ]
 
     # --- Chips (petrol only — Street rating reported not adopted) ---
@@ -320,8 +346,8 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
         "claim": "Street analyst consensus — ratings and targets reported as third-party context.",
         "reframe": (
             "Wide dispersion = real disagreement the consensus hides. "
-            "Target 90d and EPS est 90d are not wired (data gap — no historical series). "
-            "All ratings are the Street's view; this panel never adopts them."
+            "Upside is implied by the Street's mean target; forward EPS is a consensus "
+            "estimate. All figures are the Street's view; this panel never adopts them."
         ),
         "verdicts": [
             Verdict(
