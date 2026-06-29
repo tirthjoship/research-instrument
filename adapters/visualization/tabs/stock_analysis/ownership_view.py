@@ -105,14 +105,17 @@ def _short_interest_metric(info: dict[str, Any]) -> Metric:
         return Metric(
             "short_interest", "Short interest", "—", "data gap", "grey", meaning, basis
         )
+    si = pct * 100
+    # measured risk bands: amber when elevated (>5% of float), grey otherwise
+    tone = "amber" if si > 5 else "grey"
     return Metric(
         "short_interest",
         "Short interest",
-        f"{pct * 100:.1f}%",
+        f"{si:.1f}%",
         "of float",
-        "grey",
+        tone,
         meaning,
-        basis,
+        basis + "; amber >5% of float (elevated borrow/squeeze risk)",
     )
 
 
@@ -134,14 +137,16 @@ def _days_to_cover_metric(info: dict[str, Any]) -> Metric:
         return Metric(
             "days_to_cover", "Days-to-cover", "—", "data gap", "grey", meaning, basis
         )
+    # amber when a crowded short would take many days to unwind (>5)
+    tone = "amber" if dtc > 5 else "grey"
     return Metric(
         "days_to_cover",
         "Days-to-cover",
         f"{dtc:.1f}d",
         "to close short",
-        "grey",
+        tone,
         meaning,
-        basis,
+        basis + "; amber >5 days (crowded short)",
     )
 
 
@@ -185,14 +190,15 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
         )
     else:
         inst_pct = inst_raw * 100
+        # green = passes the "majority institutionally held" threshold (descriptive)
         m_inst = Metric(
             "inst_pct",
             "Institutional %",
             f"{inst_pct:.0f}%",
             "of shares outstanding",
-            "grey",
+            "green" if inst_pct >= 50 else "grey",
             inst_meaning,
-            inst_basis,
+            inst_basis + "; green ≥50% (majority institutionally held)",
         )
 
     # 2. Insiders %
@@ -243,14 +249,15 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
         )
     else:
         float_pct = max(0.0, 100.0 - inst_pct - insider_pct)
+        # amber = thin float (<20%): a liquidity/volatility risk characteristic
         m_float = Metric(
             "public_float",
             "Public float",
             f"{float_pct:.0f}%",
             "approx. unaffiliated",
-            "grey",
+            "amber" if float_pct < 20 else "grey",
             float_meaning,
-            float_basis,
+            float_basis + "; amber <20% (thin float can amplify volatility)",
         )
 
     # 4. Insider net Q (sum of transaction values — reducing/accumulating, never labelled as direction)
@@ -350,20 +357,20 @@ def build_ownership_panel(result: Any) -> str:
     inst_raw = _f(info, "heldPercentInstitutions")
     insider_raw = _f(info, "heldPercentInsiders")
 
-    # Comparison viz: holder composition bars (Institutions, Insiders, Public)
-    holder_rows: list[tuple[str, float, bool]]
+    # Comparison viz: holder composition as one segmented bar (Inst/Insiders/Public)
     if inst_raw is not None and insider_raw is not None:
         inst_pct = inst_raw * 100
         insider_pct = insider_raw * 100
         public_pct = max(0.0, 100.0 - inst_pct - insider_pct)
-        holder_rows = [
-            ("Institutions", inst_pct, True),
-            ("Insiders", insider_pct, False),
-            ("Public", public_pct, False),
-        ]
         left = (
             '<div class="sa-pnl-subh">Holder composition</div>'
-            + panel_charts.peer_bars(holder_rows, unit="%", width=150)
+            + panel_charts.stacked_bar(
+                [
+                    ("Institutions", inst_pct, "#0F6E80"),
+                    ("Insiders", insider_pct, "#b45309"),
+                    ("Public", public_pct, "#cdd7d9"),
+                ]
+            )
         )
     else:
         left = (

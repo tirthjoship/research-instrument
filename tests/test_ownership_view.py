@@ -46,6 +46,32 @@ def test_days_to_cover_computed_from_primitives():
     assert dtc.value == "1.0d"  # 250M / 250M
 
 
+def test_institutional_tile_green_when_majority_held():
+    v = ownership_view.build_ownership_view(_result())  # 66% institutional
+    inst = next(m for m in v["metrics"] if "nstitution" in m.label)
+    assert inst.tone == "green"
+
+
+def test_public_float_amber_when_thin():
+    v = ownership_view.build_ownership_view(
+        _result(heldPercentInstitutions=0.88, heldPercentInsiders=0.05)
+    )  # public float ~7% -> thin
+    flt = next(m for m in v["metrics"] if "float" in m.label.lower())
+    assert flt.tone == "amber"
+
+
+def test_short_interest_amber_when_elevated():
+    v = ownership_view.build_ownership_view(_result(shortPercentOfFloat=0.08))
+    si = next(m for m in v["metrics"] if "Short" in m.label)
+    assert si.tone == "amber"
+
+
+def test_insider_net_tile_stays_grey_adr053():
+    v = ownership_view.build_ownership_view(_result())
+    net = next(m for m in v["metrics"] if "net" in m.label.lower())
+    assert net.tone == "grey"  # falsified signal — never coloured good/bad
+
+
 def test_insiders_chip_grey_and_falsified():
     v = ownership_view.build_ownership_view(_result())
     assert "INSIDERS" in v["chips"] and "falsified" in v["chips"].lower()
