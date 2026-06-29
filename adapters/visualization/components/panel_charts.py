@@ -40,6 +40,33 @@ def peer_bars(rows: type_peer_rows, *, unit: str = "x", width: int = 150) -> str
     return "".join(out)
 
 
+def stacked_bar(segments: Sequence[tuple[str, float, str]], *, height: int = 16) -> str:
+    """One segmented horizontal bar (e.g. holder composition) + a wrapping legend.
+
+    ``segments`` is ``(label, value, colour)``; widths are value/total. A single
+    bar avoids the multi-row label wrapping of separate bars and reads as one
+    whole split into parts.
+    """
+    total = sum(max(0.0, v) for _, v, _ in segments) or 1.0
+    seg = "".join(
+        f'<div style="width:{max(0.0, v) / total * 100:.1f}%;background:{col}"></div>'
+        for _, v, col in segments
+    )
+    bar = (
+        f'<div style="display:flex;height:{height}px;border-radius:6px;'
+        f'overflow:hidden;background:#eef1f2">{seg}</div>'
+    )
+    legend = "".join(
+        '<span style="display:inline-flex;align-items:center;gap:5px;margin:0 12px 0 0;'
+        "font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--ri-ink2)\">"
+        f'<i style="width:9px;height:9px;border-radius:2px;background:{col};'
+        'display:inline-block"></i>'
+        f"{_html.escape(label)} <b>{round(v)}%</b></span>"
+        for label, v, col in segments
+    )
+    return bar + f'<div style="margin-top:7px">{legend}</div>'
+
+
 def horizon_compare_bars(
     rows: Sequence[tuple[str, float, float, bool]], *, unit: str = "%", width: int = 150
 ) -> str:
