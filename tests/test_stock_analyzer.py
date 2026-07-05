@@ -539,6 +539,58 @@ class TestAnalyzeTicker:
         result = self._run_analyze(info=buy_info)
         assert result.analyst_recommendation == "Buy"
 
+    def test_supply_chain_group_gets_co_movement_wired(self) -> None:
+        from adapters.visualization.stock_analyzer import analyze_ticker
+
+        group = {
+            "group": "AI semis",
+            "leaders": ["NVDA"],
+            "followers": ["AMD"],
+            "typical_lag_days": 2,
+            "_is_leader": True,
+        }
+        closes = {
+            "NVDA": [100.0, 102.0, 101.0, 104.0],
+            "AMD": [50.0, 51.0, 50.5, 52.0],
+        }
+        with (
+            patch(f"{_PC}._fetch_ticker_info_impl", return_value=MOCK_INFO),
+            patch(
+                f"{_PC}._batch_fetch_prices_impl",
+                return_value={
+                    "NVDA": {"price": 850.0, "change_pct": 1.5},
+                    "AMD": {"price": 150.0, "change_pct": -0.5},
+                },
+            ),
+            patch(f"{_PC}._batch_fetch_closes_impl", return_value=closes),
+            patch(
+                f"{_PC}._fetch_quarterly_financials_impl",
+                return_value=(None, None, None),
+            ),
+            patch(f"{_PC}._fetch_insider_transactions_impl", return_value=[]),
+            patch(
+                "adapters.visualization.analysis.analyze.load_buzz_signals",
+                return_value=[],
+            ),
+            patch(
+                "adapters.visualization.analysis.analyze.load_recommendation",
+                return_value=None,
+            ),
+            patch(
+                "adapters.visualization.analysis.analyze.find_supply_chain_group",
+                return_value=group,
+            ),
+            patch(
+                "adapters.visualization.analysis.analyze.get_sector_peers",
+                return_value=[],
+            ),
+        ):
+            result = analyze_ticker("NVDA")
+
+        assert result.supply_chain_group is not None
+        assert result.supply_chain_group["co_movement"] is not None
+        assert isinstance(result.supply_chain_group["co_movement"], float)
+
 
 # ---------------------------------------------------------------------------
 # Hold duration derivation
