@@ -285,7 +285,8 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             target_mean is not None and target_mean > 0 and spread / target_mean >= 0.30
         )
         tone = "amber" if is_wide else "grey"
-        sub = "wide disagreement" if is_wide else "spread"
+        range_str = f"${target_low:.0f}–${target_high:.0f}"
+        sub = f"wide {range_str}" if is_wide else range_str
         m_dispersion = Metric(
             "dispersion",
             "Dispersion",
@@ -357,9 +358,10 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             (
                 Verdict(
                     "cau",
-                    "Wide dispersion signals genuine disagreement among analysts — consensus may mask divergence.",
+                    f"Wide ${target_low:.0f}–${target_high:.0f} spread = real disagreement "
+                    "among analysts — consensus may mask divergence.",
                 )
-                if is_wide
+                if is_wide and target_low is not None and target_high is not None
                 else Verdict(
                     "neu",
                     "Target spread is within normal range — analyst estimates broadly aligned.",

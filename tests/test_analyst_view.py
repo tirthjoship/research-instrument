@@ -29,6 +29,22 @@ def test_six_metrics_consensus_dispersion():
     assert any("ispersion" in m.label for m in v["metrics"])
 
 
+def test_dispersion_sub_shows_target_range():
+    v = analyst_view.build_analyst_view(_result())
+    disp = next(m for m in v["metrics"] if "ispersion" in m.label)
+    assert disp.value == "$110"
+    assert "$150" in disp.sub
+    assert "$260" in disp.sub
+
+
+def test_wide_dispersion_verdict_shows_target_range():
+    v = analyst_view.build_analyst_view(_result())
+    assert any(
+        vv.tone == "cau" and "$150" in vv.text and "$260" in vv.text
+        for vv in v["verdicts"]
+    )
+
+
 def test_chips_petrol_never_green():
     v = analyst_view.build_analyst_view(_result())
     assert "t-petrol" in v["chips"]
