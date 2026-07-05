@@ -86,7 +86,7 @@ _SECTION_ANCHORS: dict[str, str] = {
     "Corroboration": "sa-corroboration",
 }
 
-_CORR_DB_PATH = "data/corroboration.db"
+_CORR_DB_PATH = "data/recommendations.db"
 
 # ⓘ glance-tooltips for each group micro-tile — say what the category measures,
 # in descriptive terms (no trade call). Keyed by tile label.

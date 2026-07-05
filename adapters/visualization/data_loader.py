@@ -99,7 +99,7 @@ def _build_corroboration_view(
 
 def load_corroboration_snapshot(
     ticker: str,
-    db_path: str = "data/corroboration.db",
+    db_path: str = "data/recommendations.db",
 ) -> "CorroborationTabView | None":
     """Load latest corroboration snapshot for ticker. Returns None on missing DB or store error."""
     if not Path(db_path).exists():

@@ -28,6 +28,19 @@ from domain.corroboration_models import ConvergenceTier
 from tests.fakes.corroboration_store_fake import FAKE_SNAPSHOT
 
 
+def test_corroboration_db_path_matches_cli_writer() -> None:
+    """compose.py must read the same DB the `corroborate` CLI writes to.
+
+    Regression: this constant used to point at a "data/corroboration.db" file
+    that is never created anywhere — the corroborate CLI always writes to
+    data/recommendations.db — so the Corroboration section silently stayed
+    empty forever regardless of how much real data existed.
+    """
+    from adapters.visualization.tabs.stock_analysis import compose
+
+    assert compose._CORR_DB_PATH == "data/recommendations.db"
+
+
 def _buzz(source: str, sentiment: float, mentions: int, date_str: str) -> Any:
     """Minimal BuzzSignal-like object (the builders use getattr)."""
     return SimpleNamespace(
