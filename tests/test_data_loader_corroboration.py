@@ -1,5 +1,6 @@
 # tests/test_data_loader_corroboration.py
 """Tests for corroboration data loader extension."""
+
 from __future__ import annotations
 
 from datetime import date
@@ -74,3 +75,19 @@ def test_load_corroboration_snapshot_returns_none_for_missing_db(tmp_path):
 
     result = load_corroboration_snapshot("AAPL", db_path=str(tmp_path / "missing.db"))
     assert result is None
+
+
+def test_default_db_path_matches_where_corroborate_cli_writes():
+    """The dashboard must read the same DB the `corroborate` CLI writes to.
+
+    ``corroborate`` (application/cli/corroboration_commands.py) always connects
+    to "data/recommendations.db" via CorroborationStore. If the dashboard's
+    default db_path drifts from that, the Corroboration section silently shows
+    the empty state forever, regardless of how much real data exists.
+    """
+    import inspect
+
+    from adapters.visualization.data_loader import load_corroboration_snapshot
+
+    sig = inspect.signature(load_corroboration_snapshot)
+    assert sig.parameters["db_path"].default == "data/recommendations.db"
