@@ -114,6 +114,69 @@ def _batch_fetch_prices_impl(tickers: tuple[str, ...]) -> dict[str, dict[str, fl
     return result
 
 
+def _batch_fetch_closes_impl(
+    tickers: tuple[str, ...], period: str = "3mo"
+) -> dict[str, list[float]]:
+    """Fetch full daily close series for multiple tickers via one yf.download() call.
+
+    Returns ``{ticker: [close, close, ...]}`` (chronological). Cheaper than N
+    separate ``_fetch_price_history_impl`` calls — one batched network round-trip
+    for the whole group. Used for cross-price correlation (co-movement), where a
+    ~3-month window is enough; unlike ``_batch_fetch_prices_impl`` this keeps the
+    whole series, not just the last close.
+    """
+    if not tickers:
+        return {}
+
+    try:
+        data = yf.download(
+            list(tickers),
+            period=period,
+            auto_adjust=True,
+            progress=False,
+        )
+    except Exception as exc:
+        logger.warning("yf.download failed for {}: {}", tickers, exc)
+        return {}
+
+    if data is None or data.empty:
+        return {}
+
+    result: dict[str, list[float]] = {}
+
+    if len(tickers) == 1:
+        ticker = tickers[0]
+        try:
+            close_obj = data["Close"]
+            if isinstance(close_obj, DataFrame):
+                close_obj = (
+                    close_obj[ticker]
+                    if ticker in close_obj.columns
+                    else close_obj.squeeze("columns")
+                )
+            closes = [float(c) for c in close_obj.dropna()]
+            if closes:
+                result[ticker] = closes
+        except (KeyError, IndexError, TypeError) as exc:
+            logger.warning("Could not extract closes for {}: {}", ticker, exc)
+    else:
+        try:
+            close_df = data["Close"]
+        except KeyError:
+            logger.warning("No 'Close' column in yf.download result for {}", tickers)
+            return {}
+
+        for ticker in tickers:
+            try:
+                closes = [float(c) for c in close_df[ticker].dropna()]
+                if closes:
+                    result[ticker] = closes
+            except (KeyError, IndexError) as exc:
+                logger.warning("Could not extract closes for {}: {}", ticker, exc)
+
+    return result
+
+
 def _fetch_ticker_info_impl(ticker: str) -> dict[str, Any]:
     """Fetch full ticker info dict from yfinance. Returns {} on any error."""
     try:

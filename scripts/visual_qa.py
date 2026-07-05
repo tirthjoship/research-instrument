@@ -132,6 +132,7 @@ def nvda_result() -> SimpleNamespace:
             "notes": "n",
             "_is_leader": True,
             "member_moves": {"NVDA": 2.4, "AMD": -1.1, "AVGO": 0.8, "TSM": 1.5},
+            "co_movement": 0.78,
         },
         quarterly_financials=_qf6(),
         quarterly_cashflow=_qcf6(),

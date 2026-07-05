@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from adapters.visualization.price_cache import (
+    _batch_fetch_closes_impl,
     _batch_fetch_prices_impl,
     _fetch_index_prices_impl,
     _fetch_insider_transactions_impl,
@@ -98,6 +99,62 @@ class TestBatchFetchPrices:
             side_effect=Exception("network error"),
         ):
             result = _batch_fetch_prices_impl(("AAPL",))
+        assert result == {}
+
+
+class TestBatchFetchCloses:
+    def test_multi_ticker_returns_full_close_series(self):
+        arrays = [["Close", "Close"], ["AAPL", "MSFT"]]
+        multi_idx = pd.MultiIndex.from_arrays(arrays, names=["Price", "Ticker"])
+        data = pd.DataFrame(
+            [[150.0, 300.0], [155.0, 305.0], [160.0, 310.0]],
+            columns=multi_idx,
+            index=pd.date_range("2026-01-01", periods=3),
+        )
+
+        with patch("adapters.visualization.price_cache.yf.download", return_value=data):
+            result = _batch_fetch_closes_impl(("AAPL", "MSFT"))
+
+        assert result["AAPL"] == pytest.approx([150.0, 155.0, 160.0])
+        assert result["MSFT"] == pytest.approx([300.0, 305.0, 310.0])
+
+    def test_single_ticker_flat_columns(self):
+        data = pd.DataFrame(
+            {"Close": [200.0, 210.0, 220.0]},
+            index=pd.date_range("2026-01-01", periods=3),
+        )
+
+        with patch("adapters.visualization.price_cache.yf.download", return_value=data):
+            result = _batch_fetch_closes_impl(("GOOG",))
+
+        assert result["GOOG"] == pytest.approx([200.0, 210.0, 220.0])
+
+    def test_single_ticker_multiindex(self):
+        arrays = [["Close"], ["NVDA"]]
+        multi_idx = pd.MultiIndex.from_arrays(arrays, names=["Price", "Ticker"])
+        data = pd.DataFrame(
+            [[500.0], [510.0], [520.0]],
+            columns=multi_idx,
+            index=pd.date_range("2026-01-01", periods=3),
+        )
+
+        with patch("adapters.visualization.price_cache.yf.download", return_value=data):
+            result = _batch_fetch_closes_impl(("NVDA",))
+
+        assert result["NVDA"] == pytest.approx([500.0, 510.0, 520.0])
+
+    def test_empty_tickers_returns_empty_dict(self):
+        with patch("adapters.visualization.price_cache.yf.download") as mock_dl:
+            result = _batch_fetch_closes_impl(())
+        assert result == {}
+        mock_dl.assert_not_called()
+
+    def test_download_failure_returns_empty_dict(self):
+        with patch(
+            "adapters.visualization.price_cache.yf.download",
+            side_effect=Exception("network error"),
+        ):
+            result = _batch_fetch_closes_impl(("AAPL",))
         assert result == {}
 
 

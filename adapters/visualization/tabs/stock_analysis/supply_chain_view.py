@@ -4,10 +4,12 @@ Supply-chain grouping tells you which tickers share sector exposure and move
 together historically.  High co-movement means sector risk travels together.
 This is structural context only — it is NOT a directional signal.
 
+Wired: Co-movement (average pairwise correlation of daily returns across the
+group, from ``supply_chain_group.co_movement``) and 1-day price moves for
+group members (``supply_chain_group.member_moves``).
+
 DATA-GAP items:
-- Co-movement correlation (not computed — no cross-price correlation pipeline wired)
-- Lead/lag quantile (not computed — same pipeline gap)
-- 1-week price moves for group members (change_pct always 0 — price-change feed not wired)
+- Lead/lag quantile (not computed — no lead-series pipeline wired)
 - Ticker-vs-group lead series (no time-series wired)
 """
 
@@ -27,6 +29,7 @@ from adapters.visualization.tabs.stock_analysis.valuation_view import Metric
 # ---------------------------------------------------------------------------
 
 _DATA_GAP = "—"
+_HIGH_COMOVEMENT = 0.6
 
 _STRIP_TILE = (
     '<div class="sa-tile t-{tone}"><div class="lab">{lbl} {info}</div>'
@@ -63,7 +66,7 @@ def build_supply_chain_view(result: Any) -> dict[str, Any]:
       2. Role        — leader or follower (from _is_leader flag)
       3. Members     — total tickers in group (leaders + followers)
       4. Typical lag — characteristic lag in days from group config
-      5. Co-movement — DATA-GAP (correlation pipeline not wired)
+      5. Co-movement — average pairwise correlation, or DATA-GAP if not computed
       6. Lead/lag    — DATA-GAP (quantile series not wired)
 
     Chips:
@@ -91,6 +94,7 @@ def build_supply_chain_view(result: Any) -> dict[str, Any]:
     role_str = "leader" if is_leader else "follower"
     member_count = len(leaders) + len(followers)
     lag_str = f"{lag_days} days" if lag_days is not None else _DATA_GAP
+    co_movement: float | None = grp.get("co_movement") if grp is not None else None
 
     # ---- 6 metrics ----
     metrics: list[Metric] = []
@@ -155,20 +159,28 @@ def build_supply_chain_view(result: Any) -> dict[str, Any]:
         )
     )
 
-    # 5. Co-movement — DATA-GAP
+    # 5. Co-movement — average pairwise correlation of daily returns, or DATA-GAP
     metrics.append(
         Metric(
             "sc_comovement",
             "Co-movement",
-            _DATA_GAP,
-            "data gap",
-            "grey",
+            f"{co_movement:.2f}" if co_movement is not None else _DATA_GAP,
             (
-                "Cross-price co-movement correlation within the group.  "
-                "The cross-price correlation pipeline is not wired — "
-                "this value is always data gap."
+                "pairwise correlation"
+                if co_movement is not None
+                else "data gap — insufficient price history"
             ),
-            "data gap — cross-price correlation pipeline not wired",
+            (
+                "amber"
+                if co_movement is not None and co_movement >= _HIGH_COMOVEMENT
+                else "grey"
+            ),
+            (
+                "Average pairwise correlation of daily returns across the group "
+                "(~3mo). High = the group trades as a pack — sector risk travels "
+                "together, not a directional signal."
+            ),
+            "avg(pearson(daily returns)) across supply_chain_group members",
         )
     )
 
@@ -211,21 +223,44 @@ def build_supply_chain_view(result: Any) -> dict[str, Any]:
             rule="supply_chain_group is None — no group assignment available for this ticker",
         )
 
+    if co_movement is not None:
+        comovement_verdict = (
+            Verdict(
+                "cau",
+                f"Co-movement {co_movement:.2f} across the group — high, sector risk travels together.",
+            )
+            if co_movement >= _HIGH_COMOVEMENT
+            else Verdict(
+                "neu",
+                f"Co-movement {co_movement:.2f} across the group — moderate, some independent movement.",
+            )
+        )
+        comovement_reframe = (
+            f"Co-movement {co_movement:.2f} — high means sector risk travels together; "
+            "structural context, not a signal."
+        )
+    else:
+        comovement_verdict = Verdict(
+            "neu",
+            "Co-movement correlation not wired — data gap, insufficient price history.",
+        )
+        comovement_reframe = (
+            "High co-movement means sector risk travels together; "
+            "structural context, not a signal. "
+            "Co-movement correlation not wired — data gap."
+        )
+
     return {
         "metrics": metrics,
         "chips": chips,
         "claim": "Structural supply-chain position — group membership and characteristic lag.",
         "reframe": (
-            "High co-movement means sector risk travels together; "
-            "structural context, not a signal. "
-            "Co-movement correlation and lead/lag quantile are not wired — data gap. "
-            "1-week price moves for group members are not wired (change_pct=0 placeholder)."
+            f"{comovement_reframe} "
+            "Lead/lag quantile is not wired — data gap. "
+            "1-day price moves for group members are wired from live quotes."
         ),
         "verdicts": [
-            Verdict(
-                "neu",
-                "Co-movement correlation not wired — data gap, cross-price pipeline absent.",
-            ),
+            comovement_verdict,
             Verdict(
                 "neu",
                 "Lead/lag series not wired — data gap, quantile computation absent.",
@@ -251,7 +286,7 @@ def build_supply_chain_panel(result: Any) -> str:
         ]
         bars_html = panel_charts.peer_bars(rows, unit="%")
         cap = (
-            "recent (~5-day) price move per member"
+            "1-day price move per member"
             if moves
             else "member moves unavailable — data gap"
         )

@@ -19,7 +19,10 @@ from adapters.visualization.analysis.scoring.health import score_health
 from adapters.visualization.analysis.scoring.ownership import score_ownership
 from adapters.visualization.analysis.scoring.performance import score_performance
 from adapters.visualization.analysis.scoring.sentiment import score_sentiment
-from adapters.visualization.analysis.scoring.supply_chain import score_supply_chain
+from adapters.visualization.analysis.scoring.supply_chain import (
+    compute_co_movement,
+    score_supply_chain,
+)
 from adapters.visualization.analysis.scoring.valuation import score_valuation
 
 
@@ -28,6 +31,7 @@ def analyze_ticker(
 ) -> AnalysisResult:
     """Run full analysis for a single ticker. Returns AnalysisResult."""
     from adapters.visualization.price_cache import (
+        _batch_fetch_closes_impl,
         _batch_fetch_prices_impl,
         _fetch_annual_revenue_impl,
         _fetch_insider_transactions_impl,
@@ -71,12 +75,14 @@ def analyze_ticker(
         )
         if members:
             mprices = _batch_fetch_prices_impl(tuple(members))
+            closes = _batch_fetch_closes_impl((ticker, *members))
             sc_group = {
                 **sc_group,
                 "member_moves": {
                     t: float(mprices.get(t, {}).get("change_pct", 0.0) or 0.0)
                     for t in members
                 },
+                "co_movement": compute_co_movement(closes),
             }
 
     # 8. Fetch peer data for comparison

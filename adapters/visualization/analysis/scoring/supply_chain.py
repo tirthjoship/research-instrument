@@ -2,9 +2,59 @@
 
 from __future__ import annotations
 
+import math
+from itertools import combinations
 from typing import Any, Literal
 
 from adapters.visualization.analysis.models import SectionScore
+
+
+def compute_co_movement(closes_by_ticker: dict[str, list[float]]) -> float | None:
+    """Average pairwise Pearson correlation of daily returns across tickers.
+
+    Descriptive group-cohesion measure: high average correlation means the
+    group trades as a pack (structural context, not a directional signal).
+    Series are aligned to the shortest common length (from the end) before
+    computing returns. Series with fewer than 2 returns or zero variance are
+    excluded. Returns ``None`` when fewer than 2 usable series remain.
+    """
+    returns_by_ticker: dict[str, list[float]] = {}
+    for ticker, closes in closes_by_ticker.items():
+        if len(closes) < 3:
+            continue
+        returns = [
+            (closes[i] - closes[i - 1]) / closes[i - 1]
+            for i in range(1, len(closes))
+            if closes[i - 1] != 0
+        ]
+        if len(returns) >= 2 and len(set(returns)) > 1:
+            returns_by_ticker[ticker] = returns
+
+    if len(returns_by_ticker) < 2:
+        return None
+
+    correlations: list[float] = []
+    for t1, t2 in combinations(returns_by_ticker, 2):
+        r1, r2 = returns_by_ticker[t1], returns_by_ticker[t2]
+        n = min(len(r1), len(r2))
+        r1, r2 = r1[-n:], r2[-n:]
+        corr = _pearson(r1, r2)
+        if corr is not None:
+            correlations.append(corr)
+
+    return sum(correlations) / len(correlations) if correlations else None
+
+
+def _pearson(xs: list[float], ys: list[float]) -> float | None:
+    """Pearson correlation coefficient; None if either series has zero variance."""
+    n = len(xs)
+    mean_x, mean_y = sum(xs) / n, sum(ys) / n
+    cov = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys))
+    var_x = sum((x - mean_x) ** 2 for x in xs)
+    var_y = sum((y - mean_y) ** 2 for y in ys)
+    if var_x == 0 or var_y == 0:
+        return None
+    return cov / math.sqrt(var_x * var_y)
 
 
 def find_supply_chain_group(ticker: str) -> dict[str, Any] | None:
