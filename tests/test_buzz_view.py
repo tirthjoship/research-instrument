@@ -47,6 +47,58 @@ def test_panel_renders() -> None:
     assert "Buzz" in buzz_view.build_buzz_panel(_result())
 
 
+def test_mention_volume_chart_renders_with_multiple_distinct_days() -> None:
+    # buzz_signals are loaded from SQLite across every past harvest run, so
+    # real tickers often DO have 2+ distinct fetched_at days even though a
+    # single run only ever sees "today" -- the trend slot should use them
+    # instead of a permanent "not wired" placeholder.
+    buzz = [
+        _sig("yahoo_finance", 1, 0.1),
+        SimpleNamespace(
+            source="yahoo_finance",
+            mention_count=1,
+            sentiment_raw=0.1,
+            fetched_at="2026-06-03",
+        ),
+        SimpleNamespace(
+            source="yahoo_finance",
+            mention_count=1,
+            sentiment_raw=0.1,
+            fetched_at="2026-06-04",
+        ),
+    ]
+    html = buzz_view.build_buzz_panel(_result(buzz=buzz))
+    assert "mention-volume trend not wired" not in html
+    assert "Mentions by day" in html
+
+
+def test_mention_volume_datagap_with_single_day() -> None:
+    # default fixture signals are all dated "2026-06-27" -- only one distinct day
+    html = buzz_view.build_buzz_panel(_result())
+    assert "data gap" in html.split("Mentions by day")[1][:200]
+
+
+def test_verdict_mentions_data_gap_only_when_single_day() -> None:
+    v_gap = buzz_view.build_buzz_view(_result())
+    assert any(
+        "not wired" in vv.text and "data gap" in vv.text for vv in v_gap["verdicts"]
+    )
+
+    buzz = [
+        _sig("yahoo_finance", 1, 0.1),
+        SimpleNamespace(
+            source="yahoo_finance",
+            mention_count=1,
+            sentiment_raw=0.1,
+            fetched_at="2026-06-03",
+        ),
+    ]
+    v_have = buzz_view.build_buzz_view(_result(buzz=buzz))
+    trend_verdict = v_have["verdicts"][0]
+    assert "not wired" not in trend_verdict.text.lower()
+    assert "recorded day" in trend_verdict.text.lower()
+
+
 def test_no_streamlit_and_clean() -> None:
     src = inspect.getsource(buzz_view)
     assert "import streamlit" not in src
