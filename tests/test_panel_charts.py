@@ -35,6 +35,21 @@ def test_trend_lines_multi_series_labels_each_line():
     assert "Cash" in svg and "Debt" in svg and svg.count("<text") == 2
 
 
+def test_trend_lines_label_lines_false_omits_inline_labels():
+    # two lines that converge at the same endpoint would otherwise render
+    # overlapping/garbled inline text; callers that already name both series
+    # in a caption can opt out of the inline labels entirely.
+    svg = panel_charts.trend_lines(
+        [
+            ("price", [100.0, 150.0, 200.0], "#0F6E80"),
+            ("target", [200.0, 200.0, 200.0], "#9aa6aa"),
+        ],
+        label_lines=False,
+    )
+    assert "<text" not in svg
+    assert svg.count("<polyline") == 2
+
+
 def test_trend_lines_empty_is_blank():
     assert panel_charts.trend_lines([]) == ""
 

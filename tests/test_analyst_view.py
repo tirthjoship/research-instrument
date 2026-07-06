@@ -87,6 +87,44 @@ def test_panel_renders():
     assert "Analyst" in analyst_view.build_analyst_panel(_result())
 
 
+def test_price_vs_target_chart_renders_when_price_history_available():
+    # price_history is already fetched for the Performance panel — the Analyst
+    # panel's "mean-target trend" slot should use it instead of a dead data-gap.
+    closes = [150.0 + i * 0.2 for i in range(60)]
+    result = SimpleNamespace(
+        analyst_panel=_panel(), ticker="NVDA", price_history={"closes": closes}
+    )
+    html = analyst_view.build_analyst_panel(result)
+    assert "mean-target trend not wired" not in html
+    assert "Price vs. mean target" in html
+    assert "polyline" in html
+    chart_region = html.split("Price vs. mean target")[1].split("sa-drill")[0]
+    assert "data gap" not in chart_region
+    # price and target lines converge (both end near $200) — inline SVG labels
+    # would overlap into garbled text, so this chart must not emit any.
+    assert "<text" not in chart_region
+    assert "$200" in chart_region
+
+
+def test_price_vs_target_chart_datagap_without_price_history():
+    result = SimpleNamespace(analyst_panel=_panel(), ticker="NVDA")
+    html = analyst_view.build_analyst_panel(result)
+    assert "data gap" in html.split("Price vs. mean target")[1][:200]
+
+
+def test_verdict_mentions_data_gap_only_when_price_history_missing():
+    no_history = SimpleNamespace(analyst_panel=_panel(), ticker="NVDA")
+    v_gap = analyst_view.build_analyst_view(no_history)
+    assert any("data gap" in vv.text for vv in v_gap["verdicts"])
+
+    closes = [150.0 + i * 0.2 for i in range(60)]
+    with_history = SimpleNamespace(
+        analyst_panel=_panel(), ticker="NVDA", price_history={"closes": closes}
+    )
+    v_have = analyst_view.build_analyst_view(with_history)
+    assert not any("data gap" in vv.text for vv in v_have["verdicts"])
+
+
 def test_no_streamlit_and_clean():
     src = inspect.getsource(analyst_view)
     assert "import streamlit" not in src

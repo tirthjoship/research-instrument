@@ -110,12 +110,18 @@ def trend_lines(
     width: int = 300,
     unit: str = "",
     x_labels: tuple[str, str] | None = None,
+    label_lines: bool = True,
 ) -> str:
     """One or more polylines on a shared y-scale, with HTML axis numbers.
 
     Mirrors ``bars_and_line``: the crisp y-axis (max/min) and optional x-axis
     (first/last period) labels are rendered as HTML around the SVG so they are
     not distorted by ``preserveAspectRatio="none"``. '' if no series have data.
+
+    ``label_lines=False`` suppresses the inline end-of-line text labels even
+    with 2+ series — for callers whose lines can converge at the same value
+    (the labels would otherwise overlap into unreadable text) and who already
+    name each series in a caption instead.
     """
     series = [(lbl, vals, col) for lbl, vals, col in series if vals]
     if not series:
@@ -123,7 +129,7 @@ def trend_lines(
     allv = [v for _, vals, _ in series for v in vals]
     lo, hi = min(allv), max(allv)
     span = (hi - lo) or 1.0
-    multi = len(series) > 1
+    multi = len(series) > 1 and label_lines
     lines = []
     for lbl, vals, col in series:
         n = len(vals)

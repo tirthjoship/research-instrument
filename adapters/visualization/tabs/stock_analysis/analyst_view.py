@@ -4,9 +4,12 @@ This panel reports third-party analyst ratings and price targets as facts.
 It does NOT adopt, endorse, or echo analyst recommendations as the project's view.
 All tone is petrol (never green): the data is attributed to the Street, not the model.
 
-DATA-GAP items: mean-target trend (no time series wired). The 90-day target and
-EPS-estimate history are unavailable, so those slots show the current implied
-upside to the mean target and the consensus forward EPS instead.
+DATA-GAP items: the 90-day target and EPS-estimate revision *history* (no
+timestamped estimate series available) — those slots show the current implied
+upside to the mean target and the consensus forward EPS instead. The trend viz
+uses the price_history already fetched for the Performance panel plotted
+against the mean target — it is a price/target comparison, not a target
+history (still a data gap without price_history).
 """
 
 from __future__ import annotations
@@ -84,6 +87,14 @@ def _fwd_eps_metric(info: dict[str, Any]) -> Metric:
     return Metric(
         "fwd_eps", "Fwd EPS", f"${eps:.2f}", "consensus est", "petrol", meaning, basis
     )
+
+
+def _distribution_and_trend_verdict_text(result: Any) -> str:
+    ph = getattr(result, "price_history", None) or {}
+    closes = ph.get("closes") if isinstance(ph, dict) else None
+    if closes and len(closes) >= 30:
+        return "Rating distribution shown when available; trend shows price vs. the Street's mean target."
+    return "Rating distribution shown when available; mean-target trend needs a history (data gap)."
 
 
 # ---------------------------------------------------------------------------
@@ -351,10 +362,7 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             "estimate. All figures are the Street's view; this panel never adopts them."
         ),
         "verdicts": [
-            Verdict(
-                "neu",
-                "Rating distribution shown when available; mean-target trend needs a history (data gap).",
-            ),
+            Verdict("neu", _distribution_and_trend_verdict_text(result)),
             (
                 Verdict(
                     "cau",
@@ -369,6 +377,35 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             ),
         ],
     }
+
+
+def _price_vs_target_html(result: Any, target_mean: float | None) -> str:
+    """Price history (already fetched for the Performance panel) plotted against
+    the Street's mean target — a real chart in place of the dead trend slot.
+    Not a target *history* (no timestamped estimate series exists); it is an
+    honest price/target comparison, so it is labelled accordingly."""
+    ph = getattr(result, "price_history", None) or {}
+    closes = ph.get("closes") if isinstance(ph, dict) else None
+    closes = [float(c) for c in closes] if closes else []
+    subh = '<div class="sa-pnl-subh">Price vs. mean target</div>'
+    if len(closes) >= 30 and target_mean:
+        series = [
+            ("price", closes, "#0F6E80"),
+            ("target", [float(target_mean)] * len(closes), "#9AA5AD"),
+        ]
+        # label_lines=False: the price and target lines can converge at the same
+        # value, which would otherwise render overlapping/garbled inline SVG
+        # text — the caption below names both lines (with the target's dollar
+        # value) instead.
+        return (
+            subh
+            + panel_charts.trend_lines(
+                series, x_labels=("start", "now"), label_lines=False
+            )
+            + '<div class="sa-pnl-cap">Trailing price (teal) vs. the Street\'s '
+            f"${target_mean:.0f} mean target (grey) — context, not a forecast.</div>"
+        )
+    return subh + '<div class="sa-pnl-cap">data gap — price history unavailable</div>'
 
 
 def build_analyst_panel(result: Any) -> str:
@@ -391,11 +428,9 @@ def build_analyst_panel(result: Any) -> str:
             '<div class="sa-pnl-cap">rating distribution unavailable — data gap</div>'
         )
 
-    # Trend viz: mean-target trend — DATA-GAP (no time series wired)
-    right = (
-        '<div class="sa-pnl-subh">Mean-target trend</div>'
-        '<div class="sa-pnl-cap">mean-target trend not wired — data gap</div>'
-    )
+    panel = getattr(result, "analyst_panel", None)
+    target_mean = _safe_float(getattr(panel, "target_mean", None))
+    right = _price_vs_target_html(result, target_mean)
 
     return build_panel(
         number=1,
