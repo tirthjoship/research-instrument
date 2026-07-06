@@ -5,9 +5,12 @@ This panel renders attention/volume data only: source mention counts, dates,
 and per-source distribution.
 
 DATA-GAP items:
-- Baseline multiple (no historical baseline wired — ELEVATED chip never emitted)
-- Mention-volume trend (no time-series wired)
+- Baseline multiple (no defined historical baseline window — ELEVATED chip never emitted)
 - Real headline text (BuzzSignal has no titles; summaries show source+count+date only)
+
+Mention-volume trend uses whatever distinct fetched_at days are already on
+buzz_signals (loaded from every past harvest run, not just today) — still a
+data gap for tickers with <2 distinct days recorded.
 """
 
 from __future__ import annotations
@@ -55,6 +58,19 @@ def _source_totals(buzz_signals: list[Any]) -> dict[str, int]:
         cnt = int(getattr(sig, "mention_count", 0) or 0)
         if src:
             totals[src] = totals.get(src, 0) + cnt
+    return totals
+
+
+def _day_totals(buzz_signals: list[Any]) -> dict[str, int]:
+    """Aggregate mention_count per calendar day (fetched_at[:10])."""
+    totals: dict[str, int] = {}
+    for sig in buzz_signals:
+        fa = str(getattr(sig, "fetched_at", "") or "")
+        if not fa:
+            continue
+        day = fa[:10]
+        cnt = int(getattr(sig, "mention_count", 0) or 0)
+        totals[day] = totals.get(day, 0) + cnt
     return totals
 
 
@@ -222,20 +238,29 @@ def build_buzz_view(result: Any) -> dict[str, Any]:
             ),
         )
 
+    n_trend_days = len(_day_totals(buzz_signals))
+    trend_reframe = (
+        "mention-volume trend shown by recorded day"
+        if n_trend_days >= 2
+        else "mention-volume trend not wired (data gap)"
+    )
+    trend_verdict = (
+        "Mention-volume trend shown by recorded day — sparse, not a continuous series."
+        if n_trend_days >= 2
+        else "Mention-volume trend not wired — data gap, no time-series available."
+    )
+
     return {
         "metrics": metrics,
         "chips": chips,
         "claim": "Attention and volume across monitored platforms — descriptive only.",
         "reframe": (
             "Buzz-to-return hypothesis falsified (ADR-044); attention only, never a signal. "
-            "Baseline multiple and mention-volume trend are not wired (data gap). "
+            f"Baseline multiple is not wired (data gap); {trend_reframe}. "
             "Mention summaries show attributed source and count, not scored items."
         ),
         "verdicts": [
-            Verdict(
-                "neu",
-                "Mention-volume trend not wired — data gap, no time-series available.",
-            ),
+            Verdict("neu", trend_verdict),
             Verdict(
                 "neu",
                 "Baseline multiple not wired — data gap, no historical comparison available.",
@@ -262,12 +287,24 @@ def build_buzz_panel(result: Any) -> str:
 
     left = '<div class="sa-pnl-subh">Mentions by source</div>' + bars_html
 
-    # Trend viz: mention-volume — DATA-GAP (no time-series wired)
+    # Trend viz: mentions by day — real when 2+ distinct days are on record,
+    # otherwise an honest data gap (not a permanent placeholder).
     summaries_html = _mention_summaries_html(buzz_signals)
+    day_totals = _day_totals(buzz_signals)
+    if len(day_totals) >= 2:
+        day_rows: list[tuple[str, float, bool]] = [
+            (day[5:], float(cnt), False) for day, cnt in sorted(day_totals.items())
+        ]
+        trend_html = (
+            panel_charts.peer_bars(day_rows, unit=" mentions")
+            + '<div class="sa-pnl-cap">Recorded days only — sparse, not a continuous series.</div>'
+        )
+    else:
+        trend_html = '<div class="sa-pnl-cap">mention-volume trend — data gap (fewer than 2 distinct days recorded)</div>'
     right = (
-        '<div class="sa-pnl-subh">Mention-volume trend</div>'
-        '<div class="sa-pnl-cap">mention-volume trend not wired — data gap</div>'
-        '<div class="sa-pnl-subh" style="margin-top:8px">Mention summaries</div>'
+        '<div class="sa-pnl-subh">Mentions by day</div>'
+        + trend_html
+        + '<div class="sa-pnl-subh" style="margin-top:8px">Mention summaries</div>'
         + summaries_html
     )
 
