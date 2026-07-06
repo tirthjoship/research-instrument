@@ -36,6 +36,15 @@ def test_view_has_six_multiples():
     )
 
 
+def test_ps_tile_has_its_own_copy_not_ev_ebitda():
+    # P/S must not silently borrow EV/EBITDA's tooltip copy — they're different multiples.
+    v = valuation_view.build_valuation_view(_result())
+    ps = next(m for m in v["metrics"] if m.label == "P/S")
+    ev_ebitda = next(m for m in v["metrics"] if m.label == "EV/EBITDA")
+    assert ps.meaning != ev_ebitda.meaning
+    assert "sales" in ps.meaning.lower()
+
+
 def test_pfcf_computed():
     v = valuation_view.build_valuation_view(_result())
     pfcf = next(m for m in v["metrics"] if "P/FCF" in m.label)

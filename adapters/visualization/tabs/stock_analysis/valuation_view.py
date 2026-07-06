@@ -1,4 +1,4 @@
-"""Valuation panel (spec D10): 6 multiples vs peers + P/E history + fair value (DATA-GAP) -> measured colour."""
+"""Valuation panel (spec D10): 6 multiples vs peers + P/E-vs-1yr-range + analyst-target fair value -> measured colour."""
 
 from __future__ import annotations
 
@@ -87,9 +87,7 @@ def build_valuation_view(result: Any) -> dict[str, Any]:
         _multiple(info, "trailingPE", "P/E ttm", "pe_ttm", rich_pct=pe_pct),
         _multiple(info, "forwardPE", "P/E fwd", "pe_fwd"),
         _multiple(info, "pegRatio", "PEG", "peg", suffix=""),
-        _multiple(
-            info, "priceToSalesTrailing12Months", "P/S", "ev_ebitda"
-        ),  # P/S uses ev_ebitda copy; yfinance key is ...Trailing12Months
+        _multiple(info, "priceToSalesTrailing12Months", "P/S", "ps"),
         _multiple(info, "enterpriseToEbitda", "EV/EBITDA", "ev_ebitda"),
         Metric(
             "p_fcf",
