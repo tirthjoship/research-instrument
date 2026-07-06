@@ -45,6 +45,26 @@ def test_empty_degrades() -> None:
     assert "Sentiment" in sentiment_view.build_sentiment_panel(_result(buzz=[]))
 
 
+def test_overlay_gap_reason_is_price_series_when_price_history_missing() -> None:
+    # no price_history attribute at all -> the honest reason is a missing price series
+    html = sentiment_view.build_sentiment_panel(_result())
+    assert "no price series available" in html
+
+
+def test_overlay_gap_reason_is_buzz_sparsity_when_price_history_present() -> None:
+    # price_history IS available (as it is for every real ticker via the
+    # Performance panel) -- the true blocker is too few distinct buzz days,
+    # not a missing price series. This was a mislabeled DATA-GAP reason.
+    result = SimpleNamespace(
+        buzz_signals=[_sig(0.3), _sig(0.4)],  # both fetched_at "2026-06-27" -> 1 day
+        ticker="NVDA",
+        price_history={"closes": [100.0, 101.0, 102.0]},
+    )
+    html = sentiment_view.build_sentiment_panel(result)
+    assert "no price series" not in html
+    assert "buzz too sparse to correlate with price" in html
+
+
 def test_no_streamlit_and_clean() -> None:
     src = inspect.getsource(sentiment_view)
     assert "import streamlit" not in src

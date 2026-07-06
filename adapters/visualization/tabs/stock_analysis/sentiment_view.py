@@ -6,7 +6,10 @@ that result honestly: tone looks positive AND it doesn't matter.
 
 DATA-GAP items:
 - Per-source IC (computed only at universe level; by-source decomposition not wired)
-- Sentiment-vs-price series (no price series wired)
+- Sentiment-vs-price series: price_history IS available (see the Performance/Analyst
+  panels), but buzz_signals rarely has enough distinct fetched_at days to build a
+  meaningful overlay against it — the real blocker is buzz date-sparsity, not a
+  missing price series.
 """
 
 from __future__ import annotations
@@ -92,6 +95,32 @@ def _source_means(buzz_signals: list[Any]) -> dict[str, float]:
         if src:
             buckets.setdefault(src, []).append(val)
     return {src: sum(vs) / len(vs) for src, vs in buckets.items()}
+
+
+def _distinct_buzz_days(buzz_signals: list[Any]) -> int:
+    dates = {str(getattr(sig, "fetched_at", "") or "")[:10] for sig in buzz_signals}
+    dates.discard("")
+    return len(dates)
+
+
+_OVERLAY_MIN_DAYS = 5
+
+
+def _overlay_gap_reason(result: Any, buzz_signals: list[Any]) -> str:
+    """Honest reason the sentiment-vs-price overlay is a data gap.
+
+    price_history IS available (Performance/Analyst panels use it) — the real
+    blocker is that buzz_signals almost never has enough distinct days to
+    plot a meaningful overlay against it, not a missing price series.
+    """
+    ph = getattr(result, "price_history", None) or {}
+    has_price = bool(ph.get("closes")) if isinstance(ph, dict) else False
+    if not has_price:
+        return "no price series available"
+    n_days = _distinct_buzz_days(buzz_signals)
+    if n_days < _OVERLAY_MIN_DAYS:
+        return f"buzz too sparse to correlate with price ({n_days} distinct day{'s' if n_days != 1 else ''} recorded, need {_OVERLAY_MIN_DAYS}+)"
+    return "not yet built"
 
 
 # ---------------------------------------------------------------------------
@@ -232,6 +261,8 @@ def build_sentiment_view(result: Any) -> dict[str, Any]:
         rule="cross-sectional IC ~0 on a clean 430-ticker universe, ADR-044",
     )
 
+    overlay_gap = _overlay_gap_reason(result, buzz_signals)
+
     return {
         "metrics": metrics,
         "chips": chips,
@@ -239,7 +270,7 @@ def build_sentiment_view(result: Any) -> dict[str, Any]:
         "reframe": (
             "ADR-044 falsified the sentiment-to-return hypothesis: tone looks positive "
             "and it doesn't matter — that candour is the product. "
-            "Sentiment-vs-price series not wired (data gap — no price series)."
+            f"Sentiment-vs-price series not wired (data gap — {overlay_gap})."
         ),
         "verdicts": [
             Verdict(
@@ -248,7 +279,7 @@ def build_sentiment_view(result: Any) -> dict[str, Any]:
             ),
             Verdict(
                 "neu",
-                "Sentiment-vs-price series not wired — data gap, no price series available.",
+                f"Sentiment-vs-price series not wired — data gap, {overlay_gap}.",
             ),
         ],
     }
@@ -285,12 +316,13 @@ def build_sentiment_panel(result: Any) -> str:
 
     left = '<div class="sa-pnl-subh">Tone mix + by source</div>' + bars_html
 
-    # Trend viz: sentiment-vs-price — DATA-GAP (no price series wired)
+    # Trend viz: sentiment-vs-price — DATA-GAP; reason is dynamic (see
+    # _overlay_gap_reason) since price_history is available, buzz sparsity is
+    # the actual, ticker-dependent blocker.
+    overlay_gap = _overlay_gap_reason(result, buzz_signals)
     right = (
         '<div class="sa-pnl-subh">Sentiment vs price</div>'
-        '<div class="sa-pnl-cap">'
-        "sentiment-vs-price series not wired — data gap (no price series)"
-        "</div>"
+        f'<div class="sa-pnl-cap">sentiment-vs-price series not wired — data gap ({overlay_gap})</div>'
     )
 
     return build_panel(
