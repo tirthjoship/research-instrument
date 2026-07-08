@@ -13,6 +13,24 @@ from adapters.visualization.analysis.scoring.supply_chain import find_supply_cha
 BUZZ_MENTION_WINDOW_DAYS = 30
 BUZZ_FALLBACK_WINDOW_DAYS = 90
 
+# Curated industry/sector peer pools — shared by get_sector_peers() (valuation
+# comparables) and supply_chain_resolver.py (correlation-cluster candidates).
+INDUSTRY_PEERS: dict[str, list[str]] = {
+    "Semiconductors": ["AMD", "AVGO", "QCOM", "TXN", "INTC", "MU"],
+    "Semiconductor Equipment & Materials": ["AMAT", "LRCX", "KLAC", "ASML"],
+    "Software - Infrastructure": ["MSFT", "ORCL", "ADBE", "CRM"],
+    "Software - Application": ["CRM", "NOW", "INTU", "ADBE"],
+    "Consumer Electronics": ["AAPL", "SONY", "DELL", "HPQ"],
+}
+SECTOR_PEERS: dict[str, list[str]] = {
+    "Technology": ["MSFT", "AAPL", "GOOGL", "META"],
+    "Healthcare": ["JNJ", "PFE", "ABBV", "MRK"],
+    "Financial Services": ["JPM", "BAC", "GS", "MS"],
+    "Consumer Cyclical": ["AMZN", "TSLA", "HD", "NKE"],
+    "Energy": ["XOM", "CVX", "COP", "SLB"],
+    "Industrials": ["CAT", "DE", "HON", "GE"],
+}
+
 
 def _distinct_harvest_days(rows: list[Any]) -> int:
     dates = {str(getattr(r, "fetched_at", "") or "")[:10] for r in rows}
@@ -150,22 +168,7 @@ def get_sector_peers(
     peer_tickers: list[str] = []
     sector = info.get("sector", "")
     industry = info.get("industry", "")
-    _INDUSTRY_PEERS: dict[str, list[str]] = {
-        "Semiconductors": ["AMD", "AVGO", "QCOM", "TXN", "INTC", "MU"],
-        "Semiconductor Equipment & Materials": ["AMAT", "LRCX", "KLAC", "ASML"],
-        "Software - Infrastructure": ["MSFT", "ORCL", "ADBE", "CRM"],
-        "Software - Application": ["CRM", "NOW", "INTU", "ADBE"],
-        "Consumer Electronics": ["AAPL", "SONY", "DELL", "HPQ"],
-    }
-    _SECTOR_PEERS: dict[str, list[str]] = {
-        "Technology": ["MSFT", "AAPL", "GOOGL", "META"],
-        "Healthcare": ["JNJ", "PFE", "ABBV", "MRK"],
-        "Financial Services": ["JPM", "BAC", "GS", "MS"],
-        "Consumer Cyclical": ["AMZN", "TSLA", "HD", "NKE"],
-        "Energy": ["XOM", "CVX", "COP", "SLB"],
-        "Industrials": ["CAT", "DE", "HON", "GE"],
-    }
-    pool = _INDUSTRY_PEERS.get(industry) or _SECTOR_PEERS.get(sector)
+    pool = INDUSTRY_PEERS.get(industry) or SECTOR_PEERS.get(sector)
     if pool:
         peer_tickers = [t for t in pool if t != ticker][:4]
     elif sc_group:

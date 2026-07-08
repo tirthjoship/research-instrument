@@ -434,6 +434,69 @@ def volume_bars(
     )
 
 
+type_bubble_rows = Sequence[tuple[str, float, float, bool]]
+
+
+def group_bubbles(
+    rows: type_bubble_rows, *, width: int = 300, height: int = 132
+) -> str:
+    """Supply-chain group map: x = market-cap rank (larger → right), y = 1-week
+    move, bubble radius ~ relative market cap. Subject ticker in petrol, peers
+    grey. ``rows`` is ``(ticker, market_cap, one_week_pct, is_subject)``; entries
+    with a non-positive market cap are dropped. '' if fewer than 2 remain.
+    """
+    usable = [r for r in rows if r[1] > 0]
+    if len(usable) < 2:
+        return ""
+    ordered = sorted(usable, key=lambda r: r[1])
+    caps = [r[1] for r in ordered]
+    lo_cap, hi_cap = min(caps), max(caps)
+    cap_span = (hi_cap - lo_cap) or 1.0
+    moves = [r[2] for r in ordered] + [0.0]
+    lo_m, hi_m = min(moves), max(moves)
+    m_span = (hi_m - lo_m) or 1.0
+    n = len(ordered)
+    slot = width / n
+    r_min, r_max = 9.0, 24.0
+    plot_h = height - 44
+
+    def y(move: float) -> float:
+        return height - 6 - ((move - lo_m) / m_span) * plot_h
+
+    circles = []
+    for i, (ticker, cap, move, is_subject) in enumerate(ordered):
+        cx = slot * i + slot / 2
+        cy = y(move) - 10
+        frac = (cap - lo_cap) / cap_span
+        radius = r_min + frac * (r_max - r_min)
+        fill = "rgba(15,110,128,.5)" if is_subject else "rgba(91,113,120,.32)"
+        stroke = "#0F6E80" if is_subject else "#7d8a90"
+        weight = "700" if is_subject else "400"
+        fs = 9 if is_subject else 7.5
+        text_col = "#fff" if is_subject else "#33403f"
+        circles.append(
+            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{radius:.1f}" fill="{fill}" '
+            f'stroke="{stroke}"/>'
+            f'<text x="{cx:.1f}" y="{cy + 3:.1f}" font-size="{fs}" fill="{text_col}" '
+            f'text-anchor="middle" font-weight="{weight}">{_html.escape(ticker)}</text>'
+        )
+
+    zero_y = y(0.0)
+    baseline = (
+        f'<line x1="0" y1="{zero_y:.1f}" x2="{width}" y2="{zero_y:.1f}" '
+        'stroke="#e6e6e6" stroke-dasharray="3,3"/>'
+        f'<text x="2" y="{zero_y - 4:.1f}" font-size="7" fill="#9aa6aa">0%</text>'
+    )
+    caption = (
+        f'<text x="{width / 2:.1f}" y="{height - 2}" font-size="7" fill="#9aa6aa" '
+        'text-anchor="middle">larger market cap →</text>'
+    )
+    return (
+        f'<svg width="100%" height="{height}" viewBox="0 0 {width} {height}" '
+        'preserveAspectRatio="none">' + baseline + "".join(circles) + caption + "</svg>"
+    )
+
+
 def _normalize_series(vals: list[float]) -> list[float]:
     lo, hi = min(vals), max(vals)
     span = (hi - lo) or 1.0

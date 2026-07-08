@@ -9,14 +9,12 @@ from typing import Any, Literal
 from adapters.visualization.analysis.models import SectionScore
 
 
-def compute_co_movement(closes_by_ticker: dict[str, list[float]]) -> float | None:
-    """Average pairwise Pearson correlation of daily returns across tickers.
+def _returns_by_ticker(
+    closes_by_ticker: dict[str, list[float]]
+) -> dict[str, list[float]]:
+    """Convert close series to daily returns, dropping unusable series.
 
-    Descriptive group-cohesion measure: high average correlation means the
-    group trades as a pack (structural context, not a directional signal).
-    Series are aligned to the shortest common length (from the end) before
-    computing returns. Series with fewer than 2 returns or zero variance are
-    excluded. Returns ``None`` when fewer than 2 usable series remain.
+    Series with fewer than 2 returns or zero variance are excluded.
     """
     returns_by_ticker: dict[str, list[float]] = {}
     for ticker, closes in closes_by_ticker.items():
@@ -29,6 +27,19 @@ def compute_co_movement(closes_by_ticker: dict[str, list[float]]) -> float | Non
         ]
         if len(returns) >= 2 and len(set(returns)) > 1:
             returns_by_ticker[ticker] = returns
+    return returns_by_ticker
+
+
+def compute_co_movement(closes_by_ticker: dict[str, list[float]]) -> float | None:
+    """Average pairwise Pearson correlation of daily returns across tickers.
+
+    Descriptive group-cohesion measure: high average correlation means the
+    group trades as a pack (structural context, not a directional signal).
+    Series are aligned to the shortest common length (from the end) before
+    computing returns. Series with fewer than 2 returns or zero variance are
+    excluded. Returns ``None`` when fewer than 2 usable series remain.
+    """
+    returns_by_ticker = _returns_by_ticker(closes_by_ticker)
 
     if len(returns_by_ticker) < 2:
         return None
@@ -45,6 +56,36 @@ def compute_co_movement(closes_by_ticker: dict[str, list[float]]) -> float | Non
     return sum(correlations) / len(correlations) if correlations else None
 
 
+def avg_pairwise_correlation(
+    closes_by_ticker: dict[str, list[float]]
+) -> dict[str, float]:
+    """Per-ticker mean Pearson correlation to every other ticker in the group.
+
+    Used to rank centrality (which ticker moves most "with the pack") when no
+    market-cap data is available to determine a supply-chain leader. Tickers
+    with unusable series (per :func:`_returns_by_ticker`) are omitted.
+    """
+    returns_by_ticker = _returns_by_ticker(closes_by_ticker)
+    tickers = list(returns_by_ticker)
+    if len(tickers) < 2:
+        return {}
+
+    sums: dict[str, float] = {t: 0.0 for t in tickers}
+    counts: dict[str, int] = {t: 0 for t in tickers}
+    for t1, t2 in combinations(tickers, 2):
+        r1, r2 = returns_by_ticker[t1], returns_by_ticker[t2]
+        n = min(len(r1), len(r2))
+        corr = _pearson(r1[-n:], r2[-n:])
+        if corr is None:
+            continue
+        sums[t1] += corr
+        sums[t2] += corr
+        counts[t1] += 1
+        counts[t2] += 1
+
+    return {t: sums[t] / counts[t] for t in tickers if counts[t] > 0}
+
+
 def _pearson(xs: list[float], ys: list[float]) -> float | None:
     """Pearson correlation coefficient; None if either series has zero variance."""
     n = len(xs)
@@ -55,6 +96,46 @@ def _pearson(xs: list[float], ys: list[float]) -> float | None:
     if var_x == 0 or var_y == 0:
         return None
     return cov / math.sqrt(var_x * var_y)
+
+
+def one_week_return_pct(closes: list[float]) -> float | None:
+    """Percent return from 5 trading days ago to the latest close.
+
+    ``None`` when fewer than 6 points are available or the reference close is 0.
+    """
+    if len(closes) < 6:
+        return None
+    start, end = closes[-6], closes[-1]
+    if start == 0:
+        return None
+    return (end - start) / start * 100.0
+
+
+def compute_group_week_moves(
+    closes_by_ticker: dict[str, list[float]], ticker: str
+) -> tuple[float | None, float | None]:
+    """(group_1w_avg_pct, ticker_vs_group_pct) for the supply-chain panel's
+    "Group 1w" / "{ticker} vs grp" tiles.
+
+    ``group_1w_avg_pct`` is the average 1-week return across every *other*
+    ticker in ``closes_by_ticker`` with enough history; ``ticker_vs_group_pct``
+    is ``ticker``'s own 1-week return minus that average. Either (or both) is
+    ``None`` when there isn't enough price history to compute it — an honest
+    data gap, never a guessed number.
+    """
+    ticker_ret = one_week_return_pct(closes_by_ticker.get(ticker, []))
+    peer_returns = [
+        r
+        for t, closes in closes_by_ticker.items()
+        if t != ticker
+        for r in [one_week_return_pct(closes)]
+        if r is not None
+    ]
+    if not peer_returns:
+        return None, None
+    group_avg = sum(peer_returns) / len(peer_returns)
+    vs_group = (ticker_ret - group_avg) if ticker_ret is not None else None
+    return round(group_avg, 2), (round(vs_group, 2) if vs_group is not None else None)
 
 
 def find_supply_chain_group(ticker: str) -> dict[str, Any] | None:
