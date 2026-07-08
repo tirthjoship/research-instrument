@@ -64,10 +64,7 @@ from adapters.visualization.tabs.stock_analysis.synthesis import (
 from adapters.visualization.tabs.stock_analysis.valuation_view import (
     build_valuation_panel,
 )
-from adapters.visualization.tabs.stock_analysis.verdict_section import (
-    _render_news_context,
-    _snowflake_axes,
-)
+from adapters.visualization.tabs.stock_analysis.verdict_section import _snowflake_axes
 from adapters.visualization.tabs.stock_analysis.vitals import (
     build_vitals_html,
     build_vitals_view,
@@ -466,11 +463,10 @@ def _post_top_render_plan() -> list[str]:
 
     Pure helper — no Streamlit, safe to call in tests.
     Sections that live inside the sa-* group shells (build_top_html) must NOT
-    appear here; only the two sections not covered by the groups are kept:
-    news_context (verdict_section, not in any group) and
-    corroboration (its own section below the groups).
+    appear here. Headlines formerly in a separate Buzz Context block now live
+    in the Buzz panel; only corroboration remains below the groups.
     """
-    return ["news_context", "corroboration"]
+    return ["corroboration"]
 
 
 def render() -> None:
@@ -565,7 +561,6 @@ def render() -> None:
         # sentiment, supply_chain, analyst_panel) now live inside the sa-* group
         # shells rendered by build_top_html — do NOT re-render them flat here.
         _render_top(result, fit, as_of=now.strftime("%b %d %Y"))
-        _render_news_context(result)
         render_corroboration_section(corr_view, our_readout=readout)
     elif not ticker_input:
         st.markdown(

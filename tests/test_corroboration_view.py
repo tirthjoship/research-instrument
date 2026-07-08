@@ -180,19 +180,49 @@ def test_conflicted_tier_flags_conflicted() -> None:
     assert "disagree" in view["headline"].lower()
 
 
-def test_empty_claims_returns_empty_view() -> None:
+def test_empty_claims_returns_educational_view() -> None:
     view = cv.build_corroboration_view(_FakeCorrView(ticker="NVDA", claims=()))
     assert view["empty"] is True
     assert view["ticker"] == "NVDA"
-    assert view["chips_html"] == ""
+    assert "DATA GAP" in view["chips_html"]
+    assert "cross-checks our panels" in view["headline"]
+    assert "ADR-062" in view["reline"]
     assert view["claims_strong"] == []
     assert view["show_dissent_callout"] is False
+
+
+def test_empty_corroboration_html_shows_readout_and_education() -> None:
+    from adapters.visualization.tabs.stock_analysis.corroboration_section import (
+        build_corroboration_html,
+    )
+    from adapters.visualization.tabs.stock_analysis.corroboration_view import (
+        build_corroboration_view,
+    )
+    from domain.corroboration_models import OurReadout, TrendHealth
+
+    view = build_corroboration_view(
+        None,
+        our_readout=OurReadout(
+            factor_percentile=82.0,
+            trend_health=TrendHealth.HEALTHY,
+            divergence_flag=False,
+            discipline_flag="clear",
+        ),
+    )
+    html = build_corroboration_html(view)
+    assert "Corroboration" in html
+    assert "DATA GAP" in html
+    assert "Our readout" in html
+    assert "82" in html
+    assert "corroborate" in html
+    assert "Why this section exists" in html
 
 
 def test_none_input_returns_empty_view_with_blank_ticker() -> None:
     view = cv.build_corroboration_view(None)
     assert view["empty"] is True
     assert view["ticker"] == ""
+    assert "cross-checks our panels" in view["headline"]
 
 
 # ---------------------------------------------------------------------------

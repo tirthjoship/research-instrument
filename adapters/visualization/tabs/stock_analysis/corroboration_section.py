@@ -80,6 +80,8 @@ def build_corroboration_html(view: dict) -> str:  # type: ignore[type-arg]
     """
     parts = [_header_html(view["chips_html"])]
     if view["empty"]:
+        parts.append(_headline_reline_html(view["headline"], view["reline"]))
+        parts.append(_two_col_html(view["stance_segments"], view["readout_rows"]))
         parts.append(_empty_state_html(view["ticker"]))
         return "".join(parts)
 
@@ -134,14 +136,27 @@ def _headline_reline_html(headline: str, reline: str) -> str:
 
 
 def _empty_state_html(ticker: str) -> str:
-    label = f" for {ticker}" if ticker else ""
+    label = f" for <b>{_html.escape(ticker)}</b>" if ticker else ""
     return (
         '<div style="border:1px solid var(--ri-line);border-radius:9px;'
-        'background:var(--ri-card);padding:16px;text-align:center;">'
-        f'<div style="font-size:14px;color:#64748B;">No corroboration data{label}.</div>'
-        '<div style="font-size:13px;color:#94A3B8;margin-top:4px;">'
-        "Run <code>corroborate</code> to surface external evidence.</div>"
+        'background:var(--ri-card);padding:14px 16px;margin-top:6px;">'
+        '<div style="font-size:13px;font-weight:700;color:var(--ri-ink);">'
+        f"Why this section exists{label}</div>"
+        '<div style="font-size:12px;color:#4a5358;margin-top:6px;line-height:1.55;">'
+        "Corroboration is the dossier&#39;s last step: it cross-checks our panels against "
+        "<b>independent, attributed outside sources</b>, and summarizes how much they converge."
         "</div>"
+        '<ul style="font-size:12px;color:#4a5358;margin:8px 0 10px 18px;line-height:1.55;">'
+        "<li>Surfaces <b>attributed</b> outside claims with verified links — not our own panels.</li>"
+        "<li>Weights sources by reliability so a forum post cannot outvote a 10-K.</li>"
+        "<li>Shows <b>dissent</b> honestly when credible sources disagree.</li>"
+        "<li>Bridges to our readout (factor percentile, trend, discipline) on the right.</li>"
+        "</ul>"
+        '<div style="font-size:12px;color:#64748B;line-height:1.55;">'
+        "<b>To populate:</b> run <code>corroborate</code> to harvest into "
+        "<code>data/recommendations.db</code>. Harvest is search-driven and capped — "
+        "so not every ticker appears every run."
+        "</div></div>"
     )
 
 
@@ -221,10 +236,18 @@ def _stance_bar_html(segments: list[dict]) -> str:  # type: ignore[type-arg]
     visible = [s for s in segments if s["pct"] >= 0.5]
     if not visible:
         return (
+            '<div style="display:flex;align-items:center;justify-content:space-between;'
+            'gap:10px;margin-bottom:8px;">'
             '<div style="font-size:11px;color:var(--ri-muted);text-transform:uppercase;'
-            "font-family:'IBM Plex Mono',monospace;margin-bottom:8px;\">Where sources land</div>"
-            '<div style="font-size:12px;color:#94A3B8;padding:8px 0;">'
-            "Stance distribution — data gap (no weighted claims).</div>"
+            "font-family:'IBM Plex Mono',monospace;\">Where sources land</div>"
+            '<div style="font-size:11px;color:#94A3B8;">0 sources</div>'
+            "</div>"
+            '<div style="background:#F1F5F9;border-radius:5px;height:22px;'
+            "display:flex;align-items:center;justify-content:center;"
+            "font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;"
+            'color:#64748B;">DATA GAP</div>'
+            '<div style="font-size:11px;color:var(--ri-muted);margin-top:9px;font-style:italic;">'
+            "Once populated, widths are reliability-weighted — a weak source can&#39;t outvote a 10-K.</div>"
         )
     bar = "".join(
         f'<div style="width:{s["pct"]:.0f}%;background:{s["colour"]};'

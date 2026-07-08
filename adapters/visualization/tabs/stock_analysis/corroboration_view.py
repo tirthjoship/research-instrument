@@ -240,13 +240,29 @@ def build_corroboration_view(
     """Build the pure view-model dict consumed by ``render_corroboration_section``."""
     if corr is None or not corr.claims:
         ticker = corr.ticker if corr is not None else ""
+        label = f" for {ticker}" if ticker else ""
         return {
             "empty": True,
             "ticker": ticker,
             "tier": ConvergenceTier.NONE,
-            "chips_html": "",
-            "headline": "",
-            "reline": "",
+            "chips_html": render_status_chip(
+                "DATA GAP",
+                "0 sources",
+                tone="grey",
+                rule=(
+                    "No harvested corroboration claims in the store yet"
+                    f"{label}. Harvest is search-driven and capped — not every "
+                    "ticker appears every run."
+                ),
+            ),
+            "headline": "No outside evidence yet — this section cross-checks our panels",
+            "reline": (
+                "Corroboration gathers independent claims (analyst notes, filings, "
+                "trade press), verifies each citation, weights by source reliability, "
+                "then summarizes how much outside reads agree with our factor/trend/"
+                "discipline view. Convergence measures evidence agreement — not a "
+                "return forecast (ADR-062)."
+            ),
             "stance_segments": [],
             "readout_rows": _readout_rows(our_readout),
             "claims_strong": [],

@@ -36,7 +36,7 @@ from adapters.visualization.tabs.stock_analysis.valuation_view import Metric
 _DATA_GAP = "—"
 _ZERO = "0"
 VOLUME_CHART_DAYS = 14
-_HEADLINE_LIMIT = 4
+_HEADLINE_LIMIT = 10
 _MENTION_WINDOW_SUB = f"{BUZZ_MENTION_WINDOW_DAYS}d"
 
 _STRIP_TILE = (
@@ -445,7 +445,7 @@ def _headlines_html(result: Any, buzz_signals: list[Any], ref: datetime) -> str:
         )
     cap = (
         '<div class="sa-pnl-cap">Attributed, linked — context, not signal '
-        "(ADR-056).</div>"
+        "(ADR-056). Signal-return IC was tested and falsified (ADR-044).</div>"
     )
     return _headline_block(rows[:_HEADLINE_LIMIT], rows[_HEADLINE_LIMIT:]) + cap
 
