@@ -435,7 +435,7 @@ class TestAnalyzeTicker:
                 return_value=None,
             ),
             patch(
-                "adapters.visualization.analysis.analyze.find_supply_chain_group",
+                "adapters.visualization.analysis.analyze.resolve_supply_chain_group",
                 return_value=None,
             ),
             patch(
@@ -472,7 +472,7 @@ class TestAnalyzeTicker:
                 return_value=rec,
             ),
             patch(
-                "adapters.visualization.analysis.analyze.find_supply_chain_group",
+                "adapters.visualization.analysis.analyze.resolve_supply_chain_group",
                 return_value=None,
             ),
             patch(
@@ -521,7 +521,7 @@ class TestAnalyzeTicker:
                 return_value=None,
             ),
             patch(
-                "adapters.visualization.analysis.analyze.find_supply_chain_group",
+                "adapters.visualization.analysis.analyze.resolve_supply_chain_group",
                 return_value=None,
             ),
             patch(
@@ -577,7 +577,7 @@ class TestAnalyzeTicker:
                 return_value=None,
             ),
             patch(
-                "adapters.visualization.analysis.analyze.find_supply_chain_group",
+                "adapters.visualization.analysis.analyze.resolve_supply_chain_group",
                 return_value=group,
             ),
             patch(
@@ -628,7 +628,7 @@ class TestHoldDuration:
                 return_value=rec,
             ),
             patch(
-                "adapters.visualization.analysis.analyze.find_supply_chain_group",
+                "adapters.visualization.analysis.analyze.resolve_supply_chain_group",
                 return_value=None,
             ),
             patch(

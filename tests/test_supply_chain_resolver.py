@@ -1,0 +1,163 @@
+"""Tests for dynamic supply-chain group resolution (replaces first-match YAML lookup).
+
+All tests inject ``closes_by_ticker`` / ``market_caps`` directly — no network calls.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from adapters.visualization.analysis.supply_chain_resolver import (
+    resolve_supply_chain_group,
+)
+
+_RETURNS = [0.02, -0.0098039, 0.0297030, -0.0096154, 0.0291262]
+
+
+def _compound(start: float, returns: list[float] = _RETURNS) -> list[float]:
+    closes = [start]
+    for r in returns:
+        closes.append(closes[-1] * (1 + r))
+    return closes
+
+
+def test_nvda_resolves_to_leader_not_follower_in_semiconductors_first() -> None:
+    """NVDA is a follower in the first YAML match (semiconductors) but a leader in
+    ai_infrastructure — only the ai_infrastructure peers have price data, so that's
+    the only candidate with enough members to be scored, and it wins on co-movement."""
+    closes = {
+        "NVDA": _compound(400.0),
+        "SMCI": _compound(30.0),
+        "DELL": _compound(90.0),
+        "HPE": _compound(18.0),
+    }
+    info = {"sector": "Technology", "industry": "Semiconductors"}
+    result = resolve_supply_chain_group(
+        "NVDA", info, closes_by_ticker=closes, market_caps={"NVDA": 4.2e12}
+    )
+    assert result is not None
+    assert result["group"] == "ai_infrastructure"
+    assert result["_is_leader"] is True
+    assert result["co_movement"] == pytest.approx(1.0)
+    assert result["provenance"] == "yaml+correlation"
+
+
+def test_unknown_ticker_returns_none() -> None:
+    result = resolve_supply_chain_group(
+        "ZZZZ", {}, closes_by_ticker={"ZZZZ": _compound(10.0)}, market_caps={}
+    )
+    assert result is None
+
+
+def test_mocked_closes_yield_stable_co_movement() -> None:
+    closes = {
+        "NVDA": _compound(400.0),
+        "SMCI": _compound(30.0),
+        "DELL": _compound(90.0),
+        "HPE": _compound(18.0),
+    }
+    info = {"sector": "Technology"}
+    r1 = resolve_supply_chain_group(
+        "NVDA", info, closes_by_ticker=closes, market_caps={}
+    )
+    r2 = resolve_supply_chain_group(
+        "NVDA", info, closes_by_ticker=closes, market_caps={}
+    )
+    assert r1 is not None and r2 is not None
+    assert r1["co_movement"] == r2["co_movement"] == pytest.approx(1.0)
+
+
+def test_insufficient_members_with_data_returns_none() -> None:
+    """AMAT is a YAML leader in 'semiconductors', but only one peer has price data —
+    below the 4-member minimum — and there's no sector/industry pool match either."""
+    closes = {"AMAT": _compound(200.0), "LRCX": _compound(700.0)}
+    result = resolve_supply_chain_group(
+        "AMAT", {}, closes_by_ticker=closes, market_caps={}
+    )
+    assert result is None
+
+
+def test_low_comovement_below_threshold_returns_none() -> None:
+    closes = {
+        "AMAT": _compound(200.0, [0.02, -0.03, 0.01, -0.02, 0.015]),
+        "LRCX": _compound(700.0, [-0.01, 0.02, -0.015, 0.03, -0.005]),
+        "KLAC": _compound(500.0, [0.015, -0.01, 0.02, -0.03, 0.01]),
+        "ASML": _compound(900.0, [-0.02, 0.01, -0.03, 0.02, -0.015]),
+    }
+    result = resolve_supply_chain_group(
+        "AMAT", {}, closes_by_ticker=closes, market_caps={}
+    )
+    assert result is None
+
+
+def test_correlation_only_provenance_and_market_cap_leader() -> None:
+    """CRM is not in supply_chain.yaml at all — a pure sector/industry correlation
+    cluster (from the existing Software - Application peer pool) is the only
+    candidate. Highest market cap in the cluster determines leader role."""
+    closes = {
+        "CRM": _compound(250.0),
+        "NOW": _compound(900.0),
+        "INTU": _compound(600.0),
+        "ADBE": _compound(400.0),
+    }
+    info = {"industry": "Software - Application"}
+    market_caps = {"CRM": 3.0e11, "NOW": 1.8e11, "INTU": 1.7e11, "ADBE": 1.6e11}
+    result = resolve_supply_chain_group(
+        "CRM", info, closes_by_ticker=closes, market_caps=market_caps
+    )
+    assert result is not None
+    assert result["provenance"] == "correlation_only"
+    assert result["_is_leader"] is True
+
+
+def test_correlation_only_follower_when_not_highest_market_cap() -> None:
+    closes = {
+        "CRM": _compound(250.0),
+        "NOW": _compound(900.0),
+        "INTU": _compound(600.0),
+        "ADBE": _compound(400.0),
+    }
+    info = {"industry": "Software - Application"}
+    market_caps = {"CRM": 1.0e11, "NOW": 1.8e11, "INTU": 1.7e11, "ADBE": 1.6e11}
+    result = resolve_supply_chain_group(
+        "CRM", info, closes_by_ticker=closes, market_caps=market_caps
+    )
+    assert result is not None
+    assert result["_is_leader"] is False
+    assert "CRM" in result["followers"]
+
+
+def test_yaml_follower_promoted_to_leader_relocates_out_of_followers() -> None:
+    """NVDA is a YAML follower in 'semiconductors', but if it has by far the
+    highest market cap in the actual cluster, it should be promoted to leader
+    AND moved out of the followers list — not double-counted."""
+    closes = {
+        "NVDA": _compound(900.0),
+        "AMAT": _compound(200.0),
+        "LRCX": _compound(700.0),
+        "KLAC": _compound(500.0),
+    }
+    market_caps = {"NVDA": 4.7e12, "AMAT": 4.4e11, "LRCX": 4.1e11, "KLAC": 2.8e11}
+    result = resolve_supply_chain_group(
+        "NVDA", {}, closes_by_ticker=closes, market_caps=market_caps
+    )
+    assert result is not None
+    assert result["group"] == "semiconductors"
+    assert result["_is_leader"] is True
+    assert "NVDA" in result["leaders"]
+    assert "NVDA" not in result["followers"]
+
+
+def test_result_has_group_display_and_resolution_score() -> None:
+    closes = {
+        "NVDA": _compound(400.0),
+        "SMCI": _compound(30.0),
+        "DELL": _compound(90.0),
+        "HPE": _compound(18.0),
+    }
+    result = resolve_supply_chain_group(
+        "NVDA", {}, closes_by_ticker=closes, market_caps={}
+    )
+    assert result is not None
+    assert result["group_display"]
+    assert result["resolution_score"] == pytest.approx(result["co_movement"])

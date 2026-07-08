@@ -7,7 +7,6 @@ import datetime as _dt
 from loguru import logger
 
 from adapters.visualization.analysis.loaders import (
-    find_supply_chain_group,
     get_sector_peers,
     load_buzz_signals,
     load_buzz_volume_signals,
@@ -22,9 +21,13 @@ from adapters.visualization.analysis.scoring.performance import score_performanc
 from adapters.visualization.analysis.scoring.sentiment import score_sentiment
 from adapters.visualization.analysis.scoring.supply_chain import (
     compute_co_movement,
+    compute_group_week_moves,
     score_supply_chain,
 )
 from adapters.visualization.analysis.scoring.valuation import score_valuation
+from adapters.visualization.analysis.supply_chain_resolver import (
+    resolve_supply_chain_group,
+)
 
 
 def analyze_ticker(
@@ -94,8 +97,9 @@ def analyze_ticker(
     # 6. Fetch recommendation from DB
     rec = load_recommendation(ticker, db_path)
 
-    # 7. Find supply chain group (+ recent member moves for the panel bars)
-    sc_group = find_supply_chain_group(ticker)
+    # 7. Resolve supply chain group dynamically (correlation + curated YAML —
+    #    ADR-027 hybrid) + recent member moves for the panel bars
+    sc_group = resolve_supply_chain_group(ticker, info)
     if sc_group is not None:
         members = list(sc_group.get("leaders") or []) + list(
             sc_group.get("followers") or []
@@ -103,13 +107,18 @@ def analyze_ticker(
         if members:
             mprices = _batch_fetch_prices_impl(tuple(members))
             closes = _batch_fetch_closes_impl((ticker, *members))
+            group_1w_pct, vs_group_1w_pct = compute_group_week_moves(closes, ticker)
             sc_group = {
                 **sc_group,
                 "member_moves": {
                     t: float(mprices.get(t, {}).get("change_pct", 0.0) or 0.0)
                     for t in members
                 },
-                "co_movement": compute_co_movement(closes),
+                "co_movement": compute_co_movement(closes)
+                or sc_group.get("co_movement"),
+                "member_closes": closes,
+                "group_1w_pct": group_1w_pct,
+                "vs_group_1w_pct": vs_group_1w_pct,
             }
 
     # 8. Fetch peer data for comparison
