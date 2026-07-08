@@ -28,6 +28,25 @@ def test_save_and_get_buzz_signals(tmp_path: pytest.TempPathFactory) -> None:
     assert results[0].sentiment_raw == 0.6
 
 
+def test_save_and_get_buzz_signals_with_article_text(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    store = SQLiteStore(str(tmp_path / "test.db"))  # type: ignore[arg-type]
+    bs = BuzzSignal(
+        ticker="AAPL",
+        source="reuters_rss",
+        mention_count=10,
+        sentiment_raw=0.6,
+        scorer="keyword",
+        fetched_at=datetime(2026, 5, 30, 9, 0),
+        article_hash="hash1",
+        article_text="Apple beats earnings with strong growth",
+    )
+    store.save_buzz_signal(bs)
+    results = store.get_buzz_signals(ticker="AAPL")
+    assert results[0].article_text == "Apple beats earnings with strong growth"
+
+
 def test_buzz_signal_dedup_by_hash(tmp_path: pytest.TempPathFactory) -> None:
     store = SQLiteStore(str(tmp_path / "test.db"))  # type: ignore[arg-type]
     bs = BuzzSignal(

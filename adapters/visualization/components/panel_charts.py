@@ -20,6 +20,26 @@ def fmt_num(v: float) -> str:
     return s.rstrip("0").rstrip(".") or "0"
 
 
+def rating_distribution_bars(
+    rows: Sequence[tuple[str, float, str]], *, label_width: int = 74, width: int = 150
+) -> str:
+    """Analyst rating counts — slop-safe tier labels, mockup purple/grey bars."""
+    vals = [abs(v) for _, v, _ in rows] or [1.0]
+    hi = max(vals) or 1.0
+    out = []
+    for label, value, bar_bg in rows:
+        w = int(round(abs(value) / hi * width))
+        out.append(
+            '<div style="display:flex;align-items:center;gap:8px;margin:4px 0;'
+            "font-family:'IBM Plex Mono',monospace;font-size:9px\">"
+            f'<span style="width:{label_width}px;color:var(--ri-ink2)">'
+            f"{_html.escape(label)}</span>"
+            f'<div style="height:11px;border-radius:3px;width:{w}px;background:{bar_bg}"></div>'
+            f'<span style="color:var(--ri-ink2)">{round(value)}</span></div>'
+        )
+    return "".join(out)
+
+
 def peer_bars(rows: type_peer_rows, *, unit: str = "x", width: int = 150) -> str:
     vals = [abs(v) for _, v, _ in rows] or [1.0]
     hi = max(vals) or 1.0
@@ -320,4 +340,182 @@ def marker_range(
         "font-family:'IBM Plex Mono',monospace;font-size:8px\">"
         f'<span style="color:{lcol};font-weight:700">{ll}</span>'
         f'<span style="color:{rcol};font-weight:700">{rl}</span></div>'
+    )
+
+
+def volume_bars(
+    rows: Sequence[tuple[str, float] | tuple[str, float, str]],
+    *,
+    width: int = 300,
+    height: int | None = None,
+    highlight_idx: int | None = None,
+    show_zero_stubs: bool = True,
+    css_class: str = "",
+    compact: bool = False,
+) -> str:
+    """Vertical mention-volume bars with readable axes. Empty -> empty string."""
+    if not rows:
+        return ""
+    parsed: list[tuple[str, float, str]] = []
+    for row in rows:
+        if len(row) >= 3:
+            parsed.append((str(row[0]), float(row[1]), str(row[2])))
+        else:
+            parsed.append((str(row[0]), float(row[1]), str(row[0])))
+    vals = [max(0.0, v) for _, v, _ in parsed]
+    hi = max(vals) or 1.0
+    nonzero = sum(1 for v in vals if v > 0)
+    if height is None:
+        height = 56 if compact or nonzero <= 4 else 72
+    n = len(parsed)
+    y_axis_w = 24
+    plot_w = width - y_axis_w - 2
+    gap = 6 if n <= 14 else max(2, 6 - n // 10)
+    bar_w = max(8 if n <= 14 else 3, min(14, (plot_w - gap * (n + 1)) // max(n, 1)))
+    top = 12
+    baseline_y = height - 14
+    plot_h = baseline_y - top
+    if highlight_idx is None and vals:
+        highlight_idx = max(range(n), key=lambda i: vals[i])
+    rects: list[str] = []
+    label_idxs: set[int] = {0, n - 1}
+    if highlight_idx is not None:
+        label_idxs.add(highlight_idx)
+    for i, (label, value, iso_date) in enumerate(parsed):
+        if value > 0:
+            h = max(4, int(round(value / hi * plot_h)))
+            fill = "#7c5cbf" if i == highlight_idx else "#b9a0d6"
+        elif show_zero_stubs:
+            h = 3
+            fill = "#dde2e4"
+        else:
+            continue
+        x = y_axis_w + gap + i * (bar_w + gap)
+        y = baseline_y - h
+        cnt = int(value)
+        word = "mentions" if cnt != 1 else "mention"
+        tip = _html.escape(f"{iso_date}: {cnt} {word}")
+        tip_short = _html.escape(f"{label} · {cnt}")
+        cx = x + bar_w / 2
+        rects.append(
+            f'<g class="sa-buzz-bar">'
+            f"<title>{tip}</title>"
+            f'<rect x="{x}" y="{y}" width="{bar_w}" height="{h}" fill="{fill}"/>'
+            f'<text class="sa-buzz-bar-tip" x="{cx:.1f}" y="{max(top + 2, y - 3):.1f}" '
+            f'text-anchor="middle">{tip_short}</text>'
+            f"</g>"
+        )
+    axis_labels: list[str] = []
+    hi_lbl = str(int(hi)) if hi == int(hi) else f"{hi:.1f}"
+    axis_labels.append(
+        f'<text x="{y_axis_w - 3}" y="{baseline_y + 3}" text-anchor="end" '
+        f'font-size="7.5" fill="#8a949a">0</text>'
+    )
+    axis_labels.append(
+        f'<text x="{y_axis_w - 3}" y="{top + 4}" text-anchor="end" '
+        f'font-size="7.5" fill="#8a949a">{_html.escape(hi_lbl)}</text>'
+    )
+    for idx in sorted(label_idxs):
+        cx = y_axis_w + gap + idx * (bar_w + gap) + bar_w / 2
+        axis_labels.append(
+            f'<text x="{cx:.1f}" y="{height - 2}" text-anchor="middle" '
+            f'font-size="7" fill="#8a949a">{_html.escape(parsed[idx][0])}</text>'
+        )
+    cls = f' class="{css_class}"' if css_class else ""
+    return (
+        f'<svg width="100%" height="{height}" viewBox="0 0 {width} {height}" '
+        f'xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"{cls}>'
+        f'<line x1="{y_axis_w}" y1="{baseline_y}" x2="{width}" y2="{baseline_y}" '
+        f'stroke="#eef1f1"/>'
+        f'<line x1="{y_axis_w}" y1="{top}" x2="{y_axis_w}" y2="{baseline_y}" '
+        f'stroke="#eef1f1"/>'
+        f'<g>{"".join(rects)}</g>'
+        f'<g>{"".join(axis_labels)}</g></svg>'
+    )
+
+
+def _normalize_series(vals: list[float]) -> list[float]:
+    lo, hi = min(vals), max(vals)
+    span = (hi - lo) or 1.0
+    return [(v - lo) / span for v in vals]
+
+
+def sentiment_source_row(label: str, mean: float, *, track_width: int = 120) -> str:
+    """Diverging bar for a News/Social bucket mean in [-1, 1]."""
+    clamped = max(-1.0, min(1.0, mean))
+    mid = track_width // 2
+    if clamped >= 0:
+        w = int(abs(clamped) * mid)
+        fill = "#2d6a4f"
+        style = f"left:{mid}px;width:{w}px;background:{fill}"
+    else:
+        w = int(abs(clamped) * mid)
+        fill = "#b91c1c"
+        style = f"left:{mid - w}px;width:{w}px;background:{fill}"
+    mean_lbl = f"{mean:+.2f}"
+    return (
+        '<div class="sa-srcrow">'
+        f'<span class="lab">{_html.escape(label)}</span>'
+        f'<div class="sa-srctrack" style="max-width:{track_width}px">'
+        f'<span class="sa-srcmid"></span>'
+        f'<span class="sa-srcfill" style="{style}"></span></div>'
+        f'<span class="sa-srcval">{mean_lbl}</span></div>'
+    )
+
+
+def sentiment_vs_price_chart(
+    sentiment: list[float],
+    price: list[float],
+    *,
+    height: int = 84,
+    width: int = 300,
+    x_labels: tuple[str, str] | None = None,
+) -> str:
+    """Dual-line overlay: solid tone (purple) + dashed normalized price (grey).
+
+    Both series are min-max normalized to a shared 0–1 scale for shape comparison
+    only — not a return forecast. '' if fewer than 2 aligned points.
+    """
+    n = min(len(sentiment), len(price))
+    if n < 2:
+        return ""
+    s_vals = _normalize_series([float(v) for v in sentiment[:n]])
+    p_vals = _normalize_series([float(v) for v in price[-n:]])
+    lo = 0.0
+    span = 1.0
+    step = width / max(n - 1, 1)
+
+    def y(v: float) -> float:
+        return height - 6 - ((v - lo) / span) * (height - 14)
+
+    s_pts = " ".join(f"{i * step:.1f},{y(v):.1f}" for i, v in enumerate(s_vals))
+    p_pts = " ".join(f"{i * step:.1f},{y(v):.1f}" for i, v in enumerate(p_vals))
+    svg = (
+        f'<svg width="100%" height="{height}" viewBox="0 0 {width} {height}" '
+        'preserveAspectRatio="none" style="overflow:visible">'
+        f'<polyline points="{s_pts}" fill="none" stroke="#5c6bc0" stroke-width="2"/>'
+        f'<polyline points="{p_pts}" fill="none" stroke="#9aa6aa" stroke-width="1.8" '
+        'stroke-dasharray="4 3"/>'
+        "</svg>"
+    )
+    yaxis = (
+        '<div style="display:flex;flex-direction:column;justify-content:space-between;'
+        'text-align:right;min-width:26px;padding:2px 2px 0 0">'
+        + _axis_label("1")
+        + _axis_label("0")
+        + "</div>"
+    )
+    xaxis = ""
+    if x_labels:
+        xaxis = (
+            '<div style="display:flex;justify-content:space-between;margin:1px 0 0 28px">'
+            + _axis_label(x_labels[0])
+            + _axis_label(x_labels[1])
+            + "</div>"
+        )
+    return (
+        '<div style="display:flex;gap:3px;align-items:stretch">'
+        + yaxis
+        + f'<div style="flex:1">{svg}</div></div>'
+        + xaxis
     )

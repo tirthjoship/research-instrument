@@ -36,14 +36,27 @@ def build_panel(
     viz_right: str,
     verdicts: list[Verdict],
     drill: str,
+    reframe_html: str | None = None,
+    viz_two_modifier: str = "",
 ) -> str:
     e = _html.escape
     verds = "".join(_verdict_html(v) for v in verdicts)
-    two = (
-        f'<div class="sa-pnl-two"><div>{viz_left}</div><div>{viz_right}</div></div>'
-        if (viz_left or viz_right)
-        else ""
-    )
+    two_mod = f" sa-pnl-two{viz_two_modifier}" if viz_two_modifier else " sa-pnl-two"
+    col_cls = "sa-buzz-col" if viz_two_modifier == "--buzz" else ""
+
+    def col_open() -> str:
+        return f'<div class="{col_cls}">' if col_cls else "<div>"
+
+    if viz_left and viz_right:
+        two = (
+            f'<div class="{two_mod.strip()}">{col_open()}{viz_left}</div>'
+            f"{col_open()}{viz_right}</div></div>"
+        )
+    elif viz_left:
+        two = f'<div class="sa-pnl-viz-full">{viz_left}</div>'
+    else:
+        two = ""
+    reline = reframe_html if reframe_html is not None else e(reframe)
     # NOTE: `drill` is intentionally not rendered — the deeper "open full …" view
     # it described was never built (its data is DATA-GAP), so a non-functional
     # link is misleading. Param kept for call-site compatibility.
@@ -54,7 +67,7 @@ def build_panel(
         f"{number} · {e(name)} {info_html}</span>"
         f'<span class="sa-pnl-chips">{chips_html}</span></div>'
         f'<div class="sa-pnl-claim">{e(claim)}</div>'
-        f'<div class="sa-pnl-reline">{e(reframe)}</div>'
+        f'<div class="sa-pnl-reline">{reline}</div>'
         f"{strip_html}{two}"
         f'<div class="sa-verdrow">{verds}</div></div>'
     )

@@ -10,6 +10,7 @@ from adapters.visualization.analysis.loaders import (
     find_supply_chain_group,
     get_sector_peers,
     load_buzz_signals,
+    load_buzz_volume_signals,
     load_recommendation,
 )
 from adapters.visualization.analysis.models import AnalysisResult
@@ -61,8 +62,34 @@ def analyze_ticker(
     # 4. Fetch insider transactions
     insider_txns = _fetch_insider_transactions_impl(ticker)
 
-    # 5. Fetch buzz signals from DB
-    buzz = load_buzz_signals(ticker, db_path)
+    # 5. Fetch buzz signals from DB (rolling 30-day harvest window)
+    from datetime import datetime, timezone
+
+    from adapters.visualization.analysis.buzz_enrichment import (
+        resolve_sentiment_signals,
+        score_headlines_as_buzz_signals,
+    )
+    from adapters.visualization.price_cache import _fetch_recent_news_impl
+
+    buzz, buzz_stale = load_buzz_signals(
+        ticker,
+        db_path,
+        ref=datetime.now(timezone.utc),
+    )
+    buzz_volume, buzz_volume_extended = load_buzz_volume_signals(
+        ticker,
+        db_path,
+        ref=datetime.now(timezone.utc),
+    )
+    live_headlines = _fetch_recent_news_impl(ticker, limit=10)
+    sentiment_signals, sentiment_live, _sentiment_stale = resolve_sentiment_signals(
+        buzz, buzz_stale, ticker, live_headlines
+    )
+    publisher_rows = (
+        score_headlines_as_buzz_signals(ticker, live_headlines)
+        if live_headlines and not sentiment_live
+        else []
+    )
 
     # 6. Fetch recommendation from DB
     rec = load_recommendation(ticker, db_path)
@@ -121,6 +148,12 @@ def analyze_ticker(
         forward_revenue_growth=forward_revenue_growth,
         insider_transactions=insider_txns,
         buzz_signals=buzz,
+        buzz_harvest_stale=buzz_stale,
+        buzz_volume_signals=buzz_volume,
+        buzz_volume_extended=buzz_volume_extended,
+        sentiment_signals=sentiment_signals,
+        sentiment_from_live=sentiment_live,
+        sentiment_publisher_rows=publisher_rows,
         recommendation_data=rec,
         peer_data=peers,
         supply_chain_group=sc_group,
@@ -132,11 +165,13 @@ def analyze_ticker(
     result.performance = score_performance(info)
     result.health = score_health(info)
     result.ownership = score_ownership(info, insider_txns)
-    result.sentiment = score_sentiment(buzz)
+    result.sentiment = score_sentiment(sentiment_signals or buzz)
     result.supply_chain = score_supply_chain(sc_group)
 
     # Compute signal radar
-    result.signal_scores = compute_signal_radar(info, buzz, rec, sc_group, insider_txns)
+    result.signal_scores = compute_signal_radar(
+        info, sentiment_signals or buzz, rec, sc_group, insider_txns
+    )
 
     # Compute overall verdict from DB recommendation
     if rec:
@@ -182,25 +217,42 @@ def analyze_ticker(
         logger.warning("Could not build analyst panel for {}: {}", ticker, exc)
         result.analyst_panel = None
 
-    # E3: Attributed news/event context — map BuzzSignal objects to dicts
+    # E3: Attributed news/event context — live yfinance headlines first, buzz fallback
     try:
         from application.news_context import build_news_context
 
-        signal_dicts: list[dict[str, object]] = []
-        for b in buzz:
-            fetched = getattr(b, "fetched_at", None)
-            date_str = str(fetched)[:10] if fetched is not None else ""
-            source = getattr(b, "source", "unknown")
-            mention_count = getattr(b, "mention_count", 0)
-            _raw = getattr(b, "sentiment_raw", 0.0)
-            sentiment = float(_raw) if _raw is not None else 0.0  # guard: may be None
-            sent_label = (
-                "positive"
-                if sentiment > 0.01
-                else "negative" if sentiment < -0.01 else "neutral"
-            )
-            title = f"{source}: {mention_count} mention(s), sentiment {sent_label} ({sentiment:+.2f})"
-            signal_dicts.append({"source": source, "title": title, "date": date_str})
+        headlines = live_headlines
+        if headlines:
+            signal_dicts: list[dict[str, object]] = [
+                {
+                    "source": h["source"],
+                    "title": h["title"],
+                    "date": h["date"],
+                    "url": h.get("url", ""),
+                }
+                for h in headlines
+            ]
+        else:
+            signal_dicts = []
+            for b in buzz:
+                fetched = getattr(b, "fetched_at", None)
+                date_str = str(fetched)[:10] if fetched is not None else ""
+                source = getattr(b, "source", "unknown")
+                mention_count = getattr(b, "mention_count", 0)
+                _raw = getattr(b, "sentiment_raw", 0.0)
+                sentiment = float(_raw) if _raw is not None else 0.0
+                sent_label = (
+                    "positive"
+                    if sentiment > 0.01
+                    else "negative" if sentiment < -0.01 else "neutral"
+                )
+                title = (
+                    f"{source}: {mention_count} mention(s), "
+                    f"sentiment {sent_label} ({sentiment:+.2f})"
+                )
+                signal_dicts.append(
+                    {"source": source, "title": title, "date": date_str}
+                )
         result.news_context = build_news_context(signal_dicts, 10)
     except Exception as exc:
         logger.warning("Could not build news context for {}: {}", ticker, exc)

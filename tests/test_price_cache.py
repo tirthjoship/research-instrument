@@ -311,3 +311,60 @@ class TestFetchIndexPrices:
         assert "SPY" in result
         assert "QQQ" in result
         assert result["SPY"]["price"] == pytest.approx(405.0)
+
+
+class TestYfinanceNews:
+    def test_parse_nested_content_shape(self):
+        from adapters.visualization.price_cache import _parse_yfinance_news_item
+
+        item = {
+            "content": {
+                "title": "Chip demand stays hot",
+                "pubDate": "2026-06-27T12:00:00Z",
+                "provider": {"displayName": "Yahoo Finance"},
+                "clickThroughUrl": {
+                    "url": "https://finance.yahoo.com/news/chip-demand.html",
+                },
+            }
+        }
+        parsed = _parse_yfinance_news_item(item)
+        assert parsed == {
+            "source": "Yahoo Finance",
+            "title": "Chip demand stays hot",
+            "date": "2026-06-27T12:00:00Z",
+            "url": "https://finance.yahoo.com/news/chip-demand.html",
+        }
+
+    def test_parse_flat_legacy_shape(self):
+        from adapters.visualization.price_cache import _parse_yfinance_news_item
+
+        item = {
+            "title": "Legacy headline",
+            "providerPublishTime": 1719504000,
+            "publisher": "Reuters",
+        }
+        parsed = _parse_yfinance_news_item(item)
+        assert parsed is not None
+        assert parsed["source"] == "Reuters"
+        assert parsed["title"] == "Legacy headline"
+
+    def test_fetch_recent_news_impl(self):
+        from adapters.visualization.price_cache import _fetch_recent_news_impl
+
+        mock_ticker = MagicMock()
+        mock_ticker.news = [
+            {
+                "content": {
+                    "title": "One",
+                    "pubDate": "2026-06-27",
+                    "provider": {"displayName": "Yahoo Finance"},
+                }
+            },
+            {"content": {"title": "", "pubDate": "2026-06-26"}},
+        ]
+        with patch(
+            "adapters.visualization.price_cache.yf.Ticker", return_value=mock_ticker
+        ):
+            out = _fetch_recent_news_impl("NVDA", limit=5)
+        assert len(out) == 1
+        assert out[0]["title"] == "One"

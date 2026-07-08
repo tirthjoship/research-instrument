@@ -69,6 +69,12 @@ class AnalysisResult:
     forward_revenue_growth: float | None = None  # analyst +1y revenue growth estimate
     insider_transactions: list[dict[str, Any]] = field(default_factory=list)
     buzz_signals: list[Any] = field(default_factory=list)
+    buzz_harvest_stale: bool = False
+    buzz_volume_signals: list[Any] = field(default_factory=list)
+    buzz_volume_extended: bool = False
+    sentiment_signals: list[Any] = field(default_factory=list)
+    sentiment_from_live: bool = False
+    sentiment_publisher_rows: list[Any] = field(default_factory=list)
     recommendation_data: Any = None
     peer_data: list[dict[str, Any]] = field(default_factory=list)
     supply_chain_group: dict[str, Any] | None = None
