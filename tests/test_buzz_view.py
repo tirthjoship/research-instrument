@@ -196,18 +196,19 @@ def test_headlines_from_news_context() -> None:
                 "2026-06-26",
                 f"https://finance.yahoo.com/news/{i}.html",
             )
-            for i in range(6)
+            for i in range(12)
         ],
         label="context, not signal",
         data_gap=False,
     )
     html = buzz_view.build_buzz_panel(_result(news_context=ctx))
     assert "Recent headlines" in html
-    assert html.count("sa-buzz-hl") == 6
+    assert html.count("sa-buzz-hl") == 12
     assert "sa-buzz-more" in html
     assert "+ 2 more headlines" in html
     assert "Headline 0" in html
-    assert "Headline 5" in html
+    assert "Headline 11" in html
+    assert "ADR-044" in html
 
 
 def test_buzz_panel_balanced_two_column_layout() -> None:
