@@ -74,11 +74,16 @@ def analyze_ticker(
     )
     from adapters.visualization.price_cache import _fetch_recent_news_impl
 
-    buzz, buzz_stale = load_buzz_signals(
+    # Backward-compatible: some tests/mocks still return a bare list.
+    _buzz_res = load_buzz_signals(
         ticker,
         db_path,
         ref=datetime.now(timezone.utc),
     )
+    if isinstance(_buzz_res, tuple) and len(_buzz_res) == 2:
+        buzz, buzz_stale = _buzz_res
+    else:
+        buzz, buzz_stale = list(_buzz_res or []), False
     buzz_volume, buzz_volume_extended = load_buzz_volume_signals(
         ticker,
         db_path,
