@@ -64,52 +64,42 @@ class DailyScanUseCase:
         for signal in raw_signals:
             self._store(signal)
 
-        # 3. Group article hashes + metadata by ticker for scoring
-        ticker_texts: dict[str, list[tuple[str, datetime, str]]] = {}
-        for s in raw_signals:
-            ticker_texts.setdefault(s.ticker, []).append(
-                (s.article_hash, s.fetched_at, s.source)
-            )
-
-        # 4. Score each (ticker, text) pair with keyword scorer then Flan-T5
+        # 3. Score each article's headline+summary text (not the dedup hash)
         scored_count = 0
-        for ticker, texts in ticker_texts.items():
-            for text, ts, source in texts:
-                # Keyword scorer
-                kw_results = self._keyword.score_text(ticker, text, ts, source)
-                for sent in kw_results:
+        tickers_seen: set[str] = set()
+        for s in raw_signals:
+            text = (s.article_text or "").strip()
+            if not text:
+                logger.debug(
+                    "Skipping score for {} — no article_text on {}",
+                    s.ticker,
+                    s.article_hash,
+                )
+                continue
+            tickers_seen.add(s.ticker)
+            for scorer_name, scorer, prefix in (
+                ("keyword", self._keyword, "kw"),
+                ("flan_t5", self._flan_t5, "ft"),
+            ):
+                results = scorer.score_text(s.ticker, text, s.fetched_at, s.source)
+                for sent in results:
                     self._store(
                         BuzzSignal(
-                            ticker=ticker,
-                            source=source,
-                            mention_count=1,
+                            ticker=s.ticker,
+                            source=s.source,
+                            mention_count=s.mention_count,
                             sentiment_raw=sent.sentiment_score,
-                            scorer="keyword",
-                            fetched_at=ts,
-                            article_hash=f"kw_{ticker}_{ts.isoformat()}",
-                        )
-                    )
-                    scored_count += 1
-
-                # Flan-T5 scorer
-                ft_results = self._flan_t5.score_text(ticker, text, ts, source)
-                for sent in ft_results:
-                    self._store(
-                        BuzzSignal(
-                            ticker=ticker,
-                            source=source,
-                            mention_count=1,
-                            sentiment_raw=sent.sentiment_score,
-                            scorer="flan_t5",
-                            fetched_at=ts,
-                            article_hash=f"ft_{ticker}_{ts.isoformat()}",
+                            scorer=scorer_name,
+                            fetched_at=s.fetched_at,
+                            article_hash=f"{prefix}_{s.article_hash}",
+                            article_text=text[:2000],
                         )
                     )
                     scored_count += 1
 
         logger.info(
             "Scoring complete — tickers={}, scored_signals={}",
-            len(ticker_texts),
+            len(tickers_seen),
             scored_count,
         )
-        return {"tickers_found": len(ticker_texts), "signals_stored": scored_count}
+        return {"tickers_found": len(tickers_seen), "signals_stored": scored_count}

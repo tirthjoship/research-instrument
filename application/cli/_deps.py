@@ -210,6 +210,59 @@ def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     return load_ticker_universe(existing)
 
 
+# Mega-caps / semis scanned first so daily-scan is not limited to A* tickers.
+_PRIORITY_BUZZ_TICKERS: tuple[str, ...] = (
+    "NVDA",
+    "AAPL",
+    "MSFT",
+    "GOOG",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "TSLA",
+    "AMD",
+    "AVGO",
+    "ARM",
+    "ASML",
+    "INTC",
+    "QCOM",
+    "MU",
+    "AMAT",
+    "LRCX",
+    "KLAC",
+    "SMCI",
+    "PLTR",
+    "CRM",
+    "NFLX",
+    "JPM",
+    "V",
+    "UNH",
+    "XOM",
+    "LLY",
+    "COST",
+    "WMT",
+    "BAC",
+)
+
+
+def _buzz_scan_tickers(universe: list[str], limit: int = 50) -> list[str]:
+    """Return up to *limit* tickers with priority names first (includes NVDA)."""
+    universe_set = set(universe)
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for ticker in _PRIORITY_BUZZ_TICKERS:
+        if ticker in universe_set and ticker not in seen:
+            ordered.append(ticker)
+            seen.add(ticker)
+    for ticker in universe:
+        if ticker not in seen:
+            ordered.append(ticker)
+            seen.add(ticker)
+        if len(ordered) >= limit:
+            break
+    return ordered[:limit]
+
+
 def _get_backtest_universe(market: str) -> list[str]:
     """US S&P 500 + NASDAQ-100 (existing) plus TSX 60 with .TO suffix for the backtest.
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from adapters.data.store._base import _SCHEMA, to_naive_utc
+from adapters.data.store._base import _SCHEMA, _migrate_buzz_signals, to_naive_utc
 from adapters.data.store.accuracy import AccuracyMixin
 from adapters.data.store.attention import AttentionMixin
 from adapters.data.store.buzz_signals import BuzzSignalsMixin
@@ -54,6 +54,7 @@ class SQLiteStore(
         self.__shared_conn: sqlite3.Connection = sqlite3.connect(db_path)
         self.__shared_conn.row_factory = sqlite3.Row
         self.__shared_conn.executescript(_SCHEMA)
+        _migrate_buzz_signals(self.__shared_conn)
 
     def _conn(self) -> sqlite3.Connection:
         """Return the shared connection (works for both file-based and :memory:)."""

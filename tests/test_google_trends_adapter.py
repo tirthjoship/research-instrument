@@ -42,7 +42,7 @@ def _make_weekly_df(ticker: str) -> pd.DataFrame:
 
 def test_default_rate_limit() -> None:
     adapter = GoogleTrendsAdapter()
-    assert adapter.rate_limit_seconds == 2.0
+    assert adapter.rate_limit_seconds == 6.0
 
 
 def test_custom_rate_limit() -> None:

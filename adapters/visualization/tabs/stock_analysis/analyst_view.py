@@ -34,6 +34,99 @@ _STRIP_TILE = (
 
 _DATA_GAP = "—"
 
+# Slop-safe tier labels (r1..r5) — mockup-style names are FORBIDDEN_WORDS in output.
+_RATING_TIER_LABELS: dict[int, str] = {
+    1: "Str. pos.",
+    2: "Positive",
+    3: "Hold",
+    4: "Reduce",
+    5: "Negative",
+}
+_RATING_POS_COLOR = "#7d89c4"
+_RATING_NEU_COLOR = "#c2ccce"
+
+
+def _consensus_sub(mean_rating: float) -> str:
+    if mean_rating <= 2.0:
+        return "positive"
+    if mean_rating <= 3.0:
+        return "neutral"
+    return "cautious"
+
+
+def _claim_headline(mean_rating: float | None) -> str:
+    if mean_rating is None:
+        return "Street analyst consensus — third-party context only."
+    if mean_rating <= 2.0:
+        return "Street leans positive — but that's their view, not ours"
+    if mean_rating <= 3.0:
+        return "Street is mixed — their view, not ours"
+    return "Street leans cautious — their view, not ours"
+
+
+def _summary_reframe_html(
+    *,
+    count: int,
+    mean_rating: float | None,
+    target_mean: float | None,
+    upside_pct: float | None,
+    target_low: float | None,
+    target_high: float | None,
+    is_wide: bool,
+) -> str:
+    """Mockup-style one-line data summary with bold key figures."""
+    e = _html.escape
+    parts: list[str] = []
+    if count:
+        parts.append(f"{e(str(count))} analysts")
+    if mean_rating is not None:
+        parts.append(f"consensus <b>{mean_rating:.1f}</b>")
+    if target_mean is not None:
+        tgt = f"mean target <b>${target_mean:.0f}</b>"
+        if upside_pct is not None:
+            sign = "+" if upside_pct >= 0 else ""
+            tgt += f" ({sign}{upside_pct:.0f}%)"
+        parts.append(tgt)
+    if target_low is not None and target_high is not None:
+        tail = (
+            f"Spread <b>${target_low:.0f}–${target_high:.0f}</b> — real disagreement."
+            if is_wide
+            else f"Target range <b>${target_low:.0f}–${target_high:.0f}</b>."
+        )
+        parts.append(tail)
+    if not parts:
+        return "Analyst ratings and targets reported as third-party context."
+    return ", ".join(parts[:-1]) + (", " + parts[-1] if len(parts) > 1 else parts[0])
+
+
+def _rating_distribution_rows(rd: dict[str, int]) -> list[tuple[str, float, str]]:
+    rows: list[tuple[str, float, str]] = []
+    for tier in range(1, 6):
+        cnt = float(rd.get(f"r{tier}", 0) or 0)
+        if cnt <= 0:
+            continue
+        color = _RATING_POS_COLOR if tier <= 2 else _RATING_NEU_COLOR
+        rows.append((_RATING_TIER_LABELS[tier], cnt, color))
+    return rows
+
+
+def _distribution_skew_caption(rd: dict[str, int]) -> str:
+    pos = float(rd.get("r1", 0) or 0) + float(rd.get("r2", 0) or 0)
+    other = sum(float(rd.get(f"r{i}", 0) or 0) for i in range(3, 6))
+    if pos > other and pos > 0:
+        return "Skewed positive — but targets disagree on how much."
+    if other > pos and other > 0:
+        return "Ratings mixed — consensus hides real target disagreement."
+    return "Rating distribution across contributing analysts."
+
+
+def _analyst_context_verdict(count: int, mean_rating: float | None) -> str:
+    if count and mean_rating is not None and mean_rating <= 2.5:
+        return f"{count} analysts lean positive — third-party context."
+    if count:
+        return f"{count} analysts covering — third-party context."
+    return "Analyst consensus reported — third-party context."
+
 
 def _strip_html(metrics: list[Metric]) -> str:
     tiles = "".join(
@@ -87,14 +180,6 @@ def _fwd_eps_metric(info: dict[str, Any]) -> Metric:
     return Metric(
         "fwd_eps", "Fwd EPS", f"${eps:.2f}", "consensus est", "petrol", meaning, basis
     )
-
-
-def _distribution_and_trend_verdict_text(result: Any) -> str:
-    ph = getattr(result, "price_history", None) or {}
-    closes = ph.get("closes") if isinstance(ph, dict) else None
-    if closes and len(closes) >= 30:
-        return "Rating distribution shown when available; trend shows price vs. the Street's mean target."
-    return "Rating distribution shown when available; mean-target trend needs a history (data gap)."
 
 
 # ---------------------------------------------------------------------------
@@ -193,6 +278,7 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
                 "No analyst data wired for this ticker. "
                 "Wide dispersion = real disagreement the consensus hides."
             ),
+            "reframe_html": None,
             "verdicts": [
                 Verdict("neu", "Analyst data unavailable — data gap for this ticker."),
             ],
@@ -211,7 +297,7 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
         "analysts",
         "Analysts",
         str(count) if count else _DATA_GAP,
-        "contributing" if count else "data gap",
+        "covering" if count else "data gap",
         "grey",
         analysts_meaning,
         analysts_basis,
@@ -238,13 +324,18 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             "consensus",
             "Consensus",
             f"{mean_rating:.1f}",
-            "Street mean (1=best)",
+            _consensus_sub(mean_rating),
             "petrol",
             consensus_meaning,
             consensus_basis,
         )
 
-    # 3. Mean target
+    current_price = _safe_float(getattr(result, "current_price", None))
+    upside_pct: float | None = None
+    if target_mean is not None and current_price:
+        upside_pct = (target_mean - current_price) / current_price * 100
+
+    # 3. Mean target — upside % in sub (mockup combines mean tgt + implied move)
     mean_target_meaning = "Analyst consensus mean price target in USD."
     mean_target_basis = (
         "analyst_panel.target_mean; Street price target; third-party, not adopted"
@@ -252,7 +343,7 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
     if target_mean is None:
         m_mean_target = Metric(
             "mean_target",
-            "Mean target",
+            "Mean tgt",
             _DATA_GAP,
             "data gap",
             "grey",
@@ -260,11 +351,14 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             mean_target_basis,
         )
     else:
+        tgt_sub = (
+            f"{upside_pct:+.0f}%" if upside_pct is not None else "Street consensus"
+        )
         m_mean_target = Metric(
             "mean_target",
-            "Mean target",
+            "Mean tgt",
             f"${target_mean:.0f}",
-            "Street consensus",
+            tgt_sub,
             "petrol",
             mean_target_meaning,
             mean_target_basis,
@@ -296,8 +390,7 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             target_mean is not None and target_mean > 0 and spread / target_mean >= 0.30
         )
         tone = "amber" if is_wide else "grey"
-        range_str = f"${target_low:.0f}–${target_high:.0f}"
-        sub = f"wide {range_str}" if is_wide else range_str
+        sub = "wide" if is_wide else f"${target_low:.0f}–${target_high:.0f}"
         m_dispersion = Metric(
             "dispersion",
             "Dispersion",
@@ -308,10 +401,18 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             dispersion_basis,
         )
 
-    # 5. Upside to mean target (replaces the unavailable 90-day target history)
-    m_upside = _upside_metric(
-        target_mean, _safe_float(getattr(result, "current_price", None))
-    )
+    # 5. Upside to mean target (honest substitute for unavailable 90-day target history)
+    m_upside = _upside_metric(target_mean, current_price)
+    if m_upside.value != _DATA_GAP:
+        m_upside = Metric(
+            m_upside.key,
+            "Impl. move",
+            m_upside.value,
+            "to mean target",
+            m_upside.tone,
+            m_upside.meaning,
+            m_upside.basis,
+        )
 
     # 6. Forward EPS consensus (replaces the unavailable 90-day EPS-estimate history)
     m_fwd_eps = _fwd_eps_metric(getattr(result, "info", {}) or {})
@@ -340,11 +441,11 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             ),
         )
 
-    # TARGETS chip: petrol — target direction is the Street's view
+    # TARGETS chip: direction only — dollar value lives in the metric strip (mockup)
     if target_mean is not None:
         chips += render_status_chip(
-            "TARGETS ▲",
-            f"${target_mean:.0f}",
+            "TARGETS",
+            "▲",
             tone="petrol",
             rule=(
                 "Street consensus mean price target; third-party estimate; "
@@ -352,17 +453,24 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             ),
         )
 
+    reframe_html = _summary_reframe_html(
+        count=count,
+        mean_rating=mean_rating,
+        target_mean=target_mean,
+        upside_pct=upside_pct,
+        target_low=target_low,
+        target_high=target_high,
+        is_wide=is_wide,
+    )
+
     return {
         "metrics": metrics,
         "chips": chips,
-        "claim": "Street analyst consensus — ratings and targets reported as third-party context.",
-        "reframe": (
-            "Wide dispersion = real disagreement the consensus hides. "
-            "Upside is implied by the Street's mean target; forward EPS is a consensus "
-            "estimate. All figures are the Street's view; this panel never adopts them."
-        ),
+        "claim": _claim_headline(mean_rating),
+        "reframe": "",
+        "reframe_html": reframe_html,
         "verdicts": [
-            Verdict("neu", _distribution_and_trend_verdict_text(result)),
+            Verdict("neu", _analyst_context_verdict(count, mean_rating)),
             (
                 Verdict(
                     "cau",
@@ -393,17 +501,14 @@ def _price_vs_target_html(result: Any, target_mean: float | None) -> str:
             ("price", closes, "#0F6E80"),
             ("target", [float(target_mean)] * len(closes), "#9AA5AD"),
         ]
-        # label_lines=False: the price and target lines can converge at the same
-        # value, which would otherwise render overlapping/garbled inline SVG
-        # text — the caption below names both lines (with the target's dollar
-        # value) instead.
         return (
             subh
             + panel_charts.trend_lines(
                 series, x_labels=("start", "now"), label_lines=False
             )
-            + '<div class="sa-pnl-cap">Trailing price (teal) vs. the Street\'s '
-            f"${target_mean:.0f} mean target (grey) — context, not a forecast.</div>"
+            + '<div class="sa-pnl-cap">Trailing price (teal) vs. today\'s '
+            f"${target_mean:.0f} mean target (grey) — not a 12-mo revision history "
+            "(that series is a data gap).</div>"
         )
     return subh + '<div class="sa-pnl-cap">data gap — price history unavailable</div>'
 
@@ -412,15 +517,14 @@ def build_analyst_panel(result: Any) -> str:
     """Compose the full Analyst deep-dive panel HTML (panel #1 in Signals group)."""
     v = build_analyst_view(result)
 
-    # Comparison viz: rating distribution as numeric tiers 1..5 (slop-safe labels)
+    # Comparison viz: slop-safe tier labels + mockup purple/grey bars
     rd = getattr(result, "rating_distribution", None) or {}
-    total = sum(int(x or 0) for x in rd.values()) if rd else 0
-    if total > 0:
-        rows = [(str(i), float(rd.get(f"r{i}", 0) or 0), False) for i in range(1, 6)]
+    rows = _rating_distribution_rows(rd)
+    if rows:
         left = (
             '<div class="sa-pnl-subh">Rating distribution</div>'
-            + panel_charts.peer_bars(rows, unit="")
-            + '<div class="sa-pnl-cap">analyst tiers 1 (most positive) → 5 (most negative)</div>'
+            + panel_charts.rating_distribution_bars(rows)
+            + f'<div class="sa-pnl-cap">{_distribution_skew_caption(rd)}</div>'
         )
     else:
         left = (
@@ -442,7 +546,8 @@ def build_analyst_panel(result: Any) -> str:
         ),
         chips_html=v["chips"],
         claim=v["claim"],
-        reframe=v["reframe"],
+        reframe=v.get("reframe", ""),
+        reframe_html=v.get("reframe_html"),
         strip_html=_strip_html(v["metrics"]),
         viz_left=left,
         viz_right=right,

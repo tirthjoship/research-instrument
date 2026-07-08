@@ -443,3 +443,63 @@ def fetch_index_prices() -> dict[str, dict[str, float]]:
         return _fetch_index_prices_impl()
 
     return _cached()
+
+
+def _extract_yfinance_news_url(
+    item: dict[str, Any], content: dict[str, Any] | None
+) -> str:
+    """Pull an external article URL from a yfinance news payload."""
+    blocks: list[Any] = []
+    if isinstance(content, dict):
+        blocks.extend(content.get(k) for k in ("clickThroughUrl", "canonicalUrl"))
+    blocks.extend(item.get(k) for k in ("clickThroughUrl", "canonicalUrl", "link"))
+    for block in blocks:
+        if isinstance(block, dict):
+            url = str(block.get("url") or "").strip()
+            if url.startswith(("http://", "https://")):
+                return url
+        elif isinstance(block, str) and block.startswith(("http://", "https://")):
+            return block.strip()
+    return ""
+
+
+def _parse_yfinance_news_item(item: dict[str, Any]) -> dict[str, str] | None:
+    """Normalize one yfinance news item to {source, title, date, url}."""
+    content = item.get("content")
+    if isinstance(content, dict):
+        title = str(content.get("title") or "").strip()
+        pub = str(content.get("pubDate") or content.get("displayTime") or "")
+        provider = content.get("provider")
+        source = (
+            str(provider.get("displayName") or "news")
+            if isinstance(provider, dict)
+            else "news"
+        )
+        url = _extract_yfinance_news_url(item, content)
+    else:
+        title = str(item.get("title") or "").strip()
+        pub = str(item.get("providerPublishTime") or item.get("pubDate") or "")
+        source = str(item.get("publisher") or item.get("publisherName") or "news")
+        url = _extract_yfinance_news_url(item, None)
+    if not title:
+        return None
+    return {"source": source, "title": title, "date": pub.strip(), "url": url}
+
+
+def _fetch_recent_news_impl(ticker: str, limit: int = 8) -> list[dict[str, str]]:
+    """Fetch recent attributed headlines for *ticker* via yfinance. Returns [] on error."""
+    try:
+        raw = yf.Ticker(ticker).news or []
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("yfinance news failed for {}: {}", ticker, exc)
+        return []
+    out: list[dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        parsed = _parse_yfinance_news_item(item)
+        if parsed is not None:
+            out.append(parsed)
+        if len(out) >= limit:
+            break
+    return out
