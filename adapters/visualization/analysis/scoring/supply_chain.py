@@ -194,8 +194,18 @@ def score_supply_chain(group: dict[str, Any] | None) -> SectionScore:
     )
 
     # 2. Leader momentum (we can't fetch live here without circular imports, use heuristic)
-    lag = group.get("typical_lag_days", 1)
-    if lag <= 2:
+    lag_raw = group.get("typical_lag_days", 1)
+    lag: int | None
+    try:
+        lag = int(lag_raw) if lag_raw is not None else None
+    except (TypeError, ValueError):
+        lag = None
+
+    if lag is None:
+        verdicts.append(
+            ("warn", "Typical lag not available — dynamic cluster has no curated lag")
+        )
+    elif lag <= 2:
         score += 1
         verdicts.append(
             (
