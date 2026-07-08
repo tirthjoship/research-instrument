@@ -11,6 +11,9 @@ if TYPE_CHECKING:
     from domain.fit import FitVerdict
 
 # Pure builder imports — no Streamlit, safe at module level
+from adapters.visualization.analysis.corroboration_bridge import (
+    build_readout_from_analysis,
+)
 from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.radar_svg import RadarAxis
 from adapters.visualization.data_loader import load_corroboration_snapshot
@@ -528,8 +531,10 @@ def render() -> None:
     if lookup_key and f"analysis_{lookup_key}" in st.session_state:
         result = st.session_state[f"analysis_{lookup_key}"]
 
-        # Load corroboration snapshot (None if store empty / DB missing)
+        # Load corroboration snapshot (None if store empty / DB missing) and bridge
+        # in a live OurReadout built from data already on `result` — no new fetch.
         corr_view = load_corroboration_snapshot(lookup_key, db_path=_CORR_DB_PATH)
+        readout = build_readout_from_analysis(result)
 
         fit_key = f"fit_{lookup_key}"
 
@@ -561,7 +566,7 @@ def render() -> None:
         # shells rendered by build_top_html — do NOT re-render them flat here.
         _render_top(result, fit, as_of=now.strftime("%b %d %Y"))
         _render_news_context(result)
-        render_corroboration_section(corr_view)
+        render_corroboration_section(corr_view, our_readout=readout)
     elif not ticker_input:
         st.markdown(
             '<div class="ws-card" style="text-align:center;padding:2rem;">'
