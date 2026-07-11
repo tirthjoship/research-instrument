@@ -1,8 +1,10 @@
 """Growth panel (spec D10): rev/eps YoY rates + quarterly trend -> measured colour.
 
 Growth = RATES only. Six metrics: Rev YoY and EPS YoY (from yfinance info),
-plus four honest DATA-GAP metrics (Rev 3y CAGR, FCF YoY, Fwd rev, Peer rank)
-for which no point-in-time source is wired.
+plus Rev 3y CAGR (annual financials), FCF YoY (quarterly cashflow), Fwd rev
+(third-party analyst estimate), and Peer rank (vs peer_data revenue growth) —
+each falls back to an honest DATA-GAP tile only when its own source is
+genuinely missing (e.g. <4y of annual revenue, no peer data), not always.
 """
 
 from __future__ import annotations

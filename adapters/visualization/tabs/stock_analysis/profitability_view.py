@@ -1,8 +1,10 @@
 """Profitability panel (spec D10): margins/ROE/ROIC/FCF-margin (LEVELS & returns).
 
 Profitability = margin levels and capital-return efficiency.
-Six metrics: Gross, Operating, Net margin, ROE, ROIC (computed when inputs present),
-FCF margin (computed). Comparison: peer margin median not wired — self-only bar shown.
+Six metrics: Gross, Operating, Net margin, ROE, ROIC (computed when inputs
+present, degrading to ROA then EBITDA margin before a genuine gap),
+FCF margin (computed). Comparison: peer gross-margin median from peer_data
+when peer margins are available, else a self-only bar.
 Trend: quarterly gross/operating margin from quarterly_financials when available.
 """
 
