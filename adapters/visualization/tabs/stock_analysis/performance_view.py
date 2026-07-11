@@ -1,8 +1,9 @@
 """Performance panel (spec D11): price/return behaviour — 1Y, vs S&P, beta, vs 200-day.
 
 Margins and ROE live in the Profitability panel (Phase 3); they must NOT appear here.
-3Y return and max-drawdown have no point-in-time source wired — both are DATA-GAP.
-Returns-by-horizon and relative-strength series are also DATA-GAP (no price series).
+Long-horizon return, max-drawdown, returns-by-horizon, and relative strength are all
+computed from result.price_history (closes/spy_closes) when it's available; each
+falls back to an honest DATA-GAP tile only when the price series itself is missing.
 """
 
 from __future__ import annotations

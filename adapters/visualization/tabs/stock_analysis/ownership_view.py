@@ -260,21 +260,34 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
             float_basis + "; amber <20% (thin float can amplify volatility)",
         )
 
-    # 4. Insider net Q (sum of transaction values — reducing/accumulating, never labelled as direction)
+    # 4. Insider net Q — the latest quarter's net transaction value, bucketed the
+    #    same way as the trend chart (_insider_quarterly_net), so the headline
+    #    tile can't disagree with the chart beside it. Falls back to summing all
+    #    available transactions only when none carry a parseable date (bucketing
+    #    is then impossible), with copy that says so honestly.
     net_q_meaning = (
         "Net transaction value of insider activity reported for the latest quarter. "
         "Negative = net reducing; positive = net accumulating. "
         "Insider-cluster signal is falsified (ADR-053) — descriptive only."
     )
-    net_q_basis = (
-        "sum of insider_transactions[*].value; quarterly net position change in dollars"
-    )
+    net_q_basis = "latest quarter bucket from insider_transactions[*].value (dated)"
     net_q: float | None = None
     if txns:
-        try:
-            net_q = float(sum(float(t.get("value", 0) or 0) for t in txns))
-        except (TypeError, ValueError):
-            net_q = None
+        quarterly = _insider_quarterly_net(txns)
+        if quarterly:
+            net_q = quarterly[-1][1]
+        else:
+            try:
+                net_q = float(sum(float(t.get("value", 0) or 0) for t in txns))
+                net_q_meaning = (
+                    "Net transaction value across the available insider transaction "
+                    "records (no dates present to bucket by quarter). "
+                    "Negative = net reducing; positive = net accumulating. "
+                    "Insider-cluster signal is falsified (ADR-053) — descriptive only."
+                )
+                net_q_basis = "sum of insider_transactions[*].value; no Start Date to bucket by quarter"
+            except (TypeError, ValueError):
+                net_q = None
 
     net_q_direction: str
     if net_q is None:
