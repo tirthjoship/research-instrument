@@ -82,6 +82,25 @@ def test_panel_renders():
     assert "Ownership" in ownership_view.build_ownership_panel(_result())
 
 
+def test_insider_net_q_tile_uses_latest_quarter_not_alltime_sum():
+    # Three quarters of activity: the strip tile is labelled "Insider net Q"
+    # and its tooltip says "reported for the latest quarter" — it must match
+    # the same latest-quarter bucket the trend chart plots (-$186M, Q2 2026),
+    # not the sum across all three quarters (-$396M).
+    result = SimpleNamespace(
+        info={"heldPercentInstitutions": 0.66, "heldPercentInsiders": 0.04},
+        insider_transactions=[
+            {"value": -186e6, "Start Date": "2026-06-18"},
+            {"value": -120e6, "Start Date": "2026-03-15"},
+            {"value": -90e6, "Start Date": "2025-12-10"},
+        ],
+        ticker="NVDA",
+    )
+    v = ownership_view.build_ownership_view(result)
+    net = next(m for m in v["metrics"] if "net" in m.label.lower())
+    assert net.value == "-$186M"
+
+
 def test_insider_quarterly_net_aggregates_by_quarter():
     qn = ownership_view._insider_quarterly_net(
         [
