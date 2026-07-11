@@ -66,7 +66,12 @@ flowchart TD
 
 ## What the tool DOES do
 
-The dashboard (Streamlit) is organised into six tabs:
+The dashboard (Streamlit) is organised into six tabs. On first visit (local or
+hosted) it always loads a bundled 10-stock **sample book** (`data/sample/`) —
+never the operator's real holdings. Uploading your own CSV replaces it for that
+browser session only (never written to disk); refreshing or opening a new tab
+returns to the sample book. Stale Home/Screener artifacts can be refreshed
+in-app via a gated "Run" button (single-flight, cooldown, disabled while fresh).
 
 **Home** — a plain-English book-health summary: how many holdings need attention this
 week, a gauge for how much of the book's movement is one market-wide bet, the latest
