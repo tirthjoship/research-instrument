@@ -39,8 +39,9 @@ STOCK_METRICS: dict[str, tuple[str, str]] = {
         "net debt / EBITDA; lower = less leverage",
     ),
     "interest_coverage": (
-        "Operating profit divided by interest expense; how many times interest is covered.",
-        "EBIT / interest",
+        "EBITDA divided by interest expense; how many times interest is covered "
+        "(uses EBITDA, not EBIT, so it reads more forgiving than the stricter EBIT-based ratio).",
+        "yfinance info.ebitda / info.interestExpense; green when > 5×",
     ),
     "relative_strength": (
         "Price relative to the S&P, indexed to 100; rising = pulling ahead.",

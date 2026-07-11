@@ -57,3 +57,13 @@ def test_solo_tiles_dont_claim_unwired_peer_comparison():
         assert (
             "vs peer" not in low
         ), f"{k} basis falsely implies a peer comparison: {basis!r}"
+
+
+# health_view._coverage_metric actually divides info.ebitda by interestExpense
+# (pinned by test_health_view.py::test_interest_coverage_computed, 90e9/1e9)
+# — the registry must describe EBITDA, not EBIT, or the tooltip promises a
+# stricter ratio than what's actually shown.
+def test_interest_coverage_describes_ebitda_not_ebit():
+    meaning, basis = stock_metrics.STOCK_METRICS["interest_coverage"]
+    assert "ebitda" in (meaning + basis).lower()
+    assert "ebit /" not in basis.lower()
