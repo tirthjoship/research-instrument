@@ -89,11 +89,13 @@ def _analyst_chip(result: Any) -> ClaimChip:
             "sa-signals",
         )
     # report the Street, never endorse -> petrol/grey, never green
+    r = float(rating)
+    tone_word = "positive" if r <= 2.0 else "neutral" if r <= 3.0 else "negative"
     return ClaimChip(
         "Analysts",
-        f"positive · {float(rating):.1f}",
+        f"{tone_word} · {r:.1f}",
         "petrol",
-        f"Mean rating {float(rating):.1f} on 1-5 (1=most positive). Third-party; reported, not adopted.",
+        f"Mean rating {r:.1f} on 1-5 (1=most positive). Third-party; reported, not adopted.",
         "analyst_panel",
         "sa-signals",
     )
@@ -157,8 +159,8 @@ def build_synthesis_view(result: Any) -> SynthesisView:
     val = chips[0].value
     gro = chips[1].value
     prose = (
-        f"On the evidence: valuation reads <b>{val}</b> and revenue growth <b>{gro}</b>; "
-        "the Street is reported below and insider activity is shown as a disclosed fact, not a signal."
+        f"Valuation reads <b>{val}</b> on revenue growth of <b>{gro}</b>; "
+        "the Street's view and insider activity appear below as disclosed facts — context, not a forecast."
     )
     return SynthesisView(prose=prose, chips=chips)
 

@@ -17,6 +17,7 @@ class NewsItem:
     source: str
     title: str
     date: str
+    url: str = ""
 
 
 @dataclass(frozen=True)
@@ -41,7 +42,8 @@ def build_news_context(
     """Aggregate raw signal dicts into an attributed :class:`NewsContext`.
 
     Each item in *signals* is expected to have ``"source"``, ``"title"``,
-    and ``"date"`` keys.  Missing keys receive safe empty-string defaults.
+    ``"date"``, and optional ``"url"`` keys.  Missing keys receive safe
+    empty-string defaults.
 
     Items are sorted by ``date`` descending (most recent first) and
     capped at *limit*.
@@ -57,6 +59,7 @@ def build_news_context(
             source=str(s.get("source", "")),
             title=str(s.get("title", "")),
             date=str(s.get("date", "")),
+            url=str(s.get("url", "") or ""),
         )
         for s in signals
     ]

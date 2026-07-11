@@ -11,10 +11,44 @@ import click
 from ._cli_group import cli
 from ._deps import (
     _build_dependencies,
+    _buzz_scan_tickers,
     _CombinedAttention,
     _get_ticker_universe,
     _load_wiki_map,
 )
+
+
+def _store_keyword_scores(
+    store: Any,
+    keyword: Any,
+    signals: list[Any],
+    *,
+    prefix: str,
+) -> int:
+    """Persist keyword-scored rows for headline-like buzz signals."""
+    from domain.models import BuzzSignal
+
+    scored = 0
+    for sig in signals:
+        text = (getattr(sig, "article_text", None) or "").strip()
+        if not text:
+            continue
+        results = keyword.score_text(sig.ticker, text, sig.fetched_at, sig.source)
+        for sent in results:
+            store.save_buzz_signal(
+                BuzzSignal(
+                    ticker=sig.ticker,
+                    source=sig.source,
+                    mention_count=sig.mention_count,
+                    sentiment_raw=sent.sentiment_score,
+                    scorer="keyword",
+                    fetched_at=sig.fetched_at,
+                    article_hash=f"{prefix}_{sig.article_hash}",
+                    article_text=text[:2000],
+                )
+            )
+            scored += 1
+    return scored
 
 
 @cli.command("daily-scan")
@@ -62,29 +96,51 @@ def daily_scan(market: str, no_flan: bool) -> None:
         f"Done: {result['tickers_found']} tickers, {result['signals_stored']} signals stored"
     )
 
-    # Phase 3.5: Google Trends scan
-    click.echo("Running Google Trends scan...")
+    config = deps["config"]
+    tickers = _get_ticker_universe(config)
+    buzz_tickers = _buzz_scan_tickers(tickers, limit=50)
+
+    # Phase 3.5: Google Trends scan (priority tickers — NVDA first, not A*)
+    click.echo(f"Running Google Trends scan ({len(buzz_tickers)} tickers)...")
     from adapters.data.google_trends_adapter import GoogleTrendsAdapter
 
     gt_adapter = GoogleTrendsAdapter()
-    config = deps["config"]
-    tickers = _get_ticker_universe(config)
-    gt_signals = gt_adapter.scan_sources(
-        scan_time, tickers=tickers[:50]
-    )  # top 50 to stay under rate limits
+    gt_signals = gt_adapter.scan_sources(scan_time, tickers=buzz_tickers)
     for sig in gt_signals:
         store.save_buzz_signal(sig)
     click.echo(f"  Google Trends: {len(gt_signals)} signals")
 
-    # Phase 3.5: StockTwits scan
-    click.echo("Running StockTwits scan...")
-    from adapters.data.stocktwits_adapter import StockTwitsAdapter
+    # Google News headlines — per-article text for keyword sentiment scoring
+    click.echo(f"Running Google News headline scan ({len(buzz_tickers)} tickers)...")
+    from adapters.data.google_news_adapter import GoogleNewsAdapter
 
-    st_adapter = StockTwitsAdapter()
-    st_signals = st_adapter.scan_sources(scan_time, tickers=tickers[:50])  # top 50
-    for sig in st_signals:
+    gn_adapter = GoogleNewsAdapter()
+    gn_signals = gn_adapter.scan_headline_sources(scan_time, tickers=buzz_tickers)
+    gn_scored = 0
+    for sig in gn_signals:
         store.save_buzz_signal(sig)
-    click.echo(f"  StockTwits: {len(st_signals)} signals")
+    gn_scored = _store_keyword_scores(store, keyword, gn_signals, prefix="gn_kw")
+    click.echo(
+        f"  Google News: {len(gn_signals)} headlines, {gn_scored} keyword scores"
+    )
+
+    # Reddit RSS — keyless social buzz (r/stocks, r/StockMarket, r/investing)
+    reddit_tickers = _buzz_scan_tickers(tickers, limit=10)
+    click.echo(f"Running Reddit RSS scan ({len(reddit_tickers)} tickers)...")
+    from adapters.data.reddit_rss_adapter import RedditRssAdapter
+
+    # r/stocks only in daily cron — extra subs hit Reddit RSS rate limits quickly.
+    rd_adapter = RedditRssAdapter(subreddits=("stocks",))
+    rd_signals = rd_adapter.scan_headline_sources(scan_time, tickers=reddit_tickers)
+    for sig in rd_signals:
+        store.save_buzz_signal(sig)
+    rd_scored = _store_keyword_scores(store, keyword, rd_signals, prefix="rd_kw")
+    click.echo(f"  Reddit RSS: {len(rd_signals)} posts, {rd_scored} keyword scores")
+
+    # StockTwits public API is deprecated (HTTP 403) — skip to avoid noise.
+    click.echo(
+        "Skipping StockTwits scan (public API locked; see stocktwits_adapter.py)"
+    )
 
 
 @cli.command("validate-3b")

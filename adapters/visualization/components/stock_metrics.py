@@ -22,6 +22,10 @@ STOCK_METRICS: dict[str, tuple[str, str]] = {
         "Enterprise value over EBITDA; capital-structure-neutral valuation multiple.",
         "vs peer percentile",
     ),
+    "ps": (
+        "Price divided by trailing sales; useful for low-margin or pre-profit businesses without stable earnings.",
+        "vs peer percentile",
+    ),
     "p_fcf": ("Price divided by free cash flow.", "vs peer percentile"),
     "roic": (
         "Return on invested capital; efficiency measure independent of how the company is financed.",

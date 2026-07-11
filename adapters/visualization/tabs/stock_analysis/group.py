@@ -11,15 +11,24 @@ class MicroTile:
     label: str
     value: str
     colour: str
+    pct: float | None = None  # 0-100 -> mini percentile bar (None = no bar)
+    info: str = ""  # ⓘ tooltip HTML (render_info output); already escaped
 
 
 def _micro_tile_html(t: MicroTile) -> str:
     e = _html.escape
+    bar = ""
+    if t.pct is not None:
+        w = max(0.0, min(100.0, t.pct))
+        bar = (
+            '<span class="pb"><span class="pf" '
+            f'style="width:{w:.0f}%;background:{e(t.colour)}"></span></span>'
+        )
     return (
         '<span class="sa-gt">'
         f'<span class="d" style="background:{e(t.colour)}"></span>'
-        f'<span class="col"><span class="gl">{e(t.label)}</span>'
-        f'<span class="gv">{e(t.value)}</span></span></span>'
+        f'<span class="col"><span class="gl">{e(t.label)}{t.info}</span>'
+        f'<span class="gv">{e(t.value)}</span></span>{bar}</span>'
     )
 
 

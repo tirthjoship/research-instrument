@@ -20,7 +20,7 @@ def _result() -> object:
             "trailingPE": 52.0,
             "forwardPE": 34.0,
             "pegRatio": 0.75,
-            "priceToSalesTrailingTwelveMonths": 28.0,
+            "priceToSalesTrailing12Months": 28.0,
             "enterpriseToEbitda": 45.0,
             "marketCap": 4.2e12,
             "freeCashflow": 72e9,
@@ -74,7 +74,7 @@ def test_top_html_fundamentals_group_is_populated() -> None:
 def test_fundamentals_microtiles_show_gist() -> None:
     html = compose.build_top_html(_result(), None)
     i = html.index('id="sa-fundamentals"')
-    head = html[i : i + 800]  # the summary header region before the panels
+    head = html[i : html.index("</summary>", i)]  # the summary header (micro-tiles)
     # micro-tiles show the at-a-glance gist (D8), not "—" placeholders
     assert "78th" in head  # P/E peer percentile
     assert "+69%" in head  # revenueGrowth 0.69 → +69%

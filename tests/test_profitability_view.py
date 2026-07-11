@@ -3,8 +3,25 @@
 import inspect
 from types import SimpleNamespace
 
+import pandas as pd
+
 from adapters.visualization.tabs.stock_analysis import profitability_view
 from domain.fit import FORBIDDEN_WORDS
+
+
+def _margin_df(gross_newest_first: list[float]) -> pd.DataFrame:
+    """quarterly_financials with Revenue=100 so Gross Profit == margin*100."""
+    cols = [f"2025-{m:02d}-01" for m in range(len(gross_newest_first), 0, -1)]
+    return pd.DataFrame(
+        {
+            c: {
+                "Total Revenue": 100.0,
+                "Gross Profit": g * 100.0,
+                "Operating Income": g * 80.0,
+            }
+            for c, g in zip(cols, gross_newest_first)
+        }
+    )
 
 
 def _result(**info_over):
@@ -45,10 +62,55 @@ def test_fcf_margin_computed():
     assert "55%" in fcf.value or "55" in fcf.value  # 72/130 = 55%
 
 
-def test_roic_datagap_when_inputs_missing():
+def test_roic_when_equity_available():
+    v = profitability_view.build_profitability_view(
+        _result(totalStockholdersEquity=200e9)
+    )
+    cr = v["metrics"][4]
+    assert cr.label == "ROIC" and cr.value != "—"
+
+
+def test_capital_return_falls_back_to_roa_when_roic_gaps():
+    # no equity -> ROIC can't compute; ROA is available -> show ROA, not a gap
+    v = profitability_view.build_profitability_view(_result(returnOnAssets=0.45))
+    cr = v["metrics"][4]
+    assert cr.label == "ROA" and cr.value == "45%"
+
+
+def test_capital_return_falls_back_to_ebitda_margin():
+    # no equity, no ROA, but ebitda+revenue present -> EBITDA margin
+    v = profitability_view.build_profitability_view(_result(ebitda=90e9))
+    cr = v["metrics"][4]
+    assert "EBITDA" in cr.label and cr.value == "69%"  # 90/130
+
+
+def test_capital_return_datagap_only_when_all_missing():
+    # ebit None, no equity, no ROA, no ebitda -> genuine gap, keeps ROIC label
     v = profitability_view.build_profitability_view(_result(ebit=None))
-    roic = next(m for m in v["metrics"] if "ROIC" in m.label)
-    assert roic.value == "—"
+    cr = v["metrics"][4]
+    assert cr.label == "ROIC" and cr.value == "—"
+
+
+def test_margin_trend_axis_is_percent_not_fraction():
+    # newest-first 0.75..0.60 -> chronological rising to 0.75; axis must read 75%, not 0.75%
+    result = _result()
+    result.quarterly_financials = _margin_df([0.75, 0.72, 0.70, 0.66, 0.63, 0.60])
+    html = profitability_view.build_profitability_panel(result)
+    assert "75%" in html and "0.75%" not in html
+
+
+def test_margins_widening_chip_green():
+    result = _result()
+    result.quarterly_financials = _margin_df([0.75, 0.72, 0.70, 0.66, 0.63, 0.60])
+    v = profitability_view.build_profitability_view(result)
+    assert "WIDENING" in v["chips"] and "t-green" in v["chips"]
+
+
+def test_margins_narrowing_chip_amber():
+    result = _result()
+    result.quarterly_financials = _margin_df([0.60, 0.63, 0.66, 0.70, 0.72, 0.75])
+    v = profitability_view.build_profitability_view(result)
+    assert "NARROWING" in v["chips"] and "t-amber" in v["chips"]
 
 
 def test_panel_renders():

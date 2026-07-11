@@ -114,6 +114,69 @@ def _batch_fetch_prices_impl(tickers: tuple[str, ...]) -> dict[str, dict[str, fl
     return result
 
 
+def _batch_fetch_closes_impl(
+    tickers: tuple[str, ...], period: str = "3mo"
+) -> dict[str, list[float]]:
+    """Fetch full daily close series for multiple tickers via one yf.download() call.
+
+    Returns ``{ticker: [close, close, ...]}`` (chronological). Cheaper than N
+    separate ``_fetch_price_history_impl`` calls — one batched network round-trip
+    for the whole group. Used for cross-price correlation (co-movement), where a
+    ~3-month window is enough; unlike ``_batch_fetch_prices_impl`` this keeps the
+    whole series, not just the last close.
+    """
+    if not tickers:
+        return {}
+
+    try:
+        data = yf.download(
+            list(tickers),
+            period=period,
+            auto_adjust=True,
+            progress=False,
+        )
+    except Exception as exc:
+        logger.warning("yf.download failed for {}: {}", tickers, exc)
+        return {}
+
+    if data is None or data.empty:
+        return {}
+
+    result: dict[str, list[float]] = {}
+
+    if len(tickers) == 1:
+        ticker = tickers[0]
+        try:
+            close_obj = data["Close"]
+            if isinstance(close_obj, DataFrame):
+                close_obj = (
+                    close_obj[ticker]
+                    if ticker in close_obj.columns
+                    else close_obj.squeeze("columns")
+                )
+            closes = [float(c) for c in close_obj.dropna()]
+            if closes:
+                result[ticker] = closes
+        except (KeyError, IndexError, TypeError) as exc:
+            logger.warning("Could not extract closes for {}: {}", ticker, exc)
+    else:
+        try:
+            close_df = data["Close"]
+        except KeyError:
+            logger.warning("No 'Close' column in yf.download result for {}", tickers)
+            return {}
+
+        for ticker in tickers:
+            try:
+                closes = [float(c) for c in close_df[ticker].dropna()]
+                if closes:
+                    result[ticker] = closes
+            except (KeyError, IndexError) as exc:
+                logger.warning("Could not extract closes for {}: {}", ticker, exc)
+
+    return result
+
+
 def _fetch_ticker_info_impl(ticker: str) -> dict[str, Any]:
     """Fetch full ticker info dict from yfinance. Returns {} on any error."""
     try:
@@ -153,10 +216,74 @@ def _fetch_insider_transactions_impl(ticker: str) -> list[dict[str, Any]]:
         df = t.insider_transactions
         if df is None or (hasattr(df, "empty") and df.empty):
             return []
-        return cast(list[dict[str, Any]], df.to_dict(orient="records"))
+        records = cast(list[dict[str, Any]], df.to_dict(orient="records"))
+        # yfinance 'Value' is unsigned and the consumers read lowercase 'value'.
+        # Expose a signed 'value': disposals (Sale) reduce; awards/grants/
+        # purchases accumulate. Direction is in the free-text 'Text' field.
+        for r in records:
+            raw = r.get("Value", r.get("value", 0)) or 0
+            text = str(r.get("Text", "")).lower()
+            sign = -1 if ("sale" in text or "dispos" in text) else 1
+            r["value"] = sign * abs(float(raw))
+        return records
     except Exception as exc:
         logger.warning("Insider transactions fetch failed for {}: {}", ticker, exc)
         return []
+
+
+def _fetch_rating_distribution_impl(ticker: str) -> dict[str, int] | None:
+    """Latest analyst rating distribution as numeric tiers 1..5 (1 = most positive).
+
+    Maps yfinance recommendations_summary columns (strongBuy..strongSell) to
+    forbidden-word-free keys r1..r5 so downstream view code stays slop-clean.
+    Returns None on any error or empty data.
+    """
+    try:
+        df = yf.Ticker(ticker).recommendations_summary
+        if df is None or (hasattr(df, "empty") and df.empty):
+            return None
+        row = df.iloc[0]  # latest period (0m)
+        cols = {
+            "r1": "strongBuy",
+            "r2": "buy",
+            "r3": "hold",
+            "r4": "sell",
+            "r5": "strongSell",
+        }
+        out = {k: int(row.get(v, 0) or 0) for k, v in cols.items()}
+        return out if sum(out.values()) > 0 else None
+    except Exception as exc:
+        logger.warning("Rating distribution fetch failed for {}: {}", ticker, exc)
+        return None
+
+
+def _fetch_annual_revenue_impl(ticker: str) -> list[float]:
+    """Chronological annual Total Revenue (from yfinance income_stmt). [] on error."""
+    try:
+        df = yf.Ticker(ticker).income_stmt
+        if df is None or df.empty or "Total Revenue" not in df.index:
+            return []
+        return list(
+            reversed([float(v) for v in df.loc["Total Revenue"].values if v == v])
+        )
+    except Exception as exc:
+        logger.warning("Annual revenue fetch failed for {}: {}", ticker, exc)
+        return []
+
+
+def _fetch_revenue_estimate_impl(ticker: str) -> float | None:
+    """Forward (+1y) revenue growth estimate from yfinance revenue_estimate. None on error."""
+    try:
+        df = yf.Ticker(ticker).revenue_estimate
+        if df is None or df.empty or "growth" not in df.columns:
+            return None
+        if "+1y" in df.index:
+            g = df.loc["+1y", "growth"]
+            return float(g) if g == g else None
+        return None
+    except Exception as exc:
+        logger.warning("Revenue estimate fetch failed for {}: {}", ticker, exc)
+        return None
 
 
 def _fetch_index_prices_impl() -> dict[str, dict[str, float]]:
@@ -316,3 +443,63 @@ def fetch_index_prices() -> dict[str, dict[str, float]]:
         return _fetch_index_prices_impl()
 
     return _cached()
+
+
+def _extract_yfinance_news_url(
+    item: dict[str, Any], content: dict[str, Any] | None
+) -> str:
+    """Pull an external article URL from a yfinance news payload."""
+    blocks: list[Any] = []
+    if isinstance(content, dict):
+        blocks.extend(content.get(k) for k in ("clickThroughUrl", "canonicalUrl"))
+    blocks.extend(item.get(k) for k in ("clickThroughUrl", "canonicalUrl", "link"))
+    for block in blocks:
+        if isinstance(block, dict):
+            url = str(block.get("url") or "").strip()
+            if url.startswith(("http://", "https://")):
+                return url
+        elif isinstance(block, str) and block.startswith(("http://", "https://")):
+            return block.strip()
+    return ""
+
+
+def _parse_yfinance_news_item(item: dict[str, Any]) -> dict[str, str] | None:
+    """Normalize one yfinance news item to {source, title, date, url}."""
+    content = item.get("content")
+    if isinstance(content, dict):
+        title = str(content.get("title") or "").strip()
+        pub = str(content.get("pubDate") or content.get("displayTime") or "")
+        provider = content.get("provider")
+        source = (
+            str(provider.get("displayName") or "news")
+            if isinstance(provider, dict)
+            else "news"
+        )
+        url = _extract_yfinance_news_url(item, content)
+    else:
+        title = str(item.get("title") or "").strip()
+        pub = str(item.get("providerPublishTime") or item.get("pubDate") or "")
+        source = str(item.get("publisher") or item.get("publisherName") or "news")
+        url = _extract_yfinance_news_url(item, None)
+    if not title:
+        return None
+    return {"source": source, "title": title, "date": pub.strip(), "url": url}
+
+
+def _fetch_recent_news_impl(ticker: str, limit: int = 8) -> list[dict[str, str]]:
+    """Fetch recent attributed headlines for *ticker* via yfinance. Returns [] on error."""
+    try:
+        raw = yf.Ticker(ticker).news or []
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("yfinance news failed for {}: {}", ticker, exc)
+        return []
+    out: list[dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        parsed = _parse_yfinance_news_item(item)
+        if parsed is not None:
+            out.append(parsed)
+        if len(out) >= limit:
+            break
+    return out

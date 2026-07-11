@@ -44,6 +44,26 @@ def _range_label(pct: int) -> str:
     return "mid-range"
 
 
+_EXCHANGE_NAMES = {
+    "NMS": "NASDAQ",
+    "NGM": "NASDAQ",
+    "NCM": "NASDAQ",
+    "NAS": "NASDAQ",
+    "NYQ": "NYSE",
+    "PCX": "NYSE Arca",
+    "ASE": "NYSE American",
+    "BTS": "Cboe BZX",
+    "TOR": "TSX",
+    "LSE": "LSE",
+}
+
+
+def _decode_exchange(code: Any) -> str:
+    """Human exchange name from a yfinance code (NMS -> NASDAQ); pass through if unknown."""
+    c = str(code or "").strip()
+    return _EXCHANGE_NAMES.get(c, c or "—")
+
+
 def build_hero_view(
     result: Any, *, grade: str | None = None, as_of: str = ""
 ) -> HeroView:
@@ -63,8 +83,9 @@ def build_hero_view(
     return HeroView(
         company_name=str(getattr(result, "company_name", "") or ""),
         ticker=str(getattr(result, "ticker", "") or ""),
-        exchange=str(info.get("exchange") or "—"),
-        sector=str(getattr(result, "sector", "") or "—"),
+        exchange=_decode_exchange(info.get("exchange")),
+        # prefer the more specific industry (e.g. "Semiconductors") over the broad sector
+        sector=str(info.get("industry") or getattr(result, "sector", "") or "—"),
         as_of=as_of,
         price=_money(price),
         change_label=f"{arrow} {chg:+.2f}% today",

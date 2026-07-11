@@ -35,6 +35,29 @@ def _f(info: dict[str, Any], key: str) -> float | None:
         return None
 
 
+def _insider_quarterly_net(txns: list[dict[str, Any]]) -> list[tuple[str, float]]:
+    """Net signed insider transaction value per quarter (last 8), chronological."""
+    from collections import defaultdict
+    from datetime import datetime
+
+    buckets: dict[tuple[int, int], float] = defaultdict(float)
+    for t in txns:
+        d = t.get("Start Date") or t.get("Date") or t.get("startDate")
+        if d is None:
+            continue
+        try:
+            if hasattr(d, "year"):
+                y, m = int(d.year), int(d.month)
+            else:
+                dt = datetime.fromisoformat(str(d)[:10])
+                y, m = dt.year, dt.month
+            buckets[(y, (m - 1) // 3 + 1)] += float(t.get("value", 0) or 0)
+        except Exception:
+            continue
+    items = sorted(buckets.items())[-8:]
+    return [(f"Q{q} {y}", v) for (y, q), v in items]
+
+
 def _strip_html(metrics: list[Metric]) -> str:
     tiles = "".join(
         _STRIP_TILE.format(
@@ -60,6 +83,71 @@ def _fmt_net_q(net_q: float) -> str:
     if abs_val >= 1_000:
         return f"{sign}${abs_val / 1_000:.0f}K"
     return f"{sign}${abs_val:.0f}"
+
+
+def _short_interest_metric(info: dict[str, Any]) -> Metric:
+    """Short interest as % of float. Prefer shortPercentOfFloat; else compute
+    sharesShort / floatShares (or sharesOutstanding). yfinance often drops the
+    headline ratio while keeping the primitives, so this keeps the tile live."""
+    meaning = (
+        "Short interest as a percentage of float — shares short divided by shares "
+        "available to trade. High short interest raises borrowing costs; descriptive."
+    )
+    pct = _f(info, "shortPercentOfFloat")
+    basis = "yfinance info.shortPercentOfFloat; percentage of float; descriptive"
+    if pct is None:
+        shares_short = _f(info, "sharesShort")
+        base = _f(info, "floatShares") or _f(info, "sharesOutstanding")
+        if shares_short is not None and base:
+            pct = shares_short / base
+            basis = "sharesShort / floatShares (computed; shortPercentOfFloat absent)"
+    if pct is None:
+        return Metric(
+            "short_interest", "Short interest", "—", "data gap", "grey", meaning, basis
+        )
+    si = pct * 100
+    # measured risk bands: amber when elevated (>5% of float), grey otherwise
+    tone = "amber" if si > 5 else "grey"
+    return Metric(
+        "short_interest",
+        "Short interest",
+        f"{si:.1f}%",
+        "of float",
+        tone,
+        meaning,
+        basis + "; amber >5% of float (elevated borrow/squeeze risk)",
+    )
+
+
+def _days_to_cover_metric(info: dict[str, Any]) -> Metric:
+    """Days-to-cover. Prefer shortRatio; else sharesShort / average daily volume."""
+    meaning = (
+        "Days-to-cover (short ratio): short interest divided by average daily volume — "
+        "how many trading days it would take to close all short positions."
+    )
+    dtc = _f(info, "shortRatio")
+    basis = "yfinance info.shortRatio; days to close short at average volume"
+    if dtc is None:
+        shares_short = _f(info, "sharesShort")
+        vol = _f(info, "averageDailyVolume10Day") or _f(info, "averageVolume")
+        if shares_short is not None and vol:
+            dtc = shares_short / vol
+            basis = "sharesShort / 10-day average volume (computed; shortRatio absent)"
+    if dtc is None:
+        return Metric(
+            "days_to_cover", "Days-to-cover", "—", "data gap", "grey", meaning, basis
+        )
+    # amber when a crowded short would take many days to unwind (>5)
+    tone = "amber" if dtc > 5 else "grey"
+    return Metric(
+        "days_to_cover",
+        "Days-to-cover",
+        f"{dtc:.1f}d",
+        "to close short",
+        tone,
+        meaning,
+        basis + "; amber >5 days (crowded short)",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -102,14 +190,15 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
         )
     else:
         inst_pct = inst_raw * 100
+        # green = passes the "majority institutionally held" threshold (descriptive)
         m_inst = Metric(
             "inst_pct",
             "Institutional %",
             f"{inst_pct:.0f}%",
             "of shares outstanding",
-            "grey",
+            "green" if inst_pct >= 50 else "grey",
             inst_meaning,
-            inst_basis,
+            inst_basis + "; green ≥50% (majority institutionally held)",
         )
 
     # 2. Insiders %
@@ -160,14 +249,15 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
         )
     else:
         float_pct = max(0.0, 100.0 - inst_pct - insider_pct)
+        # amber = thin float (<20%): a liquidity/volatility risk characteristic
         m_float = Metric(
             "public_float",
             "Public float",
             f"{float_pct:.0f}%",
             "approx. unaffiliated",
-            "grey",
+            "amber" if float_pct < 20 else "grey",
             float_meaning,
-            float_basis,
+            float_basis + "; amber <20% (thin float can amplify volatility)",
         )
 
     # 4. Insider net Q (sum of transaction values — reducing/accumulating, never labelled as direction)
@@ -211,63 +301,10 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
             net_q_basis,
         )
 
-    # 5. Short interest (% of float)
-    short_meaning = (
-        "Short interest as a percentage of float — shares short divided by shares available "
-        "to trade. High short interest raises borrowing costs; descriptive, not directional."
-    )
-    short_basis = "yfinance info.shortPercentOfFloat; percentage of float; descriptive"
-    short_raw = _f(info, "shortPercentOfFloat")
-    if short_raw is None:
-        m_short = Metric(
-            "short_interest",
-            "Short interest",
-            "—",
-            "data gap",
-            "grey",
-            short_meaning,
-            short_basis,
-        )
-    else:
-        m_short = Metric(
-            "short_interest",
-            "Short interest",
-            f"{short_raw * 100:.1f}%",
-            "of float",
-            "grey",
-            short_meaning,
-            short_basis,
-        )
-
-    # 6. Days-to-cover (short ratio)
-    dtc_meaning = (
-        "Days-to-cover (short ratio): current short interest divided by average daily volume. "
-        "Indicates how many trading days it would take to close all short positions."
-    )
-    dtc_basis = (
-        "yfinance info.shortRatio; days to close short at average volume; descriptive"
-    )
-    dtc_raw = _f(info, "shortRatio")
-    if dtc_raw is None:
-        m_dtc = Metric(
-            "days_to_cover",
-            "Days-to-cover",
-            "—",
-            "data gap",
-            "grey",
-            dtc_meaning,
-            dtc_basis,
-        )
-    else:
-        m_dtc = Metric(
-            "days_to_cover",
-            "Days-to-cover",
-            f"{dtc_raw:.1f}d",
-            "to close short",
-            "grey",
-            dtc_meaning,
-            dtc_basis,
-        )
+    # 5/6. Short interest + days-to-cover (computed from primitives when the
+    # yfinance convenience ratios are absent — they often are).
+    m_short = _short_interest_metric(info)
+    m_dtc = _days_to_cover_metric(info)
 
     metrics: list[Metric] = [m_inst, m_insider, m_float, m_netq, m_short, m_dtc]
 
@@ -296,7 +333,8 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
         "reframe": (
             "Institutional ownership is a structural characteristic of large-cap equities, not a signal. "
             "Insider-cluster signal is falsified (ADR-053): hypothesis tests found no systematic edge. "
-            "Short data is absent for many tickers — shown as data gap."
+            "Short interest and days-to-cover are computed from shares-short and float/volume when "
+            "the headline ratios are absent; data gap only when shares-short is unavailable."
         ),
         "verdicts": [
             Verdict(
@@ -319,20 +357,20 @@ def build_ownership_panel(result: Any) -> str:
     inst_raw = _f(info, "heldPercentInstitutions")
     insider_raw = _f(info, "heldPercentInsiders")
 
-    # Comparison viz: holder composition bars (Institutions, Insiders, Public)
-    holder_rows: list[tuple[str, float, bool]]
+    # Comparison viz: holder composition as one segmented bar (Inst/Insiders/Public)
     if inst_raw is not None and insider_raw is not None:
         inst_pct = inst_raw * 100
         insider_pct = insider_raw * 100
         public_pct = max(0.0, 100.0 - inst_pct - insider_pct)
-        holder_rows = [
-            ("Institutions", inst_pct, True),
-            ("Insiders", insider_pct, False),
-            ("Public", public_pct, False),
-        ]
         left = (
             '<div class="sa-pnl-subh">Holder composition</div>'
-            + panel_charts.peer_bars(holder_rows, unit="%", width=150)
+            + panel_charts.stacked_bar(
+                [
+                    ("Institutions", inst_pct, "#0F6E80"),
+                    ("Insiders", insider_pct, "#b45309"),
+                    ("Public", public_pct, "#cdd7d9"),
+                ]
+            )
         )
     else:
         left = (
@@ -340,12 +378,24 @@ def build_ownership_panel(result: Any) -> str:
             '<div class="sa-pnl-cap">holder composition not available — data gap</div>'
         )
 
-    # Trend viz: insider net activity — DATA-GAP (signal falsified per ADR-053)
-    right = (
-        '<div class="sa-pnl-subh">Insider net activity</div>'
-        '<div class="sa-pnl-cap">insider quarterly trend not wired — data gap; '
-        "signal falsified (ADR-053)</div>"
-    )
+    # Trend viz: net insider transaction value per quarter (signed; grey = falsified, ADR-053)
+    qn = _insider_quarterly_net(getattr(result, "insider_transactions", []) or [])
+    if len(qn) >= 2:
+        right = (
+            '<div class="sa-pnl-subh">Insider net activity ($M/qtr)</div>'
+            + panel_charts.trend_lines(
+                [("Net", [v / 1e6 for _, v in qn], "#9aa6aa")],
+                unit="M",
+                x_labels=(qn[0][0], qn[-1][0]),
+            )
+            + '<div class="sa-pnl-cap">disclosed fact; insider-cluster signal falsified (ADR-053)</div>'
+        )
+    else:
+        right = (
+            '<div class="sa-pnl-subh">Insider net activity</div>'
+            '<div class="sa-pnl-cap">no quarterly insider history — data gap; '
+            "signal falsified (ADR-053)</div>"
+        )
 
     return build_panel(
         number=2,

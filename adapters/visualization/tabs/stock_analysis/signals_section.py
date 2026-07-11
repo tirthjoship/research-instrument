@@ -177,7 +177,10 @@ def _render_sentiment(result: AnalysisResult) -> None:
         unsafe_allow_html=True,
     )
 
-    digest = _build_sentiment_digest(result.buzz_signals)
+    buzz = getattr(result, "sentiment_signals", None) or getattr(
+        result, "buzz_signals", None
+    )
+    digest = _build_sentiment_digest(buzz or [])
     if digest is not None:
         # Tally + source breakdown, with the FALSIFIED sentiment chip attached.
         st.markdown(_sentiment_tally_html(digest), unsafe_allow_html=True)

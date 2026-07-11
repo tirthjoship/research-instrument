@@ -10,7 +10,7 @@ def _result(**over):
         "trailingPE": 52.0,
         "forwardPE": 34.0,
         "pegRatio": 0.75,
-        "priceToSalesTrailingTwelveMonths": 28.0,
+        "priceToSalesTrailing12Months": 28.0,
         "enterpriseToEbitda": 45.0,
         "marketCap": 4.2e12,
         "freeCashflow": 72e9,
@@ -34,6 +34,15 @@ def test_view_has_six_multiples():
     assert any("EV/EBITDA" in lbl for lbl in labels) and any(
         "P/FCF" in lbl for lbl in labels
     )
+
+
+def test_ps_tile_has_its_own_copy_not_ev_ebitda():
+    # P/S must not silently borrow EV/EBITDA's tooltip copy — they're different multiples.
+    v = valuation_view.build_valuation_view(_result())
+    ps = next(m for m in v["metrics"] if m.label == "P/S")
+    ev_ebitda = next(m for m in v["metrics"] if m.label == "EV/EBITDA")
+    assert ps.meaning != ev_ebitda.meaning
+    assert "sales" in ps.meaning.lower()
 
 
 def test_pfcf_computed():
@@ -67,7 +76,31 @@ def test_panel_renders_with_chips_strip_and_drill():
     html = valuation_view.build_valuation_panel(_result())
     assert "sa-pnl" in html and "Valuation" in html
     assert "sa-chip" in html and html.count("sa-tip") >= 3
-    assert "sa-drill" in html
+    assert "sa-drill" not in html
+
+
+def test_valuation_ranges_render_pe_and_fair_value():
+    result = _result(
+        current_price=172.0,
+        info={"fiftyTwoWeekLow": 86.6, "fiftyTwoWeekHigh": 189.5},
+        analyst_panel=SimpleNamespace(
+            target_low=150.0, target_mean=200.0, target_high=260.0
+        ),
+    )
+    html = valuation_view.build_valuation_panel(result)
+    assert "P/E vs 1-yr range" in html
+    assert "Fair value · analyst target" in html
+    assert html.count("sa-rangebar") == 2  # P/E range + fair-value range
+    assert "data gap — no range available" not in html
+    # bear/bull semantic end labels + bear→bull gradient on the fair-value bar
+    assert "bear $150" in html and "bull $260" in html
+    assert "bearbull" in html and "base $200" in html
+
+
+def test_valuation_ranges_datagap_when_no_data():
+    # sparse result (no 52-wk prices, no analyst targets) -> honest data gap
+    html = valuation_view.build_valuation_panel(_result())
+    assert "data gap — no range available" in html
 
 
 def test_no_streamlit_and_clean():

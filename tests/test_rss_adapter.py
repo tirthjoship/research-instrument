@@ -69,9 +69,9 @@ def test_article_hash_length() -> None:
 # ---------------------------------------------------------------------------
 
 
-@patch("adapters.data.rss_adapter.feedparser.parse")
-def test_scan_sources_with_mocked_feed(mock_parse: MagicMock) -> None:
-    mock_parse.return_value = MagicMock(
+@patch("adapters.data.rss_adapter.fetch_feed")
+def test_scan_sources_with_mocked_feed(mock_fetch: MagicMock) -> None:
+    mock_fetch.return_value = MagicMock(
         entries=[
             MagicMock(
                 title="Apple AAPL surges on earnings",
@@ -88,9 +88,9 @@ def test_scan_sources_with_mocked_feed(mock_parse: MagicMock) -> None:
     assert signals[0].source == "reuters"
 
 
-@patch("adapters.data.rss_adapter.feedparser.parse")
-def test_scan_sources_empty_feed_returns_no_signals(mock_parse: MagicMock) -> None:
-    mock_parse.return_value = MagicMock(entries=[])
+@patch("adapters.data.rss_adapter.fetch_feed")
+def test_scan_sources_empty_feed_returns_no_signals(mock_fetch: MagicMock) -> None:
+    mock_fetch.return_value = MagicMock(entries=[])
     adapter = RSSAdapter(
         feeds={"marketwatch": "https://example.com/rss"}, request_delay=0
     )
@@ -98,9 +98,9 @@ def test_scan_sources_empty_feed_returns_no_signals(mock_parse: MagicMock) -> No
     assert signals == []
 
 
-@patch("adapters.data.rss_adapter.feedparser.parse")
-def test_scan_sources_skips_entry_with_no_tickers(mock_parse: MagicMock) -> None:
-    mock_parse.return_value = MagicMock(
+@patch("adapters.data.rss_adapter.fetch_feed")
+def test_scan_sources_skips_entry_with_no_tickers(mock_fetch: MagicMock) -> None:
+    mock_fetch.return_value = MagicMock(
         entries=[
             MagicMock(
                 title="The weather is nice today",
@@ -115,9 +115,9 @@ def test_scan_sources_skips_entry_with_no_tickers(mock_parse: MagicMock) -> None
     assert signals == []
 
 
-@patch("adapters.data.rss_adapter.feedparser.parse")
-def test_scan_sources_sets_fetched_at(mock_parse: MagicMock) -> None:
-    mock_parse.return_value = MagicMock(
+@patch("adapters.data.rss_adapter.fetch_feed")
+def test_scan_sources_sets_fetched_at(mock_fetch: MagicMock) -> None:
+    mock_fetch.return_value = MagicMock(
         entries=[
             MagicMock(
                 title="NVDA NVIDIA record quarter",
@@ -135,9 +135,9 @@ def test_scan_sources_sets_fetched_at(mock_parse: MagicMock) -> None:
     assert signals[0].fetched_at == SCAN_TIME
 
 
-@patch("adapters.data.rss_adapter.feedparser.parse")
-def test_scan_sources_article_hash_populated(mock_parse: MagicMock) -> None:
-    mock_parse.return_value = MagicMock(
+@patch("adapters.data.rss_adapter.fetch_feed")
+def test_scan_sources_article_hash_populated(mock_fetch: MagicMock) -> None:
+    mock_fetch.return_value = MagicMock(
         entries=[
             MagicMock(
                 title="MSFT Microsoft cloud growth",
@@ -155,20 +155,20 @@ def test_scan_sources_article_hash_populated(mock_parse: MagicMock) -> None:
     assert len(signals[0].article_hash) == 16
 
 
-@patch("adapters.data.rss_adapter.feedparser.parse")
+@patch("adapters.data.rss_adapter.fetch_feed")
 def test_scan_sources_uses_default_feeds_when_none_provided(
-    mock_parse: MagicMock,
+    mock_fetch: MagicMock,
 ) -> None:
-    mock_parse.return_value = MagicMock(entries=[])
+    mock_fetch.return_value = MagicMock(entries=[])
     adapter = RSSAdapter(request_delay=0)
-    # Should call feedparser 6 times (one per default feed)
+    # Should call fetch_feed 6 times (one per default feed)
     adapter.scan_sources(SCAN_TIME)
-    assert mock_parse.call_count == 6
+    assert mock_fetch.call_count == 6
 
 
-@patch("adapters.data.rss_adapter.feedparser.parse")
-def test_scan_sources_sentiment_raw_in_bounds(mock_parse: MagicMock) -> None:
-    mock_parse.return_value = MagicMock(
+@patch("adapters.data.rss_adapter.fetch_feed")
+def test_scan_sources_sentiment_raw_in_bounds(mock_fetch: MagicMock) -> None:
+    mock_fetch.return_value = MagicMock(
         entries=[
             MagicMock(
                 title="GOOG Google beats earnings strong revenue growth",
@@ -184,3 +184,24 @@ def test_scan_sources_sentiment_raw_in_bounds(mock_parse: MagicMock) -> None:
     signals = adapter.scan_sources(SCAN_TIME)
     for sig in signals:
         assert -1.0 <= sig.sentiment_raw <= 1.0
+
+
+@patch("adapters.data.rss_adapter.fetch_feed")
+def test_entry_signals_include_article_text(mock_fetch: MagicMock) -> None:
+    mock_fetch.return_value = MagicMock(
+        entries=[
+            MagicMock(
+                title="NVDA NVIDIA beats earnings with strong growth",
+                summary="Revenue surge",
+                published_parsed=(2026, 5, 29, 14, 0, 0, 0, 0, 0),
+                link="https://example.com/nvda",
+            )
+        ]
+    )
+    adapter = RSSAdapter(
+        feeds={"yahoo_finance": "https://example.com/rss"}, request_delay=0
+    )
+    signals = adapter.scan_sources(SCAN_TIME)
+    nvda = [s for s in signals if s.ticker == "NVDA"]
+    assert nvda
+    assert "beats earnings" in (nvda[0].article_text or "")

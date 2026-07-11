@@ -10,6 +10,7 @@ from __future__ import annotations
 import html as _html
 from typing import Any
 
+from adapters.visualization.components import panel_charts
 from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.status_chip import render_status_chip
 from adapters.visualization.tabs.stock_analysis.panel import Verdict, build_panel
@@ -32,6 +33,58 @@ def _f(info: dict[str, Any], key: str) -> float | None:
         return float(v) if v is not None else None
     except (TypeError, ValueError):
         return None
+
+
+def _closes(result: Any) -> list[float]:
+    ph = getattr(result, "price_history", None) or {}
+    cl = ph.get("closes") if isinstance(ph, dict) else None
+    return [float(c) for c in cl] if cl else []
+
+
+def _spy_closes(result: Any) -> list[float]:
+    ph = getattr(result, "price_history", None) or {}
+    cl = ph.get("spy_closes") if isinstance(ph, dict) else None
+    return [float(c) for c in cl] if cl else []
+
+
+_HORIZONS = [("3M", 63), ("6M", 126), ("1Y", 252), ("2Y", 504), ("3Y", 756)]
+
+
+def _horizon_returns(closes: list[float]) -> list[tuple[str, float]]:
+    """(label, return %) for each trailing horizon the series can cover."""
+    out: list[tuple[str, float]] = []
+    if not closes:
+        return out
+    cur = closes[-1]
+    for label, days in _HORIZONS:
+        if len(closes) > days and closes[-(days + 1)]:
+            base = closes[-(days + 1)]
+            out.append((label, (cur - base) / base * 100))
+    return out
+
+
+def _max_drawdown(closes: list[float]) -> float | None:
+    """Largest peak-to-trough decline (%, negative) over the series."""
+    if len(closes) < 2:
+        return None
+    peak = closes[0]
+    mdd = 0.0
+    for c in closes:
+        peak = max(peak, c)
+        if peak:
+            mdd = min(mdd, (c - peak) / peak * 100)
+    return mdd
+
+
+def _relative_strength(closes: list[float], spy: list[float]) -> list[float]:
+    """Cumulative relative-strength vs SPY over the aligned tail (100 = in line)."""
+    n = min(len(closes), len(spy))
+    if n < 30:
+        return []
+    a, b = closes[-n:], spy[-n:]
+    if not a[0] or not b[0]:
+        return []
+    return [((a[i] / a[0]) / (b[i] / b[0])) * 100 for i in range(n)]
 
 
 def _strip_html(metrics: list[Metric]) -> str:
@@ -71,6 +124,7 @@ def build_performance_view(result: Any) -> dict[str, Any]:
     spy_1y = _f(info, "SandP52WeekChange")
     beta = _f(info, "beta")
     ma200 = _f(info, "twoHundredDayAverage")
+    closes = _closes(result)
 
     metrics: list[Metric] = []
 
@@ -134,18 +188,35 @@ def build_performance_view(result: Any) -> dict[str, Any]:
             )
         )
 
-    # 3. 3Y return — DATA-GAP (no point-in-time source wired)
-    metrics.append(
-        Metric(
-            "ret_3y",
-            "3Y return",
-            "—",
-            "data gap",
-            "grey",
-            "Stock price change over three years; no point-in-time source wired.",
-            "data gap — not wired",
+    # 3. Long-horizon return — the longest trailing window the price series covers
+    #    (3Y when available, else 2Y/1Y); honest dynamic label, never faked.
+    hz = _horizon_returns(closes)
+    if hz:
+        lbl, r = hz[-1]
+        sign = "+" if r >= 0 else ""
+        metrics.append(
+            Metric(
+                "ret_long",
+                f"{lbl} return",
+                f"{sign}{r:.0f}%",
+                "from price history",
+                "green" if r > 0 else "grey",
+                f"Trailing {lbl} price change, from the daily close series.",
+                "price_history.closes",
+            )
         )
-    )
+    else:
+        metrics.append(
+            Metric(
+                "ret_3y",
+                "3Y return",
+                "—",
+                "data gap",
+                "grey",
+                "Multi-year price change; requires a price series.",
+                "data gap — price history unavailable",
+            )
+        )
 
     # 4. Beta (market sensitivity)
     beta_meaning = (
@@ -163,7 +234,7 @@ def build_performance_view(result: Any) -> dict[str, Any]:
             Metric(
                 "beta",
                 "Beta",
-                f"{beta:.2f}×",
+                f"{beta:.1f}",
                 "vs market",
                 tone,
                 beta_meaning,
@@ -171,18 +242,32 @@ def build_performance_view(result: Any) -> dict[str, Any]:
             )
         )
 
-    # 5. Max drawdown — DATA-GAP (no price series wired)
-    metrics.append(
-        Metric(
-            "max_drawdown",
-            "Max drawdown",
-            "—",
-            "data gap",
-            "grey",
-            "Largest peak-to-trough price decline; requires price series not currently wired.",
-            "data gap — price series not wired",
+    # 5. Max drawdown — largest peak-to-trough decline over the price series
+    mdd = _max_drawdown(closes)
+    if mdd is not None:
+        metrics.append(
+            Metric(
+                "max_drawdown",
+                "Max drawdown",
+                f"{mdd:.0f}%",
+                "peak-to-trough",
+                "amber" if mdd < -20 else "grey",
+                "Largest peak-to-trough decline over the available daily price history.",
+                "price_history.closes",
+            )
         )
-    )
+    else:
+        metrics.append(
+            Metric(
+                "max_drawdown",
+                "Max drawdown",
+                "—",
+                "data gap",
+                "grey",
+                "Largest peak-to-trough decline; requires a price series.",
+                "data gap — price history unavailable",
+            )
+        )
 
     # 6. vs 200-day MA ((price − MA200) / MA200 * 100)
     ma200_meaning = (
@@ -234,7 +319,7 @@ def build_performance_view(result: Any) -> dict[str, Any]:
     if beta is not None and beta > 1.3:
         chips += render_status_chip(
             "HIGH-BETA",
-            f"{beta:.1f}×",
+            f"{beta:.1f}",
             tone="amber",
             rule="beta>1.3 = amplified vs market; a risk characteristic, not good/bad",
         )
@@ -244,20 +329,31 @@ def build_performance_view(result: Any) -> dict[str, Any]:
         "chips": chips,
         "claim": "Price and return behaviour over trailing horizons.",
         "reframe": (
-            "1Y return and vs-200d are trailing price facts. "
-            "3Y return and max-drawdown are not wired (data gap — no price series). "
-            "Beta is the trailing regression coefficient, not a forward estimate."
+            "Returns, drawdown, and relative strength are computed from the daily "
+            "close series. Beta is the trailing regression coefficient, not a forecast."
+            if closes
+            else (
+                "1Y return and vs-200d are trailing price facts. "
+                "Multi-horizon returns and drawdown need a price series (data gap)."
+            )
         ),
-        "verdicts": [
-            Verdict(
-                "neu",
-                "Returns-by-horizon series not wired — data gap, no price history available.",
-            ),
-            Verdict(
-                "neu",
-                "Relative-strength series not wired — data gap, no index comparison series.",
-            ),
-        ],
+        "verdicts": (
+            [
+                Verdict(
+                    "pos",
+                    "Multi-horizon returns and drawdown computed from price history.",
+                ),
+                Verdict(
+                    "neu",
+                    "Relative strength vs the S&P is descriptive, not a forecast.",
+                ),
+            ]
+            if closes
+            else [
+                Verdict("neu", "Returns-by-horizon series not wired — data gap."),
+                Verdict("neu", "Relative-strength series not wired — data gap."),
+            ]
+        ),
     }
 
 
@@ -265,17 +361,41 @@ def build_performance_panel(result: Any) -> str:
     """Compose the full Performance deep-dive panel HTML (panel #1)."""
     v = build_performance_view(result)
 
-    # Comparison viz: returns-by-horizon paired bars — DATA-GAP (no price series)
-    left = (
-        '<div class="sa-pnl-subh">Returns by horizon</div>'
-        '<div class="sa-pnl-cap">returns-by-horizon series not wired — data gap</div>'
-    )
+    closes = _closes(result)
+    hz = _horizon_returns(closes)
+    if hz:
+        # Pair each horizon's stock return with the S&P's over the same window so
+        # the panel's "beat the market" claim is shown, not just asserted.
+        spy_map = dict(_horizon_returns(_spy_closes(result)))
+        if spy_map:
+            rows = [(lbl, r, spy_map.get(lbl, 0.0), lbl == "1Y") for lbl, r in hz]
+            chart = panel_charts.horizon_compare_bars(rows, unit="%")
+            subh = "Return vs S&P, by horizon"
+        else:
+            chart = panel_charts.peer_bars(
+                [(lbl, r, lbl == "1Y") for lbl, r in hz], unit="%"
+            )
+            subh = "Returns by horizon"
+        left = f'<div class="sa-pnl-subh">{subh}</div>' + chart
+    else:
+        left = (
+            '<div class="sa-pnl-subh">Returns by horizon</div>'
+            '<div class="sa-pnl-cap">returns-by-horizon — data gap (no price series)</div>'
+        )
 
-    # Trend viz: relative-strength vs index — DATA-GAP (no series wired)
-    right = (
-        '<div class="sa-pnl-subh">Relative strength vs S&P</div>'
-        '<div class="sa-pnl-cap">relative-strength series not wired — data gap</div>'
-    )
+    rs = _relative_strength(closes, _spy_closes(result))
+    if len(rs) >= 30:
+        right = (
+            '<div class="sa-pnl-subh">Relative strength vs S&P (100 = in line)</div>'
+            + panel_charts.trend_lines(
+                [("RS", rs, "#0F6E80")], x_labels=("start", "now")
+            )
+        )
+    else:
+        right = (
+            '<div class="sa-pnl-subh">Relative strength vs S&P</div>'
+            '<div class="sa-pnl-cap">relative-strength — data gap (no index series)</div>'
+        )
 
     return build_panel(
         number=1,
