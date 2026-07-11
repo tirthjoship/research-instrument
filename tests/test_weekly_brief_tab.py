@@ -1341,3 +1341,49 @@ def test_render_default_args_resolve_to_sample_paths_on_cold_start(  # type: ign
     wb.render()
 
     assert captured["path"] == "data/sample/brief_summary.json"
+
+
+def test_stage_csv_upload_is_session_only(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Upload must never write to data/personal/ (save_and_sync_holdings) —
+    the parsed book goes straight into session_state, and the background
+    rebuild target must be a session/temp path."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(st, "toast", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "rerun", lambda: None)
+
+    assert not hasattr(wb, "save_and_sync_holdings"), (
+        "the public-facing tab module must not even import the "
+        "data/personal/-writing sync function"
+    )
+
+    rebuild_calls: list[tuple[object, object]] = []
+    monkeypatch.setattr(
+        wb,
+        "_start_dashboard_rebuild_background",
+        lambda *a, **k: rebuild_calls.append((a, k)),
+    )
+
+    class FakeUpload:
+        name = "portfolio.csv"
+
+        def getvalue(self) -> bytes:
+            return (
+                b"symbol,quantity,book value (cad),exchange,account type\n"
+                b"COST,5,900,NASDAQ,TFSA\n"
+            )
+
+    wb._stage_csv_upload(FakeUpload())
+
+    assert st.session_state["is_sample_book"] is False
+    tickers = {h.ticker for h in st.session_state["book"]}
+    assert tickers == {"COST"}
+    assert rebuild_calls, "must still kick off a background rebuild"
+    call_args, call_kwargs = rebuild_calls[0]
+    blob = str(call_args) + str(call_kwargs)
+    assert "data/personal" not in blob
+    assert wb.SESSION_BRIEF_PATH_KEY in st.session_state
+    assert "data/personal" not in st.session_state[wb.SESSION_BRIEF_PATH_KEY]

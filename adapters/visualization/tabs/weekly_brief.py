@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
+import tempfile
 import threading
 from collections.abc import Callable, Sequence
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
 
-from adapters.visualization.book_context import resolve_ui_book_context
+from adapters.visualization.book_context import (
+    SESSION_BRIEF_PATH_KEY,
+    SESSION_REPORTS_DIR_KEY,
+    resolve_ui_book_context,
+)
 from adapters.visualization.card_fetch import (
     _home_evidence_card,
     fetch_card,
@@ -35,10 +41,7 @@ from adapters.visualization.data_loader import (
     load_weekly_brief,
     staleness_days,
 )
-from adapters.visualization.holdings_syncer import (
-    rebuild_weekly_brief_cached,
-    save_and_sync_holdings,
-)
+from adapters.visualization.holdings_syncer import rebuild_weekly_brief_cached
 from application.card_loading import select_case_summarizer
 from application.holdings_reader import read_holdings
 from application.runtime_guard import holdings_upload_enabled
@@ -435,8 +438,15 @@ _UPLOAD_KEY_VER = "ob_upload_key_ver"
 _HOME_AUTO_FETCH_KEY = "home_brief_auto_fetch"
 
 
-def _start_dashboard_rebuild_background() -> None:
-    """Rebuild brief_summary.json in a daemon thread (non-blocking)."""
+def _start_dashboard_rebuild_background(
+    holdings_csv: str | None = None, out_path: str | None = None
+) -> None:
+    """Rebuild brief_summary.json in a daemon thread (non-blocking).
+
+    ``holdings_csv``/``out_path`` default to the personal dogfood paths; the
+    session-upload path passes a session/temp pair so the rebuild never
+    touches ``data/personal/``.
+    """
     if st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
         return
     st.session_state[_HOME_BRIEF_PROCESSING_KEY] = True
@@ -444,7 +454,7 @@ def _start_dashboard_rebuild_background() -> None:
 
     def _worker() -> None:
         try:
-            rebuild_weekly_brief_cached()
+            rebuild_weekly_brief_cached(holdings_csv=holdings_csv, out_path=out_path)
         except Exception:  # noqa: BLE001
             st.session_state["home_brief_rebuild_error"] = True
         finally:
@@ -662,7 +672,9 @@ def _home_evidence_record_html() -> str:
 
 
 def _stage_csv_upload(uploaded: Any) -> None:
-    """Save uploaded CSV, then kick off background dashboard rebuild + analysis."""
+    """Parse an uploaded CSV into the session book (session-only — never
+    written to data/personal/), then kick off a background brief rebuild into
+    a session-scoped temp directory."""
     try:
         content = uploaded.getvalue().decode("utf-8")
         holdings = read_holdings_from_string(content)
@@ -672,16 +684,27 @@ def _stage_csv_upload(uploaded: Any) -> None:
                 "book value (cad), exchange, account type."
             )
             return
-        save_and_sync_holdings(content, uploaded.name)
-        st.session_state["book"] = read_holdings("data/personal/holdings.csv")
+
+        tmp_dir = tempfile.mkdtemp(prefix="stockrec_session_")
+        session_csv = Path(tmp_dir) / "holdings.csv"
+        session_csv.write_text(content, encoding="utf-8")
+        session_out = Path(tmp_dir) / "weekly_brief.md"
+
+        st.session_state["book"] = holdings
         st.session_state["is_sample_book"] = False
+        st.session_state[SESSION_BRIEF_PATH_KEY] = str(
+            Path(tmp_dir) / "brief_summary.json"
+        )
+        st.session_state[SESSION_REPORTS_DIR_KEY] = _REPORTS_DIR
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state[_HOME_FETCH_STARTED_KEY] = False
         st.session_state[_HOME_AUTO_FETCH_KEY] = True
         st.session_state[_UPLOAD_KEY_VER] = (
             int(st.session_state.get(_UPLOAD_KEY_VER, 0)) + 1
         )
-        _start_dashboard_rebuild_background()
+        _start_dashboard_rebuild_background(
+            holdings_csv=str(session_csv), out_path=str(session_out)
+        )
         st.toast(f"Processing {len(holdings)} holdings from {uploaded.name}")
         st.rerun()
     except Exception as exc:  # noqa: BLE001
