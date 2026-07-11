@@ -725,3 +725,47 @@ def test_decision_levers_no_forbidden_words() -> None:
         assert not re.search(
             rf"\b{re.escape(w)}\b", blob
         ), f"Forbidden word {w!r} found in new P2-Risk copy"
+
+
+def test_render_default_path_resolves_via_book_context(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """render() called with no explicit path (the real dashboard.py call) must
+    resolve through the book-context resolver — the sample brief on cold
+    start, never data/personal/brief_summary.json."""
+    from adapters.visualization.tabs import risk
+
+    captured: dict[str, str] = {}
+
+    def fake_load_brief_summary(path: str) -> None:
+        captured["path"] = path
+        return None
+
+    monkeypatch.setattr(risk.compose, "load_brief_summary", fake_load_brief_summary)
+
+    risk.render()
+
+    assert captured["path"] == "data/sample/brief_summary.json"
+
+
+def test_render_hides_personal_upload_history_when_not_local(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """The personal upload-history table must never render for a hosted/public
+    visitor — it would leak the operator's own upload filenames/cost basis."""
+    import pathlib
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import risk
+
+    monkeypatch.setattr(
+        risk.compose, "holdings_upload_enabled", lambda: False, raising=False
+    )
+    monkeypatch.setattr(pathlib.Path, "exists", lambda self: True)
+    captured: list[object] = []
+    monkeypatch.setattr(
+        st, "subheader", lambda *a, **k: captured.append(a)
+    )  # noqa: ARG005
+
+    risk.render(path=str(tmp_path / "brief.json"))
+
+    assert (
+        captured == []
+    ), "personal upload history table must not render when not local"
