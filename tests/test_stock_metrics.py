@@ -40,3 +40,20 @@ def test_clean():
     src = inspect.getsource(stock_metrics).lower()
     for w in FORBIDDEN_WORDS:
         assert w not in src
+
+
+# ev_ebitda, ps, p_fcf, roic are rendered as solo trailing-multiple tiles —
+# no peer_percentiles/peer_data comparison is ever computed for them (only
+# P/E and Market Cap get peer_percentiles; gross margin gets its own inline
+# peer-median bar). Their basis copy must not claim a peer benchmark that
+# doesn't exist — only P/E's basis may say so.
+_NO_PEER_COMPARISON_WIRED = ["ev_ebitda", "ps", "p_fcf", "roic"]
+
+
+def test_solo_tiles_dont_claim_unwired_peer_comparison():
+    for k in _NO_PEER_COMPARISON_WIRED:
+        _, basis = stock_metrics.STOCK_METRICS[k]
+        low = basis.lower()
+        assert (
+            "vs peer" not in low
+        ), f"{k} basis falsely implies a peer comparison: {basis!r}"

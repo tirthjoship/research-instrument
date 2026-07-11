@@ -20,16 +20,19 @@ STOCK_METRICS: dict[str, tuple[str, str]] = {
     ),
     "ev_ebitda": (
         "Enterprise value over EBITDA; capital-structure-neutral valuation multiple.",
-        "vs peer percentile",
+        "yfinance info.enterpriseToEbitda (trailing, no peer comparison shown)",
     ),
     "ps": (
         "Price divided by trailing sales; useful for low-margin or pre-profit businesses without stable earnings.",
-        "vs peer percentile",
+        "yfinance info.priceToSalesTrailing12Months (trailing, no peer comparison shown)",
     ),
-    "p_fcf": ("Price divided by free cash flow.", "vs peer percentile"),
+    "p_fcf": (
+        "Price divided by free cash flow.",
+        "price / info.freeCashflow (trailing, no peer comparison shown)",
+    ),
     "roic": (
         "Return on invested capital; efficiency measure independent of how the company is financed.",
-        "vs peer median",
+        "EBIT*(1-tax) / (equity+debt-cash) (no peer comparison shown)",
     ),
     "net_debt_ebitda": (
         "Net debt over EBITDA; negative means net cash. Higher multiples mean more years of earnings would be needed to clear net debt.",
