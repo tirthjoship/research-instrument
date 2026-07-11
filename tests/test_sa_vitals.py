@@ -49,6 +49,21 @@ def test_datagap_tile_is_grey():
     assert pe["tone"] == "grey" and pe["value"] in ("—", "n/a")
 
 
+def test_insiders_q_tile_uses_latest_quarter_not_alltime_sum():
+    # Same bug class fixed in ownership_view: this tile is labelled "Insiders Q"
+    # ("net insider transaction value last quarter") and must match the latest
+    # quarter's bucket (-$186M), not the sum across all three quarters (-$396M).
+    r = _result()
+    r.insider_transactions = [
+        {"value": -186e6, "Start Date": "2026-06-18"},
+        {"value": -120e6, "Start Date": "2026-03-15"},
+        {"value": -90e6, "Start Date": "2025-12-10"},
+    ]
+    v = vitals.build_vitals_view(r)
+    tile = next(t for t in v.tiles if "Insiders" in t["label"])
+    assert tile["value"] == "-186M"
+
+
 def test_no_streamlit_and_clean():
     src = inspect.getsource(vitals)
     assert "import streamlit" not in src
