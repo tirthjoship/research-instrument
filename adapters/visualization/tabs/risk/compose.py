@@ -6,10 +6,12 @@ from typing import Any
 
 import streamlit as st
 
+from adapters.visualization.book_context import resolve_ui_book_context
 from adapters.visualization.components.risk_second_opinion import (
     render_risk_second_opinion,
 )
 from adapters.visualization.data_loader import load_brief_summary
+from application.runtime_guard import holdings_upload_enabled
 
 from ._theme import _MUT
 from .components import (
@@ -89,9 +91,15 @@ def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
 # ===========================================================================
 
 
-def render(path: str = "data/personal/brief_summary.json") -> None:
-    """Streamlit entrypoint: load macro → render v8 status-first layout."""
-    summary = load_brief_summary(path)
+def render(path: str | None = None) -> None:
+    """Streamlit entrypoint: load macro → render v8 status-first layout.
+
+    ``path`` defaults to the book-context resolver's brief path (sample on
+    cold start, session brief after an upload) — never data/personal/ unless
+    a caller explicitly passes that path.
+    """
+    effective_path = path if path is not None else resolve_ui_book_context().brief_path
+    summary = load_brief_summary(effective_path)
     macro = (summary or {}).get("macro") if summary else None
 
     # Build AI second-opinion panel HTML BEFORE composing (spec §9 — no live
@@ -114,7 +122,12 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
 
         render_lens_scroll()
 
-    # Render holdings upload history table at the bottom of the Risk tab
+    # Render holdings upload history table at the bottom of the Risk tab —
+    # local-only: this is the operator's own dogfood upload log and must never
+    # be shown to a hosted/public visitor.
+    if not holdings_upload_enabled():
+        return
+
     import json
     from pathlib import Path
 

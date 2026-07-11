@@ -1231,3 +1231,113 @@ def test_rendered_home_shows_evidence_record_panel(tmp_path) -> None:  # type: i
     assert "Still testing" in all_html
     # The panel pulls the live registry — the forward-pending gate is shown.
     assert "ADR-048" in all_html
+
+
+# ---------------------------------------------------------------------------
+# Public sample book: cold start must never auto-load data/personal/
+# ---------------------------------------------------------------------------
+
+
+def test_handle_onboarding_never_autoloads_personal_even_if_present(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """Regression for the live bug: cold start must always resolve to the
+    sample book, never ``data/personal/holdings.csv``, even when that file and
+    ``upload_history.json`` exist on the machine running the dashboard (the
+    normal state on the operator's own laptop)."""
+    import pathlib
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+    from application.holdings_reader import Holding
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+
+    real_exists = pathlib.Path.exists
+
+    def fake_exists(self: pathlib.Path) -> bool:
+        if str(self) in {
+            "data/personal/holdings.csv",
+            "data/personal/upload_history.json",
+        }:
+            return True
+        return real_exists(self)
+
+    monkeypatch.setattr(pathlib.Path, "exists", fake_exists)
+    monkeypatch.setattr(
+        wb,
+        "read_holdings",
+        lambda path: (
+            [Holding("COST", 1.0, 100.0, "TFSA")] if "personal" in str(path) else []
+        ),
+    )
+    monkeypatch.setattr(wb, "holdings_upload_enabled", lambda: False)
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "markdown", lambda *a, **k: None)  # noqa: ARG005
+
+    wb._handle_onboarding()
+
+    assert st.session_state["is_sample_book"] is True
+    tickers = {h.ticker for h in st.session_state["book"]}
+    assert "COST" not in tickers
+    assert tickers == {
+        "AAPL",
+        "MSFT",
+        "NVDA",
+        "GOOGL",
+        "AMZN",
+        "TSLA",
+        "META",
+        "JPM",
+        "V",
+        "BRK-B",
+    }
+
+
+def test_render_default_args_resolve_to_sample_paths_on_cold_start(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """render() called with no explicit path/reports_dir (the real call from
+    dashboard.py) must resolve through the book-context resolver on cold
+    start — the committed sample artifacts, never data/personal/."""
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(wb, "holdings_upload_enabled", lambda: False)
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "markdown", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "info", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "warning", lambda *a, **k: None)  # noqa: ARG005
+
+    captured: dict[str, str] = {}
+
+    def fake_load_brief_summary(path: str) -> None:
+        captured["path"] = path
+        return None
+
+    monkeypatch.setattr(wb, "load_brief_summary", fake_load_brief_summary)
+
+    wb.render()
+
+    assert captured["path"] == "data/sample/brief_summary.json"

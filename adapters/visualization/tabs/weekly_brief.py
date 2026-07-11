@@ -5,11 +5,11 @@ from __future__ import annotations
 import threading
 from collections.abc import Callable, Sequence
 from datetime import timedelta
-from pathlib import Path
 from typing import Any
 
 import streamlit as st
 
+from adapters.visualization.book_context import resolve_ui_book_context
 from adapters.visualization.card_fetch import (
     _home_evidence_card,
     fetch_card,
@@ -42,7 +42,6 @@ from adapters.visualization.holdings_syncer import (
 from application.card_loading import select_case_summarizer
 from application.holdings_reader import read_holdings
 from application.runtime_guard import holdings_upload_enabled
-from application.sample_book import load_sample_book
 from domain.discipline import Verdict
 from domain.evidence_registry import EvidenceEntry
 from domain.evidence_registry import Verdict as EvidenceVerdict
@@ -700,22 +699,13 @@ def read_holdings_from_string(content: str) -> list[Any]:
 
 
 def _handle_onboarding() -> None:
-    """Auto-load sample or saved book; show sample banner + inline upload CTA."""
+    """Load the book via the resolver (session upload, else sample); show
+    sample banner + inline upload CTA. Never auto-reads data/personal/ — that
+    stays a CLI-only dogfood path, outside the public UI."""
     if "book" not in st.session_state:
-        import os  # noqa: PLC0415
-
-        custom_csv = Path("data/personal/holdings.csv")
-        history_json = Path("data/personal/upload_history.json")
-        if (
-            custom_csv.exists()
-            and history_json.exists()
-            and "PYTEST_CURRENT_TEST" not in os.environ
-        ):
-            st.session_state["book"] = read_holdings(str(custom_csv))
-            st.session_state["is_sample_book"] = False
-        else:
-            st.session_state["book"] = load_sample_book()
-            st.session_state["is_sample_book"] = True
+        ctx = resolve_ui_book_context()
+        st.session_state["book"] = ctx.book
+        st.session_state["is_sample_book"] = ctx.is_sample
 
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
@@ -776,12 +766,10 @@ def _compute_vs_market_1y(holdings: list[dict[str, Any]]) -> float | None:
 
 
 def render(
-    path: str = _SUMMARY_PATH,
+    path: str | None = None,
     adherence_path: str = _ADHERENCE_PATH,
-    reports_dir: str = _REPORTS_DIR,
+    reports_dir: str | None = None,
 ) -> None:
-    summary = load_brief_summary(path)
-
     # ── Landing door — ALWAYS rendered (FIX A: persistent so CSV/manual stay
     #    reachable even when a book/brief is loaded).  Button handlers set
     #    st.session_state["book"] and call st.rerun() so the Front-Desk below
@@ -789,6 +777,15 @@ def render(
     _handle_onboarding()
     _clear_tab_loading_overlay()
     _poll_dashboard_rebuild()
+
+    # Explicit path/reports_dir (tests, or a future personal CLI-driven view)
+    # win; production's no-arg call resolves through the book-context resolver
+    # so cold start / session upload always land on the right artifacts.
+    ctx = resolve_ui_book_context()
+    path = path if path is not None else ctx.brief_path
+    reports_dir = reports_dir if reports_dir is not None else ctx.reports_dir
+
+    summary = load_brief_summary(path)
 
     if st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
         st.info(
