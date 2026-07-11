@@ -12,12 +12,22 @@ from __future__ import annotations
 import html as _html
 import json
 import logging
+import subprocess
+import sys
+import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
 import streamlit as st
 
 from adapters.ml.gemini_narrator import GeminiNarratorAdapter
+from adapters.visualization.book_context import (
+    SESSION_REPORTS_DIR_KEY,
+    SESSION_SAMPLE_REFRESH_REPORTS_KEY,
+    UIBookContext,
+    resolve_ui_book_context,
+)
 from adapters.visualization.components.factor_row import render_factor_row
 from adapters.visualization.components.funnel import render_funnel
 from adapters.visualization.components.gemini_read import (
@@ -31,6 +41,7 @@ from adapters.visualization.data_loader import (
     load_latest_screened,
     staleness_days,
 )
+from adapters.visualization.run_gate import RUN_GATE_HELP, evaluate_run_gate
 from application.runtime_guard import is_local_runtime
 from domain.evidence_registry import get_evidence
 from domain.factor_bands import Band, band_for_percentile, plain_read
@@ -1265,18 +1276,104 @@ def _render_history_and_upload(reports_dir: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Gated "Run screener" — single-flight, cooldown, disable-if-fresh (mirrors
+# weekly_brief.py's gated Run brief). Writes always land in a fresh
+# session-scoped temp dir — never data/reports/ or data/sample/ from a
+# public click.
+# ---------------------------------------------------------------------------
+
+_SCREENER_PROCESSING_KEY = "screener_run_processing"
+_SCREENER_LAST_RUN_KEY = "screener_run_last_ts"
+_SCREENER_RUN_ERROR_KEY = "screener_run_error"
+
+
+def _run_screen_candidates_cli(report_dir: str) -> None:
+    cmd = [
+        sys.executable,
+        "-m",
+        "application.cli",
+        "screen-candidates",
+        "--report-dir",
+        report_dir,
+    ]
+    subprocess.run(cmd, check=True)
+
+
+def _start_screener_run_background(report_dir: str) -> None:
+    if st.session_state.get(_SCREENER_PROCESSING_KEY):
+        return
+    st.session_state[_SCREENER_PROCESSING_KEY] = True
+    st.session_state.pop(_SCREENER_RUN_ERROR_KEY, None)
+
+    def _worker() -> None:
+        try:
+            _run_screen_candidates_cli(report_dir)
+        except Exception:  # noqa: BLE001
+            st.session_state[_SCREENER_RUN_ERROR_KEY] = True
+        finally:
+            st.session_state[_SCREENER_PROCESSING_KEY] = False
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
+def _trigger_screener_run(ctx: UIBookContext) -> None:
+    import time as _time  # noqa: PLC0415
+
+    st.session_state[_SCREENER_LAST_RUN_KEY] = _time.time()
+    tmp_dir = tempfile.mkdtemp(prefix="stockrec_screen_run_")
+    if ctx.is_sample:
+        st.session_state[SESSION_SAMPLE_REFRESH_REPORTS_KEY] = tmp_dir
+    else:
+        st.session_state[SESSION_REPORTS_DIR_KEY] = tmp_dir
+    _start_screener_run_background(tmp_dir)
+
+
+def _render_run_screener_gate(ctx: UIBookContext, days: int | None) -> None:
+    """Status caption + gated Run button for the screener."""
+    age_label = (
+        f"{days} day{'s' if days != 1 else ''} old"
+        if days is not None
+        else "no screen yet"
+    )
+    gate = evaluate_run_gate(
+        staleness_days=days,
+        is_running=bool(st.session_state.get(_SCREENER_PROCESSING_KEY)),
+        last_run_ts=st.session_state.get(_SCREENER_LAST_RUN_KEY),
+    )
+    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+        st.caption(f"Screener — {age_label}")
+        clicked = st.button(
+            "↻ Run screener",
+            key="screener_run_button",
+            disabled=not gate.can_run,
+            help=RUN_GATE_HELP[gate.reason],
+        )
+    if clicked:
+        _trigger_screener_run(ctx)
+        st.rerun()
+    if st.session_state.get(_SCREENER_PROCESSING_KEY):
+        st.info("⟳ Screening the universe — this can take a few minutes…", icon="ℹ️")
+    elif st.session_state.pop(_SCREENER_RUN_ERROR_KEY, False):
+        st.error("Screen run failed. The previous screen above is still shown.")
+
+
+# ---------------------------------------------------------------------------
 # render() — Streamlit entry point (wires all components)
 # ---------------------------------------------------------------------------
 
 
-def render(reports_dir: str = "data/reports") -> None:
+def render(reports_dir: str | None = None) -> None:
     """Main render entry point for the Research Candidates tab."""
+    ctx = resolve_ui_book_context()
+    reports_dir = reports_dir if reports_dir is not None else ctx.reports_dir
+
     screen = load_latest_screened(reports_dir)
     if screen is None:
         st.warning(
             "No screen report found. Run "
             "`python -m application.cli screen-candidates` to generate one."
         )
+        _render_run_screener_gate(ctx, None)
         return
 
     _using_screened = screen.get("_source") == "screened"
@@ -1284,6 +1381,7 @@ def render(reports_dir: str = "data/reports") -> None:
     days = staleness_days(screen.get("as_of", ""))
     if days is not None and days > 8:
         st.error(f"Screen is {days} days old — re-run `screen-candidates`.")
+    _render_run_screener_gate(ctx, days)
 
     if _using_screened:
         candidates = screen.get("rows", [])[:_TOP_N]
