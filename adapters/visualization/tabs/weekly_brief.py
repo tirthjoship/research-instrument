@@ -13,7 +13,11 @@ import streamlit as st
 
 from adapters.visualization.book_context import (
     SESSION_BRIEF_PATH_KEY,
+    SESSION_HOLDINGS_CSV_KEY,
     SESSION_REPORTS_DIR_KEY,
+    SESSION_SAMPLE_REFRESH_BRIEF_KEY,
+    SESSION_SAMPLE_REFRESH_REPORTS_KEY,
+    UIBookContext,
     resolve_ui_book_context,
 )
 from adapters.visualization.card_fetch import (
@@ -42,6 +46,7 @@ from adapters.visualization.data_loader import (
     staleness_days,
 )
 from adapters.visualization.holdings_syncer import rebuild_weekly_brief_cached
+from adapters.visualization.run_gate import RUN_GATE_HELP, evaluate_run_gate
 from application.card_loading import select_case_summarizer
 from application.holdings_reader import read_holdings
 from application.runtime_guard import holdings_upload_enabled
@@ -464,6 +469,64 @@ def _start_dashboard_rebuild_background(
     threading.Thread(target=_worker, daemon=True).start()
 
 
+_HOME_LAST_BRIEF_RUN_KEY = "home_brief_last_run_ts"
+
+
+def _trigger_brief_run(ctx: UIBookContext) -> None:
+    """Kick off a background brief rebuild for the resolved context.
+
+    Sample book: reads the committed sample CSV but writes into a fresh
+    session-scoped temp dir — never overwrites data/sample/brief_summary.json.
+    Uploaded book: rebuilds from its session holdings CSV into a fresh temp
+    dir too, so each Run click never collides with an earlier one.
+    """
+    import time as _time  # noqa: PLC0415
+
+    st.session_state[_HOME_LAST_BRIEF_RUN_KEY] = _time.time()
+    tmp_dir = tempfile.mkdtemp(prefix="stockrec_brief_run_")
+    out_path = str(Path(tmp_dir) / "weekly_brief.md")
+    brief_path = str(Path(tmp_dir) / "brief_summary.json")
+
+    if ctx.is_sample:
+        st.session_state[SESSION_SAMPLE_REFRESH_BRIEF_KEY] = brief_path
+        st.session_state[SESSION_SAMPLE_REFRESH_REPORTS_KEY] = _REPORTS_DIR
+        _start_dashboard_rebuild_background(
+            holdings_csv="data/sample/sample_book.csv", out_path=out_path
+        )
+    else:
+        holdings_csv = st.session_state.get(SESSION_HOLDINGS_CSV_KEY)
+        st.session_state[SESSION_BRIEF_PATH_KEY] = brief_path
+        st.session_state[SESSION_REPORTS_DIR_KEY] = _REPORTS_DIR
+        _start_dashboard_rebuild_background(
+            holdings_csv=holdings_csv, out_path=out_path
+        )
+
+
+def _render_run_brief_gate(ctx: UIBookContext, days: int | None) -> None:
+    """Status caption + gated Run button for the weekly brief."""
+    age_label = (
+        f"{days} day{'s' if days != 1 else ''} old"
+        if days is not None
+        else "no brief yet"
+    )
+    gate = evaluate_run_gate(
+        staleness_days=days,
+        is_running=bool(st.session_state.get(_HOME_BRIEF_PROCESSING_KEY)),
+        last_run_ts=st.session_state.get(_HOME_LAST_BRIEF_RUN_KEY),
+    )
+    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+        st.caption(f"Weekly brief — {age_label}")
+        clicked = st.button(
+            "↻ Run brief",
+            key="home_run_brief",
+            disabled=not gate.can_run,
+            help=RUN_GATE_HELP[gate.reason],
+        )
+    if clicked:
+        _trigger_brief_run(ctx)
+        st.rerun()
+
+
 @_fragment(run_every=timedelta(seconds=2))
 def _poll_dashboard_rebuild() -> None:
     """Rerun Home when background brief rebuild finishes."""
@@ -696,6 +759,7 @@ def _stage_csv_upload(uploaded: Any) -> None:
             Path(tmp_dir) / "brief_summary.json"
         )
         st.session_state[SESSION_REPORTS_DIR_KEY] = _REPORTS_DIR
+        st.session_state[SESSION_HOLDINGS_CSV_KEY] = str(session_csv)
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state[_HOME_FETCH_STARTED_KEY] = False
         st.session_state[_HOME_AUTO_FETCH_KEY] = True
@@ -831,9 +895,11 @@ def render(
         return
 
     if summary is None:
-        # Session book present (uploaded or sample) but no brief_summary.json.
-        # Defer to future sprint: for now show a neutral notice.
+        # Session book present (uploaded or sample) but no brief_summary.json —
+        # should not happen in the shipped tree (sample artifacts are
+        # committed); offer an honest Run CTA rather than a dead end.
         st.info("Book loaded from session. Run weekly-brief to see Front-Desk vitals.")
+        _render_run_brief_gate(ctx, None)
         return
 
     days = staleness_days(summary.get("as_of", ""))
@@ -842,6 +908,7 @@ def render(
             f"Brief is {days} days old — run "
             "`python -m application.cli weekly-brief` for a fresh one."
         )
+    _render_run_brief_gate(ctx, days)
 
     holdings = summary.get("holdings", [])
     macro = summary.get("macro") or {}

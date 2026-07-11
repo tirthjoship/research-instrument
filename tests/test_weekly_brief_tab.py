@@ -1387,3 +1387,94 @@ def test_stage_csv_upload_is_session_only(monkeypatch) -> None:  # type: ignore[
     assert "data/personal" not in blob
     assert wb.SESSION_BRIEF_PATH_KEY in st.session_state
     assert "data/personal" not in st.session_state[wb.SESSION_BRIEF_PATH_KEY]
+
+
+def test_run_brief_button_sample_context_refreshes_to_session_temp(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """Clicking Run brief while viewing the sample book must read the
+    committed sample CSV but write to a fresh session-scoped temp path —
+    never overwrite data/sample/brief_summary.json itself."""
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "caption", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "button", lambda *a, **k: True)  # noqa: ARG005
+
+    rebuild_calls: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        wb,
+        "_start_dashboard_rebuild_background",
+        lambda **kw: rebuild_calls.append(kw),
+    )
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+    wb._render_run_brief_gate(ctx, 3)
+
+    assert rebuild_calls, "must trigger a background rebuild"
+    kw = rebuild_calls[0]
+    assert kw["holdings_csv"] == "data/sample/sample_book.csv"
+    assert kw["out_path"] != "data/sample/weekly_brief.md"
+    refreshed = st.session_state[wb.SESSION_SAMPLE_REFRESH_BRIEF_KEY]
+    assert refreshed != "data/sample/brief_summary.json"
+
+
+def test_run_brief_button_disabled_when_fresh_never_triggers_rebuild(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """A fresh (<1 day old) brief must not offer a working Run button —
+    st.button(disabled=True) never returns True, but assert the gate wiring
+    passes disabled=True through so Streamlit actually blocks the click."""
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "caption", lambda *a, **k: None)  # noqa: ARG005
+
+    captured_kwargs: dict[str, object] = {}
+
+    def fake_button(*args: object, **kwargs: object) -> bool:
+        captured_kwargs.update(kwargs)
+        return False
+
+    monkeypatch.setattr(st, "button", fake_button)
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+    wb._render_run_brief_gate(ctx, 0)
+
+    assert captured_kwargs.get("disabled") is True

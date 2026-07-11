@@ -99,3 +99,27 @@ def test_resolve_treats_empty_session_book_as_sample(monkeypatch) -> None:  # ty
 
     assert ctx.is_sample is True
     assert len(ctx.book) == 10
+
+
+def test_resolve_honors_sample_refresh_override_while_still_sample(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Clicking 'Run brief' while viewing the sample book must refresh into a
+    session-scoped artifact — never overwrite the committed data/sample/
+    files — while the book identity stays 'sample'."""
+    from adapters.visualization import book_context
+
+    monkeypatch.setattr(
+        st,
+        "session_state",
+        {
+            book_context.SESSION_SAMPLE_REFRESH_BRIEF_KEY: "/tmp/refresh/brief_summary.json",
+            book_context.SESSION_SAMPLE_REFRESH_REPORTS_KEY: "/tmp/refresh",
+        },
+        raising=False,
+    )
+
+    ctx = book_context.resolve_ui_book_context()
+
+    assert ctx.is_sample is True
+    assert ctx.brief_path == "/tmp/refresh/brief_summary.json"
+    assert ctx.reports_dir == "/tmp/refresh"
+    assert len(ctx.book) == 10  # still the bundled sample book's 10 tickers

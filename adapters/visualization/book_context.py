@@ -22,6 +22,16 @@ SESSION_IS_SAMPLE_KEY = "is_sample_book"
 SESSION_BRIEF_PATH_KEY = "session_brief_path"
 SESSION_REPORTS_DIR_KEY = "session_reports_dir"
 
+# A visitor's uploaded-book holdings.csv, kept so a later "Run brief" click can
+# rebuild the same session book again without re-uploading.
+SESSION_HOLDINGS_CSV_KEY = "session_holdings_csv_path"
+
+# Set by "Run brief"/"Run screener" while still viewing the sample book — a
+# session-scoped refresh of the artifacts, never a write to the committed
+# data/sample/ files. Book identity (is_sample) is untouched.
+SESSION_SAMPLE_REFRESH_BRIEF_KEY = "sample_refresh_brief_path"
+SESSION_SAMPLE_REFRESH_REPORTS_KEY = "sample_refresh_reports_dir"
+
 
 @dataclass(frozen=True)
 class UIBookContext:
@@ -51,6 +61,6 @@ def resolve_ui_book_context() -> UIBookContext:
     return UIBookContext(
         book=load_sample_book(),
         is_sample=True,
-        brief_path=SAMPLE_BRIEF_PATH,
-        reports_dir=SAMPLE_REPORTS_DIR,
+        brief_path=session.get(SESSION_SAMPLE_REFRESH_BRIEF_KEY, SAMPLE_BRIEF_PATH),
+        reports_dir=session.get(SESSION_SAMPLE_REFRESH_REPORTS_KEY, SAMPLE_REPORTS_DIR),
     )
