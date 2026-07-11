@@ -115,3 +115,28 @@ def test_save_and_sync_holdings_overwrites_existing(temp_env):
     db_holdings = store.get_holdings()
     assert len(db_holdings) == 1
     assert db_holdings[0].symbol == "AAPL"
+
+
+def test_rebuild_weekly_brief_cached_accepts_session_paths(monkeypatch, tmp_path):
+    """A session/temp holdings CSV + out path must override the personal
+    defaults — the public upload path rebuilds outside data/personal/."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check):  # type: ignore[no-untyped-def]
+        calls.append(cmd)
+
+    monkeypatch.setattr(holdings_syncer.subprocess, "run", fake_run)
+
+    session_csv = tmp_path / "holdings.csv"
+    session_out = tmp_path / "weekly_brief.md"
+
+    holdings_syncer.rebuild_weekly_brief_cached(
+        holdings_csv=str(session_csv), out_path=str(session_out)
+    )
+
+    assert len(calls) == 1
+    cmd = calls[0]
+    assert str(session_csv) in cmd
+    assert str(session_out) in cmd
+    assert "data/personal/holdings.csv" not in cmd
+    assert "data/personal/weekly_brief.md" not in cmd
