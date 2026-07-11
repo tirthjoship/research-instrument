@@ -8,6 +8,9 @@ from typing import Any
 
 from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.mini_charts import percentile_bar, sparkline
+from adapters.visualization.tabs.stock_analysis.ownership_view import (
+    _insider_quarterly_net,
+)
 
 
 @dataclass(frozen=True)
@@ -156,7 +159,6 @@ def _target_tile(result: Any) -> dict[str, Any]:
 
 def _insider_tile(result: Any) -> dict[str, Any]:
     txns = getattr(result, "insider_transactions", []) or []
-    net = sum(float(t.get("value", 0) or 0) for t in txns)
     if not txns:
         return dict(
             label="Insiders Q",
@@ -167,6 +169,19 @@ def _insider_tile(result: Any) -> dict[str, Any]:
             basis="insider_transactions",
             viz="",
         )
+    # Bucket by quarter (same helper the Ownership deep-dive panel's trend
+    # chart uses) so this tile's "last quarter" claim can't disagree with it —
+    # summing every available transaction would blend in stale prior quarters.
+    quarterly = _insider_quarterly_net(txns)
+    if quarterly:
+        net = quarterly[-1][1]
+        basis = "insider_transactions · latest quarter bucket · signal falsified"
+    else:
+        net = sum(float(t.get("value", 0) or 0) for t in txns)
+        basis = (
+            "insider_transactions · all-time sum, no dates to bucket by quarter "
+            "· signal falsified"
+        )
     millions = net / 1e6
     # spec D11 + anti-false-claim: FALSIFIED signal stays grey (descriptive), never coloured as bad.
     # NOTE: avoid FORBIDDEN_WORDS anywhere in source — the slop test scans this file.
@@ -176,7 +191,7 @@ def _insider_tile(result: Any) -> dict[str, Any]:
         sub="net reducing" if net < 0 else "net accumulating",
         tone="grey",
         meaning="Net insider transaction value last quarter. Disclosed fact; insider-cluster signal falsified.",
-        basis="insider_transactions · signal falsified",
+        basis=basis,
         viz="",
     )
 
