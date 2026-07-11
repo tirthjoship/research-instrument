@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from adapters.visualization.price_cache import (
+    _batch_fetch_closes_impl,
     _batch_fetch_prices_impl,
     _fetch_index_prices_impl,
     _fetch_insider_transactions_impl,
@@ -98,6 +99,62 @@ class TestBatchFetchPrices:
             side_effect=Exception("network error"),
         ):
             result = _batch_fetch_prices_impl(("AAPL",))
+        assert result == {}
+
+
+class TestBatchFetchCloses:
+    def test_multi_ticker_returns_full_close_series(self):
+        arrays = [["Close", "Close"], ["AAPL", "MSFT"]]
+        multi_idx = pd.MultiIndex.from_arrays(arrays, names=["Price", "Ticker"])
+        data = pd.DataFrame(
+            [[150.0, 300.0], [155.0, 305.0], [160.0, 310.0]],
+            columns=multi_idx,
+            index=pd.date_range("2026-01-01", periods=3),
+        )
+
+        with patch("adapters.visualization.price_cache.yf.download", return_value=data):
+            result = _batch_fetch_closes_impl(("AAPL", "MSFT"))
+
+        assert result["AAPL"] == pytest.approx([150.0, 155.0, 160.0])
+        assert result["MSFT"] == pytest.approx([300.0, 305.0, 310.0])
+
+    def test_single_ticker_flat_columns(self):
+        data = pd.DataFrame(
+            {"Close": [200.0, 210.0, 220.0]},
+            index=pd.date_range("2026-01-01", periods=3),
+        )
+
+        with patch("adapters.visualization.price_cache.yf.download", return_value=data):
+            result = _batch_fetch_closes_impl(("GOOG",))
+
+        assert result["GOOG"] == pytest.approx([200.0, 210.0, 220.0])
+
+    def test_single_ticker_multiindex(self):
+        arrays = [["Close"], ["NVDA"]]
+        multi_idx = pd.MultiIndex.from_arrays(arrays, names=["Price", "Ticker"])
+        data = pd.DataFrame(
+            [[500.0], [510.0], [520.0]],
+            columns=multi_idx,
+            index=pd.date_range("2026-01-01", periods=3),
+        )
+
+        with patch("adapters.visualization.price_cache.yf.download", return_value=data):
+            result = _batch_fetch_closes_impl(("NVDA",))
+
+        assert result["NVDA"] == pytest.approx([500.0, 510.0, 520.0])
+
+    def test_empty_tickers_returns_empty_dict(self):
+        with patch("adapters.visualization.price_cache.yf.download") as mock_dl:
+            result = _batch_fetch_closes_impl(())
+        assert result == {}
+        mock_dl.assert_not_called()
+
+    def test_download_failure_returns_empty_dict(self):
+        with patch(
+            "adapters.visualization.price_cache.yf.download",
+            side_effect=Exception("network error"),
+        ):
+            result = _batch_fetch_closes_impl(("AAPL",))
         assert result == {}
 
 
@@ -254,3 +311,60 @@ class TestFetchIndexPrices:
         assert "SPY" in result
         assert "QQQ" in result
         assert result["SPY"]["price"] == pytest.approx(405.0)
+
+
+class TestYfinanceNews:
+    def test_parse_nested_content_shape(self):
+        from adapters.visualization.price_cache import _parse_yfinance_news_item
+
+        item = {
+            "content": {
+                "title": "Chip demand stays hot",
+                "pubDate": "2026-06-27T12:00:00Z",
+                "provider": {"displayName": "Yahoo Finance"},
+                "clickThroughUrl": {
+                    "url": "https://finance.yahoo.com/news/chip-demand.html",
+                },
+            }
+        }
+        parsed = _parse_yfinance_news_item(item)
+        assert parsed == {
+            "source": "Yahoo Finance",
+            "title": "Chip demand stays hot",
+            "date": "2026-06-27T12:00:00Z",
+            "url": "https://finance.yahoo.com/news/chip-demand.html",
+        }
+
+    def test_parse_flat_legacy_shape(self):
+        from adapters.visualization.price_cache import _parse_yfinance_news_item
+
+        item = {
+            "title": "Legacy headline",
+            "providerPublishTime": 1719504000,
+            "publisher": "Reuters",
+        }
+        parsed = _parse_yfinance_news_item(item)
+        assert parsed is not None
+        assert parsed["source"] == "Reuters"
+        assert parsed["title"] == "Legacy headline"
+
+    def test_fetch_recent_news_impl(self):
+        from adapters.visualization.price_cache import _fetch_recent_news_impl
+
+        mock_ticker = MagicMock()
+        mock_ticker.news = [
+            {
+                "content": {
+                    "title": "One",
+                    "pubDate": "2026-06-27",
+                    "provider": {"displayName": "Yahoo Finance"},
+                }
+            },
+            {"content": {"title": "", "pubDate": "2026-06-26"}},
+        ]
+        with patch(
+            "adapters.visualization.price_cache.yf.Ticker", return_value=mock_ticker
+        ):
+            out = _fetch_recent_news_impl("NVDA", limit=5)
+        assert len(out) == 1
+        assert out[0]["title"] == "One"

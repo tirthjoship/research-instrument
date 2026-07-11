@@ -200,6 +200,7 @@ class BuzzSignal:
     scorer: str  # "keyword" or "flan_t5"
     fetched_at: datetime
     article_hash: str  # dedup key
+    article_text: str | None = None  # headline+summary for downstream scoring
 
     def __post_init__(self) -> None:
         if self.mention_count < 0:

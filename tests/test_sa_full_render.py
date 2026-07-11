@@ -53,7 +53,7 @@ def rich_result():
             "quickRatio": 3.5,
             "pegRatio": 0.75,
             "forwardPE": 34.0,
-            "priceToSalesTrailingTwelveMonths": 28.0,
+            "priceToSalesTrailing12Months": 28.0,
             "enterpriseToEbitda": 45.0,
         },
         peer_percentiles={"P/E": 78.0},

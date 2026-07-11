@@ -58,8 +58,23 @@ class AnalysisResult:
     info: dict[str, Any] = field(default_factory=dict)
     quarterly_financials: Any = None
     quarterly_balance_sheet: Any = None
+    quarterly_cashflow: Any = None
+    # {closes: list[float], ma200, atr, vs_spy: list[float]|None} from price_cache
+    price_history: dict[str, Any] | None = None
+    # {r1..r5: int} latest analyst rating distribution (1=most positive)
+    rating_distribution: dict[str, int] | None = None
+    annual_revenue: list[float] = field(
+        default_factory=list
+    )  # chronological, for 3y CAGR
+    forward_revenue_growth: float | None = None  # analyst +1y revenue growth estimate
     insider_transactions: list[dict[str, Any]] = field(default_factory=list)
     buzz_signals: list[Any] = field(default_factory=list)
+    buzz_harvest_stale: bool = False
+    buzz_volume_signals: list[Any] = field(default_factory=list)
+    buzz_volume_extended: bool = False
+    sentiment_signals: list[Any] = field(default_factory=list)
+    sentiment_from_live: bool = False
+    sentiment_publisher_rows: list[Any] = field(default_factory=list)
     recommendation_data: Any = None
     peer_data: list[dict[str, Any]] = field(default_factory=list)
     supply_chain_group: dict[str, Any] | None = None

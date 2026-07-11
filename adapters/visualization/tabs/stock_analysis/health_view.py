@@ -25,6 +25,17 @@ def _f(info: dict[str, Any], key: str) -> float | None:
         return None
 
 
+def _bs_row(qbs: Any, names: list[str]) -> list[float]:
+    """Chronological values of the first matching balance-sheet row (NaNs dropped)."""
+    for n in names:
+        try:
+            if qbs is not None and n in qbs.index:
+                return list(reversed([float(v) for v in qbs.loc[n].values if v == v]))
+        except Exception:
+            continue
+    return []
+
+
 def _fmt_cash(val: float) -> str:
     """Format net cash as +$XB / -$XB (billions/millions/trillions)."""
     abs_val = abs(val)
@@ -56,6 +67,76 @@ def _strip_html(metrics: list[Metric]) -> str:
         for m in metrics
     )
     return f'<div class="sa-strip">{tiles}</div>'
+
+
+def _coverage_metric(
+    ebitda: float | None,
+    interest_expense: float | None,
+    total_cash: float | None,
+    total_debt: float | None,
+) -> Metric:
+    """Coverage tile: interest coverage (EBITDA/interest) when interest is known,
+    else Cash/Debt — how many times cash covers gross debt. Interest expense is
+    often absent from yfinance info, so Cash/Debt keeps the slot useful rather
+    than a dead '—'. Debt-free shows as 'debt-free'; only a true gap when nothing
+    is computable."""
+    ic_meaning, ic_basis = STOCK_METRICS["interest_coverage"]
+    if ebitda is not None and interest_expense not in (None, 0):
+        ic = ebitda / interest_expense  # type: ignore[operator]
+        return Metric(
+            "interest_coverage",
+            "Int cov",
+            f"{ic:.0f}×",
+            "EBITDA / interest",
+            "green" if ic > 5 else "grey",
+            ic_meaning,
+            ic_basis,
+        )
+    cd_meaning = (
+        "Cash and equivalents divided by total debt — how many times cash covers "
+        "gross debt; shown when interest expense is unavailable."
+    )
+    cd_basis = "totalCash / totalDebt; green when > 1"
+    if total_cash is not None and total_debt is not None:
+        if total_debt == 0:
+            return Metric(
+                "interest_coverage",
+                "Cash/Debt",
+                "debt-free",
+                "no debt",
+                "green",
+                cd_meaning,
+                cd_basis,
+            )
+        cd = total_cash / total_debt
+        return Metric(
+            "interest_coverage",
+            "Cash/Debt",
+            f"{cd:.1f}×",
+            "cash ÷ debt",
+            "green" if cd > 1 else "grey",
+            cd_meaning,
+            cd_basis,
+        )
+    return Metric(
+        "interest_coverage", "Int cov", "—", "data gap", "grey", ic_meaning, ic_basis
+    )
+
+
+def _cash_debt_b(result: Any) -> tuple[list[float], list[float]]:
+    """Chronological cash and total-debt series in $B from the quarterly balance
+    sheet (empty lists when unavailable). Shared by the trend chart and verdict."""
+    qbs = getattr(result, "quarterly_balance_sheet", None)
+    cash = _bs_row(
+        qbs,
+        [
+            "Cash And Cash Equivalents",
+            "Cash Cash Equivalents And Short Term Investments",
+            "Cash",
+        ],
+    )
+    debt = _bs_row(qbs, ["Total Debt", "Total Debt And Capital Lease Obligation"])
+    return [c / 1e9 for c in cash], [d / 1e9 for d in debt]
 
 
 # ---------------------------------------------------------------------------
@@ -97,7 +178,7 @@ def build_health_view(result: Any) -> dict[str, Any]:
             Metric(
                 "de",
                 "D/E ratio",
-                f"{de:g}%",
+                f"{de:.0f}%",
                 "vs 50% threshold",
                 tone,
                 de_meaning,
@@ -161,7 +242,7 @@ def build_health_view(result: Any) -> dict[str, Any]:
             Metric(
                 "net_debt_ebitda",
                 "ND/EBITDA",
-                f"{nd_ebitda:.2f}×",
+                f"{nd_ebitda:.1f}×",
                 sub,
                 tone,
                 nd_meaning,
@@ -193,7 +274,7 @@ def build_health_view(result: Any) -> dict[str, Any]:
             Metric(
                 "current_ratio",
                 "Current ratio",
-                f"{current_ratio:g}×",
+                f"{current_ratio:.1f}×",
                 "",
                 tone,
                 cr_meaning,
@@ -201,34 +282,9 @@ def build_health_view(result: Any) -> dict[str, Any]:
             )
         )
 
-    # 5. Interest coverage = ebitda / interestExpense; green when > 5
-    ic_meaning, ic_basis = STOCK_METRICS["interest_coverage"]
-    if ebitda is None or interest_expense is None or interest_expense == 0:
-        metrics.append(
-            Metric(
-                "interest_coverage",
-                "Int cov",
-                "—",
-                "data gap",
-                "grey",
-                ic_meaning,
-                ic_basis,
-            )
-        )
-    else:
-        ic = ebitda / interest_expense
-        tone = "green" if ic > 5 else "grey"
-        metrics.append(
-            Metric(
-                "interest_coverage",
-                "Int cov",
-                f"{ic:.0f}×",
-                "EBITDA / interest",
-                tone,
-                ic_meaning,
-                ic_basis,
-            )
-        )
+    # 5. Coverage: interest coverage preferred, else Cash/Debt (never a dead gap
+    #    when cash + debt are known).
+    metrics.append(_coverage_metric(ebitda, interest_expense, total_cash, total_debt))
 
     # 6. Quick ratio; green when > 1
     qr_meaning = (
@@ -254,7 +310,7 @@ def build_health_view(result: Any) -> dict[str, Any]:
             Metric(
                 "quick_ratio",
                 "Quick ratio",
-                f"{quick_ratio:g}×",
+                f"{quick_ratio:.1f}×",
                 "",
                 tone,
                 qr_meaning,
@@ -286,6 +342,39 @@ def build_health_view(result: Any) -> dict[str, Any]:
             rule="current ratio > 1.5 — current assets cover current liabilities with margin",
         )
 
+    # Trend verdict reflects whether the quarterly balance sheet actually wired —
+    # never claim "not wired" when the trend chart beside it is rendering.
+    cash_b, debt_b = _cash_debt_b(result)
+    if len(cash_b) >= 2:
+        if cash_b[-1] - cash_b[0] > 0.01 * max(abs(cash_b[0]), 1.0):
+            trend_verdict = Verdict(
+                "pos", "Cash & debt trend from quarterly statements — cash rising."
+            )
+        elif cash_b[0] - cash_b[-1] > 0.01 * max(abs(cash_b[0]), 1.0):
+            trend_verdict = Verdict(
+                "neu", "Cash & debt trend from quarterly statements — cash easing."
+            )
+        else:
+            trend_verdict = Verdict(
+                "neu", "Cash & debt trend from quarterly statements — roughly steady."
+            )
+    else:
+        trend_verdict = Verdict(
+            "neu",
+            "Balance-sheet trend not wired — data gap, no quarterly history available.",
+        )
+
+    if net_cash_val is not None and net_cash_val > 0:
+        cash_verdict = Verdict(
+            "pos", "Net cash position reported — more cash than gross debt."
+        )
+    elif net_cash_val is not None:
+        cash_verdict = Verdict(
+            "neu", "Net debt position reported — gross debt exceeds cash."
+        )
+    else:
+        cash_verdict = Verdict("neu", "Cash vs debt unavailable — data gap.")
+
     return {
         "metrics": metrics,
         "chips": chips,
@@ -293,16 +382,10 @@ def build_health_view(result: Any) -> dict[str, Any]:
         "reframe": (
             "D/E, ratios, and coverage are trailing balance-sheet facts. "
             "Net-debt/EBITDA computed from totalDebt, totalCash, and ebitda. "
-            "Interest coverage computed from EBITDA / interestExpense. "
-            "Balance-sheet trend not wired (data gap)."
+            "Coverage is interest coverage when interest expense is known, else "
+            "cash-to-debt. Balance-sheet trend from quarterly statements when present."
         ),
-        "verdicts": [
-            Verdict("pos", "Net cash position reported — more cash than gross debt."),
-            Verdict(
-                "neu",
-                "Balance-sheet trend not wired — data gap, no quarterly history available.",
-            ),
-        ],
+        "verdicts": [cash_verdict, trend_verdict],
     }
 
 
@@ -326,11 +409,35 @@ def build_health_panel(result: Any) -> str:
 
     left = '<div class="sa-pnl-subh">Cash vs Total debt</div>' + comparison_bar
 
-    # Trend viz: DATA-GAP — no balance-sheet history wired
-    right = (
-        '<div class="sa-pnl-subh">Balance-sheet trend</div>'
-        '<div class="sa-pnl-cap">balance-sheet history not wired — data gap</div>'
-    )
+    # Trend viz: cash & debt over the quarterly balance sheet (real series)
+    cash_b, debt_b = _cash_debt_b(result)
+    series = []
+    if len(cash_b) >= 2:
+        series.append(("Cash", cash_b, "#1F9254"))
+    if len(debt_b) >= 2:
+        series.append(("Debt", debt_b, "#9aa6aa"))
+    if series:
+        cap = ""
+        if len(cash_b) >= 2:
+            word = (
+                "strengthening"
+                if cash_b[-1] > cash_b[0]
+                else "softening" if cash_b[-1] < cash_b[0] else "steady"
+            )
+            cap = (
+                '<div class="sa-pnl-cap">cash '
+                f"${cash_b[0]:.0f}B → ${cash_b[-1]:.0f}B — {word}</div>"
+            )
+        right = (
+            '<div class="sa-pnl-subh">Cash &amp; debt trend ($B)</div>'
+            + panel_charts.trend_lines(series, unit="B")
+            + cap
+        )
+    else:
+        right = (
+            '<div class="sa-pnl-subh">Balance-sheet trend</div>'
+            '<div class="sa-pnl-cap">no quarterly balance-sheet history — data gap</div>'
+        )
 
     return build_panel(
         number=4,

@@ -12,9 +12,9 @@ import time
 from datetime import datetime
 from typing import Any
 
-import feedparser
 from loguru import logger
 
+from adapters.data.feed_fetch import fetch_feed
 from domain.models import BuzzSignal
 
 # ---------------------------------------------------------------------------
@@ -378,7 +378,13 @@ class RSSAdapter:
         for source_name, url in self._feeds.items():
             logger.debug("Fetching RSS feed: {} ({})", source_name, url)
             try:
-                feed = feedparser.parse(url)
+                feed = fetch_feed(url)
+                if not feed.entries:
+                    logger.warning(
+                        "RSS feed {} returned 0 entries (bozo={})",
+                        source_name,
+                        getattr(feed, "bozo", False),
+                    )
                 for entry in feed.entries:
                     entry_signals = self._entry_to_signals(
                         source_name, entry, scan_time
@@ -432,6 +438,7 @@ class RSSAdapter:
                 scorer="rss_raw",
                 fetched_at=scan_time,
                 article_hash=article_hash,
+                article_text=text[:2000],
             )
             for ticker in tickers
         ]

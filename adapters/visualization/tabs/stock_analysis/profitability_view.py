@@ -97,6 +97,47 @@ def _compute_roic(info: dict[str, Any], result: Any) -> Metric:
     return Metric("roic", "ROIC", _pct(val), "", tone, meaning, basis)
 
 
+def _capital_return_metric(info: dict[str, Any], result: Any) -> Metric:
+    """Capital-return tile: prefer ROIC, but degrade to a still-useful capital
+    metric rather than a dead '—'. ROIC needs equity (often absent); when it
+    can't be computed, fall back to ROA, then EBITDA margin, then a genuine gap.
+    Each fallback carries its own label + tooltip basis so it's never mislabelled.
+    """
+    roic = _compute_roic(info, result)
+    if roic.value != "—":
+        return roic
+
+    roa = _f(info, "returnOnAssets")
+    if roa is not None:
+        return Metric(
+            "roic",
+            "ROA",
+            _pct(roa),
+            "of assets",
+            "green" if roa > 0 else "grey",
+            "Net income as a fraction of total assets — capital efficiency shown "
+            "when ROIC inputs (equity) are unavailable.",
+            "yfinance info.returnOnAssets",
+        )
+
+    ebitda = _f(info, "ebitda")
+    rev = _f(info, "totalRevenue")
+    if ebitda is not None and rev:
+        val = ebitda / rev
+        return Metric(
+            "roic",
+            "EBITDA mgn",
+            _pct(val),
+            "ebitda/rev",
+            "green" if val > 0 else "grey",
+            "EBITDA as a fraction of revenue — cash operating profitability shown "
+            "when ROIC inputs (equity) are unavailable.",
+            "yfinance info.ebitda / info.totalRevenue",
+        )
+
+    return roic  # genuine data gap, keeps the ROIC label
+
+
 def _compute_fcf_margin(info: dict[str, Any]) -> Metric:
     """Compute FCF margin = freeCashflow/totalRevenue.  DATA-GAP if either missing."""
     meaning = (
@@ -151,6 +192,29 @@ def _quarterly_margin_series(result: Any) -> tuple[list[float], list[float]]:
         return gross_series, op_series
     except Exception:
         return [], []
+
+
+def _margin_direction(series: list[float]) -> str:
+    """Slope of the gross-margin series: 'up' widening, 'down' narrowing, 'flat'
+    roughly steady, or '' when <2 points. Series are fractions; a +/-1pp net
+    change (0.01) is the flat band so quarter noise doesn't flip the badge."""
+    if len(series) < 2:
+        return ""
+    delta = series[-1] - series[0]
+    if delta > 0.01:
+        return "up"
+    if delta < -0.01:
+        return "down"
+    return "flat"
+
+
+# Gross-margin slope -> (chip label, chip tone) and a verb for the rule/caption.
+_MARGIN_CHIP = {
+    "up": ("WIDENING", "green"),
+    "down": ("NARROWING", "amber"),
+    "flat": ("STEADY", "grey"),
+}
+_MARGIN_WORD = {"up": "widening", "down": "narrowing", "flat": "roughly steady"}
 
 
 # ---------------------------------------------------------------------------
@@ -219,25 +283,27 @@ def build_profitability_view(result: Any) -> dict[str, Any]:
             "Net income divided by shareholders' equity; return earned for equity holders.",
             "yfinance info.returnOnEquity",
         ),
-        _compute_roic(info, result),
+        _capital_return_metric(info, result),
         _compute_fcf_margin(info),
     ]
 
     gross_series, op_series = _quarterly_margin_series(result)
+    margin_dir = _margin_direction(gross_series)
 
-    # EXPANDING chip: emitted only when gross margin genuinely rose three quarters in a row
+    # Direction chip driven by the gross-margin slope over the shown window, so
+    # it tracks the same line the trend chart plots (WIDENING / NARROWING / STEADY).
     chips = ""
-    if (
-        len(gross_series) >= 3
-        and gross_series[-1] > gross_series[-2] > gross_series[-3]
-    ):
+    if margin_dir:
+        label, tone = _MARGIN_CHIP[margin_dir]
         chips += render_status_chip(
-            "EXPANDING",
+            label,
             "",
-            tone="green",
+            tone=tone,
             rule=(
-                "Gross margin rose in each of the last three quarters — "
-                "measured from quarterly_financials Gross Profit / Total Revenue."
+                f"Gross margin {_MARGIN_WORD[margin_dir]} "
+                f"{gross_series[0] * 100:.0f}% → {gross_series[-1] * 100:.0f}% "
+                "across the shown window — measured from quarterly_financials "
+                "Gross Profit / Total Revenue."
             ),
         )
 
@@ -245,19 +311,17 @@ def build_profitability_view(result: Any) -> dict[str, Any]:
         "metrics": metrics,
         "gross_series": gross_series,
         "op_series": op_series,
+        "margin_dir": margin_dir,
         "chips": chips,
         "claim": "Margin levels and capital-return efficiency.",
         "reframe": (
             "Margins and ROE are trailing facts. "
             "ROIC computed from EBIT, debt, and equity when all inputs present. "
-            "Peer margin median not wired (data gap)."
+            "Gross margin shown vs peers with the peer median."
         ),
         "verdicts": [
             Verdict("pos", "Positive gross, operating, and net margins reported."),
-            Verdict(
-                "neu",
-                "Peer comparison for margins requires an additional data source.",
-            ),
+            Verdict("neu", "Gross margin compared against peers — a descriptive fact."),
         ],
     }
 
@@ -268,35 +332,62 @@ def build_profitability_panel(result: Any) -> str:
     info: dict[str, Any] = getattr(result, "info", {}) or {}
     ticker = getattr(result, "ticker", "") or ""
 
-    # Comparison viz: peer median not wired — show self-only gross-margin bar
+    # Comparison viz: subject gross margin vs peers + peer median (real)
     gross_val = _f(info, "grossMargins")
+    peers = getattr(result, "peer_data", []) or []
+    peer_margins = [
+        float(p["gross_margins"]) * 100
+        for p in peers
+        if p.get("gross_margins") is not None
+    ]
     if gross_val is not None:
         margin_rows: list[tuple[str, float, bool]] = [
             (ticker or "Self", round(gross_val * 100, 1), True)
         ]
+        margin_rows += [
+            (p.get("ticker", "?"), round(float(p["gross_margins"]) * 100, 1), False)
+            for p in peers
+            if p.get("gross_margins") is not None
+        ][:4]
         margin_bar = panel_charts.peer_bars(margin_rows, unit="%")
-        margin_bar += (
-            '<div class="sa-pnl-cap">'
-            "peer median not wired — self-only gross margin shown"
-            "</div>"
-        )
+        if peer_margins:
+            med = sorted(peer_margins)[len(peer_margins) // 2]
+            margin_bar += (
+                f'<div class="sa-pnl-cap">peer median gross margin {med:.0f}%</div>'
+            )
+        else:
+            margin_bar += (
+                '<div class="sa-pnl-cap">peer margins unavailable — self only</div>'
+            )
     else:
         margin_bar = '<div class="sa-pnl-cap">gross margin data gap</div>'
 
     left = '<div class="sa-pnl-subh">Gross margin vs peers</div>' + margin_bar
 
-    # Trend viz: quarterly gross + operating margin
+    # Trend viz: quarterly gross + operating margin. Series are fractions
+    # (0.74) — scale to percent so the axis reads 74%, matching the tiles.
+    gross_pct = [g * 100 for g in v["gross_series"]]
+    op_pct = [o * 100 for o in v["op_series"]]
     trend_viz = panel_charts.trend_lines(
         [
-            ("Gross %", v["gross_series"], "#7c5cbf"),
-            ("Op %", v["op_series"], "#5c8cbf"),
-        ]
+            ("Gross %", gross_pct, "#7c5cbf"),
+            ("Op %", op_pct, "#5c8cbf"),
+        ],
+        unit="%",
     )
-    right = (
-        '<div class="sa-pnl-subh">Quarterly margin trend</div>' + trend_viz
-        if trend_viz
-        else ""
-    )
+    if trend_viz:
+        mdir = v["margin_dir"]
+        cap = ""
+        if mdir and gross_pct:
+            cap = (
+                '<div class="sa-pnl-cap">gross margin '
+                f"{gross_pct[0]:.0f}% → {gross_pct[-1]:.0f}% — {_MARGIN_WORD[mdir]}</div>"
+            )
+        right = (
+            '<div class="sa-pnl-subh">Quarterly margin trend</div>' + trend_viz + cap
+        )
+    else:
+        right = ""
 
     return build_panel(
         number=3,

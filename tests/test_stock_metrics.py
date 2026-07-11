@@ -7,6 +7,7 @@ REQUIRED_KEYS = [
     "pe_ttm",
     "peg",
     "ev_ebitda",
+    "ps",
     "p_fcf",
     "roic",
     "net_debt_ebitda",

@@ -99,7 +99,7 @@ def _build_corroboration_view(
 
 def load_corroboration_snapshot(
     ticker: str,
-    db_path: str = "data/corroboration.db",
+    db_path: str = "data/recommendations.db",
 ) -> "CorroborationTabView | None":
     """Load latest corroboration snapshot for ticker. Returns None on missing DB or store error."""
     if not Path(db_path).exists():
@@ -217,7 +217,7 @@ def load_shap_importance(json_path: str) -> dict[str, dict[str, float]]:
     if not path.exists():
         return {}
     try:
-        return json.loads(path.read_text())  # type: ignore[no-any-return]
+        return json.loads(path.read_text())
     except (json.JSONDecodeError, OSError) as e:
         logger.warning("Failed to load SHAP: %s", e)
         return {}
@@ -233,7 +233,7 @@ def load_ablation_results(reports_dir: str) -> list[dict[str, Any]]:
         return []
     try:
         data = json.loads(files[-1].read_text())
-        return data.get("ablation_results", [])  # type: ignore[no-any-return]
+        return data.get("ablation_results", [])
     except (json.JSONDecodeError, OSError) as e:
         logger.warning("Failed to load ablation: %s", e)
         return []
@@ -352,7 +352,7 @@ def load_scan_distribution(
     the surfaced list is empty.
     """
     try:
-        return store.get_scan_candidates(scan_date=scan_date)  # type: ignore[no-any-return]
+        return store.get_scan_candidates(scan_date=scan_date)
     except Exception as e:
         logger.warning("Failed to load scan distribution: %s", e)
         return []
