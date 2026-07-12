@@ -21,7 +21,6 @@ from typing import Any
 
 import streamlit as st
 
-from adapters.ml.gemini_narrator import GeminiNarratorAdapter
 from adapters.visualization.book_context import (
     SESSION_REPORTS_DIR_KEY,
     SESSION_SAMPLE_REFRESH_REPORTS_KEY,
@@ -41,7 +40,9 @@ from adapters.visualization.data_loader import (
     load_latest_screened,
     staleness_days,
 )
+from adapters.visualization.price_cache import fetch_ticker_info
 from adapters.visualization.run_gate import RUN_GATE_HELP, evaluate_run_gate
+from application.card_loading import select_case_summarizer
 from application.runtime_guard import is_local_runtime
 from domain.evidence_registry import get_evidence
 from domain.factor_bands import Band, band_for_percentile, plain_read
@@ -49,9 +50,12 @@ from domain.factor_scores import factor_caveat, factor_display_label
 from domain.screen_buckets import PRIORITY, BucketInput, assign_buckets
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
 
-# Module-level adapter instance — monkeypatchable in tests.
-# Constructed lazily: API key comes from env at first call; no network on import.
-_gemini_adapter: GeminiNarratorAdapter = GeminiNarratorAdapter()
+# Module-level adapter instance — monkeypatchable in tests. Resolves through
+# select_case_summarizer() (Gemini-if-key-else-template), mirroring Home and
+# Portfolio, so a local dev environment without GEMINI_API_KEY gets the
+# deterministic template summary instead of a permanent data_gap — only a
+# genuine no-evidence case should ever read "Google-AI read unavailable".
+_gemini_adapter: object = select_case_summarizer()
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +101,7 @@ def maybe_render_gemini(
         return cached
 
     ctx = build_case_context(ticker=ticker, facts=facts, news=news)
-    result = _gemini_adapter.summarize_case(ctx)
+    result = _gemini_adapter.summarize_case(ctx)  # type: ignore[attr-defined]
     html = render_gemini_read(result)
     st.session_state[cache_key] = html
     return html
@@ -579,6 +583,34 @@ def resolve_view_mode(session: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _enrich_candidates_with_company_info(
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Attach a company name + sector to each candidate, display-only.
+
+    ScreenCandidate carries no name/sector, so the shown shortlist otherwise
+    falls back to bare tickers. Uses the cached fetch_ticker_info() (same
+    lookup Portfolio uses for sector) — cheap for a ~15-row shortlist, and
+    never touches score/composite/factor data. Returns new dicts; the
+    caller's list/dicts are left untouched.
+    """
+    enriched: list[dict[str, Any]] = []
+    for c in candidates:
+        c = dict(c)
+        if not c.get("name"):
+            ticker = str(c.get("ticker", ""))
+            if ticker:
+                info = fetch_ticker_info(ticker)
+                name = info.get("longName") or info.get("shortName")
+                if name:
+                    c["name"] = name
+                sector = info.get("sector")
+                if sector:
+                    c["sector"] = sector
+        enriched.append(c)
+    return enriched
+
+
 def _company_name(candidate: dict[str, Any]) -> str:
     """Return a friendly display name for the candidate, falling back to ticker.
 
@@ -592,6 +624,36 @@ def _company_name(candidate: dict[str, Any]) -> str:
             if stripped:
                 return stripped
     return str(candidate.get("ticker", "?") or "?")
+
+
+def _summary_why_html(candidate: dict[str, Any]) -> str:
+    """Company-name-prefixed one-liner for the always-visible <summary> row —
+    a collapsed <details> hides its body, so the name must live here too, not
+    only in the sub-line inside the expanded body."""
+    name = _company_name(candidate)
+    ticker = str(candidate.get("ticker", "?"))
+    why = _row_summary(candidate)
+    if name and name != ticker:
+        return _html.escape(f"{name} — {why}")
+    return _html.escape(why)
+
+
+def _facts_from_bands(
+    bands: dict[str, Band], factor_by_name: dict[str, dict[str, Any]]
+) -> dict[str, str]:
+    """Build plain-English facts from live factor bands for the Google-AI
+    case context — mirrors Home's RAG-signal-to-facts pattern.
+
+    HONESTY INVARIANT: only band + percentile text, never the composite score
+    or grade — Gemini must never see (or be influenced by) the ranking.
+    """
+    facts: dict[str, str] = {}
+    for fname, band in bands.items():
+        label = factor_display_label(fname)
+        pct = factor_by_name.get(fname, {}).get("percentile")
+        pct_txt = f" (p{round(float(pct) * 100)})" if pct is not None else ""
+        facts[label] = f"{band.value}{pct_txt}"
+    return facts
 
 
 def _build_candidate_row_html(
@@ -662,19 +724,18 @@ def _build_candidate_row_html(
             f"also {also_list}</span>"
         )
 
-    # Google-AI read placeholder (S6 fills this later)
-    gai_id = f"gai-{ticker.lower()}"
-    gai_placeholder = (
-        f'<div id="{gai_id}" class="gai" style="font-size:10.5px;'
-        "color:var(--text-secondary);background:#F7F5FF;"
-        "border:1px solid #E4DCFB;border-radius:8px;padding:7px 10px;"
-        'margin:8px 0 6px;">'
-        "&#128269; <b>Google-AI read</b> "
-        f'<span style="color:var(--text-muted);">&mdash; open <b>{ticker} in '
-        "Stock Analysis</b> for the full cited case. A companion to the evidence, "
-        "never an input to the score.</span>"
-        "</div>"
+    # Google-AI read: live per-ticker read from the candidate's own factor
+    # bands (honesty invariant — no composite/grade ever reaches the prompt),
+    # plus a permanent pointer to the full cited case in Stock Analysis.
+    raw_ticker = str(candidate.get("ticker", "?"))
+    facts = _facts_from_bands(bands, factor_by_name)
+    gai_read_html = maybe_render_gemini(raw_ticker, facts, news=[])
+    gai_pointer_html = (
+        f'<div style="font-size:10px;color:var(--text-muted);margin:2px 0 6px;">'
+        f"Open <b>{ticker} in Stock Analysis</b> for the full cited case."
+        f"</div>"
     )
+    gai_placeholder = gai_read_html + gai_pointer_html
 
     do_next = (
         "Confirm the evidence is structural (check next earnings date, recent "
@@ -683,12 +744,14 @@ def _build_candidate_row_html(
         + " in Stock Analysis</b> for a full read."
     )
 
-    # Sub-line: "CompanyName · evidence 1.22 [also-in badge]"
+    # Sub-line: "CompanyName · Sector · evidence 1.22 [also-in badge]"
     friendly_name = _html.escape(_company_name(candidate))
+    sector = candidate.get("sector")
+    sector_html = f" &middot; {_html.escape(str(sector))}" if sector else ""
     sub_line = (
         f'<div style="font-size:11px;color:var(--text-muted);'
         f"margin:8px 0 7px;font-family:'Fraunces',serif;font-style:italic;\">"
-        f"{friendly_name} &middot; evidence {composite:.2f}{also_html}"
+        f"{friendly_name}{sector_html} &middot; evidence {composite:.2f}{also_html}"
         f"</div>"
     )
 
@@ -818,7 +881,7 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
 
             # Row wrapper using HTML details/summary for collapsible behaviour
             safe_ticker = _html.escape(ticker)
-            why_text = _html.escape(_row_summary(c))
+            why_text = _summary_why_html(c)
             summary_html = (
                 f'<summary style="display:grid;'
                 f"grid-template-columns:22px 56px 1fr auto auto 16px;"
@@ -830,7 +893,7 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
                 f'<span style="color:var(--text-secondary);">{why_text}</span>'
                 f"{_standout_chip_html(c)}"
                 f"<span style=\"font-family:'JetBrains Mono',monospace;"
-                f'color:var(--text-secondary);">{composite:.2f}</span>'
+                f'white-space:nowrap;color:var(--text-secondary);">{composite:.2f}</span>'
                 f'<span style="color:var(--text-muted);font-size:10px;">&#9654;</span>'
                 f"</summary>"
             )
@@ -877,7 +940,7 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
     for rank_i, c in enumerate(sorted_candidates, start=1):
         ticker = c.get("ticker", "?")
         composite = float(c.get("composite", 0.0))
-        why_text = _html.escape(_row_summary(c))
+        why_text = _summary_why_html(c)
         safe_ticker = _html.escape(ticker)
 
         body = _build_candidate_row_html(rank=rank_i, candidate=c)
@@ -893,7 +956,7 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
             f'<span style="color:var(--text-secondary);">{why_text}</span>'
             f"{_standout_chip_html(c)}"
             f"<span style=\"font-family:'JetBrains Mono',monospace;"
-            f'color:var(--text-secondary);">{composite:.2f}</span>'
+            f'white-space:nowrap;color:var(--text-secondary);">{composite:.2f}</span>'
             f'<span style="color:var(--text-muted);font-size:10px;">&#9654;</span>'
             f"</summary>"
         )
@@ -936,6 +999,8 @@ def build_body_html(
     Otherwise: dispatches to reason or rank view.
     """
     candidates = (screen.get("rows") or screen.get("candidates", []))[:_TOP_N]
+    if candidates:
+        candidates = _enrich_candidates_with_company_info(candidates)
 
     if not candidates:
         # Abstention path (reskinned, honest)
