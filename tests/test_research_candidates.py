@@ -890,6 +890,8 @@ def test_candidate_row_wires_live_google_ai_read(monkeypatch) -> None:  # type: 
 
     monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
     monkeypatch.setattr(rc, "_gemini_adapter", _StubAdapter())
+    monkeypatch.setattr(rc, "_fetch_recent_news_impl", lambda *a, **k: [])
+    monkeypatch.setattr(rc, "buzz_sentiment_fact", lambda *a, **k: None)
     import streamlit as st
 
     st.session_state.pop("_gai_ZZZ1", None)
@@ -901,7 +903,9 @@ def test_candidate_row_wires_live_google_ai_read(monkeypatch) -> None:  # type: 
             {"name": "quality", "value": 1.5, "percentile": 0.95},
         ],
     }
-    html = rc._build_candidate_row_html(rank=1, candidate=c)
+    # open_by_default=True: only the hero row fires a live Gemini call — this
+    # test's purpose is verifying that live wiring, so it exercises the hero path.
+    html = rc._build_candidate_row_html(rank=1, candidate=c, open_by_default=True)
     assert "Quality: Exceptional" in html, "stub's real case content must render"
     assert (
         "Stock Analysis" in html
@@ -926,7 +930,8 @@ def test_candidate_row_google_ai_off_local_shows_no_facts(monkeypatch) -> None: 
     monkeypatch.setattr(rc, "_gemini_adapter", _SpyAdapter())
 
     c = {"ticker": "ZZZ2", "composite": 1.27, "factor_scores": []}
-    html = rc._build_candidate_row_html(rank=1, candidate=c)
+    # open_by_default=True: exercises the hero/live path's own privacy gate.
+    html = rc._build_candidate_row_html(rank=1, candidate=c, open_by_default=True)
     assert called == [], "summarize_case must not be called off-local"
     assert "Stock Analysis" in html
 
@@ -1022,3 +1027,107 @@ def test_card_factor_order_momentum_last():
     il = html.index(">Low-vol")
     im = html.index(">Momentum")
     assert iq < iv < il < im, "factor display order must end with Momentum"
+
+
+# ---------------------------------------------------------------------------
+# maybe_render_gemini_cache_only — non-hero rows read the persistent cache
+# only, never a live call. Cache path is {reports_dir}/screen_cited_cases.json.
+# ---------------------------------------------------------------------------
+
+
+def test_cache_only_hit_renders_two_col(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import research_candidates as rc
+    from application.case_cache import write_case_cache
+    from domain.case_models import CasePoint, CaseResult
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    cache_path = tmp_path / "screen_cited_cases.json"
+    write_case_cache(
+        str(cache_path),
+        "2026-07-12",
+        {
+            "NVDA": CaseResult(
+                in_favor=(CasePoint("demand durable", "Reuters"),),
+                to_watch=(CasePoint("export controls", "Bloomberg"),),
+                data_gap=False,
+            )
+        },
+    )
+    html = rc.maybe_render_gemini_cache_only("NVDA", str(tmp_path))
+    assert "Green flags" in html
+    assert "demand durable" in html
+
+
+def test_cache_only_miss_shows_honest_note(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    html = rc.maybe_render_gemini_cache_only("NVDA", str(tmp_path))
+    assert "not cached yet" in html.lower()
+    assert "Green flags" not in html
+
+
+def test_cache_only_off_local_returns_empty(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: False)
+    assert rc.maybe_render_gemini_cache_only("NVDA", str(tmp_path)) == ""
+
+
+def test_hero_row_calls_live_non_hero_calls_cache_only(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Only the row rendered open_by_default fires a live call; other rows are
+    cache-only — this is the practical resolution of 'lazy on expand' given
+    Streamlit can't observe raw-HTML <details> toggles (see spec section 4)."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    live_calls: list[str] = []
+    cache_only_calls: list[str] = []
+    monkeypatch.setattr(
+        rc,
+        "maybe_render_gemini",
+        lambda ticker, facts, news: live_calls.append(ticker) or "",
+    )
+    monkeypatch.setattr(
+        rc,
+        "maybe_render_gemini_cache_only",
+        lambda ticker, reports_dir: cache_only_calls.append(ticker) or "",
+    )
+
+    c = {"ticker": "HERO", "composite": 1.0, "factor_scores": []}
+    rc._build_candidate_row_html(rank=1, candidate=c, open_by_default=True)
+    assert live_calls == ["HERO"]
+    assert cache_only_calls == []
+
+    live_calls.clear()
+    c2 = {"ticker": "NOTHERO", "composite": 1.0, "factor_scores": []}
+    rc._build_candidate_row_html(rank=2, candidate=c2, open_by_default=False)
+    assert live_calls == []
+    assert cache_only_calls == ["NOTHERO"]
+
+
+def test_run_screen_candidates_cli_includes_cite_cases(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """A live 'Run screener' click should also warm the Gemini cache."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    captured: dict[str, list[str]] = {}
+
+    def _fake_run(cmd: list[str], check: bool) -> None:
+        captured["cmd"] = cmd
+
+    monkeypatch.setattr(rc.subprocess, "run", _fake_run)
+    rc._run_screen_candidates_cli(str(tmp_path))
+    assert "--cite-cases" in captured["cmd"]
+
+
+def test_no_misleading_stock_analysis_cited_case_pointer() -> None:
+    """Stock Analysis does NOT implement the cited-case/Gemini feature (only
+    Home/Portfolio/Risk do) — Screener's pointer copy must never claim a
+    "cited case" awaits there."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    c = {"ticker": "KO", "composite": 0.88, "factor_scores": []}
+    row_html = rc._build_candidate_row_html(rank=1, candidate=c)
+    assert "full cited case" not in row_html
+
+    zone2_html = rc.build_check_your_own_html(_make_fake_batch_rows())
+    assert "full cited case" not in zone2_html

@@ -31,7 +31,7 @@ from adapters.visualization.components.factor_row import render_factor_row
 from adapters.visualization.components.funnel import render_funnel
 from adapters.visualization.components.gemini_read import (
     build_case_context,
-    render_gemini_read,
+    render_gemini_read_two_col,
 )
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
@@ -40,10 +40,16 @@ from adapters.visualization.data_loader import (
     load_latest_screened,
     staleness_days,
 )
-from adapters.visualization.price_cache import fetch_ticker_info
+from adapters.visualization.price_cache import (
+    _fetch_recent_news_impl,
+    fetch_ticker_info,
+)
 from adapters.visualization.run_gate import RUN_GATE_HELP, evaluate_run_gate
 from application.card_loading import select_case_summarizer
+from application.case_cache import load_cached_case
 from application.runtime_guard import is_local_runtime
+from application.screener_case_facts import candidate_bands, facts_from_bands
+from application.screener_sentiment_facts import buzz_sentiment_fact
 from domain.evidence_registry import get_evidence
 from domain.factor_bands import Band, band_for_percentile, plain_read
 from domain.factor_scores import factor_caveat, factor_display_label
@@ -102,9 +108,39 @@ def maybe_render_gemini(
 
     ctx = build_case_context(ticker=ticker, facts=facts, news=news)
     result = _gemini_adapter.summarize_case(ctx)  # type: ignore[attr-defined]
-    html = render_gemini_read(result)
+    html = render_gemini_read_two_col(result)
     st.session_state[cache_key] = html
     return html
+
+
+def maybe_render_gemini_cache_only(ticker: str, reports_dir: str) -> str:
+    """Cache-only read for non-hero rows — never fires a live Gemini call.
+
+    Reads the persistent {reports_dir}/screen_cited_cases.json cache (written
+    by the `screen-candidates --cite-cases` CLI prefetch). On a hit, renders
+    the same two-column block the hero row would show. On a miss, returns an
+    honest "not cached yet" note. Same privacy fail-safe as maybe_render_gemini.
+
+    This is the practical resolution of "lazy fetch on expand": Streamlit has
+    no visibility into raw-HTML <details>/<summary> toggle state (no rerun
+    fires on a client-side-only disclosure open), so true per-click fetching
+    isn't reachable without converting rows to real st.expander widgets.
+    """
+    if not is_local_runtime():
+        return ""
+
+    cache_path = f"{reports_dir}/screen_cited_cases.json"
+    cached = load_cached_case(cache_path, ticker)
+    if cached is None:
+        return (
+            '<div style="font-size:10.5px;color:var(--text-muted);'
+            "background:var(--bg-secondary);border:1px dashed var(--border);"
+            'border-radius:8px;padding:7px 10px;margin:8px 0 6px;">'
+            "&#128269; <b>Google-AI read</b> &mdash; not cached yet. Runs the "
+            "next time the screen refreshes."
+            "</div>"
+        )
+    return render_gemini_read_two_col(cached)
 
 
 def _bucket_sub(bucket: Any) -> str:
@@ -170,26 +206,10 @@ def _corroboration_badge_html(row_dict: dict[str, object]) -> str:
     )
 
 
-def _candidate_bands(candidate: dict[str, Any]) -> dict[str, Band]:
-    """Map each present factor (non-None, not all-zero) to its plain-language band."""
-    bands: dict[str, Band] = {}
-    for fd in candidate.get("factor_scores", []):
-        if not isinstance(fd, dict):
-            continue
-        rv, rp = fd.get("value"), fd.get("percentile")
-        if rv is None or rp is None:
-            continue
-        fv, fp = float(rv), float(rp)
-        if fv == 0.0 and fp == 0.0:  # DATA-GAP / no coverage
-            continue
-        bands[str(fd.get("name", ""))] = band_for_percentile(fp)
-    return bands
-
-
 def _row_summary(candidate: dict[str, Any]) -> str:
     """Plain-language one-liner next to the ticker (mockup: 'Quality, value &
     analyst signal strong; momentum flat') — derived from bands, never the raw why."""
-    bands = _candidate_bands(candidate)
+    bands = candidate_bands(candidate)
     strong = [
         _FRIENDLY[k]
         for k in ("quality", "value", "revision", "lowvol")
@@ -216,7 +236,7 @@ def _standout_chip_html(candidate: dict[str, Any]) -> str:
     Derives an evidence-standing word from the name's strongest present factor:
     Exceptional/Strong → STRONG (green), Flat → MODERATE (blue), all Weak → WEAK
     (red). DATA-GAP-only names → neutral dash. Descriptive, never a forecast."""
-    bands = _candidate_bands(candidate)
+    bands = candidate_bands(candidate)
     if not bands:
         return '<span style="font-size:10px;color:var(--text-muted);">&mdash;</span>'
     best = max(
@@ -679,30 +699,13 @@ def _summary_why_html(candidate: dict[str, Any]) -> str:
     return _html.escape(why)
 
 
-def _facts_from_bands(
-    bands: dict[str, Band], factor_by_name: dict[str, dict[str, Any]]
-) -> dict[str, str]:
-    """Build plain-English facts from live factor bands for the Google-AI
-    case context — mirrors Home's RAG-signal-to-facts pattern.
-
-    HONESTY INVARIANT: only band + percentile text, never the composite score
-    or grade — Gemini must never see (or be influenced by) the ranking.
-    """
-    facts: dict[str, str] = {}
-    for fname, band in bands.items():
-        label = factor_display_label(fname)
-        pct = factor_by_name.get(fname, {}).get("percentile")
-        pct_txt = f" (p{round(float(pct) * 100)})" if pct is not None else ""
-        facts[label] = f"{band.value}{pct_txt}"
-    return facts
-
-
 def _build_candidate_row_html(
     rank: int | str,
     candidate: dict[str, Any],
     show_repeat_badge: bool = False,
     also_buckets: list[str] | None = None,
     open_by_default: bool = False,
+    reports_dir: str = "data/reports",
 ) -> str:
     """Build the HTML for a single collapsible candidate row.
 
@@ -765,15 +768,27 @@ def _build_candidate_row_html(
             f"also {also_list}</span>"
         )
 
-    # Google-AI read: live per-ticker read from the candidate's own factor
-    # bands (honesty invariant — no composite/grade ever reaches the prompt),
-    # plus a permanent pointer to the full cited case in Stock Analysis.
+    # Google-AI read: green/red flags synthesized from real news + market
+    # sentiment (honesty invariant — no composite/grade ever reaches the
+    # prompt), plus a permanent pointer to the deeper factor/evidence
+    # breakdown in Stock Analysis — that tab does NOT carry this cited-case
+    # feature (only Home/Portfolio/Risk do), so the pointer must never claim
+    # a "cited case" awaits there. Only the hero row (open_by_default) fires
+    # a live call — other rows read the persistent cache only (see
+    # maybe_render_gemini_cache_only).
     raw_ticker = str(candidate.get("ticker", "?"))
-    facts = _facts_from_bands(bands, factor_by_name)
-    gai_read_html = maybe_render_gemini(raw_ticker, facts, news=[])
+    facts = facts_from_bands(bands, factor_by_name)
+    buzz_fact = buzz_sentiment_fact(raw_ticker)
+    if buzz_fact:
+        facts = {**facts, "Market sentiment": buzz_fact}
+    if open_by_default:
+        news_items = _fetch_recent_news_impl(raw_ticker, limit=5)
+        gai_read_html = maybe_render_gemini(raw_ticker, facts, news=news_items)
+    else:
+        gai_read_html = maybe_render_gemini_cache_only(raw_ticker, reports_dir)
     gai_pointer_html = (
         f'<div style="font-size:10px;color:var(--text-muted);margin:2px 0 6px;">'
-        f"Open <b>{ticker} in Stock Analysis</b> for the full cited case."
+        f"Open <b>{ticker} in Stock Analysis</b> for the full factor breakdown."
         f"</div>"
     )
     gai_placeholder = gai_read_html + gai_pointer_html
@@ -816,7 +831,9 @@ def _build_candidate_row_html(
 # ---------------------------------------------------------------------------
 
 
-def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
+def build_reason_view_html(
+    candidates: list[dict[str, Any]], reports_dir: str = "data/reports"
+) -> str:
     """Return HTML for the reason-bucket view (Zone ① main body).
 
     Computes BucketInputs from candidates' factor_scores, assigns buckets,
@@ -910,11 +927,15 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
 
             # Show the also-in badge whenever the ticker appears in any other bucket
             # (regardless of which is "primary" — so the hero always shows it too).
+            is_hero = not hero_done
+            hero_done = True
             body = _build_candidate_row_html(
                 rank=rank_i,
                 candidate=c,
                 show_repeat_badge=bool(also_in),
                 also_buckets=also_in if also_in else None,
+                open_by_default=is_hero,
+                reports_dir=reports_dir,
             )
 
             # Composite value for row header
@@ -939,8 +960,6 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
                 f"</summary>"
             )
 
-            is_hero = not hero_done
-            hero_done = True
             open_attr = " open" if is_hero else ""
             border_color = "#CBD5E1" if is_hero else "var(--border)"
             shadow = "0 1px 3px rgba(15,23,42,.08)" if is_hero else "var(--shadow-sm)"
@@ -967,7 +986,9 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
+def build_rank_view_html(
+    candidates: list[dict[str, Any]], reports_dir: str = "data/reports"
+) -> str:
     """Return HTML for the flat ranked view (rank-only mode).
 
     Same collapsible row component, no bucket headers,
@@ -984,7 +1005,13 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
         why_text = _summary_why_html(c)
         safe_ticker = _html.escape(ticker)
 
-        body = _build_candidate_row_html(rank=rank_i, candidate=c)
+        is_hero = rank_i == 1
+        body = _build_candidate_row_html(
+            rank=rank_i,
+            candidate=c,
+            open_by_default=is_hero,
+            reports_dir=reports_dir,
+        )
 
         summary_html = (
             f'<summary style="display:grid;'
@@ -1002,7 +1029,6 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
             f"</summary>"
         )
 
-        is_hero = rank_i == 1
         open_attr = " open" if is_hero else ""
         border_color = "#CBD5E1" if is_hero else "var(--border)"
         shadow = "0 1px 3px rgba(15,23,42,.08)" if is_hero else "var(--shadow-sm)"
@@ -1112,8 +1138,8 @@ def build_body_html(
         return verdict_html + funnel_html + empty_note
 
     if view == "rank":
-        return build_rank_view_html(list(candidates))
-    return build_reason_view_html(list(candidates))
+        return build_rank_view_html(list(candidates), reports_dir=reports_dir)
+    return build_reason_view_html(list(candidates), reports_dir=reports_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -1233,8 +1259,8 @@ def _build_zone2_row_html(row: Any) -> str:
         'margin:8px 0 6px;">'
         "&#128269; <b>Google-AI read</b> "
         f'<span style="color:var(--text-muted);">&mdash; open <b>{ticker} in '
-        "Stock Analysis</b> for the full cited case. A companion to the evidence, "
-        "never an input to the score.</span>"
+        "Stock Analysis</b> for the full factor breakdown. A companion to the "
+        "evidence, never an input to the score.</span>"
         "</div>"
     )
 
@@ -1401,6 +1427,7 @@ def _run_screen_candidates_cli(report_dir: str) -> None:
         "screen-candidates",
         "--report-dir",
         report_dir,
+        "--cite-cases",
     ]
     subprocess.run(cmd, check=True)
 
