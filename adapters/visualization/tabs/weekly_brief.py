@@ -219,19 +219,23 @@ def _render_book_strip_html(
     screen_universe: int,
 ) -> str:
     t_review = render_tile(
-        label=tooltip("Need review") + render_evidence_chip_by_key("need_review"),
+        label=tooltip("Need review")
+        + render_evidence_chip_by_key("need_review", compact=True),
         number=f"{need_review} / {total}",
         tone="crimson" if need_review else "muted",
         sub="holdings a rule fired on",
     )
     vm = "—" if vs_market is None else f"{vs_market:+.1f}%"
     t_vm = render_tile(
-        label=tooltip("vs Market (1y)") + render_evidence_chip_by_key("vs_market_1y"),
+        label=tooltip("vs Market (1y)")
+        + render_evidence_chip_by_key("vs_market_1y", compact=True),
         number=vm,
         tone="muted",
         sub="realized, vs SPY",
     )
-    nb_label = tooltip("Net beta") + render_evidence_chip_by_key("net_beta")
+    nb_label = tooltip("Net beta") + render_evidence_chip_by_key(
+        "net_beta", compact=True
+    )
     if net_beta is None:
         t_nb = render_tile(
             label=nb_label, number="—", tone="muted", sub="no macro data"
@@ -246,7 +250,8 @@ def _render_book_strip_html(
             sub=f"moves ~{net_beta:.2f}x the market",
         )
     t_scr = render_tile(
-        label=tooltip("Screen") + render_evidence_chip_by_key("screen_cleared"),
+        label=tooltip("Screen")
+        + render_evidence_chip_by_key("screen_cleared", compact=True),
         number=str(screen_cleared),
         tone="green" if screen_cleared else "muted",
         sub=f"cleared of {screen_universe}",
@@ -289,7 +294,7 @@ def _render_book_health_html(systematic_share: float) -> str:
         f"<div><div style=\"font-family:'IBM Plex Mono';font-size:10px;"
         f'text-transform:uppercase;color:#94a8ad">'
         f'{tooltip("Systematic share", "Book health — systematic share")}'
-        f'{render_evidence_chip_by_key("systematic_share")}</div>'
+        f'{render_evidence_chip_by_key("systematic_share", compact=True)}</div>'
         f'<div style="font-size:13px;margin-top:3px"><b>{pct}% {band.lower()}</b> &middot; {flag} &mdash; '
         f"adding another same-direction name won't diversify.</div></div></div>"
     )
@@ -438,9 +443,9 @@ def _render_needs_review_html(holdings: list[dict[str, Any]]) -> str:
 
 _HOME_CASES_KEY = "_home_holding_cases"  # dict[ticker -> CaseResult|None]
 _HOME_FETCH_STARTED_KEY = "_home_fetch_started"
+_HOME_FETCH_LANDED_KEY = "_home_fetch_landed"  # one-shot: already reran on completion
 _HOME_BRIEF_PROCESSING_KEY = "home_brief_processing"
 _UPLOAD_KEY_VER = "ob_upload_key_ver"
-_HOME_AUTO_FETCH_KEY = "home_brief_auto_fetch"
 
 
 def _start_dashboard_rebuild_background(
@@ -535,85 +540,60 @@ def _poll_dashboard_rebuild() -> None:
     if st.session_state.pop("home_brief_rebuild_done", None):
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state[_HOME_FETCH_STARTED_KEY] = False
+        st.session_state[_HOME_FETCH_LANDED_KEY] = False
         st.rerun()
 
 
-def _maybe_auto_start_evidence_fetch(
+def _ensure_evidence_fetch_started(
     cards: list[tuple[str, dict[str, Any]]],
     summarizer: object,
     cases: dict[str, Any],
 ) -> None:
-    """After CSV upload + brief rebuild, start needs-review evidence fetch."""
-    if not st.session_state.pop(_HOME_AUTO_FETCH_KEY, False):
-        return
+    """Kick off the background evidence fetch automatically, once per session."""
     if st.session_state.get(_HOME_FETCH_STARTED_KEY, False):
         return
     st.session_state[_HOME_FETCH_STARTED_KEY] = True
     _launch_case_fetcher(cards, summarizer, cases)
 
 
-def _render_needs_review_fetch_bar(
-    cards: list[tuple[str, dict[str, Any]]],
-    summarizer: object,
-    cases: dict[str, Any],
-) -> None:
-    """Fetch / refresh controls for the needs-review evidence loader."""
-    total = len(cards)
-    done = sum(1 for ticker, _ in cards if ticker in cases)
-    started = st.session_state.get(_HOME_FETCH_STARTED_KEY, False)
+def _render_needs_review_status(cards: list[tuple[str, dict[str, Any]]]) -> None:
+    """Single status region for the needs-review evidence fetch.
 
-    bar_col, btn_col = st.columns([5, 1], vertical_alignment="center")
-    with bar_col:
-        if not started:
-            st.caption(
-                "Click **Fetch** to pull live prices and evidence for holdings "
-                "that need review."
-            )
-        elif done < total:
-            st.info(
-                f"⟳  Fetching {done} / {total} holdings in background — "
-                "switch tabs freely, then hit **Refresh** for updates.",
-                icon="ℹ️",
-            )
-        else:
-            st.success(f"Evidence ready for {total} holdings.", icon="✅")
+    One live progress bar while fetching; auto-lands on "Evidence ready" with
+    exactly one full rerun once every holding is done (so the per-row
+    expanders, rendered outside this fragment's scope, pick up the finished
+    ``cases`` dict) — no Fetch/Refresh button, ever.
 
-    with btn_col:
-        if not started:
-            if st.button(
-                "⟳ Fetch",
-                key="home_fetch_evidence",
-                type="primary",
-                use_container_width=True,
-            ):
-                st.session_state[_HOME_FETCH_STARTED_KEY] = True
-                _launch_case_fetcher(cards, summarizer, cases)
-                st.rerun()
-        elif done < total:
-            if st.button(
-                "↻ Refresh",
-                key="home_fetch_refresh",
-                use_container_width=True,
-            ):
-                st.rerun()
-
-
-@_fragment(run_every=timedelta(seconds=4))
-def _auto_refresh_fetch_progress(
-    cards: list[tuple[str, dict[str, Any]]],
-) -> None:
-    """Poll while background evidence fetch is running."""
-    if not st.session_state.get(_HOME_FETCH_STARTED_KEY, False):
-        return
+    This is the inner implementation; production callers must use
+    ``_render_needs_review_status_fragment`` (mirrors ``_render_one_holding`` /
+    ``_render_one_holding_fragment``) so the status region gets its own
+    ``st.fragment`` polling cycle.
+    """
     cases: dict[str, Any] = st.session_state.get(_HOME_CASES_KEY, {})
-    done = sum(1 for ticker, _ in cards if ticker in cases)
     total = len(cards)
+    done = sum(1 for ticker, _ in cards if ticker in cases)
+
     if done < total:
-        st.caption(f"Auto-refreshing… {done} / {total} loaded")
+        st.progress(
+            done / total, text=f"Fetching evidence — {done} / {total} holdings…"
+        )
+        return
+
+    if not st.session_state.get(_HOME_FETCH_LANDED_KEY, False):
+        st.session_state[_HOME_FETCH_LANDED_KEY] = True
+        st.rerun()
+        return
+
+    st.success(f"Evidence ready for {total} holdings.", icon="✅")
+
+
+_render_needs_review_status_fragment: Any = _fragment(run_every=timedelta(seconds=2))(
+    _render_needs_review_status
+)
 
 
 def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
-    """Render holdings using background-fetched case data (user-initiated)."""
+    """Render holdings using background-fetched case data (fully automatic)."""
     cards = _needs_review_cards(holdings)
     if not cards:
         st.markdown(_render_needs_review_html([]), unsafe_allow_html=True)
@@ -624,12 +604,12 @@ def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
     if _HOME_CASES_KEY not in st.session_state:
         st.session_state[_HOME_CASES_KEY] = {}
         st.session_state[_HOME_FETCH_STARTED_KEY] = False
+        st.session_state[_HOME_FETCH_LANDED_KEY] = False
 
     cases: dict[str, Any] = st.session_state[_HOME_CASES_KEY]
 
-    _maybe_auto_start_evidence_fetch(cards, summarizer, cases)
-    _render_needs_review_fetch_bar(cards, summarizer, cases)
-    _auto_refresh_fetch_progress(cards)
+    _ensure_evidence_fetch_started(cards, summarizer, cases)
+    _render_needs_review_status_fragment(cards)
 
     for ticker, h in cards:
         cached = cases.get(ticker, _CASE_PENDING)
@@ -657,7 +637,7 @@ def _evidence_record_row_html(
     (so each carries its own meaning / band / ADR / caveat on hover).
     """
     if entries:
-        chips = "".join(render_evidence_chip(e) for e in entries)
+        chips = "".join(render_evidence_chip(e, compact=True) for e in entries)
     else:
         chips = '<span style="font-size:12px;color:#94a8ad">— none —</span>'
     return (
@@ -762,7 +742,7 @@ def _stage_csv_upload(uploaded: Any) -> None:
         st.session_state[SESSION_HOLDINGS_CSV_KEY] = str(session_csv)
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state[_HOME_FETCH_STARTED_KEY] = False
-        st.session_state[_HOME_AUTO_FETCH_KEY] = True
+        st.session_state[_HOME_FETCH_LANDED_KEY] = False
         st.session_state[_UPLOAD_KEY_VER] = (
             int(st.session_state.get(_UPLOAD_KEY_VER, 0)) + 1
         )
@@ -796,6 +776,7 @@ def _handle_onboarding() -> None:
 
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state.pop(_HOME_FETCH_STARTED_KEY, None)
+        st.session_state.pop(_HOME_FETCH_LANDED_KEY, None)
 
     ver = int(st.session_state.get(_UPLOAD_KEY_VER, 0))
     upload_key = f"ob_csv_uploader_{ver}"
