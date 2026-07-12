@@ -746,26 +746,32 @@ def test_render_default_path_resolves_via_book_context(monkeypatch) -> None:  # 
     assert captured["path"] == "data/sample/brief_summary.json"
 
 
-def test_render_hides_personal_upload_history_when_not_local(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
-    """The personal upload-history table must never render for a hosted/public
-    visitor — it would leak the operator's own upload filenames/cost basis."""
+def test_render_never_shows_personal_upload_history_table(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """The Risk tab must never render the operator's personal holdings
+    upload-history table — not for a hosted/public visitor (leaks the
+    operator's own upload filenames/cost basis), and not locally either
+    (unused dogfood table with no place in the Risk tab)."""
     import pathlib
 
     import streamlit as st
 
     from adapters.visualization.tabs import risk
 
-    monkeypatch.setattr(
-        risk.compose, "holdings_upload_enabled", lambda: False, raising=False
-    )
     monkeypatch.setattr(pathlib.Path, "exists", lambda self: True)
     captured: list[object] = []
     monkeypatch.setattr(
         st, "subheader", lambda *a, **k: captured.append(a)
     )  # noqa: ARG005
 
-    risk.render(path=str(tmp_path / "brief.json"))
+    for local in (True, False):
+        monkeypatch.setattr(
+            risk.compose,
+            "holdings_upload_enabled",
+            lambda local=local: local,
+            raising=False,
+        )
+        risk.render(path=str(tmp_path / "brief.json"))
 
     assert (
         captured == []
-    ), "personal upload history table must not render when not local"
+    ), "personal upload history table must never render on the Risk tab"
