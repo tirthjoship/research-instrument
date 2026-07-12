@@ -927,9 +927,6 @@ def render(
         st.markdown(_render_book_health_html(float(sys_share)), unsafe_allow_html=True)
     st.markdown(_render_honesty_line_html(), unsafe_allow_html=True)
 
-    # ── Credibility panel: what we know / don't know / still testing ─────────
-    st.markdown(_home_evidence_record_html(), unsafe_allow_html=True)
-
     # ── Concentration flags (optional — keep if present) ─────────────────────
     concentration = summary.get("concentration", [])
     if concentration:
@@ -958,6 +955,11 @@ def render(
 
     steady = sum(1 for h in holdings if h.get("verdict") in ("HOLD", "ADD_OK"))
     st.caption(f"Holding steady · {steady} — no rule fired, nothing to do")
+
+    # ── Credibility panel: what we know / don't know / still testing ─────────
+    # Placed at the end of the tab — reference material for after the user has
+    # seen their book, not a wall to scroll past before it.
+    st.markdown(_home_evidence_record_html(), unsafe_allow_html=True)
 
     # ── Footer: brief as download, not an inline dump ────────────────────────────
     md = load_weekly_brief(path.replace("brief_summary.json", "weekly_brief.md"))
