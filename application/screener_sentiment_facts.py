@@ -14,7 +14,13 @@ _MILDLY_NEGATIVE = -0.15
 _STRONGLY_NEGATIVE = -0.5
 
 
-def _sentiment_label(mean_sentiment: float) -> str:
+def sentiment_label(mean_sentiment: float) -> str:
+    """Bucket a mean BuzzSignal.sentiment_raw ([-1, 1]) into plain-English text.
+
+    Public and shared: Stock Analysis's ai_read.py reuses this on
+    result.buzz_signals (already fetched by analyze_ticker(), no second DB
+    query) instead of duplicating the threshold logic.
+    """
     if mean_sentiment >= _STRONGLY_POSITIVE:
         return "strongly positive"
     if mean_sentiment >= _MILDLY_POSITIVE:
@@ -44,7 +50,7 @@ def buzz_sentiment_fact(
     mean_sentiment = sum(
         float(getattr(s, "sentiment_raw", 0.0)) for s in signals
     ) / len(signals)
-    label = _sentiment_label(mean_sentiment)
+    label = sentiment_label(mean_sentiment)
     return (
         f"Recent buzz: {label} sentiment ({mean_sentiment:.2f}), "
         f"{total_mentions} mentions in the last 30d"

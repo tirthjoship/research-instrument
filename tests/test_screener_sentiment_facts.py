@@ -95,3 +95,15 @@ def test_buzz_sentiment_fact_no_forbidden_words(tmp_path) -> None:
     low = fact.lower()
     for w in FORBIDDEN_WORDS:
         assert w not in low
+
+
+def test_sentiment_label_is_public() -> None:
+    """Promoted to public so Stock Analysis's ai_read.py can reuse the same
+    bucketing logic on result.buzz_signals without a second DB query."""
+    from application.screener_sentiment_facts import sentiment_label
+
+    assert sentiment_label(0.6) == "strongly positive"
+    assert sentiment_label(0.2) == "mildly positive"
+    assert sentiment_label(0.0) == "neutral"
+    assert sentiment_label(-0.2) == "mildly negative"
+    assert sentiment_label(-0.6) == "strongly negative"
