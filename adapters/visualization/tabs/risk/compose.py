@@ -11,7 +11,6 @@ from adapters.visualization.components.risk_second_opinion import (
     render_risk_second_opinion,
 )
 from adapters.visualization.data_loader import load_brief_summary
-from application.runtime_guard import holdings_upload_enabled
 
 from ._theme import _MUT
 from .components import (
@@ -121,45 +120,3 @@ def render(path: str | None = None) -> None:
         from adapters.visualization.components.lens_scroll import render_lens_scroll
 
         render_lens_scroll()
-
-    # Render holdings upload history table at the bottom of the Risk tab —
-    # local-only: this is the operator's own dogfood upload log and must never
-    # be shown to a hosted/public visitor.
-    if not holdings_upload_enabled():
-        return
-
-    import json
-    from pathlib import Path
-
-    import pandas as pd
-
-    upload_history_path = Path("data/personal/upload_history.json")
-    if upload_history_path.exists():
-        try:
-            with open(upload_history_path, encoding="utf-8") as f:
-                history = json.load(f)
-            if history:
-                st.write("---")
-                st.subheader("Holdings CSV Upload History")
-                df = pd.DataFrame(history)
-                # Rename columns for presentation
-                df = df.rename(
-                    columns={
-                        "timestamp": "Timestamp",
-                        "filename": "Filename",
-                        "positions_count": "Positions Count",
-                        "total_cost_basis": "Total Cost Basis (CAD)",
-                    }
-                )
-                # Select/reorder columns
-                df = df[
-                    [
-                        "Timestamp",
-                        "Filename",
-                        "Positions Count",
-                        "Total Cost Basis (CAD)",
-                    ]
-                ]
-                st.dataframe(df, use_container_width=True, hide_index=True)
-        except Exception:
-            pass
