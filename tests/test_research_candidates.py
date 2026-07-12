@@ -394,12 +394,29 @@ def test_reason_view_do_next_present() -> None:
     assert "Do next" in html
 
 
+def test_reason_view_score_does_not_wrap() -> None:
+    """The composite-score span (e.g. "0.85") sits in a narrow CSS-grid column
+    with no white-space rule, so the browser wraps it onto two lines at the
+    decimal point. Every score span must be white-space:nowrap, matching the
+    grade badge already styled that way in the same row."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    reason_html = rc.build_reason_view_html(_make_full_candidates_for_reason())
+    rank_html = rc.build_rank_view_html(_make_full_candidates_for_reason())
+    for html in (reason_html, rank_html):
+        assert "JetBrains Mono" in html
+        idx = html.index("JetBrains Mono")
+        span_chunk = html[idx : idx + 120]
+        assert "white-space:nowrap" in span_chunk
+
+
 def test_reason_view_google_ai_placeholder() -> None:
-    """Google-AI read placeholder div must be present (filled by S6 later)."""
+    """Google-AI read companion (live when local, else the Stock Analysis
+    pointer) must be present for every row."""
     from adapters.visualization.tabs import research_candidates as rc
 
     html = rc.build_reason_view_html(_make_full_candidates_for_reason())
-    assert "gai" in html  # the placeholder div id/class
+    assert "Stock Analysis" in html  # the permanent pointer, live or off-local
 
 
 def test_reason_view_repeat_badge() -> None:
@@ -425,6 +442,96 @@ def test_reason_view_no_forbidden_words() -> None:
 # ---------------------------------------------------------------------------
 # Task 7: build_rank_view_html + build_body_html (abstention path)
 # ---------------------------------------------------------------------------
+
+
+def test_enrich_candidates_adds_company_name_and_sector(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Candidates with no name/sector must be enriched from a cached ticker-info
+    lookup — display-only, never touches score/composite/factor data."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(
+        rc,
+        "fetch_ticker_info",
+        lambda t: (
+            {"longName": "Simon Property Group", "sector": "Real Estate"}
+            if t == "SPG"
+            else {}
+        ),
+    )
+    candidates = [{"ticker": "SPG", "composite": 1.27, "factor_scores": []}]
+    enriched = rc._enrich_candidates_with_company_info(candidates)
+    assert enriched[0]["name"] == "Simon Property Group"
+    assert enriched[0]["sector"] == "Real Estate"
+    # Original list/dict must not be mutated in place.
+    assert "name" not in candidates[0]
+
+
+def test_enrich_candidates_skips_when_name_already_present(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Never overwrite a name already carried by the candidate dict, and never
+    hit the network for it."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    called: list[str] = []
+
+    def _spy(t: str) -> dict[str, str]:
+        called.append(t)
+        return {"longName": "Wrong Name", "sector": "Wrong"}
+
+    monkeypatch.setattr(rc, "fetch_ticker_info", _spy)
+    candidates = [{"ticker": "SPG", "name": "Simon Property Group", "composite": 1.27}]
+    enriched = rc._enrich_candidates_with_company_info(candidates)
+    assert enriched[0]["name"] == "Simon Property Group"
+    assert called == []
+
+
+def test_sub_line_shows_sector_when_present() -> None:
+    """Fix: sub-line shows sector alongside company name when the candidate
+    carries one (enriched by _enrich_candidates_with_company_info)."""
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {
+        "ticker": "SPG",
+        "name": "Simon Property Group",
+        "sector": "Real Estate",
+        "composite": 1.27,
+        "factor_scores": [],
+    }
+    html = _build_candidate_row_html(rank=1, candidate=c)
+    assert "Simon Property Group" in html
+    assert "Real Estate" in html
+
+
+def test_summary_row_shows_company_name_not_just_ticker() -> None:
+    """The always-visible <summary> row (no expand needed — a collapsed
+    <details> still hides its body from the visitor, even though the body
+    text remains in the raw HTML) must itself show the company name, not
+    just the bare ticker — this is the row a visitor sees first without
+    clicking anything."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    candidates = [
+        {
+            "ticker": "SPG",
+            "name": "Simon Property Group",
+            "composite": 1.27,
+            "why": "x",
+            "label": "RESEARCH_ONLY",
+            "factor_scores": [
+                {"name": "quality", "value": 1.5, "percentile": 0.95},
+            ],
+        }
+    ]
+    reason_html = rc.build_reason_view_html(candidates)
+    rank_html = rc.build_rank_view_html(candidates)
+    for html in (reason_html, rank_html):
+        summary_start = html.index("<summary")
+        summary_end = html.index("</summary>")
+        assert "Simon Property Group" in html[summary_start:summary_end], (
+            "company name must be in the always-visible <summary>, not only "
+            "the collapsed body"
+        )
 
 
 def test_rank_view_is_flat_ranked() -> None:
@@ -733,6 +840,65 @@ def test_fix3_sub_line_falls_back_to_ticker() -> None:
     html = _build_candidate_row_html(rank=1, candidate=c)
     assert "KO" in html
     assert "evidence 0.88" in html
+
+
+def test_candidate_row_wires_live_google_ai_read(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """The static gai placeholder must be replaced by a real maybe_render_gemini()
+    call fed with facts derived from the candidate's factor bands — when local
+    and a summarizer is available, real in-favor/to-watch content renders, not
+    just a link to Stock Analysis."""
+    from adapters.visualization.tabs import research_candidates as rc
+    from domain.case_models import CasePoint, CaseResult
+
+    class _StubAdapter:
+        def summarize_case(self, ctx: object) -> CaseResult:
+            return CaseResult(
+                in_favor=(CasePoint("Quality: Exceptional (p95)", "quality"),),
+                to_watch=(),
+                data_gap=False,
+            )
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    monkeypatch.setattr(rc, "_gemini_adapter", _StubAdapter())
+    import streamlit as st
+
+    st.session_state.pop("_gai_ZZZ1", None)
+
+    c = {
+        "ticker": "ZZZ1",
+        "composite": 1.27,
+        "factor_scores": [
+            {"name": "quality", "value": 1.5, "percentile": 0.95},
+        ],
+    }
+    html = rc._build_candidate_row_html(rank=1, candidate=c)
+    assert "Quality: Exceptional" in html, "stub's real case content must render"
+    assert (
+        "Stock Analysis" in html
+    ), "the Stock Analysis pointer must still be present alongside the read"
+
+
+def test_candidate_row_google_ai_off_local_shows_no_facts(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Privacy fail-safe: off-local, no facts/news leave the process — the
+    stub adapter must never be called, and only the static pointer shows."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    called: list[str] = []
+
+    class _SpyAdapter:
+        def summarize_case(self, ctx: object) -> object:
+            called.append("called")
+            from domain.case_models import CaseResult
+
+            return CaseResult((), (), True)
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: False)
+    monkeypatch.setattr(rc, "_gemini_adapter", _SpyAdapter())
+
+    c = {"ticker": "ZZZ2", "composite": 1.27, "factor_scores": []}
+    html = rc._build_candidate_row_html(rank=1, candidate=c)
+    assert called == [], "summarize_case must not be called off-local"
+    assert "Stock Analysis" in html
 
 
 def test_fix5_gai_placeholder_no_s6_in_zone1() -> None:

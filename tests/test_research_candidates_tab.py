@@ -954,6 +954,30 @@ def test_gemini_cached_in_session_state(monkeypatch: Any) -> None:
     ), "summarize_case must only be called once (cached after first call)"
 
 
+def test_default_gemini_adapter_falls_back_to_template_without_api_key(
+    monkeypatch: Any,
+) -> None:
+    """Regression guard: the module-level default adapter must resolve through
+    select_case_summarizer() (Gemini-if-key-else-template), not hardcode the
+    raw GeminiNarratorAdapter. The raw adapter always returns data_gap=True
+    without GEMINI_API_KEY, which made the Screener's Google-AI read look
+    permanently 'unavailable' in any local dev environment without a key."""
+    import importlib
+
+    from application.case_builder import TemplateCaseSummarizer
+
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+
+    from adapters.visualization.tabs import research_candidates as rc
+
+    importlib.reload(rc)
+    try:
+        assert isinstance(rc._gemini_adapter, TemplateCaseSummarizer)
+    finally:
+        importlib.reload(rc)
+
+
 # ---------------------------------------------------------------------------
 # Public sample book: cold-start reports_dir resolution + gated Run screener
 # ---------------------------------------------------------------------------
