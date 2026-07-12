@@ -6,9 +6,8 @@ Honesty: prompt forbids trade verbs; output is attributed; any failure -> data_g
 from __future__ import annotations
 
 import json
-import os
 
-from adapters.ml.gemini_models import generate_with_fallback
+from adapters.ml.gemini_models import generate_with_key_fallback, load_gemini_api_keys
 from domain.case_models import CaseContext, CasePoint, CaseResult
 
 _PROMPT = (
@@ -38,17 +37,21 @@ def parse_case_json(raw: str) -> CaseResult:
 
 class GeminiNarratorAdapter:
     def __init__(self, api_key: str | None = None) -> None:
-        self._key = api_key or os.environ.get("GEMINI_API_KEY")
+        # An explicit api_key is used as the sole key (caller's contract);
+        # otherwise collect GEMINI_API_KEY + any numbered fallbacks
+        # (GEMINI_API_KEY_2, _3, ...) so a second key can absorb load once an
+        # earlier key's daily free-tier quota is exhausted.
+        self._keys = (api_key,) if api_key else load_gemini_api_keys()
 
     def summarize_case(self, ctx: CaseContext) -> CaseResult:
-        if not self._key:
+        if not self._keys:
             return CaseResult((), (), True)
         try:
             prompt = _PROMPT.format(
                 facts="\n".join(ctx.facts),
                 news="\n".join(f"[{s}] {t}" for s, t in ctx.news) or "(none)",
             )
-            text = generate_with_fallback(self._key, prompt)
+            text = generate_with_key_fallback(self._keys, prompt)
             return parse_case_json(text)
         except Exception:  # noqa: BLE001 — network/quota/parse → honest gap
             return CaseResult((), (), True)

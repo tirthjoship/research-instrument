@@ -16,11 +16,15 @@ import pytest
 from loguru import logger as loguru_logger
 
 _LIVE_API_KEYS = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
+# Multi-key Gemini fallback (GEMINI_API_KEY_2, _3, ...) — strip a generous
+# range too, so a numbered fallback key in a real .env can't leak into tests
+# either. Individual tests that need one set it explicitly via monkeypatch.
+_LIVE_API_KEY_FALLBACKS = tuple(f"GEMINI_API_KEY_{n}" for n in range(2, 6))
 
 
 @pytest.fixture(autouse=True)
 def _strip_live_api_keys(monkeypatch: pytest.MonkeyPatch) -> None:
-    for key in _LIVE_API_KEYS:
+    for key in _LIVE_API_KEYS + _LIVE_API_KEY_FALLBACKS:
         monkeypatch.delenv(key, raising=False)
 
 
