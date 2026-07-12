@@ -67,3 +67,26 @@ def test_top_html_has_three_empty_group_shells():
 def test_top_html_degrades_without_fit():
     html = compose.build_top_html(_result(), None)
     assert 'class="sa-stage"' in html and "sa-hero" in html
+
+
+def test_top_html_default_ai_read_html_unchanged_output():
+    """Regression guard: omitting ai_read_html must render identically to before
+    this parameter existed."""
+    html_default = compose.build_top_html(_result(), _fit(), as_of="Jun 27 2026")
+    html_explicit_empty = compose.build_top_html(
+        _result(), _fit(), as_of="Jun 27 2026", ai_read_html=""
+    )
+    assert html_default == html_explicit_empty
+
+
+def test_top_html_places_ai_read_between_synthesis_and_vitals():
+    html = compose.build_top_html(
+        _result(),
+        _fit(),
+        as_of="Jun 27 2026",
+        ai_read_html='<div class="gai-marker">stub ai read</div>',
+    )
+    i_syn = html.index("Story this week")
+    i_ai = html.index("gai-marker")
+    i_vit = html.index("sa-grid6")
+    assert i_syn < i_ai < i_vit

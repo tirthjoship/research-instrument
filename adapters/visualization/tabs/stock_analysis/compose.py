@@ -332,11 +332,19 @@ def build_signals_inner(result: object) -> str:
     )
 
 
-def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> str:
+def build_top_html(
+    result: object, fit: object | None, *, as_of: str = "", ai_read_html: str = ""
+) -> str:
     """Pure assembler: produce the locked D0 answer-first top as a single HTML string.
 
-    Order: stage-wrapper → hero → synthesis → vitals → snowflake/fit → colour key
-    → 3 empty group shells (sa-fundamentals, sa-market, sa-signals).
+    Order: stage-wrapper → hero → synthesis → Google-AI read (optional) → vitals
+    → snowflake/fit → colour key → 3 empty group shells (sa-fundamentals,
+    sa-market, sa-signals).
+
+    ai_read_html: pre-rendered HTML for the Google-AI read companion block (see
+    ai_read.py::get_or_fetch_google_ai_read) — computed in render() since it may
+    involve a live network call; this function stays pure/Streamlit-free.
+    Defaults to "" (renders nothing, identical to before this parameter existed).
 
     Degrades gracefully when fit is None (no snowflake, fit-card-only fallback).
     No Streamlit dependency — safe to call in tests.
@@ -419,10 +427,15 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
         )
     )
     sep = '<hr style="border:none;border-top:1px solid var(--ri-hair);margin:20px 0">'
+    # Only emit the divider before the AI-read block when it's non-empty (the
+    # off-local privacy gate yields "" — a genuine data_gap still renders an
+    # honest "unavailable" note, so it is NOT empty and gets its divider).
+    ai_read_section = f"{sep}{ai_read_html}" if ai_read_html else ""
     return (
         '<div class="sa-stage">'
         f"{hero}"
         f"{sep}{synth}"
+        f"{ai_read_section}"
         f"{sep}{vit}"
         f"{sep}{snowfit}"
         f"{sep}{COLOUR_KEY_HTML}"
@@ -431,11 +444,16 @@ def build_top_html(result: object, fit: object | None, *, as_of: str = "") -> st
     )
 
 
-def _render_top(result: object, fit: object | None, *, as_of: str = "") -> None:
+def _render_top(
+    result: object, fit: object | None, *, as_of: str = "", ai_read_html: str = ""
+) -> None:
     """Tier-2 wrapper: render the answer-first top via st.markdown (lazy Streamlit import)."""
     import streamlit as st
 
-    st.markdown(build_top_html(result, fit, as_of=as_of), unsafe_allow_html=True)
+    st.markdown(
+        build_top_html(result, fit, as_of=as_of, ai_read_html=ai_read_html),
+        unsafe_allow_html=True,
+    )
 
 
 def _ensure_fit_cached(
@@ -556,11 +574,32 @@ def render() -> None:
                 systematic_share_threshold=market_systematic_share_threshold(),
             ),
         )
+
+        from adapters.visualization.tabs.stock_analysis.ai_read import (
+            buzz_fact_from_signals,
+            get_or_fetch_google_ai_read,
+        )
+
+        val_tile, grow_tile, health_tile = _fundamentals_tile_values(result)
+        analyst_tile, _sentiment_tile, _buzz_tile = _signals_tile_values(result)
+        ai_facts = {
+            "Valuation": f"P/E percentile {val_tile}",
+            "Growth": f"revenue growth {grow_tile}",
+            "Health": health_tile,
+            "Analyst consensus": f"mean rating {analyst_tile}",
+        }
+        buzz_fact = buzz_fact_from_signals(getattr(result, "buzz_signals", []) or [])
+        if buzz_fact:
+            ai_facts["Market sentiment"] = buzz_fact
+        ai_read_html = get_or_fetch_google_ai_read(lookup_key, ai_facts)
+
         # Answer-first top: hero → synthesis → vitals → snowflake/fit → colour key → group shells
         # Deep-dive sections (valuation, growth, health, performance, ownership,
         # sentiment, supply_chain, analyst_panel) now live inside the sa-* group
         # shells rendered by build_top_html — do NOT re-render them flat here.
-        _render_top(result, fit, as_of=now.strftime("%b %d %Y"))
+        _render_top(
+            result, fit, as_of=now.strftime("%b %d %Y"), ai_read_html=ai_read_html
+        )
         render_corroboration_section(corr_view, our_readout=readout)
     elif not ticker_input:
         st.markdown(
