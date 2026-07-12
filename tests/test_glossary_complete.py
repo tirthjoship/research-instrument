@@ -69,3 +69,16 @@ def test_new_terms_have_no_forbidden_words() -> None:
         text = g.GLOSSARY[term].lower()
         for w in FORBIDDEN_WORDS:
             assert w not in text, f"'{w}' found in glossary[{term!r}]"
+
+
+def test_band_and_grade_terms_present() -> None:
+    """Screener pipeline-visual tooltips (Band/Grade boxes) need these entries."""
+    assert "Band" in g.GLOSSARY
+    band = g.GLOSSARY["Band"]
+    for token in ("Exceptional", "Strong", "Flat", "Weak", "p95", "5%", "304"):
+        assert token in band, f"glossary['Band'] missing token: {token!r}"
+
+    assert "Grade" in g.GLOSSARY
+    grade = g.GLOSSARY["Grade"]
+    for token in ("Evidence score", "STRONG", "MODERATE", "Low-vol now live"):
+        assert token in grade, f"glossary['Grade'] missing token: {token!r}"
