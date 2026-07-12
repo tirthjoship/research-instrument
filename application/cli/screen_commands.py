@@ -11,6 +11,10 @@ from pathlib import Path
 import click
 
 from adapters.data.corroboration_store import CorroborationStore
+from adapters.visualization.price_cache import _fetch_recent_news_impl
+from application.card_loading import select_case_summarizer
+from application.screener_case_facts import candidate_bands, facts_from_bands
+from application.screener_sentiment_facts import buzz_sentiment_fact
 from domain.corroboration_models import ConvergenceTier as _CT
 from domain.screened_row import CorroborationSnapshot, ScreenedRow
 from domain.screener_composite_service import ScreenerCompositeService
@@ -24,6 +28,73 @@ from ._deps import (
 )
 
 
+def _prefetch_screener_cited_cases(
+    screened_rows: "tuple[ScreenedRow, ...]",
+    top: int,
+    report_dir: str,
+    as_of: str,
+    db_path: str,
+) -> str:
+    """Prefetch Gemini green/red-flag reads for the top-N shown candidates.
+
+    Mirrors weekly-brief's `_prefetch_cited_cases` (rate-limited via
+    select_case_summarizer(), progress echoed per ticker) but feeds real
+    per-ticker news + market-sentiment facts, not just factor-band facts —
+    see docs/superpowers/specs/2026-07-12-screener-gemini-cache-and-real-
+    signal-design.md. Writes <report_dir>/screen_cited_cases.json. Returns
+    the cache file path.
+    """
+    from application.case_batch import run_cases_with_progress
+    from application.case_cache import write_case_cache
+    from domain.case_models import CaseContext
+
+    shown = list(screened_rows[:top])
+    contexts: list[CaseContext] = []
+    tickers: list[str] = []
+    for row in shown:
+        cand = row.candidate
+        cand_dict = {
+            "ticker": cand.ticker,
+            "factor_scores": [
+                {"name": fs.name, "value": fs.value, "percentile": fs.percentile}
+                for fs in cand.factor_scores
+            ],
+        }
+        factor_by_name = {
+            fs.name: {"percentile": fs.percentile} for fs in cand.factor_scores
+        }
+        bands = candidate_bands(cand_dict)
+        facts = facts_from_bands(bands, factor_by_name)
+        buzz_fact = buzz_sentiment_fact(cand.ticker, db_path)
+        if buzz_fact:
+            facts = {**facts, "Market sentiment": buzz_fact}
+        news_items = _fetch_recent_news_impl(cand.ticker, limit=5)
+        news_pairs = tuple(
+            (n.get("source", "news"), n["title"]) for n in news_items if n.get("title")
+        )
+        facts_tuple = tuple(f"{k}: {v}" for k, v in facts.items() if v)
+        contexts.append(
+            CaseContext(ticker=cand.ticker, facts=facts_tuple, news=news_pairs)
+        )
+        tickers.append(cand.ticker)
+
+    if not contexts:
+        return ""
+
+    click.echo(f"\ncite-cases: prefetching {len(contexts)} candidate(s)…")
+    summarizer = select_case_summarizer()
+
+    def _progress(fraction: float, i: int, total: int) -> None:
+        click.echo(f"  Analysing {i}/{total}: {tickers[i - 1]} ({fraction:.0%})")
+
+    results = run_cases_with_progress(contexts, summarizer, progress=_progress)  # type: ignore[arg-type]
+    cases = dict(zip(tickers, results))
+    cache_path = os.path.join(report_dir, "screen_cited_cases.json")
+    write_case_cache(cache_path, as_of, cases)
+    click.echo(f"cite-cases: cache written → {cache_path}")
+    return cache_path
+
+
 @cli.command("screen-candidates")
 @click.option("--top", default=10, show_default=True, type=int, help="Top N rank limit")
 @click.option(
@@ -32,7 +103,13 @@ from ._deps import (
     show_default=True,
     help="Directory to write screen_<date>.json",
 )
-def screen_candidates(top: int, report_dir: str) -> None:
+@click.option(
+    "--cite-cases/--no-cite-cases",
+    default=False,
+    show_default=True,
+    help="Also prefetch Gemini green/red-flag reads for the top-N shown candidates.",
+)
+def screen_candidates(top: int, report_dir: str, cite_cases: bool) -> None:
     """Screen universe for disciplined, evidence-bounded candidates.
 
     Writes the FULL ranked candidate distribution to <report-dir>/screen_<date>.json
@@ -185,6 +262,10 @@ def screen_candidates(top: int, report_dir: str) -> None:
         click.echo(f"  {label}: {count}")
     click.echo(f"Full distribution written to: {out_file}")
     click.echo(f"Blended screened rows written to: {screened_path}")
+
+    # --- optional: prefetch Gemini green/red-flag reads (off the live UI path) ---
+    if cite_cases:
+        _prefetch_screener_cited_cases(screened_rows, top, report_dir, as_of, db_path)
 
 
 def _write_screened_json(

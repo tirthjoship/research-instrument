@@ -177,6 +177,84 @@ def test_maybe_render_gemini_does_not_pass_composite_to_build_context() -> None:
     )
 
 
+# ---------------------------------------------------------------------------
+# render_gemini_read_two_col — Screener-local two-column Green/Red flags
+# ---------------------------------------------------------------------------
+
+
+def test_two_col_both_sides_populated() -> None:
+    from adapters.visualization.components.gemini_read import render_gemini_read_two_col
+    from domain.case_models import CasePoint, CaseResult
+
+    res = CaseResult(
+        in_favor=(CasePoint("demand durable", "Reuters"),),
+        to_watch=(CasePoint("export controls", "Bloomberg"),),
+        data_gap=False,
+    )
+    html = render_gemini_read_two_col(res)
+    assert "Green flags" in html
+    assert "Red flags" in html
+    assert "demand durable" in html
+    assert "export controls" in html
+    assert "display:grid" in html
+    assert "never an input" in html.lower()
+
+
+def test_two_col_one_side_empty_omits_that_column() -> None:
+    from adapters.visualization.components.gemini_read import render_gemini_read_two_col
+    from domain.case_models import CasePoint, CaseResult
+
+    res = CaseResult(
+        in_favor=(CasePoint("dividend raised", "reported"),),
+        to_watch=(),
+        data_gap=False,
+    )
+    html = render_gemini_read_two_col(res)
+    assert "Green flags" in html
+    assert "Red flags" not in html
+
+
+def test_two_col_data_gap_matches_render_gemini_read() -> None:
+    from adapters.visualization.components.gemini_read import (
+        render_gemini_read,
+        render_gemini_read_two_col,
+    )
+    from domain.case_models import CaseResult
+
+    res = CaseResult((), (), True)
+    assert render_gemini_read_two_col(res) == render_gemini_read(res)
+
+
+def test_two_col_item_count_matches_case_result_exactly() -> None:
+    """A 2-item side stays 2-item — never padded to hit a target count."""
+    from adapters.visualization.components.gemini_read import render_gemini_read_two_col
+    from domain.case_models import CasePoint, CaseResult
+
+    res = CaseResult(
+        in_favor=(CasePoint("a", "s1"), CasePoint("b", "s2")),
+        to_watch=(CasePoint("c", "s3"),),
+        data_gap=False,
+    )
+    html = render_gemini_read_two_col(res)
+    assert html.count("<li") == 3
+
+
+def test_two_col_no_forbidden_words() -> None:
+    from adapters.visualization.components.gemini_read import render_gemini_read_two_col
+    from domain.case_models import CasePoint, CaseResult
+
+    res = CaseResult(
+        in_favor=(CasePoint("strong demand", "analyst"),),
+        to_watch=(CasePoint("valuation stretched", "fundamental"),),
+        data_gap=False,
+    )
+    low = render_gemini_read_two_col(res).lower()
+    import re
+
+    for w in ("buy", "sell", "winner", "conviction", "predict", "alpha", "outperform"):
+        assert w not in re.split(r"\W+", low)
+
+
 def test_build_case_context_result_has_exactly_three_fields() -> None:
     """CaseContext returned by build_case_context must have ticker, facts, news only."""
     import dataclasses
