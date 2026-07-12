@@ -111,6 +111,67 @@ def test_by_key_returns_empty_for_unknown() -> None:
     assert render_evidence_chip_by_key("") == ""
 
 
+# ---------------------------------------------------------------------------
+# compact=True: Home-tab-only opt-out that drops the always-visible verdict
+# badge and ADR reference, relocating both into the hover tooltip instead.
+# ---------------------------------------------------------------------------
+
+
+def test_default_behavior_unchanged_when_compact_not_passed() -> None:
+    """Regression guard: Risk/Stock Analysis call sites (no `compact` arg)
+    must keep today's badge+ADR-always-visible behavior."""
+    html = render_evidence_chip(_entry())
+    assert "ri-vbadge" in html
+    assert "ri-chip-adr" in html
+    assert "ADR-052" in html
+    assert Verdict.DESCRIPTIVE.value in html
+
+
+def test_compact_chip_omits_inline_badge_and_adr() -> None:
+    html = render_evidence_chip(_entry(), compact=True)
+    assert "ri-vbadge" not in html
+    assert "ri-chip-adr" not in html
+
+
+def test_compact_chip_still_has_plain_label_and_hover_affordance() -> None:
+    html = render_evidence_chip(_entry(label="Net beta"), compact=True)
+    assert "ri-chip-lab" in html
+    assert "Net beta" in html
+    assert 'class="ri-chip"' in html  # hover ⓘ affordance intact
+
+
+def test_compact_chip_moves_verdict_and_adr_into_tooltip() -> None:
+    html = render_evidence_chip(_entry(adr="ADR-052"), compact=True)
+    # Tooltip (ri-chip-tip) is the only place ADR/verdict text may appear.
+    tip_start = html.index('class="ri-chip-tip"')
+    tip_html = html[tip_start:]
+    assert "ADR-052" in tip_html
+    assert Verdict.DESCRIPTIVE.value in tip_html
+    assert "ADR-052" not in html[:tip_start]
+    assert Verdict.DESCRIPTIVE.value not in html[:tip_start]
+
+
+def test_compact_chip_still_has_meaning_band_and_caveat_in_tooltip() -> None:
+    html = render_evidence_chip(_entry(), compact=True)
+    assert "How much the book moves with the market." in html
+    assert "near 1.0 for an all-stock book" in html
+    assert "Inherited exposure, not a lever." in html
+
+
+def test_compact_chip_with_no_adr_omits_adr_everywhere() -> None:
+    html = render_evidence_chip(_entry(adr=None), compact=True)
+    assert "ri-chip-adr" not in html
+    assert "ADR-" not in html
+
+
+def test_by_key_supports_compact() -> None:
+    html = render_evidence_chip_by_key("sentiment_signal", compact=True)
+    assert html != ""
+    assert "ri-vbadge" not in html
+    tip_start = html.index('class="ri-chip-tip"')
+    assert "FALSIFIED" in html[tip_start:]
+
+
 def test_importable_without_streamlit() -> None:
     # The module must build HTML strings with no Streamlit dependency.
     assert "streamlit" not in sys.modules or True  # tolerate prior imports

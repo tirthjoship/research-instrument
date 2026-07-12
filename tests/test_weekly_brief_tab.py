@@ -363,6 +363,44 @@ def test_book_strip_single_net_beta(tmp_path) -> None:  # type: ignore[no-untype
     assert "63%" not in html  # systematic share does NOT appear in the beta tile
 
 
+def test_book_strip_chips_have_no_inline_adr_or_badge() -> None:
+    """Home's book-strip tiles must not print raw ADR-0XX / verdict badges
+    inline — that jargon moves into the chip's hover tooltip only."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_book_strip_html(
+        need_review=4,
+        total=10,
+        vs_market=3.2,
+        net_beta=1.21,
+        regime="RISK_ON",
+        screen_cleared=304,
+        screen_universe=512,
+    )
+    assert "ri-vbadge" not in html
+    assert "ri-chip-adr" not in html
+    assert "ADR-" not in html.split('class="ri-chip-tip"')[0]
+
+
+def test_book_health_chip_has_no_inline_adr_or_badge() -> None:
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_book_health_html(systematic_share=0.628)
+    assert "ri-vbadge" not in html
+    assert "ri-chip-adr" not in html
+
+
+def test_evidence_record_row_chips_have_no_inline_adr_or_badge() -> None:
+    from adapters.visualization.tabs import weekly_brief as wb
+    from domain.evidence_registry import get_evidence
+
+    entry = get_evidence("net_beta")
+    assert entry is not None
+    html = wb._evidence_record_row_html("What we know", "blurb", [entry])
+    assert "ri-vbadge" not in html
+    assert "ri-chip-adr" not in html
+
+
 def test_screen_tile_content_has_candidates_no_abstained_emh() -> None:
     """With cleared=70 / scanned=512, screen tile must NOT contain ABSTAINED or =EMH,
     and MUST contain '70' (the real cleared count)."""
@@ -1093,8 +1131,9 @@ def _fake_entry(key: str, label: str, verdict):  # type: ignore[no-untyped-def]
 
 
 def test_book_strip_tiles_carry_evidence_chips() -> None:
-    """Each of the 4 book-strip tiles must render an inline evidence chip with its
-    verdict badge sourced from the registry."""
+    """Each of the 4 book-strip tiles must render an inline evidence chip; the
+    verdict + ADR from the registry surface inside the hover tooltip only
+    (Home chips are compact — see test_book_strip_chips_have_no_inline_adr_or_badge)."""
     from adapters.visualization.tabs import weekly_brief as wb
 
     html = wb._render_book_strip_html(
@@ -1111,8 +1150,10 @@ def test_book_strip_tiles_carry_evidence_chips() -> None:
     # ...and the strip carries one chip per tile (need_review / vs_market /
     # net_beta / screen_cleared) — at least 4 chip spans.
     assert html.count('class="ri-chip"') >= 4
-    # Verdict badges from the registry surface (e.g. descriptive + research-only).
-    assert "v-descriptive" in html and "v-research" in html
+    # Verdict words from the registry ride along inside the hover tooltip
+    # (e.g. descriptive + research-only) — not as an always-visible badge.
+    assert "DESCRIPTIVE" in html and "RESEARCH_ONLY" in html
+    assert "ri-vbadge" not in html
     # Registry meaning text rides along for the screen tile.
     assert "pre-registered gate" in html.lower() or "ADR-049" in html
 
@@ -1123,8 +1164,10 @@ def test_book_health_tile_carries_systematic_share_chip() -> None:
 
     html = wb._render_book_health_html(systematic_share=0.628)
     assert "ri-chip" in html
-    # systematic_share is RESEARCH_ONLY in the registry → amber badge.
-    assert "v-research" in html
+    # systematic_share is RESEARCH_ONLY in the registry — verdict word rides
+    # along inside the hover tooltip only, no always-visible badge on Home.
+    assert "RESEARCH_ONLY" in html
+    assert "ri-vbadge" not in html
     # Existing behaviour preserved.
     assert "63%" in html and "60%" in html
 
@@ -1478,3 +1521,146 @@ def test_run_brief_button_disabled_when_fresh_never_triggers_rebuild(  # type: i
     wb._render_run_brief_gate(ctx, 0)
 
     assert captured_kwargs.get("disabled") is True
+
+
+# ---------------------------------------------------------------------------
+# Needs-review auto-fetch: fully automatic, single progress bar, auto-land.
+# ---------------------------------------------------------------------------
+
+
+def _needs_review_holdings() -> list[dict[str, object]]:
+    return [
+        {"ticker": "AAA", "verdict": "TRIM", "unrealized_pct": 1.0, "why": "x"},
+        {"ticker": "BBB", "verdict": "REDUCE", "unrealized_pct": -2.0, "why": "y"},
+    ]
+
+
+def test_needs_review_fetch_starts_without_button_click(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Fetch must start as soon as needs-review holdings render — zero clicks."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(wb, "select_case_summarizer", lambda: object())
+    monkeypatch.setattr(st, "progress", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "markdown", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(
+        wb, "_render_one_holding_fragment", lambda *a, **k: None
+    )  # noqa: ARG005
+
+    launch_calls: list[object] = []
+    monkeypatch.setattr(
+        wb,
+        "_launch_case_fetcher",
+        lambda cards, summarizer, cases: launch_calls.append(cards),
+    )
+
+    button_calls: list[object] = []
+    monkeypatch.setattr(
+        st,
+        "button",
+        lambda *a, **k: (button_calls.append((a, k)), False)[1],  # noqa: ARG005
+    )
+
+    wb._render_needs_review(_needs_review_holdings())
+
+    assert len(launch_calls) == 1
+    assert [t for t, _h in launch_calls[0]] == ["AAA", "BBB"]
+    assert button_calls == []  # no Fetch/Refresh button rendered
+
+
+def test_needs_review_progress_bar_reflects_done_total(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Progress bar must show done/total while the fetch is in flight."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    st.session_state[wb._HOME_CASES_KEY] = {"AAA": object()}  # 1 of 2 done
+    st.session_state[wb._HOME_FETCH_STARTED_KEY] = True
+    st.session_state[wb._HOME_FETCH_LANDED_KEY] = False
+
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+
+    progress_calls: list[tuple[object, object]] = []
+    monkeypatch.setattr(
+        st, "progress", lambda frac, **k: progress_calls.append((frac, k))
+    )
+
+    wb._render_needs_review_status(cards)
+
+    assert len(progress_calls) == 1
+    frac, kwargs = progress_calls[0]
+    assert frac == 0.5
+    assert "1 / 2" in kwargs.get("text", "")
+
+
+def test_needs_review_completion_reruns_exactly_once_then_shows_success(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """On completion, exactly one full rerun fires (guarded by a one-shot
+    flag) before the success state renders — it must not re-fire every tick."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+    st.session_state[wb._HOME_CASES_KEY] = {"AAA": object(), "BBB": object()}
+    st.session_state[wb._HOME_FETCH_STARTED_KEY] = True
+    st.session_state[wb._HOME_FETCH_LANDED_KEY] = False
+
+    rerun_calls: list[None] = []
+    monkeypatch.setattr(st, "rerun", lambda: rerun_calls.append(None))
+    success_calls: list[str] = []
+    monkeypatch.setattr(
+        st, "success", lambda msg, **k: success_calls.append(msg)  # noqa: ARG005
+    )
+    monkeypatch.setattr(st, "progress", lambda *a, **k: None)  # noqa: ARG005
+
+    # First call after completion: fires the one-shot rerun, no success yet.
+    wb._render_needs_review_status(cards)
+    assert len(rerun_calls) == 1
+    assert success_calls == []
+
+    # Second call (post-rerun): already landed — shows success, no second rerun.
+    wb._render_needs_review_status(cards)
+    assert len(rerun_calls) == 1
+    assert success_calls == ["Evidence ready for 2 holdings."]
+
+
+def test_needs_review_never_renders_fetch_or_refresh_button(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """No Fetch/Refresh button in any state — before, during, or after fetch."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(wb, "select_case_summarizer", lambda: object())
+    monkeypatch.setattr(
+        wb, "_launch_case_fetcher", lambda *a, **k: None
+    )  # noqa: ARG005
+    monkeypatch.setattr(st, "progress", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "success", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "rerun", lambda: None)
+    monkeypatch.setattr(st, "markdown", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(
+        wb, "_render_one_holding_fragment", lambda *a, **k: None
+    )  # noqa: ARG005
+
+    button_calls: list[object] = []
+    monkeypatch.setattr(
+        st,
+        "button",
+        lambda *a, **k: (button_calls.append((a, k)), False)[1],  # noqa: ARG005
+    )
+
+    holdings = _needs_review_holdings()
+    wb._render_needs_review(holdings)  # not started
+    st.session_state[wb._HOME_CASES_KEY] = {"AAA": object()}  # in flight
+    wb._render_needs_review(holdings)
+    st.session_state[wb._HOME_CASES_KEY] = {"AAA": object(), "BBB": object()}  # done
+    wb._render_needs_review(holdings)
+
+    assert button_calls == []
