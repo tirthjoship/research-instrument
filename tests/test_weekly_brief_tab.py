@@ -982,6 +982,52 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
     ), f"Expected real price 44.63 in expanded card HTML, got: {html[:500]}"
 
 
+def test_one_holding_data_gap_case_shows_honest_no_evidence_not_pending() -> None:
+    """A completed fetch that found no evidence (data_gap=True) must render the
+    same honest 'no evidence found' message as a failed fetch (case=None) —
+    never the misleading 'loads when you open this card' pending copy, since
+    by the time this branch runs the fetch has already been attempted."""
+    from unittest.mock import MagicMock, patch
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+    from application.evidence_card import EvidenceCard
+    from domain.case_models import CaseResult
+
+    holding = {
+        "ticker": "YUMC",
+        "verdict": "TRIM",
+        "unrealized_pct": 22.7,
+        "why": "pulled back below trend",
+    }
+
+    captured: list[str] = []
+    with (
+        patch.object(
+            st, "markdown", side_effect=lambda c, **k: captured.append(str(c))
+        ),
+        patch.object(st, "expander") as mock_expander,
+        patch.object(st, "caption"),
+        patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
+        patch(
+            "adapters.visualization.price_cache.fetch_prices",
+            return_value={"YUMC": {"price": 44.63, "change_pct": 0.5}},
+        ),
+        patch(
+            "adapters.visualization.price_cache.fetch_price_history",
+            return_value={"closes": [], "atr": None, "ma200": None},
+        ),
+    ):
+        mock_expander.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_expander.return_value.__exit__ = MagicMock(return_value=False)
+        wb._render_one_holding("YUMC", holding, MagicMock(), CaseResult((), (), True))
+
+    html = "\n".join(captured)
+    assert "loads when you open this card" not in html.lower()
+    assert "No cited evidence found" in html
+
+
 def test_fetch_card_analyst_key_mapping_lights_analysts_square() -> None:
     """fetch_card must remap numberOfAnalystOpinions → analyst_count so
     build_analyst_panel builds a non-GAP panel when coverage is present."""

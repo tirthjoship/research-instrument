@@ -388,15 +388,13 @@ def _render_one_holding(
                 "⟳  Case loading in background — return to this tab to see full analysis."
             )
         else:
-            case = cached_case  # may be None if fetch failed or data_gap
-            # data_gap: pass case=None so _case_html shows honest "—" placeholder
-            case_to_render = (
-                None if (case is None or getattr(case, "data_gap", False)) else case
-            )
+            # cached_case may be None (fetch failed) or a CaseResult (possibly
+            # data_gap=True) — render_expanded_card/_case_html already give
+            # both the same honest "no evidence found" treatment.
             st.markdown(
                 render_expanded_card(
                     card,
-                    case=case_to_render,
+                    case=cached_case,
                     verdict=verdict,
                     name=ticker,
                     unrealized_pct=unrealized_f,
