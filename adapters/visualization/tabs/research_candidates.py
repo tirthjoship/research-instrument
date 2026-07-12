@@ -395,45 +395,60 @@ def build_headline_html() -> str:
 # ---------------------------------------------------------------------------
 
 
-def build_legend_html() -> str:
-    """Return HTML for the 'How to read these ratings' expandable legend.
+def build_pipeline_visual_html() -> str:
+    """Return the always-visible Z-score -> Band -> Grade pipeline strip.
 
-    Matches mockup #lg .legend content: bands + p-notation + Evidence score + Grade.
+    Replaces the old always-open legend prose. Precise thresholds (band
+    percentiles, grade cutoffs) live in hover tooltips on the Band/Grade
+    boxes, sourced from the glossary (single source of truth) via the
+    existing tooltip() component — not printed inline, to keep the strip
+    scannable at a glance.
     """
-    return (
-        '<div style="background:var(--bg-secondary);border:1px solid var(--border);'
-        "border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:11px;"
-        'color:var(--text-secondary);line-height:1.75;">'
-        "Each name scored on the factors, each a z-score vs this week&#39;s trend-eligible cohort:<br>"
-        "&bull; <b>Band</b>: "
-        '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
-        'background:#DCFCE7;color:var(--success);">Exceptional</span> ~top&nbsp;5% &nbsp;'
-        '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
-        'background:#DBEAFE;color:var(--accent);">Strong</span> ~top&nbsp;quartile &nbsp;'
-        '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
-        'background:#F1F5F9;color:var(--text-secondary);">Flat</span> middle &nbsp;'
-        '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
-        'background:#FEE2E2;color:var(--danger);">Weak</span> bottom.<br>'
-        "&bull; <b style=\"font-family:'JetBrains Mono',monospace;\">pNN</b> = percentile: "
-        "p95 beats 95% of the 304 (not sector, not all 512).<br>"
-        "&bull; <b>Evidence score</b> = equal-weight average of the z-scores. "
-        "A ranking aid, not a return forecast.<br>"
-        "&bull; <b>Grade</b> (check-your-own-list): "
-        '<span style="font-weight:700;font-size:10px;padding:2px 7px;border-radius:11px;'
-        'background:#DCFCE7;color:var(--success);">STRONG</span> &ge;80% &nbsp;'
-        '<span style="font-weight:700;font-size:10px;padding:2px 7px;border-radius:11px;'
-        'background:#DBEAFE;color:var(--accent);">MODERATE</span> 50&ndash;80% &nbsp;'
-        '<span style="font-weight:700;font-size:10px;padding:2px 7px;border-radius:11px;'
-        'background:#FEE2E2;color:var(--danger);">WEAK</span> below half.<br>'
-        "&bull; Track-1 factors: Quality &middot; Value &middot; Analyst dispersion &middot; Momentum. "
-        "Low-vol now live (5th factor).<br>"
-        "&bull; <b>Analyst dispersion</b> measures the SPREAD of analyst price targets "
-        "(how much they disagree) &mdash; not estimate-revision drift. "
-        "No published evidence it anticipates returns.<br>"
-        "&bull; <b>Quality</b> &amp; <b>Value</b> use a current snapshot, "
-        "NOT point-in-time data &mdash; never validated in backtest, descriptive of today only."
+    step_style = (
+        "flex:1;border:1px solid var(--border);border-radius:8px;"
+        "padding:8px 10px;text-align:center;background:var(--bg-secondary);"
+    )
+    label_style = (
+        "font-family:'IBM Plex Mono',monospace;font-size:9.5px;"
+        "color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;"
+    )
+    arrow = '<div style="color:var(--text-muted);font-size:16px;">&rarr;</div>'
+    zscore_box = (
+        f'<div style="{step_style}">'
+        f'<div style="{label_style}">Z-score</div>'
+        '<div style="font-weight:600;font-size:12px;margin-top:2px;">'
+        "vs this week&#39;s cohort</div>"
         "</div>"
     )
+    band_box = (
+        f'<div style="{step_style}">'
+        f'<div style="{label_style}">{tooltip("Band")}</div>'
+        '<div style="font-weight:600;font-size:12px;margin-top:2px;">'
+        "Percentile band</div>"
+        "</div>"
+    )
+    grade_box = (
+        f'<div style="{step_style}">'
+        f'<div style="{label_style}">{tooltip("Grade")}</div>'
+        '<div style="font-weight:600;font-size:12px;margin-top:2px;">'
+        "Evidence-standing</div>"
+        "</div>"
+    )
+    strip_html = (
+        '<div style="display:flex;align-items:center;gap:8px;'
+        'margin-bottom:4px;">'
+        f"{zscore_box}{arrow}{band_box}{arrow}{grade_box}"
+        "</div>"
+    )
+    caption_html = (
+        '<div style="font-size:10px;color:var(--text-muted);'
+        'font-style:italic;margin-bottom:12px;">'
+        "Track-1 factors: Quality &middot; Value &middot; Analyst dispersion "
+        "&middot; Momentum &middot; Low-vol now live &middot; hover Band/Grade "
+        "for exact thresholds."
+        "</div>"
+    )
+    return strip_html + caption_html
 
 
 def build_disclosure_html() -> str:
@@ -563,6 +578,32 @@ def build_factor_honesty_html() -> str:
         + "".join(items)
         + "</ul></div>"
     )
+
+
+def build_caveats_html(screen: dict[str, Any] | None) -> str:
+    """Return the merged caveats content for the collapsed "Learn more" expander.
+
+    Combines build_disclosure_html() + build_universe_scope_html(screen) +
+    build_factor_honesty_html() verbatim into three labeled sub-sections, same
+    order as the original always-visible blocks. Wording is preserved exactly
+    — this is a container change, not a content rewrite.
+    """
+    sub_heading_style = (
+        "font-family:'IBM Plex Mono',monospace;font-size:9.5px;"
+        "font-weight:600;letter-spacing:.1em;text-transform:uppercase;"
+        "color:var(--text-muted);margin:0 0 4px;"
+    )
+    sections = [
+        ("Honest note", build_disclosure_html()),
+        ("Universe scope", build_universe_scope_html(screen)),
+        ("What each factor really is", build_factor_honesty_html()),
+    ]
+    parts: list[str] = []
+    for heading, body in sections:
+        parts.append(
+            f'<div style="{sub_heading_style}">{_html.escape(heading)}</div>{body}'
+        )
+    return "".join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -1491,16 +1532,12 @@ def render(reports_dir: str | None = None) -> None:
             unsafe_allow_html=True,
         )
 
-    # How-to-read legend (collapsible via st.expander)
-    with st.expander("▸ How to read these ratings", expanded=False):
-        st.markdown(build_legend_html(), unsafe_allow_html=True)
-
-    # Honest disclosure
-    st.markdown(build_disclosure_html(), unsafe_allow_html=True)
-
-    # P0b: honest universe scope + per-factor caveats (relabel/disclose only).
-    st.markdown(build_universe_scope_html(screen), unsafe_allow_html=True)
-    st.markdown(build_factor_honesty_html(), unsafe_allow_html=True)
+    # Always-visible Z-score -> Band -> Grade pipeline strip (thresholds live
+    # in hover tooltips on the Band/Grade boxes), then caveats/disclosures
+    # merged into one collapsed expander — one click away, not always-open.
+    st.markdown(build_pipeline_visual_html(), unsafe_allow_html=True)
+    with st.expander("▸ Learn more — caveats & methodology", expanded=False):
+        st.markdown(build_caveats_html(screen), unsafe_allow_html=True)
     if candidates:
         st.markdown(build_coverage_html(screen), unsafe_allow_html=True)
 

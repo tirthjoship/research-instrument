@@ -311,6 +311,17 @@ GLOSSARY: dict[str, str] = {
         "Where a name ranks among this week's trend-eligible cohort. p95 = stronger "
         "than 95% of them — not vs its sector, not vs the full universe."
     ),
+    "Band": (
+        "Percentile band vs this week's ~304-name trend-eligible cohort: "
+        "Exceptional ~top 5%, Strong ~top quartile, Flat middle, Weak bottom. "
+        "pNN = percentile — p95 beats 95% of the 304, not sector, not the full "
+        "universe."
+    ),
+    "Grade": (
+        "Evidence score = equal-weight average of the factor z-scores — a "
+        "ranking aid, not a return forecast. Grade: STRONG ≥ 80%, MODERATE "
+        "50–80%, WEAK below half. Low-vol now live (5th factor)."
+    ),
     "Low-vol factor": (
         "How little the price swings (trailing volatility). Higher score = steadier, "
         "smaller drawdowns historically. Descriptive, not a forecast."

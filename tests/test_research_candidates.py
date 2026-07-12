@@ -182,16 +182,39 @@ def test_header_no_inline_hex_colours() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_legend_and_disclosure() -> None:
+def test_disclosure_honest_note() -> None:
     from adapters.visualization.tabs import research_candidates as rc
-
-    html = rc.build_legend_html()
-    for token in ("Exceptional", "Strong", "Flat", "Weak", "p95", "Evidence score"):
-        assert token in html, f"Legend missing token: {token!r}"
 
     dis = rc.build_disclosure_html()
     assert "not a forecast" in dis.lower()
     assert "momentum" in dis.lower() and "no proven edge" in dis.lower()
+
+
+def test_pipeline_visual_has_three_steps_and_tooltips() -> None:
+    """Always-visible Z-score -> Band -> Grade strip (replaces the old legend
+    prose). Band/Grade thresholds live in hover tooltips sourced from the
+    glossary, not inline — the tooltip's definition text still lands in the
+    HTML string, so the same tokens the old legend exposed are still present."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_pipeline_visual_html()
+    assert "Z-score" in html
+    assert "Band" in html
+    assert "Grade" in html
+    for token in (
+        "Exceptional",
+        "Strong",
+        "Flat",
+        "Weak",
+        "p95",
+        "5%",
+        "304",
+        "Evidence score",
+        "STRONG",
+        "MODERATE",
+        "Low-vol now live",
+    ):
+        assert token in html, f"Pipeline visual missing token: {token!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -249,12 +272,33 @@ def test_coverage_line_empty_when_no_candidates() -> None:
     assert rc.build_coverage_html(_EMPTY_SCREEN) == ""
 
 
-def test_legend_relabels_dispersion_and_marks_snapshot() -> None:
+def test_caveats_html_merges_three_disclosures() -> None:
+    """build_caveats_html() replaces the legend + folds in disclosure/scope/
+    factor-honesty content verbatim, for use inside one collapsed expander."""
     from adapters.visualization.tabs import research_candidates as rc
 
-    html = rc.build_legend_html()
+    html = rc.build_caveats_html(_FAKE_SCREEN)
+    # Honest note (from build_disclosure_html)
+    assert "not a forecast" in html.lower()
+    assert "momentum" in html.lower() and "no proven edge" in html.lower()
+    # Universe scope (from build_universe_scope_html)
+    assert "Large-cap US" in html
+    assert "Nasdaq-100" in html
+    assert "570" in html
+    assert "survivor-biased" in html
+    assert "512" in html
+    # What each factor really is (from build_factor_honesty_html)
     assert "Analyst dispersion" in html
+    assert "not revision drift" in html
     assert "point-in-time" in html.lower()
+
+
+def test_caveats_html_no_screen_omits_scanned_count() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_caveats_html(None)
+    assert "Large-cap US" in html
+    assert "names scanned" not in html
 
 
 def test_friendly_label_is_dispersion() -> None:
@@ -268,20 +312,6 @@ def test_factors_tile_subtitle_says_dispersion() -> None:
 
     html = rc.build_header_html(_FAKE_SCREEN)
     assert "analyst dispersion" in html
-
-
-def test_legend_has_grade_section() -> None:
-    """Fix 2: legend must include Grade line with STRONG / MODERATE labels."""
-    from adapters.visualization.tabs import research_candidates as rc
-
-    html = rc.build_legend_html()
-    assert "Grade" in html, "Legend must have a Grade section"
-    assert "STRONG" in html, "Legend Grade section must mention STRONG"
-    assert "MODERATE" in html, "Legend Grade section must mention MODERATE"
-    # Wording update: top-5% for Exceptional, 304 cohort reference
-    assert "5%" in html, "Legend Band line must say ~top 5%"
-    assert "304" in html, "Legend pNN line must reference the 304 trend-eligible cohort"
-    assert "Low-vol now live" in html, "Legend must say 'Low-vol now live' (5th factor)"
 
 
 # ---------------------------------------------------------------------------
