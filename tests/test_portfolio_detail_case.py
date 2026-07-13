@@ -20,6 +20,31 @@ def test_resolve_case_passes_through_real_case(monkeypatch):
     assert pd.resolve_case("AAA", object()) is sentinel
 
 
+def test_resolve_case_threads_real_news_and_extra_facts(monkeypatch):
+    """Same fix as Home's _launch_case_fetcher — news=[] gap closed, verdict/why/
+    buzz facts threaded through via the shared application.personal_case_facts."""
+    captured: dict[str, object] = {}
+
+    def _fake_get_case_on_expand(ticker, card, *, news, expanded, summarizer, extra_facts=()):  # type: ignore[no-untyped-def]
+        captured["news"] = news
+        captured["extra_facts"] = extra_facts
+        return object()
+
+    monkeypatch.setattr(pd, "select_case_summarizer", lambda: object())
+    monkeypatch.setattr(pd, "get_case_on_expand", _fake_get_case_on_expand)
+    monkeypatch.setattr(pd, "personal_case_news", lambda ticker: ["real-news"])
+    monkeypatch.setattr(
+        pd,
+        "personal_case_extra_facts",
+        lambda ticker, *, verdict, why: (f"Verdict: {verdict}. {why}",),
+    )
+
+    pd.resolve_case("AAA", object(), verdict="HOLD", why="steady trend")
+
+    assert captured["news"] == ["real-news"]
+    assert captured["extra_facts"] == ("Verdict: HOLD. steady trend",)
+
+
 def test_detail_not_hardcoded_none():
     # guard against the regression we just fixed
     import inspect

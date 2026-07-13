@@ -195,6 +195,95 @@ def test_cite_cases_flag_writes_cache(
     assert "RIVN" in raw["cases"]
 
 
+def test_cite_cases_builds_unified_facts_signals_news_verdict_buzz(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--cite-cases must build CaseContext identically to the live dashboard
+    path (card.signals + verdict/why + real news + real buzz), not the old
+    minimal verdict/why/trend-only fact set — so cache and live never disagree.
+    """
+    from application.evidence_card import EvidenceCard
+    from domain.evidence_rag import DIMENSIONS, RagColor, RagSignal
+
+    assert isinstance(tmp_path, os.PathLike)
+    out_file = tmp_path / "weekly_brief.md"
+    holdings_csv = tmp_path / "holdings.csv"
+    holdings_csv.write_text(
+        "symbol,quantity,book value (cad),exchange,account type\nRIVN,10,500,NASDAQ,Margin\n"
+    )
+    cache_path = str(tmp_path / "cited_cases.json")
+
+    def _fake_build(
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
+    ) -> tuple[WeeklyBriefUseCase, list[str]]:
+        uc = WeeklyBriefUseCase(
+            screen=_FakeScreen(),
+            holdings_risk=_FakeHoldingsRisk(),
+            regime_reader=RegimeReadUseCase(
+                vix_provider=lambda: 20.0, spy_trend_provider=lambda: 0.1
+            ),
+            screen_label_fn=lambda rd: ScreenLabel.RESEARCH_ONLY,
+            cluster_peers_fn=lambda t: [],
+            screen_scorecard_fn=lambda: (None, None, 0, False),
+            discipline_scorecard_fn=lambda: (0.58, 5462, "PENDING"),
+        )
+        return uc, ["AAPL", "RIVN"]
+
+    fake_summarizer = _FakeCaseSummarizer()
+    monkeypatch.setattr(_brief_cmd, "_build_weekly_brief", _fake_build)
+    import application.card_loading as cl_mod
+
+    monkeypatch.setattr(cl_mod, "select_case_summarizer", lambda: fake_summarizer)
+    import application.case_cache as cc_mod
+
+    monkeypatch.setattr(cc_mod, "CITED_CASES_PATH", cache_path)
+
+    # Fake fetch_card at its source module — the CLI must call it per holding.
+    import adapters.visualization.card_fetch as cf_mod
+
+    fetch_card_calls: list[str] = []
+
+    def _fake_fetch_card(ticker: str) -> EvidenceCard:
+        fetch_card_calls.append(ticker)
+        sigs = tuple(
+            RagSignal(d, RagColor.GREEN, f"{d} looks strong") for d in DIMENSIONS
+        )
+        return EvidenceCard(ticker=ticker, signals=sigs, sparkline=())
+
+    monkeypatch.setattr(cf_mod, "fetch_card", _fake_fetch_card)
+
+    # Fake real-signal helpers at their source module.
+    import application.personal_case_facts as pcf_mod
+
+    monkeypatch.setattr(pcf_mod, "personal_case_news", lambda ticker: [])
+    monkeypatch.setattr(
+        pcf_mod,
+        "personal_case_extra_facts",
+        lambda ticker, *, verdict, why: (f"Verdict: {verdict}. {why}",),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli_mod.cli,
+        [
+            "weekly-brief",
+            "--holdings",
+            str(holdings_csv),
+            "--out",
+            str(out_file),
+            "--cite-cases",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "RIVN" in fetch_card_calls
+
+    ctxs = {ctx.ticker: ctx for ctx in fake_summarizer.calls}
+    rivn_ctx = ctxs["RIVN"]
+    assert any("Technicals" in f for f in rivn_ctx.facts)
+    assert any(f.startswith("Verdict:") for f in rivn_ctx.facts)
+    assert not any(f.startswith("Trend:") for f in rivn_ctx.facts)
+
+
 def test_no_cite_cases_skips_prefetch(
     tmp_path: object, monkeypatch: pytest.MonkeyPatch
 ) -> None:
