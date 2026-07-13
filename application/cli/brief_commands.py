@@ -200,24 +200,30 @@ def _build_weekly_brief(
 def _prefetch_cited_cases(brief: "Any", as_of: datetime) -> None:
     """Prefetch cited-case summaries for all holding tickers; write the weekly cache.
 
-    Strategy (minimal-from-brief):
-      - We already have brief.holdings with ticker + why + verdict text.
-      - Building a CaseContext from those facts avoids adding heavy per-ticker
-        yfinance/news fetches to the weekly-brief run (bounded, predictable).
-      - News is left empty ([]); the summarizer uses the factual why lines only.
-      - This is an intentional design choice: the weekly-brief CLI should stay
-        fast for most runs (default --no-cite-cases); a future enhancement could
-        add per-ticker news by piping through build_news_context.
+    Facts are built identically to the live dashboard path (card.signals via
+    fetch_card + verdict/why + real news + real buzz sentiment, all through
+    application.personal_case_facts) so a cache hit and a live fallback never
+    disagree on what a case was built from. This adds a fetch_card() call
+    (yfinance price/earnings/analyst) plus news+buzz fetches per holding — real
+    cost, accepted because holdings count is bounded (a personal portfolio) and
+    these calls aren't rate-limited like Gemini.
 
     Throttle: the summarizer returned by select_case_summarizer() is already a
     RateLimitedCaseSummarizer when GEMINI_API_KEY is set, so run_cases_with_progress
     drives the pings (one per holding) at the configured interval (default 5 s).
     GEMINI_MIN_INTERVAL_S=0 in tests collapses the wait to zero.
     """
+    from adapters.visualization.card_fetch import fetch_card
     from application.card_loading import select_case_summarizer
     from application.case_batch import run_cases_with_progress
+    from application.case_builder import build_case_context
     from application.case_cache import CITED_CASES_PATH, write_case_cache
+    from application.personal_case_facts import (
+        personal_case_extra_facts,
+        personal_case_news,
+    )
     from domain.case_models import CaseContext
+    from domain.evidence_rag import RagColor
 
     holding_lines = list(brief.holdings)
     if not holding_lines:
@@ -227,13 +233,21 @@ def _prefetch_cited_cases(brief: "Any", as_of: datetime) -> None:
     n = len(holding_lines)
     click.echo(f"\ncite-cases: prefetching {n} holding(s)…")
 
-    # Build minimal CaseContext for each holding from the brief's why text + verdict.
+    # Build the same fact set the live dashboard path builds: card.signals +
+    # verdict/why + real news + real buzz sentiment.
     contexts: list[CaseContext] = []
     tickers: list[str] = []
     for h in holding_lines:
-        fact = f"Verdict: {h.verdict.value}. {h.why}"
-        trend_fact = f"Trend: {h.trend_state}"
-        ctx = CaseContext(ticker=h.ticker, facts=(fact, trend_fact), news=())
+        card = fetch_card(h.ticker)
+        sigs = tuple(s for s in card.signals if s.color is not RagColor.GAP)
+        news = personal_case_news(h.ticker)
+        extra_facts = personal_case_extra_facts(
+            h.ticker, verdict=h.verdict.value, why=h.why
+        )
+        ctx = build_case_context(h.ticker, sigs, news)
+        ctx = CaseContext(
+            ticker=ctx.ticker, facts=ctx.facts + extra_facts, news=ctx.news
+        )
         contexts.append(ctx)
         tickers.append(h.ticker)
 

@@ -49,6 +49,10 @@ from adapters.visualization.holdings_syncer import rebuild_weekly_brief_cached
 from adapters.visualization.run_gate import RUN_GATE_HELP, evaluate_run_gate
 from application.card_loading import select_case_summarizer
 from application.holdings_reader import read_holdings
+from application.personal_case_facts import (
+    personal_case_extra_facts,
+    personal_case_news,
+)
 from application.runtime_guard import holdings_upload_enabled
 from domain.discipline import Verdict
 from domain.evidence_registry import EvidenceEntry
@@ -320,13 +324,24 @@ def _launch_case_fetcher(
     """
 
     def _worker() -> None:
-        for ticker, _h in cards:
+        for ticker, h in cards:
             if ticker in cases:
                 continue
             try:
                 card = fetch_card(ticker)
+                news = personal_case_news(ticker)
+                extra_facts = personal_case_extra_facts(
+                    ticker,
+                    verdict=str(h.get("verdict", "")),
+                    why=str(h.get("why", "")),
+                )
                 result = get_case_on_expand(
-                    ticker, card, news=[], expanded=True, summarizer=summarizer
+                    ticker,
+                    card,
+                    news=news,
+                    expanded=True,
+                    summarizer=summarizer,
+                    extra_facts=extra_facts,
                 )
                 cases[ticker] = result
             except Exception:  # noqa: BLE001

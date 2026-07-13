@@ -14,6 +14,8 @@ Public helpers (shared with portfolio tab and weekly_brief):
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from dataclasses import replace
 from typing import Any
 
 from application.case_builder import build_case_context
@@ -152,16 +154,21 @@ def fetch_card(ticker: str) -> EvidenceCard:
 def get_case_on_expand(
     ticker: str,
     card: EvidenceCard,
-    news: list[object],
+    news: Sequence[object],
     *,
     expanded: bool,
     summarizer: object,
+    extra_facts: tuple[str, ...] = (),
 ) -> CaseResult | None:
     """Fetch the cited case ONLY when the card is expanded. Returns None when collapsed.
 
     Cache-first: checks the weekly cited-case cache before making a live Gemini
     ping.  A cache hit returns immediately with zero network calls.  Only on a
     miss is summarizer.summarize_case(...) invoked (the throttled live path).
+
+    ``extra_facts``: additional plain-English fact lines (e.g. verdict/why,
+    real buzz sentiment — see application.personal_case_facts) appended onto
+    the card-signal facts before summarization. Default empty is a no-op.
     """
     if not expanded:
         return None
@@ -174,5 +181,7 @@ def get_case_on_expand(
     # Cache miss — live ping (rate-limited by the summarizer itself).
     sigs = tuple(s for s in card.signals if s.color is not RagColor.GAP)
     ctx = build_case_context(ticker, sigs, news)  # type: ignore[arg-type]
+    if extra_facts:
+        ctx = replace(ctx, facts=ctx.facts + extra_facts)
     result: CaseResult = summarizer.summarize_case(ctx)  # type: ignore[attr-defined]
     return result

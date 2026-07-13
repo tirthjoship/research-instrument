@@ -1581,6 +1581,54 @@ def _needs_review_holdings() -> list[dict[str, object]]:
     ]
 
 
+def test_launch_case_fetcher_threads_real_news_and_extra_facts(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """The background worker must fetch real news + verdict/why/buzz facts,
+    not the old news=[] gap — mirrors the fix already landed for Screener and
+    Stock Analysis this session."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
+
+    calls: list[dict[str, object]] = []
+
+    def _fake_get_case_on_expand(ticker, card, news, *, expanded, summarizer, extra_facts=()):  # type: ignore[no-untyped-def]
+        calls.append(
+            {
+                "ticker": ticker,
+                "news": news,
+                "extra_facts": extra_facts,
+            }
+        )
+        return object()
+
+    monkeypatch.setattr(wb, "get_case_on_expand", _fake_get_case_on_expand)
+    monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [f"news-for-{ticker}"])
+    monkeypatch.setattr(
+        wb,
+        "personal_case_extra_facts",
+        lambda ticker, *, verdict, why: (f"Verdict: {verdict}. {why}",),
+    )
+
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
+
+        def start(self) -> None:
+            self._target()
+
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+    cases: dict[str, object] = {}
+    wb._launch_case_fetcher(cards, summarizer=object(), cases=cases)
+
+    assert {c["ticker"] for c in calls} == {"AAA", "BBB"}
+    aaa = next(c for c in calls if c["ticker"] == "AAA")
+    assert aaa["news"] == ["news-for-AAA"]
+    assert aaa["extra_facts"] == ("Verdict: TRIM. x",)
+    assert set(cases) == {"AAA", "BBB"}
+
+
 def test_needs_review_fetch_starts_without_button_click(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     """Fetch must start as soon as needs-review holdings render — zero clicks."""
     import streamlit as st
