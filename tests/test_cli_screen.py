@@ -447,3 +447,102 @@ def test_backtest_screen_stdout_includes_ci(
     assert res.exit_code == 0, res.output
     # CI should appear in some form
     assert "CI" in res.output or "ci" in res.output.lower()
+
+
+# ---------------------------------------------------------------------------
+# --cite-cases: Gemini green/red-flag prefetch for the top-N shown candidates
+# ---------------------------------------------------------------------------
+
+
+class _FakeCiteSummarizer:
+    """Instant fake summarizer — no sleep, no network."""
+
+    def __init__(self) -> None:
+        self.calls: list[object] = []
+
+    def summarize_case(self, ctx: object) -> object:
+        from domain.case_models import CaseResult
+
+        self.calls.append(ctx)
+        return CaseResult(in_favor=(), to_watch=(), data_gap=True)
+
+
+def _patch_cite_deps(monkeypatch: pytest.MonkeyPatch, fake_summarizer: object) -> None:
+    import application.card_loading as cl_mod
+    import application.cli.screen_commands as sc_mod
+
+    monkeypatch.setattr(cl_mod, "select_case_summarizer", lambda: fake_summarizer)
+    monkeypatch.setattr(sc_mod, "select_case_summarizer", lambda: fake_summarizer)
+    monkeypatch.setattr(sc_mod, "_fetch_recent_news_impl", lambda *a, **k: [])
+    monkeypatch.setattr(sc_mod, "buzz_sentiment_fact", lambda *a, **k: None)
+
+
+def test_cite_cases_flag_writes_cache(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from application import evidence_screen_use_case as esc_module
+
+    fake_result = _make_screen_result(["AAPL", "MSFT", "NVDA"])
+
+    class FakeUseCase:
+        def run(self, universe: list[str], as_of: str, top_n: int = 10) -> ScreenResult:
+            return fake_result
+
+        def surface_calls(self, result: object, **kw: object) -> list[object]:
+            return []
+
+    monkeypatch.setattr(esc_module, "EvidenceScreenUseCase", lambda **kw: FakeUseCase())  # type: ignore[attr-defined]
+    fake_summarizer = _FakeCiteSummarizer()
+    _patch_cite_deps(monkeypatch, fake_summarizer)
+
+    runner = CliRunner()
+    res = runner.invoke(
+        cli,
+        [
+            "screen-candidates",
+            "--top",
+            "10",
+            "--report-dir",
+            str(tmp_path),
+            "--cite-cases",
+        ],
+    )
+    assert res.exit_code == 0, res.output
+
+    cache_file = tmp_path / "screen_cited_cases.json"  # type: ignore[operator]
+    assert cache_file.exists(), "screen_cited_cases.json must be written"
+    raw = json.loads(cache_file.read_text())
+    assert "cases" in raw
+    assert "AAPL" in raw["cases"] or "MSFT" in raw["cases"] or "NVDA" in raw["cases"]
+    assert fake_summarizer.calls, "summarizer must have been called with --cite-cases"
+
+
+def test_no_cite_cases_skips_prefetch(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from application import evidence_screen_use_case as esc_module
+
+    fake_result = _make_screen_result(["AAPL", "MSFT"])
+
+    class FakeUseCase:
+        def run(self, universe: list[str], as_of: str, top_n: int = 10) -> ScreenResult:
+            return fake_result
+
+        def surface_calls(self, result: object, **kw: object) -> list[object]:
+            return []
+
+    monkeypatch.setattr(esc_module, "EvidenceScreenUseCase", lambda **kw: FakeUseCase())  # type: ignore[attr-defined]
+    fake_summarizer = _FakeCiteSummarizer()
+    _patch_cite_deps(monkeypatch, fake_summarizer)
+
+    runner = CliRunner()
+    res = runner.invoke(
+        cli,
+        ["screen-candidates", "--top", "10", "--report-dir", str(tmp_path)],
+        # NOTE: no --cite-cases flag → prefetch skipped
+    )
+    assert res.exit_code == 0, res.output
+    assert not (tmp_path / "screen_cited_cases.json").exists()  # type: ignore[operator]
+    assert (
+        fake_summarizer.calls == []
+    ), "summarizer must not be called without --cite-cases"

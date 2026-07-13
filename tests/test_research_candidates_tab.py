@@ -75,6 +75,9 @@ class _FakeSt:
     def expander(self, *a: object, **k: object) -> "_FakeCol":
         return _FakeCol()
 
+    def container(self, *a: object, **k: object) -> "_FakeCol":
+        return _FakeCol()
+
     def radio(self, *a: object, **k: object) -> str:
         return "By reason"
 
@@ -441,6 +444,9 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
             return [FakeCol() for _ in range(count)]
 
         def expander(self, *a: object, **k: object) -> FakeCol:
+            return FakeCol()
+
+        def container(self, *a: object, **k: object) -> FakeCol:
             return FakeCol()
 
         def radio(self, *a: object, **k: object) -> str:
@@ -946,3 +952,142 @@ def test_gemini_cached_in_session_state(monkeypatch: Any) -> None:
     assert (
         call_count[0] == 1
     ), "summarize_case must only be called once (cached after first call)"
+
+
+def test_default_gemini_adapter_falls_back_to_template_without_api_key(
+    monkeypatch: Any,
+) -> None:
+    """Regression guard: the module-level default adapter must resolve through
+    select_case_summarizer() (Gemini-if-key-else-template), not hardcode the
+    raw GeminiNarratorAdapter. The raw adapter always returns data_gap=True
+    without GEMINI_API_KEY, which made the Screener's Google-AI read look
+    permanently 'unavailable' in any local dev environment without a key."""
+    import importlib
+
+    from application.case_builder import TemplateCaseSummarizer
+
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+
+    from adapters.visualization.tabs import research_candidates as rc
+
+    importlib.reload(rc)
+    try:
+        assert isinstance(rc._gemini_adapter, TemplateCaseSummarizer)
+    finally:
+        importlib.reload(rc)
+
+
+# ---------------------------------------------------------------------------
+# Public sample book: cold-start reports_dir resolution + gated Run screener
+# ---------------------------------------------------------------------------
+
+
+def test_render_default_reports_dir_resolves_to_sample_on_cold_start(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """render() called with no explicit reports_dir (the real dashboard.py
+    call) must resolve through the book-context resolver — data/sample on
+    cold start, never a bare 'data/reports' default that ignores the
+    session/sample distinction."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+
+    captured: dict[str, str] = {}
+
+    def fake_load_latest_screened(reports_dir: str) -> None:
+        captured["reports_dir"] = reports_dir
+        return None
+
+    monkeypatch.setattr(rc, "load_latest_screened", fake_load_latest_screened)
+    monkeypatch.setattr(st, "warning", lambda *a, **k: None)  # noqa: ARG005
+
+    rc.render()
+
+    assert captured["reports_dir"] == "data/sample"
+
+
+def test_run_screener_gate_disabled_when_fresh(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """A fresh (<1 day old) screen must render the Run button disabled."""
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "caption", lambda *a, **k: None)  # noqa: ARG005
+
+    captured_kwargs: dict[str, object] = {}
+
+    def fake_button(*args: object, **kwargs: object) -> bool:
+        captured_kwargs.update(kwargs)
+        return False
+
+    monkeypatch.setattr(st, "button", fake_button)
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+    rc._render_run_screener_gate(ctx, 0)
+
+    assert captured_kwargs.get("disabled") is True
+
+
+def test_run_screener_button_triggers_session_scoped_background_run(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Clicking Run screener must never write into the shared data/reports/
+    or committed data/sample/ — always a fresh session-scoped temp dir."""
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "caption", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "button", lambda *a, **k: True)  # noqa: ARG005
+    monkeypatch.setattr(st, "rerun", lambda: None)
+
+    run_calls: list[str] = []
+    monkeypatch.setattr(
+        rc,
+        "_start_screener_run_background",
+        lambda report_dir: run_calls.append(report_dir),
+    )
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+    rc._render_run_screener_gate(ctx, 3)
+
+    assert run_calls, "must trigger a background screener run"
+    target = run_calls[0]
+    assert target not in ("data/reports", "data/sample")
+    from adapters.visualization.book_context import SESSION_SAMPLE_REFRESH_REPORTS_KEY
+
+    assert st.session_state[SESSION_SAMPLE_REFRESH_REPORTS_KEY] == target

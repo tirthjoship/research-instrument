@@ -14,39 +14,28 @@ from adapters.visualization.price_cache import batch_fetch_prices, fetch_ticker_
 
 DB_PATH = "data/recommendations.db"
 
-# Canonical local book — same file Home/Risk derive their brief from.
-HOLDINGS_CSV = "data/personal/holdings.csv"
-
 # Small-book threshold: ≤ this many positions → flat treemap layout.
 SMALL_BOOK_MAX = 5
 
 
-def _resolve_book(db_path: str) -> tuple[list[Any], str]:
-    """Resolve the portfolio book from a single source, preferring the user's CSV.
+def _resolve_book() -> tuple[list[Any], str]:
+    """Resolve the portfolio book via the same resolver Home/Risk use.
 
-    Priority:
-      1. In-session book (Home tab upload / manual / sample → session_state["book"])
-      2. Canonical ``data/personal/holdings.csv`` — the same file Home/Risk use
-      3. SQLite store (trade-recorded / demo holdings) as a last resort
+    Priority: session-uploaded book (flagged non-sample) -> bundled sample
+    book. Never falls back to the operator's ``data/personal/holdings.csv`` or
+    SQLite in the public UI — see book_context.resolve_ui_book_context().
 
     Returns ``(holdings, source_label)`` where ``holdings`` are domain Holdings
     aggregated one-row-per-ticker. The label is shown to the user so they always
     know which book they are looking at (legibility over silent magic).
     """
-    from adapters.visualization.data_loader import load_holdings
-    from application.holdings_reader import aggregate_to_book, read_holdings
+    from adapters.visualization.book_context import resolve_ui_book_context
+    from application.holdings_reader import aggregate_to_book
 
-    session_book = st.session_state.get("book")
-    if session_book:
-        book = aggregate_to_book(session_book)
-        if book:
-            return book, "uploaded book"
-
-    csv_book = aggregate_to_book(read_holdings(HOLDINGS_CSV))
-    if csv_book:
-        return csv_book, "holdings.csv"
-
-    return load_holdings(db_path), "recorded trades"
+    ctx = resolve_ui_book_context()
+    book = aggregate_to_book(ctx.book)
+    source = "sample book" if ctx.is_sample else "uploaded book"
+    return book, source
 
 
 def render(db_path: str = DB_PATH) -> None:
@@ -77,7 +66,7 @@ def render(db_path: str = DB_PATH) -> None:
 
     st.markdown('<div class="ri-h1">My Portfolio</div>', unsafe_allow_html=True)
 
-    holdings, book_source = _resolve_book(db_path)
+    holdings, book_source = _resolve_book()
     trades = load_trades(db_path)
 
     if not holdings and not trades:

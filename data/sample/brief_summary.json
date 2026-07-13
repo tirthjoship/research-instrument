@@ -1,0 +1,507 @@
+{
+  "as_of": "2026-07-11",
+  "regime": "RISK_ON",
+  "screen_label": "RESEARCH_ONLY",
+  "abstained": false,
+  "candidates": [
+    {
+      "ticker": "SPG",
+      "composite": 1.2352742871650837,
+      "factor_summary": "mom p66 \u00b7 rev p83 \u00b7 qua p95 \u00b7 val p87 \u00b7 low p76 \u00b7 trend ok",
+      "why": "SPG: RESEARCH_ONLY. Price is 5.3 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "RCI-B.TO",
+      "composite": 0.8629590039639528,
+      "factor_summary": "mom p61 \u00b7 rev p62 \u00b7 qua p88 \u00b7 val p95 \u00b7 low p76 \u00b7 trend ok",
+      "why": "RCI-B.TO: RESEARCH_ONLY. Price is 1.2 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "TRGP",
+      "composite": 0.8455000020988258,
+      "factor_summary": "mom p84 \u00b7 rev p73 \u00b7 qua p95 \u00b7 val p50 \u00b7 low p40 \u00b7 trend ok",
+      "why": "TRGP: RESEARCH_ONLY. Price is 7.7 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "SYY",
+      "composite": 0.8297956754367352,
+      "factor_summary": "mom p20 \u00b7 rev p88 \u00b7 qua p95 \u00b7 val p64 \u00b7 low p73 \u00b7 trend ok",
+      "why": "SYY: RESEARCH_ONLY. Price is 3.2 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "AMP",
+      "composite": 0.8167295604749392,
+      "factor_summary": "mom p5 \u00b7 rev p79 \u00b7 qua p93 \u00b7 val p94 \u00b7 low p54 \u00b7 trend ok",
+      "why": "AMP: RESEARCH_ONLY. Price is 2.7 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "CVE.TO",
+      "composite": 0.787022819426959,
+      "factor_summary": "mom p94 \u00b7 rev p85 \u00b7 qua p52 \u00b7 val p88 \u00b7 low p29 \u00b7 trend ok",
+      "why": "CVE.TO: RESEARCH_ONLY. Price is 4.1 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "CINF",
+      "composite": 0.7784416581986486,
+      "factor_summary": "mom p53 \u00b7 rev p95 \u00b7 qua p63 \u00b7 val p95 \u00b7 low p79 \u00b7 trend ok",
+      "why": "CINF: RESEARCH_ONLY. Price is 3.5 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "MAS",
+      "composite": 0.7583518633143028,
+      "factor_summary": "mom p45 \u00b7 rev p61 \u00b7 qua p95 \u00b7 val p76 \u00b7 low p41 \u00b7 trend ok",
+      "why": "MAS: RESEARCH_ONLY. Price is 4.0 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "AIZ",
+      "composite": 0.7478514515837933,
+      "factor_summary": "mom p73 \u00b7 rev p95 \u00b7 qua p61 \u00b7 val p90 \u00b7 low p70 \u00b7 trend ok",
+      "why": "AIZ: RESEARCH_ONLY. Price is 8.5 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "CM.TO",
+      "composite": 0.7456072242596333,
+      "factor_summary": "mom p82 \u00b7 rev p76 \u00b7 qua p54 \u00b7 val p83 \u00b7 low p95 \u00b7 trend ok",
+      "why": "CM.TO: RESEARCH_ONLY. Price is 9.8 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "MSFT",
+      "verdict": "REDUCE",
+      "unrealized_pct": -0.08309522356305804,
+      "trend_state": "broken",
+      "why": "MSFT: REDUCE. Price is 8.1 ATRs below its 200-day trend. Position is -8% vs cost. This is the hold-a-loser pattern \u2014 broken trend held at a loss. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "NVDA",
+      "verdict": "TRIM",
+      "unrealized_pct": -0.47259998321533203,
+      "trend_state": "uptrend",
+      "why": "NVDA: TRIM. Price is 5.1 ATRs above its 200-day trend. Position is -47% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "GOOGL",
+      "verdict": "TRIM",
+      "unrealized_pct": 1.0410285295758928,
+      "trend_state": "uptrend",
+      "why": "GOOGL: TRIM. Price is 7.6 ATRs above its 200-day trend. Position is +104% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "AMZN",
+      "verdict": "TRIM",
+      "unrealized_pct": 0.6355999755859375,
+      "trend_state": "uptrend",
+      "why": "AMZN: TRIM. Price is 3.0 ATRs above its 200-day trend. Position is +64% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "META",
+      "verdict": "TRIM",
+      "unrealized_pct": 0.3384200439453125,
+      "trend_state": "uptrend",
+      "why": "META: TRIM. Price is 1.8 ATRs above its 200-day trend. Position is +34% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "V",
+      "verdict": "TRIM",
+      "unrealized_pct": 0.3086375045776367,
+      "trend_state": "uptrend",
+      "why": "V: TRIM. Price is 5.3 ATRs above its 200-day trend. Position is +31% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "BRK-B",
+      "verdict": "TRIM",
+      "unrealized_pct": 0.5708954273570668,
+      "trend_state": "uptrend",
+      "why": "BRK-B: TRIM. Price is 0.9 ATRs above its 200-day trend. Position is +57% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "TSLA",
+      "verdict": "HOLD",
+      "unrealized_pct": 1.038800048828125,
+      "trend_state": "broken",
+      "why": "TSLA: HOLD. Price is 0.9 ATRs below its 200-day trend. Position is +104% vs cost. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "JPM",
+      "verdict": "HOLD",
+      "unrealized_pct": 0.8025178636823381,
+      "trend_state": "uptrend",
+      "why": "JPM: HOLD. Price is 7.6 ATRs above its 200-day trend. Position is +80% vs cost. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "AAPL",
+      "verdict": "ADD_OK",
+      "unrealized_pct": 0.7517778184678819,
+      "trend_state": "uptrend",
+      "why": "AAPL: ADD_OK. Price is 8.9 ATRs above its 200-day trend. Position is +75% vs cost. In a TFSA, there is no capital-gains tax friction on selling."
+    }
+  ],
+  "concentration": [],
+  "scorecard": {
+    "screen_window": "forward since 2026-07-11",
+    "screen_n": 0,
+    "screen_significant": false,
+    "discipline_window": "21d",
+    "discipline_n": 276,
+    "discipline_gate_status": "PROCEED"
+  },
+  "macro": {
+    "as_of": "2026-07-11",
+    "factors": [
+      "SPY",
+      "SMB",
+      "HML",
+      "MOM",
+      "RMW",
+      "CMA",
+      "TLT",
+      "UUP",
+      "XLE"
+    ],
+    "net_beta_by_factor": {
+      "SPY": 1.1642922619474703,
+      "SMB": -0.08603981903260344,
+      "HML": 0.18700571573683444,
+      "MOM": -0.1160312494065653,
+      "RMW": 0.14747272525853214,
+      "CMA": -0.29992930346564534,
+      "TLT": -0.09700976766962476,
+      "UUP": -0.05147366840769782,
+      "XLE": -0.08441695706480885
+    },
+    "systematic_share": 0.8091002089496169,
+    "idiosyncratic_share": 0.19089979105038313,
+    "dominant_factor": "SPY",
+    "flags": [
+      "SYSTEMATIC_DOMINANT",
+      "DRIFT"
+    ],
+    "coverage_holdings": 10,
+    "total_holdings": 10,
+    "enb": 5.102540940896297,
+    "pc_labels_data_gap": true,
+    "systematic_share_adj": 0.8020006299436109,
+    "downside_beta": 0.9633466576055573,
+    "sector_hhi": 0.3149182990930183,
+    "diversification_ratio": 1.7735897291406892,
+    "pc_variance": [
+      0.5376157984563357,
+      0.11622222957513019,
+      0.07975739618290222
+    ],
+    "pc_labels": [
+      "Bet 1",
+      "Consumer Discretionary",
+      "Information Technology"
+    ],
+    "suppressed_factors": [
+      "SMB",
+      "UUP"
+    ],
+    "sector_gaps": [
+      "Health Care",
+      "Industrials",
+      "Consumer Staples",
+      "Energy",
+      "Utilities",
+      "Real Estate",
+      "Materials"
+    ],
+    "sys_share_history": [
+      [
+        "2026-06-16",
+        0.6224206541074655
+      ],
+      [
+        "2026-06-16",
+        0.6224202330096993
+      ],
+      [
+        "2026-06-17",
+        0.631833969532329
+      ],
+      [
+        "2026-06-17",
+        0.6887520745899096
+      ],
+      [
+        "2026-06-17",
+        0.16212835547402826
+      ],
+      [
+        "2026-06-17",
+        0.1621277275073284
+      ],
+      [
+        "2026-06-17",
+        0.16212783158347166
+      ],
+      [
+        "2026-06-17",
+        0.16212805307825517
+      ],
+      [
+        "2026-06-17",
+        0.16212805307825517
+      ],
+      [
+        "2026-06-17",
+        0.1621280558713203
+      ],
+      [
+        "2026-06-17",
+        0.162127923320462
+      ],
+      [
+        "2026-06-17",
+        0.16212794041568968
+      ],
+      [
+        "2026-06-17",
+        0.16212756093230551
+      ],
+      [
+        "2026-06-17",
+        0.1621277745750923
+      ],
+      [
+        "2026-06-17",
+        0.16212756093230551
+      ],
+      [
+        "2026-06-17",
+        0.1621277745750923
+      ],
+      [
+        "2026-06-17",
+        0.1621277788200065
+      ],
+      [
+        "2026-06-17",
+        0.16212770530396603
+      ],
+      [
+        "2026-06-17",
+        0.16212764331536234
+      ],
+      [
+        "2026-06-17",
+        0.16212793109955492
+      ],
+      [
+        "2026-06-17",
+        0.16212833695622297
+      ],
+      [
+        "2026-06-17",
+        0.16212833695622297
+      ],
+      [
+        "2026-06-17",
+        0.1621280132819115
+      ],
+      [
+        "2026-06-17",
+        0.1621281554420183
+      ],
+      [
+        "2026-06-17",
+        0.16212799790752674
+      ],
+      [
+        "2026-06-17",
+        0.1621278972296223
+      ],
+      [
+        "2026-06-17",
+        0.16212760188705633
+      ],
+      [
+        "2026-06-17",
+        0.16212791161667406
+      ],
+      [
+        "2026-06-17",
+        0.16212781924796005
+      ],
+      [
+        "2026-06-17",
+        0.16212764088138287
+      ],
+      [
+        "2026-06-17",
+        0.1621279125621753
+      ],
+      [
+        "2026-06-17",
+        0.16212762906250577
+      ],
+      [
+        "2026-06-20",
+        0.16212816578873301
+      ],
+      [
+        "2026-07-11",
+        0.6977745468253524
+      ],
+      [
+        "2026-07-11",
+        0.8091002089496169
+      ]
+    ],
+    "holdings_meta": [
+      {
+        "ticker": "AAPL",
+        "name": "AAPL",
+        "sector": "Information Technology",
+        "weight": 0.11379774354869229
+      },
+      {
+        "ticker": "MSFT",
+        "name": "MSFT",
+        "sector": "Information Technology",
+        "weight": 0.06949053456368127
+      },
+      {
+        "ticker": "NVDA",
+        "name": "NVDA",
+        "sector": "Information Technology",
+        "weight": 0.022840389622061745
+      },
+      {
+        "ticker": "GOOGL",
+        "name": "GOOGL",
+        "sector": "Communication Services",
+        "weight": 0.10312387736423964
+      },
+      {
+        "ticker": "AMZN",
+        "name": "AMZN",
+        "sector": "Consumer Discretionary",
+        "weight": 0.05312534061333317
+      },
+      {
+        "ticker": "TSLA",
+        "name": "TSLA",
+        "sector": "Consumer Discretionary",
+        "weight": 0.05886358993136666
+      },
+      {
+        "ticker": "META",
+        "name": "META",
+        "sector": "Communication Services",
+        "weight": 0.1207576250979141
+      },
+      {
+        "ticker": "JPM",
+        "name": "JPM",
+        "sector": "Financials",
+        "weight": 0.1821460390461601
+      },
+      {
+        "ticker": "V",
+        "name": "V",
+        "sector": "Financials",
+        "weight": 0.1511302719117383
+      },
+      {
+        "ticker": "BRK-B",
+        "name": "BRK-B",
+        "sector": "Financials",
+        "weight": 0.1247245883008127
+      }
+    ],
+    "risk_contribution": {
+      "AAPL": 0.12430442543067159,
+      "MSFT": 0.05525649489902846,
+      "NVDA": 0.030088089059256206,
+      "GOOGL": 0.10089803930824116,
+      "AMZN": 0.06512115889882088,
+      "TSLA": 0.11315127957159132,
+      "META": 0.18072206333770252,
+      "JPM": 0.16486366182909593,
+      "V": 0.11219896963343506,
+      "BRK-B": 0.053395818032156823
+    },
+    "sector_weights": {
+      "Information Technology": 0.20612866773443533,
+      "Communication Services": 0.22388150246215374,
+      "Consumer Discretionary": 0.11198893054469983,
+      "Financials": 0.4580008992587111
+    },
+    "systematic_share_ci": [
+      0.7640400678148577,
+      0.8588485528246166
+    ],
+    "beta_ci_by_factor": {
+      "SPY": [
+        1.0993628616240878,
+        1.2248802988041199
+      ],
+      "SMB": [
+        -0.20170826928290292,
+        0.01793134850573958
+      ],
+      "HML": [
+        0.0828203666026415,
+        0.2867473379087387
+      ],
+      "MOM": [
+        -0.1812607975950196,
+        -0.03561579627989031
+      ],
+      "RMW": [
+        0.04217198226401317,
+        0.2549867309357919
+      ],
+      "CMA": [
+        -0.4240293337481493,
+        -0.15467525774806729
+      ],
+      "TLT": [
+        -0.1780373902180608,
+        -0.026602830041404454
+      ],
+      "UUP": [
+        -0.15125376089438164,
+        0.047593369555371766
+      ],
+      "XLE": [
+        -0.1314114629975864,
+        -0.04053954465070823
+      ]
+    },
+    "vif_by_factor": {
+      "SPY": 1.5404556846654887,
+      "SMB": 1.9131412175858344,
+      "HML": 2.280118798564324,
+      "MOM": 1.6587074953297785,
+      "RMW": 1.7604126804436542,
+      "CMA": 2.3359077369059764,
+      "TLT": 1.1746200929456745,
+      "UUP": 1.174303894704751,
+      "XLE": 1.3013654777910084
+    }
+  }
+}
