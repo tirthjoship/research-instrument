@@ -13,6 +13,7 @@ from adapters.visualization.components.decision_card import (
     render_expanded_card,
 )
 from application.evidence_card import EvidenceCard
+from domain.case_models import CaseResult
 from domain.discipline import Verdict
 from domain.evidence_rag import RagColor, RagSignal
 from domain.fit import FORBIDDEN_WORDS
@@ -134,3 +135,45 @@ def test_expanded_card_price_none_shows_dash() -> None:
     )
     # Both price and cost should show the em-dash placeholder
     assert html.count("—") >= 2
+
+
+# ---------------------------------------------------------------------------
+# Bug fix: the case block must not claim "loads when you open this card"
+# (implies still-pending) once a fetch has actually completed with no
+# evidence — data_gap=True and case=None (fetch failed) must render the same
+# honest "no evidence found" message, distinct from the pending copy.
+# ---------------------------------------------------------------------------
+
+
+def _base_kwargs() -> dict[str, object]:
+    return dict(
+        verdict=Verdict.TRIM,
+        name="Yum China",
+        unrealized_pct=22.7,
+        means="A winner dipped — protect gains or give it room?",
+        price=44.63,
+        cost=36.38,
+        returns=(4.1, -4.3, -14.8, -6.9),
+        reliability="measured forward; see Trust",
+    )
+
+
+def test_case_none_and_data_gap_render_identical_honest_message() -> None:
+    """case=None (never fetched / fetch failed) and a data_gap=True CaseResult
+    (fetched, no evidence) must render the exact same honest case block —
+    no divergent behavior depending on which path produced the empty result."""
+    html_none = render_expanded_card(_card(), case=None, **_base_kwargs())
+    html_gap = render_expanded_card(
+        _card(), case=CaseResult((), (), True), **_base_kwargs()
+    )
+    assert html_none == html_gap
+
+
+def test_case_gap_message_does_not_claim_still_pending() -> None:
+    """The honest no-evidence message must not read like a pending loader —
+    a completed fetch that found nothing is a different state from 'loading'."""
+    html = render_expanded_card(
+        _card(), case=CaseResult((), (), True), **_base_kwargs()
+    )
+    assert "loads when you open this card" not in html.lower()
+    assert "informs you, not the verdict" in html  # case badge still present

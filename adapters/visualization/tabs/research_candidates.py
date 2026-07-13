@@ -12,17 +12,26 @@ from __future__ import annotations
 import html as _html
 import json
 import logging
+import subprocess
+import sys
+import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
 import streamlit as st
 
-from adapters.ml.gemini_narrator import GeminiNarratorAdapter
+from adapters.visualization.book_context import (
+    SESSION_REPORTS_DIR_KEY,
+    SESSION_SAMPLE_REFRESH_REPORTS_KEY,
+    UIBookContext,
+    resolve_ui_book_context,
+)
 from adapters.visualization.components.factor_row import render_factor_row
 from adapters.visualization.components.funnel import render_funnel
 from adapters.visualization.components.gemini_read import (
     build_case_context,
-    render_gemini_read,
+    render_gemini_read_two_col,
 )
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
@@ -31,16 +40,28 @@ from adapters.visualization.data_loader import (
     load_latest_screened,
     staleness_days,
 )
+from adapters.visualization.price_cache import (
+    _fetch_recent_news_impl,
+    fetch_ticker_info,
+)
+from adapters.visualization.run_gate import RUN_GATE_HELP, evaluate_run_gate
+from application.card_loading import select_case_summarizer
+from application.case_cache import load_cached_case
 from application.runtime_guard import is_local_runtime
+from application.screener_case_facts import candidate_bands, facts_from_bands
+from application.screener_sentiment_facts import buzz_sentiment_fact
 from domain.evidence_registry import get_evidence
 from domain.factor_bands import Band, band_for_percentile, plain_read
 from domain.factor_scores import factor_caveat, factor_display_label
 from domain.screen_buckets import PRIORITY, BucketInput, assign_buckets
 from domain.screen_diagnostics import ScreenDiagnostics, ScreenVerdict, classify_screen
 
-# Module-level adapter instance — monkeypatchable in tests.
-# Constructed lazily: API key comes from env at first call; no network on import.
-_gemini_adapter: GeminiNarratorAdapter = GeminiNarratorAdapter()
+# Module-level adapter instance — monkeypatchable in tests. Resolves through
+# select_case_summarizer() (Gemini-if-key-else-template), mirroring Home and
+# Portfolio, so a local dev environment without GEMINI_API_KEY gets the
+# deterministic template summary instead of a permanent data_gap — only a
+# genuine no-evidence case should ever read "Google-AI read unavailable".
+_gemini_adapter: object = select_case_summarizer()
 
 logger = logging.getLogger(__name__)
 
@@ -86,10 +107,40 @@ def maybe_render_gemini(
         return cached
 
     ctx = build_case_context(ticker=ticker, facts=facts, news=news)
-    result = _gemini_adapter.summarize_case(ctx)
-    html = render_gemini_read(result)
+    result = _gemini_adapter.summarize_case(ctx)  # type: ignore[attr-defined]
+    html = render_gemini_read_two_col(result)
     st.session_state[cache_key] = html
     return html
+
+
+def maybe_render_gemini_cache_only(ticker: str, reports_dir: str) -> str:
+    """Cache-only read for non-hero rows — never fires a live Gemini call.
+
+    Reads the persistent {reports_dir}/screen_cited_cases.json cache (written
+    by the `screen-candidates --cite-cases` CLI prefetch). On a hit, renders
+    the same two-column block the hero row would show. On a miss, returns an
+    honest "not cached yet" note. Same privacy fail-safe as maybe_render_gemini.
+
+    This is the practical resolution of "lazy fetch on expand": Streamlit has
+    no visibility into raw-HTML <details>/<summary> toggle state (no rerun
+    fires on a client-side-only disclosure open), so true per-click fetching
+    isn't reachable without converting rows to real st.expander widgets.
+    """
+    if not is_local_runtime():
+        return ""
+
+    cache_path = f"{reports_dir}/screen_cited_cases.json"
+    cached = load_cached_case(cache_path, ticker)
+    if cached is None:
+        return (
+            '<div style="font-size:10.5px;color:var(--text-muted);'
+            "background:var(--bg-secondary);border:1px dashed var(--border);"
+            'border-radius:8px;padding:7px 10px;margin:8px 0 6px;">'
+            "&#128269; <b>Google-AI read</b> &mdash; not cached yet. Runs the "
+            "next time the screen refreshes."
+            "</div>"
+        )
+    return render_gemini_read_two_col(cached)
 
 
 def _bucket_sub(bucket: Any) -> str:
@@ -155,26 +206,10 @@ def _corroboration_badge_html(row_dict: dict[str, object]) -> str:
     )
 
 
-def _candidate_bands(candidate: dict[str, Any]) -> dict[str, Band]:
-    """Map each present factor (non-None, not all-zero) to its plain-language band."""
-    bands: dict[str, Band] = {}
-    for fd in candidate.get("factor_scores", []):
-        if not isinstance(fd, dict):
-            continue
-        rv, rp = fd.get("value"), fd.get("percentile")
-        if rv is None or rp is None:
-            continue
-        fv, fp = float(rv), float(rp)
-        if fv == 0.0 and fp == 0.0:  # DATA-GAP / no coverage
-            continue
-        bands[str(fd.get("name", ""))] = band_for_percentile(fp)
-    return bands
-
-
 def _row_summary(candidate: dict[str, Any]) -> str:
     """Plain-language one-liner next to the ticker (mockup: 'Quality, value &
     analyst signal strong; momentum flat') — derived from bands, never the raw why."""
-    bands = _candidate_bands(candidate)
+    bands = candidate_bands(candidate)
     strong = [
         _FRIENDLY[k]
         for k in ("quality", "value", "revision", "lowvol")
@@ -201,7 +236,7 @@ def _standout_chip_html(candidate: dict[str, Any]) -> str:
     Derives an evidence-standing word from the name's strongest present factor:
     Exceptional/Strong → STRONG (green), Flat → MODERATE (blue), all Weak → WEAK
     (red). DATA-GAP-only names → neutral dash. Descriptive, never a forecast."""
-    bands = _candidate_bands(candidate)
+    bands = candidate_bands(candidate)
     if not bands:
         return '<span style="font-size:10px;color:var(--text-muted);">&mdash;</span>'
     best = max(
@@ -380,45 +415,60 @@ def build_headline_html() -> str:
 # ---------------------------------------------------------------------------
 
 
-def build_legend_html() -> str:
-    """Return HTML for the 'How to read these ratings' expandable legend.
+def build_pipeline_visual_html() -> str:
+    """Return the always-visible Z-score -> Band -> Grade pipeline strip.
 
-    Matches mockup #lg .legend content: bands + p-notation + Evidence score + Grade.
+    Replaces the old always-open legend prose. Precise thresholds (band
+    percentiles, grade cutoffs) live in hover tooltips on the Band/Grade
+    boxes, sourced from the glossary (single source of truth) via the
+    existing tooltip() component — not printed inline, to keep the strip
+    scannable at a glance.
     """
-    return (
-        '<div style="background:var(--bg-secondary);border:1px solid var(--border);'
-        "border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:11px;"
-        'color:var(--text-secondary);line-height:1.75;">'
-        "Each name scored on the factors, each a z-score vs this week&#39;s trend-eligible cohort:<br>"
-        "&bull; <b>Band</b>: "
-        '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
-        'background:#DCFCE7;color:var(--success);">Exceptional</span> ~top&nbsp;5% &nbsp;'
-        '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
-        'background:#DBEAFE;color:var(--accent);">Strong</span> ~top&nbsp;quartile &nbsp;'
-        '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
-        'background:#F1F5F9;color:var(--text-secondary);">Flat</span> middle &nbsp;'
-        '<span style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:11px;'
-        'background:#FEE2E2;color:var(--danger);">Weak</span> bottom.<br>'
-        "&bull; <b style=\"font-family:'JetBrains Mono',monospace;\">pNN</b> = percentile: "
-        "p95 beats 95% of the 304 (not sector, not all 512).<br>"
-        "&bull; <b>Evidence score</b> = equal-weight average of the z-scores. "
-        "A ranking aid, not a return forecast.<br>"
-        "&bull; <b>Grade</b> (check-your-own-list): "
-        '<span style="font-weight:700;font-size:10px;padding:2px 7px;border-radius:11px;'
-        'background:#DCFCE7;color:var(--success);">STRONG</span> &ge;80% &nbsp;'
-        '<span style="font-weight:700;font-size:10px;padding:2px 7px;border-radius:11px;'
-        'background:#DBEAFE;color:var(--accent);">MODERATE</span> 50&ndash;80% &nbsp;'
-        '<span style="font-weight:700;font-size:10px;padding:2px 7px;border-radius:11px;'
-        'background:#FEE2E2;color:var(--danger);">WEAK</span> below half.<br>'
-        "&bull; Track-1 factors: Quality &middot; Value &middot; Analyst dispersion &middot; Momentum. "
-        "Low-vol now live (5th factor).<br>"
-        "&bull; <b>Analyst dispersion</b> measures the SPREAD of analyst price targets "
-        "(how much they disagree) &mdash; not estimate-revision drift. "
-        "No published evidence it anticipates returns.<br>"
-        "&bull; <b>Quality</b> &amp; <b>Value</b> use a current snapshot, "
-        "NOT point-in-time data &mdash; never validated in backtest, descriptive of today only."
+    step_style = (
+        "flex:1;border:1px solid var(--border);border-radius:8px;"
+        "padding:8px 10px;text-align:center;background:var(--bg-secondary);"
+    )
+    label_style = (
+        "font-family:'IBM Plex Mono',monospace;font-size:9.5px;"
+        "color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;"
+    )
+    arrow = '<div style="color:var(--text-muted);font-size:16px;">&rarr;</div>'
+    zscore_box = (
+        f'<div style="{step_style}">'
+        f'<div style="{label_style}">Z-score</div>'
+        '<div style="font-weight:600;font-size:12px;margin-top:2px;">'
+        "vs this week&#39;s cohort</div>"
         "</div>"
     )
+    band_box = (
+        f'<div style="{step_style}">'
+        f'<div style="{label_style}">{tooltip("Band")}</div>'
+        '<div style="font-weight:600;font-size:12px;margin-top:2px;">'
+        "Percentile band</div>"
+        "</div>"
+    )
+    grade_box = (
+        f'<div style="{step_style}">'
+        f'<div style="{label_style}">{tooltip("Grade")}</div>'
+        '<div style="font-weight:600;font-size:12px;margin-top:2px;">'
+        "Evidence-standing</div>"
+        "</div>"
+    )
+    strip_html = (
+        '<div style="display:flex;align-items:center;gap:8px;'
+        'margin-bottom:4px;">'
+        f"{zscore_box}{arrow}{band_box}{arrow}{grade_box}"
+        "</div>"
+    )
+    caption_html = (
+        '<div style="font-size:10px;color:var(--text-muted);'
+        'font-style:italic;margin-bottom:12px;">'
+        "Track-1 factors: Quality &middot; Value &middot; Analyst dispersion "
+        "&middot; Momentum &middot; Low-vol now live &middot; hover Band/Grade "
+        "for exact thresholds."
+        "</div>"
+    )
+    return strip_html + caption_html
 
 
 def build_disclosure_html() -> str:
@@ -550,6 +600,32 @@ def build_factor_honesty_html() -> str:
     )
 
 
+def build_caveats_html(screen: dict[str, Any] | None) -> str:
+    """Return the merged caveats content for the collapsed "Learn more" expander.
+
+    Combines build_disclosure_html() + build_universe_scope_html(screen) +
+    build_factor_honesty_html() verbatim into three labeled sub-sections, same
+    order as the original always-visible blocks. Wording is preserved exactly
+    — this is a container change, not a content rewrite.
+    """
+    sub_heading_style = (
+        "font-family:'IBM Plex Mono',monospace;font-size:9.5px;"
+        "font-weight:600;letter-spacing:.1em;text-transform:uppercase;"
+        "color:var(--text-muted);margin:0 0 4px;"
+    )
+    sections = [
+        ("Honest note", build_disclosure_html()),
+        ("Universe scope", build_universe_scope_html(screen)),
+        ("What each factor really is", build_factor_honesty_html()),
+    ]
+    parts: list[str] = []
+    for heading, body in sections:
+        parts.append(
+            f'<div style="{sub_heading_style}">{_html.escape(heading)}</div>{body}'
+        )
+    return "".join(parts)
+
+
 # ---------------------------------------------------------------------------
 # Task 5: resolve_view_mode
 # ---------------------------------------------------------------------------
@@ -568,6 +644,34 @@ def resolve_view_mode(session: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _enrich_candidates_with_company_info(
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Attach a company name + sector to each candidate, display-only.
+
+    ScreenCandidate carries no name/sector, so the shown shortlist otherwise
+    falls back to bare tickers. Uses the cached fetch_ticker_info() (same
+    lookup Portfolio uses for sector) — cheap for a ~15-row shortlist, and
+    never touches score/composite/factor data. Returns new dicts; the
+    caller's list/dicts are left untouched.
+    """
+    enriched: list[dict[str, Any]] = []
+    for c in candidates:
+        c = dict(c)
+        if not c.get("name"):
+            ticker = str(c.get("ticker", ""))
+            if ticker:
+                info = fetch_ticker_info(ticker)
+                name = info.get("longName") or info.get("shortName")
+                if name:
+                    c["name"] = name
+                sector = info.get("sector")
+                if sector:
+                    c["sector"] = sector
+        enriched.append(c)
+    return enriched
+
+
 def _company_name(candidate: dict[str, Any]) -> str:
     """Return a friendly display name for the candidate, falling back to ticker.
 
@@ -583,12 +687,25 @@ def _company_name(candidate: dict[str, Any]) -> str:
     return str(candidate.get("ticker", "?") or "?")
 
 
+def _summary_why_html(candidate: dict[str, Any]) -> str:
+    """Company-name-prefixed one-liner for the always-visible <summary> row —
+    a collapsed <details> hides its body, so the name must live here too, not
+    only in the sub-line inside the expanded body."""
+    name = _company_name(candidate)
+    ticker = str(candidate.get("ticker", "?"))
+    why = _row_summary(candidate)
+    if name and name != ticker:
+        return _html.escape(f"{name} — {why}")
+    return _html.escape(why)
+
+
 def _build_candidate_row_html(
     rank: int | str,
     candidate: dict[str, Any],
     show_repeat_badge: bool = False,
     also_buckets: list[str] | None = None,
     open_by_default: bool = False,
+    reports_dir: str = "data/reports",
 ) -> str:
     """Build the HTML for a single collapsible candidate row.
 
@@ -651,19 +768,30 @@ def _build_candidate_row_html(
             f"also {also_list}</span>"
         )
 
-    # Google-AI read placeholder (S6 fills this later)
-    gai_id = f"gai-{ticker.lower()}"
-    gai_placeholder = (
-        f'<div id="{gai_id}" class="gai" style="font-size:10.5px;'
-        "color:var(--text-secondary);background:#F7F5FF;"
-        "border:1px solid #E4DCFB;border-radius:8px;padding:7px 10px;"
-        'margin:8px 0 6px;">'
-        "&#128269; <b>Google-AI read</b> "
-        f'<span style="color:var(--text-muted);">&mdash; open <b>{ticker} in '
-        "Stock Analysis</b> for the full cited case. A companion to the evidence, "
-        "never an input to the score.</span>"
-        "</div>"
+    # Google-AI read: green/red flags synthesized from real news + market
+    # sentiment (honesty invariant — no composite/grade ever reaches the
+    # prompt), plus a permanent pointer to the deeper factor/evidence
+    # breakdown in Stock Analysis — that tab does NOT carry this cited-case
+    # feature (only Home/Portfolio/Risk do), so the pointer must never claim
+    # a "cited case" awaits there. Only the hero row (open_by_default) fires
+    # a live call — other rows read the persistent cache only (see
+    # maybe_render_gemini_cache_only).
+    raw_ticker = str(candidate.get("ticker", "?"))
+    facts = facts_from_bands(bands, factor_by_name)
+    buzz_fact = buzz_sentiment_fact(raw_ticker)
+    if buzz_fact:
+        facts = {**facts, "Market sentiment": buzz_fact}
+    if open_by_default:
+        news_items = _fetch_recent_news_impl(raw_ticker, limit=5)
+        gai_read_html = maybe_render_gemini(raw_ticker, facts, news=news_items)
+    else:
+        gai_read_html = maybe_render_gemini_cache_only(raw_ticker, reports_dir)
+    gai_pointer_html = (
+        f'<div style="font-size:10px;color:var(--text-muted);margin:2px 0 6px;">'
+        f"Open <b>{ticker} in Stock Analysis</b> for the full factor breakdown."
+        f"</div>"
     )
+    gai_placeholder = gai_read_html + gai_pointer_html
 
     do_next = (
         "Confirm the evidence is structural (check next earnings date, recent "
@@ -672,12 +800,14 @@ def _build_candidate_row_html(
         + " in Stock Analysis</b> for a full read."
     )
 
-    # Sub-line: "CompanyName · evidence 1.22 [also-in badge]"
+    # Sub-line: "CompanyName · Sector · evidence 1.22 [also-in badge]"
     friendly_name = _html.escape(_company_name(candidate))
+    sector = candidate.get("sector")
+    sector_html = f" &middot; {_html.escape(str(sector))}" if sector else ""
     sub_line = (
         f'<div style="font-size:11px;color:var(--text-muted);'
         f"margin:8px 0 7px;font-family:'Fraunces',serif;font-style:italic;\">"
-        f"{friendly_name} &middot; evidence {composite:.2f}{also_html}"
+        f"{friendly_name}{sector_html} &middot; evidence {composite:.2f}{also_html}"
         f"</div>"
     )
 
@@ -701,7 +831,9 @@ def _build_candidate_row_html(
 # ---------------------------------------------------------------------------
 
 
-def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
+def build_reason_view_html(
+    candidates: list[dict[str, Any]], reports_dir: str = "data/reports"
+) -> str:
     """Return HTML for the reason-bucket view (Zone ① main body).
 
     Computes BucketInputs from candidates' factor_scores, assigns buckets,
@@ -795,11 +927,15 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
 
             # Show the also-in badge whenever the ticker appears in any other bucket
             # (regardless of which is "primary" — so the hero always shows it too).
+            is_hero = not hero_done
+            hero_done = True
             body = _build_candidate_row_html(
                 rank=rank_i,
                 candidate=c,
                 show_repeat_badge=bool(also_in),
                 also_buckets=also_in if also_in else None,
+                open_by_default=is_hero,
+                reports_dir=reports_dir,
             )
 
             # Composite value for row header
@@ -807,7 +943,7 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
 
             # Row wrapper using HTML details/summary for collapsible behaviour
             safe_ticker = _html.escape(ticker)
-            why_text = _html.escape(_row_summary(c))
+            why_text = _summary_why_html(c)
             summary_html = (
                 f'<summary style="display:grid;'
                 f"grid-template-columns:22px 56px 1fr auto auto 16px;"
@@ -819,13 +955,11 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
                 f'<span style="color:var(--text-secondary);">{why_text}</span>'
                 f"{_standout_chip_html(c)}"
                 f"<span style=\"font-family:'JetBrains Mono',monospace;"
-                f'color:var(--text-secondary);">{composite:.2f}</span>'
+                f'white-space:nowrap;color:var(--text-secondary);">{composite:.2f}</span>'
                 f'<span style="color:var(--text-muted);font-size:10px;">&#9654;</span>'
                 f"</summary>"
             )
 
-            is_hero = not hero_done
-            hero_done = True
             open_attr = " open" if is_hero else ""
             border_color = "#CBD5E1" if is_hero else "var(--border)"
             shadow = "0 1px 3px rgba(15,23,42,.08)" if is_hero else "var(--shadow-sm)"
@@ -852,7 +986,9 @@ def build_reason_view_html(candidates: list[dict[str, Any]]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
+def build_rank_view_html(
+    candidates: list[dict[str, Any]], reports_dir: str = "data/reports"
+) -> str:
     """Return HTML for the flat ranked view (rank-only mode).
 
     Same collapsible row component, no bucket headers,
@@ -866,10 +1002,16 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
     for rank_i, c in enumerate(sorted_candidates, start=1):
         ticker = c.get("ticker", "?")
         composite = float(c.get("composite", 0.0))
-        why_text = _html.escape(_row_summary(c))
+        why_text = _summary_why_html(c)
         safe_ticker = _html.escape(ticker)
 
-        body = _build_candidate_row_html(rank=rank_i, candidate=c)
+        is_hero = rank_i == 1
+        body = _build_candidate_row_html(
+            rank=rank_i,
+            candidate=c,
+            open_by_default=is_hero,
+            reports_dir=reports_dir,
+        )
 
         summary_html = (
             f'<summary style="display:grid;'
@@ -882,12 +1024,11 @@ def build_rank_view_html(candidates: list[dict[str, Any]]) -> str:
             f'<span style="color:var(--text-secondary);">{why_text}</span>'
             f"{_standout_chip_html(c)}"
             f"<span style=\"font-family:'JetBrains Mono',monospace;"
-            f'color:var(--text-secondary);">{composite:.2f}</span>'
+            f'white-space:nowrap;color:var(--text-secondary);">{composite:.2f}</span>'
             f'<span style="color:var(--text-muted);font-size:10px;">&#9654;</span>'
             f"</summary>"
         )
 
-        is_hero = rank_i == 1
         open_attr = " open" if is_hero else ""
         border_color = "#CBD5E1" if is_hero else "var(--border)"
         shadow = "0 1px 3px rgba(15,23,42,.08)" if is_hero else "var(--shadow-sm)"
@@ -925,6 +1066,8 @@ def build_body_html(
     Otherwise: dispatches to reason or rank view.
     """
     candidates = (screen.get("rows") or screen.get("candidates", []))[:_TOP_N]
+    if candidates:
+        candidates = _enrich_candidates_with_company_info(candidates)
 
     if not candidates:
         # Abstention path (reskinned, honest)
@@ -995,8 +1138,8 @@ def build_body_html(
         return verdict_html + funnel_html + empty_note
 
     if view == "rank":
-        return build_rank_view_html(list(candidates))
-    return build_reason_view_html(list(candidates))
+        return build_rank_view_html(list(candidates), reports_dir=reports_dir)
+    return build_reason_view_html(list(candidates), reports_dir=reports_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -1116,8 +1259,8 @@ def _build_zone2_row_html(row: Any) -> str:
         'margin:8px 0 6px;">'
         "&#128269; <b>Google-AI read</b> "
         f'<span style="color:var(--text-muted);">&mdash; open <b>{ticker} in '
-        "Stock Analysis</b> for the full cited case. A companion to the evidence, "
-        "never an input to the score.</span>"
+        "Stock Analysis</b> for the full factor breakdown. A companion to the "
+        "evidence, never an input to the score.</span>"
         "</div>"
     )
 
@@ -1265,18 +1408,105 @@ def _render_history_and_upload(reports_dir: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Gated "Run screener" — single-flight, cooldown, disable-if-fresh (mirrors
+# weekly_brief.py's gated Run brief). Writes always land in a fresh
+# session-scoped temp dir — never data/reports/ or data/sample/ from a
+# public click.
+# ---------------------------------------------------------------------------
+
+_SCREENER_PROCESSING_KEY = "screener_run_processing"
+_SCREENER_LAST_RUN_KEY = "screener_run_last_ts"
+_SCREENER_RUN_ERROR_KEY = "screener_run_error"
+
+
+def _run_screen_candidates_cli(report_dir: str) -> None:
+    cmd = [
+        sys.executable,
+        "-m",
+        "application.cli",
+        "screen-candidates",
+        "--report-dir",
+        report_dir,
+        "--cite-cases",
+    ]
+    subprocess.run(cmd, check=True)
+
+
+def _start_screener_run_background(report_dir: str) -> None:
+    if st.session_state.get(_SCREENER_PROCESSING_KEY):
+        return
+    st.session_state[_SCREENER_PROCESSING_KEY] = True
+    st.session_state.pop(_SCREENER_RUN_ERROR_KEY, None)
+
+    def _worker() -> None:
+        try:
+            _run_screen_candidates_cli(report_dir)
+        except Exception:  # noqa: BLE001
+            st.session_state[_SCREENER_RUN_ERROR_KEY] = True
+        finally:
+            st.session_state[_SCREENER_PROCESSING_KEY] = False
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
+def _trigger_screener_run(ctx: UIBookContext) -> None:
+    import time as _time  # noqa: PLC0415
+
+    st.session_state[_SCREENER_LAST_RUN_KEY] = _time.time()
+    tmp_dir = tempfile.mkdtemp(prefix="stockrec_screen_run_")
+    if ctx.is_sample:
+        st.session_state[SESSION_SAMPLE_REFRESH_REPORTS_KEY] = tmp_dir
+    else:
+        st.session_state[SESSION_REPORTS_DIR_KEY] = tmp_dir
+    _start_screener_run_background(tmp_dir)
+
+
+def _render_run_screener_gate(ctx: UIBookContext, days: int | None) -> None:
+    """Status caption + gated Run button for the screener."""
+    age_label = (
+        f"{days} day{'s' if days != 1 else ''} old"
+        if days is not None
+        else "no screen yet"
+    )
+    gate = evaluate_run_gate(
+        staleness_days=days,
+        is_running=bool(st.session_state.get(_SCREENER_PROCESSING_KEY)),
+        last_run_ts=st.session_state.get(_SCREENER_LAST_RUN_KEY),
+    )
+    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+        st.caption(f"Screener — {age_label}")
+        clicked = st.button(
+            "↻ Run screener",
+            key="screener_run_button",
+            disabled=not gate.can_run,
+            help=RUN_GATE_HELP[gate.reason],
+        )
+    if clicked:
+        _trigger_screener_run(ctx)
+        st.rerun()
+    if st.session_state.get(_SCREENER_PROCESSING_KEY):
+        st.info("⟳ Screening the universe — this can take a few minutes…", icon="ℹ️")
+    elif st.session_state.pop(_SCREENER_RUN_ERROR_KEY, False):
+        st.error("Screen run failed. The previous screen above is still shown.")
+
+
+# ---------------------------------------------------------------------------
 # render() — Streamlit entry point (wires all components)
 # ---------------------------------------------------------------------------
 
 
-def render(reports_dir: str = "data/reports") -> None:
+def render(reports_dir: str | None = None) -> None:
     """Main render entry point for the Research Candidates tab."""
+    ctx = resolve_ui_book_context()
+    reports_dir = reports_dir if reports_dir is not None else ctx.reports_dir
+
     screen = load_latest_screened(reports_dir)
     if screen is None:
         st.warning(
             "No screen report found. Run "
             "`python -m application.cli screen-candidates` to generate one."
         )
+        _render_run_screener_gate(ctx, None)
         return
 
     _using_screened = screen.get("_source") == "screened"
@@ -1284,6 +1514,7 @@ def render(reports_dir: str = "data/reports") -> None:
     days = staleness_days(screen.get("as_of", ""))
     if days is not None and days > 8:
         st.error(f"Screen is {days} days old — re-run `screen-candidates`.")
+    _render_run_screener_gate(ctx, days)
 
     if _using_screened:
         candidates = screen.get("rows", [])[:_TOP_N]
@@ -1328,16 +1559,12 @@ def render(reports_dir: str = "data/reports") -> None:
             unsafe_allow_html=True,
         )
 
-    # How-to-read legend (collapsible via st.expander)
-    with st.expander("▸ How to read these ratings", expanded=False):
-        st.markdown(build_legend_html(), unsafe_allow_html=True)
-
-    # Honest disclosure
-    st.markdown(build_disclosure_html(), unsafe_allow_html=True)
-
-    # P0b: honest universe scope + per-factor caveats (relabel/disclose only).
-    st.markdown(build_universe_scope_html(screen), unsafe_allow_html=True)
-    st.markdown(build_factor_honesty_html(), unsafe_allow_html=True)
+    # Always-visible Z-score -> Band -> Grade pipeline strip (thresholds live
+    # in hover tooltips on the Band/Grade boxes), then caveats/disclosures
+    # merged into one collapsed expander — one click away, not always-open.
+    st.markdown(build_pipeline_visual_html(), unsafe_allow_html=True)
+    with st.expander("▸ Learn more — caveats & methodology", expanded=False):
+        st.markdown(build_caveats_html(screen), unsafe_allow_html=True)
     if candidates:
         st.markdown(build_coverage_html(screen), unsafe_allow_html=True)
 

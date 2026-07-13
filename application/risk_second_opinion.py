@@ -28,9 +28,11 @@ errors are swallowed — a corrupt or missing cache file degrades gracefully to
 from __future__ import annotations
 
 import datetime
+from collections.abc import Sequence
 from typing import Protocol, runtime_checkable
 
 from application.case_cache import CITED_CASES_PATH, load_cached_case, write_case_cache
+from application.news_context import NewsItem
 from domain.case_models import CaseContext, CaseResult
 
 # Risk-specific context token — used as ticker; never rendered as a fact.
@@ -71,6 +73,7 @@ def build_risk_second_opinion(
     summarizer: _SummarizerLike | None,
     *,
     use_cache: bool = True,
+    news: Sequence[NewsItem] = (),
 ) -> CaseResult:
     """Build a CaseResult acting as a second-opinion on the risk read.
 
@@ -87,6 +90,9 @@ def build_risk_second_opinion(
                      is present, else TemplateCaseSummarizer — CI/offline safe).
         use_cache:   When False, skip cache read/write entirely.  Intended for
                      unit tests that should not touch the real cache file.
+        news:        Real attributed headlines (see application.risk_market_facts)
+                     — SPY/^VIX market news, optionally a sector-proxy ETF's news.
+                     Default empty is a no-op (backward compatible).
 
     Returns:
         CaseResult with in_favor / to_watch / data_gap.  Never raises.
@@ -109,7 +115,7 @@ def build_risk_second_opinion(
         # appears (consistent with spec §9 cache rules above).
         if not _needs_intent(resolved):
             return CaseResult(in_favor=(), to_watch=(), data_gap=True)
-        ctx = _build_context(macro_facts)
+        ctx = _build_context(macro_facts, news)
         effective: _SummarizerLike = _RiskSummarizingWrapper(resolved)
         result = effective.summarize_case(ctx)
     except Exception:  # noqa: BLE001 — fail-safe: never surface errors
@@ -173,10 +179,12 @@ def _resolve_summarizer(summarizer: _SummarizerLike | None) -> _SummarizerLike:
     return s
 
 
-def _build_context(macro_facts: list[str]) -> CaseContext:
-    """Construct a CaseContext from macro_facts only (no intent lines at this stage)."""
+def _build_context(
+    macro_facts: list[str], news: Sequence[NewsItem] = ()
+) -> CaseContext:
+    """Construct a CaseContext from macro_facts + real news (no intent lines yet)."""
     return CaseContext(
         ticker=_RISK_TICKER,
         facts=tuple(macro_facts),
-        news=(),
+        news=tuple((n.source, n.title) for n in news),
     )

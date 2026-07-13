@@ -84,3 +84,38 @@ def test_system_prompt_includes_government_investment() -> None:
     from adapters.ml.gemini_event_classifier import _SYSTEM_PROMPT
 
     assert "government_investment" in _SYSTEM_PROMPT
+
+
+class TestMultiKeyFallback:
+    def test_classifier_collects_env_key_fallbacks_when_no_explicit_key(
+        self, monkeypatch
+    ) -> None:
+        """Without an explicit api_key, the classifier must collect
+        GEMINI_API_KEY + numbered fallbacks so a second key can absorb load
+        once the first's quota is exhausted — mirrors GeminiNarratorAdapter."""
+        import adapters.ml.gemini_event_classifier as clf_mod
+
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+        monkeypatch.setenv("GEMINI_API_KEY_2", "key-2")
+
+        clf = clf_mod.GeminiEventClassifier()
+        assert clf._api_keys == ("key-2",)
+
+    def test_classifier_explicit_key_is_sole_key(self, monkeypatch) -> None:
+        import adapters.ml.gemini_event_classifier as clf_mod
+
+        monkeypatch.setenv("GEMINI_API_KEY_2", "env-key-2")
+        clf = clf_mod.GeminiEventClassifier(api_key="explicit-key")
+        assert clf._api_keys == ("explicit-key",)
+
+    @patch("adapters.ml.gemini_event_classifier.generate_with_key_fallback")
+    def test_call_gemini_uses_key_fallback_helper(self, mock_gen: MagicMock) -> None:
+        from adapters.ml.gemini_event_classifier import _call_gemini
+
+        mock_gen.return_value = (
+            '{"category": "earnings_surprise", "direction": 1, "confidence": 0.9}'
+        )
+        result = _call_gemini(("key-1", "key-2"), "NVDA beats estimates")
+        assert result is not None
+        assert result["category"] == "earnings_surprise"
+        assert mock_gen.call_args.args[0] == ("key-1", "key-2")

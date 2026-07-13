@@ -363,6 +363,44 @@ def test_book_strip_single_net_beta(tmp_path) -> None:  # type: ignore[no-untype
     assert "63%" not in html  # systematic share does NOT appear in the beta tile
 
 
+def test_book_strip_chips_have_no_inline_adr_or_badge() -> None:
+    """Home's book-strip tiles must not print raw ADR-0XX / verdict badges
+    inline — that jargon moves into the chip's hover tooltip only."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_book_strip_html(
+        need_review=4,
+        total=10,
+        vs_market=3.2,
+        net_beta=1.21,
+        regime="RISK_ON",
+        screen_cleared=304,
+        screen_universe=512,
+    )
+    assert "ri-vbadge" not in html
+    assert "ri-chip-adr" not in html
+    assert "ADR-" not in html.split('class="ri-chip-tip"')[0]
+
+
+def test_book_health_chip_has_no_inline_adr_or_badge() -> None:
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_book_health_html(systematic_share=0.628)
+    assert "ri-vbadge" not in html
+    assert "ri-chip-adr" not in html
+
+
+def test_evidence_record_row_chips_have_no_inline_adr_or_badge() -> None:
+    from adapters.visualization.tabs import weekly_brief as wb
+    from domain.evidence_registry import get_evidence
+
+    entry = get_evidence("net_beta")
+    assert entry is not None
+    html = wb._evidence_record_row_html("What we know", "blurb", [entry])
+    assert "ri-vbadge" not in html
+    assert "ri-chip-adr" not in html
+
+
 def test_screen_tile_content_has_candidates_no_abstained_emh() -> None:
     """With cleared=70 / scanned=512, screen tile must NOT contain ABSTAINED or =EMH,
     and MUST contain '70' (the real cleared count)."""
@@ -944,6 +982,52 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
     ), f"Expected real price 44.63 in expanded card HTML, got: {html[:500]}"
 
 
+def test_one_holding_data_gap_case_shows_honest_no_evidence_not_pending() -> None:
+    """A completed fetch that found no evidence (data_gap=True) must render the
+    same honest 'no evidence found' message as a failed fetch (case=None) —
+    never the misleading 'loads when you open this card' pending copy, since
+    by the time this branch runs the fetch has already been attempted."""
+    from unittest.mock import MagicMock, patch
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+    from application.evidence_card import EvidenceCard
+    from domain.case_models import CaseResult
+
+    holding = {
+        "ticker": "YUMC",
+        "verdict": "TRIM",
+        "unrealized_pct": 22.7,
+        "why": "pulled back below trend",
+    }
+
+    captured: list[str] = []
+    with (
+        patch.object(
+            st, "markdown", side_effect=lambda c, **k: captured.append(str(c))
+        ),
+        patch.object(st, "expander") as mock_expander,
+        patch.object(st, "caption"),
+        patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
+        patch(
+            "adapters.visualization.price_cache.fetch_prices",
+            return_value={"YUMC": {"price": 44.63, "change_pct": 0.5}},
+        ),
+        patch(
+            "adapters.visualization.price_cache.fetch_price_history",
+            return_value={"closes": [], "atr": None, "ma200": None},
+        ),
+    ):
+        mock_expander.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_expander.return_value.__exit__ = MagicMock(return_value=False)
+        wb._render_one_holding("YUMC", holding, MagicMock(), CaseResult((), (), True))
+
+    html = "\n".join(captured)
+    assert "loads when you open this card" not in html.lower()
+    assert "No cited evidence found" in html
+
+
 def test_fetch_card_analyst_key_mapping_lights_analysts_square() -> None:
     """fetch_card must remap numberOfAnalystOpinions → analyst_count so
     build_analyst_panel builds a non-GAP panel when coverage is present."""
@@ -1093,8 +1177,9 @@ def _fake_entry(key: str, label: str, verdict):  # type: ignore[no-untyped-def]
 
 
 def test_book_strip_tiles_carry_evidence_chips() -> None:
-    """Each of the 4 book-strip tiles must render an inline evidence chip with its
-    verdict badge sourced from the registry."""
+    """Each of the 4 book-strip tiles must render an inline evidence chip; the
+    verdict + ADR from the registry surface inside the hover tooltip only
+    (Home chips are compact — see test_book_strip_chips_have_no_inline_adr_or_badge)."""
     from adapters.visualization.tabs import weekly_brief as wb
 
     html = wb._render_book_strip_html(
@@ -1111,8 +1196,10 @@ def test_book_strip_tiles_carry_evidence_chips() -> None:
     # ...and the strip carries one chip per tile (need_review / vs_market /
     # net_beta / screen_cleared) — at least 4 chip spans.
     assert html.count('class="ri-chip"') >= 4
-    # Verdict badges from the registry surface (e.g. descriptive + research-only).
-    assert "v-descriptive" in html and "v-research" in html
+    # Verdict words from the registry ride along inside the hover tooltip
+    # (e.g. descriptive + research-only) — not as an always-visible badge.
+    assert "DESCRIPTIVE" in html and "RESEARCH_ONLY" in html
+    assert "ri-vbadge" not in html
     # Registry meaning text rides along for the screen tile.
     assert "pre-registered gate" in html.lower() or "ADR-049" in html
 
@@ -1123,8 +1210,10 @@ def test_book_health_tile_carries_systematic_share_chip() -> None:
 
     html = wb._render_book_health_html(systematic_share=0.628)
     assert "ri-chip" in html
-    # systematic_share is RESEARCH_ONLY in the registry → amber badge.
-    assert "v-research" in html
+    # systematic_share is RESEARCH_ONLY in the registry — verdict word rides
+    # along inside the hover tooltip only, no always-visible badge on Home.
+    assert "RESEARCH_ONLY" in html
+    assert "ri-vbadge" not in html
     # Existing behaviour preserved.
     assert "63%" in html and "60%" in html
 
@@ -1231,3 +1320,441 @@ def test_rendered_home_shows_evidence_record_panel(tmp_path) -> None:  # type: i
     assert "Still testing" in all_html
     # The panel pulls the live registry — the forward-pending gate is shown.
     assert "ADR-048" in all_html
+
+
+# ---------------------------------------------------------------------------
+# Public sample book: cold start must never auto-load data/personal/
+# ---------------------------------------------------------------------------
+
+
+def test_handle_onboarding_never_autoloads_personal_even_if_present(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """Regression for the live bug: cold start must always resolve to the
+    sample book, never ``data/personal/holdings.csv``, even when that file and
+    ``upload_history.json`` exist on the machine running the dashboard (the
+    normal state on the operator's own laptop)."""
+    import pathlib
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+    from application.holdings_reader import Holding
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+
+    real_exists = pathlib.Path.exists
+
+    def fake_exists(self: pathlib.Path) -> bool:
+        if str(self) in {
+            "data/personal/holdings.csv",
+            "data/personal/upload_history.json",
+        }:
+            return True
+        return real_exists(self)
+
+    monkeypatch.setattr(pathlib.Path, "exists", fake_exists)
+    monkeypatch.setattr(
+        wb,
+        "read_holdings",
+        lambda path: (
+            [Holding("COST", 1.0, 100.0, "TFSA")] if "personal" in str(path) else []
+        ),
+    )
+    monkeypatch.setattr(wb, "holdings_upload_enabled", lambda: False)
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "markdown", lambda *a, **k: None)  # noqa: ARG005
+
+    wb._handle_onboarding()
+
+    assert st.session_state["is_sample_book"] is True
+    tickers = {h.ticker for h in st.session_state["book"]}
+    assert "COST" not in tickers
+    assert tickers == {
+        "AAPL",
+        "MSFT",
+        "NVDA",
+        "GOOGL",
+        "AMZN",
+        "TSLA",
+        "META",
+        "JPM",
+        "V",
+        "BRK-B",
+    }
+
+
+def test_render_default_args_resolve_to_sample_paths_on_cold_start(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """render() called with no explicit path/reports_dir (the real call from
+    dashboard.py) must resolve through the book-context resolver on cold
+    start — the committed sample artifacts, never data/personal/."""
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(wb, "holdings_upload_enabled", lambda: False)
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "markdown", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "info", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "warning", lambda *a, **k: None)  # noqa: ARG005
+
+    captured: dict[str, str] = {}
+
+    def fake_load_brief_summary(path: str) -> None:
+        captured["path"] = path
+        return None
+
+    monkeypatch.setattr(wb, "load_brief_summary", fake_load_brief_summary)
+
+    wb.render()
+
+    assert captured["path"] == "data/sample/brief_summary.json"
+
+
+def test_stage_csv_upload_is_session_only(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Upload must never write to data/personal/ (save_and_sync_holdings) —
+    the parsed book goes straight into session_state, and the background
+    rebuild target must be a session/temp path."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(st, "toast", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "rerun", lambda: None)
+
+    assert not hasattr(wb, "save_and_sync_holdings"), (
+        "the public-facing tab module must not even import the "
+        "data/personal/-writing sync function"
+    )
+
+    rebuild_calls: list[tuple[object, object]] = []
+    monkeypatch.setattr(
+        wb,
+        "_start_dashboard_rebuild_background",
+        lambda *a, **k: rebuild_calls.append((a, k)),
+    )
+
+    class FakeUpload:
+        name = "portfolio.csv"
+
+        def getvalue(self) -> bytes:
+            return (
+                b"symbol,quantity,book value (cad),exchange,account type\n"
+                b"COST,5,900,NASDAQ,TFSA\n"
+            )
+
+    wb._stage_csv_upload(FakeUpload())
+
+    assert st.session_state["is_sample_book"] is False
+    tickers = {h.ticker for h in st.session_state["book"]}
+    assert tickers == {"COST"}
+    assert rebuild_calls, "must still kick off a background rebuild"
+    call_args, call_kwargs = rebuild_calls[0]
+    blob = str(call_args) + str(call_kwargs)
+    assert "data/personal" not in blob
+    assert wb.SESSION_BRIEF_PATH_KEY in st.session_state
+    assert "data/personal" not in st.session_state[wb.SESSION_BRIEF_PATH_KEY]
+
+
+def test_run_brief_button_sample_context_refreshes_to_session_temp(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """Clicking Run brief while viewing the sample book must read the
+    committed sample CSV but write to a fresh session-scoped temp path —
+    never overwrite data/sample/brief_summary.json itself."""
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "caption", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "button", lambda *a, **k: True)  # noqa: ARG005
+
+    rebuild_calls: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        wb,
+        "_start_dashboard_rebuild_background",
+        lambda **kw: rebuild_calls.append(kw),
+    )
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+    wb._render_run_brief_gate(ctx, 3)
+
+    assert rebuild_calls, "must trigger a background rebuild"
+    kw = rebuild_calls[0]
+    assert kw["holdings_csv"] == "data/sample/sample_book.csv"
+    assert kw["out_path"] != "data/sample/weekly_brief.md"
+    refreshed = st.session_state[wb.SESSION_SAMPLE_REFRESH_BRIEF_KEY]
+    assert refreshed != "data/sample/brief_summary.json"
+
+
+def test_run_brief_button_disabled_when_fresh_never_triggers_rebuild(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """A fresh (<1 day old) brief must not offer a working Run button —
+    st.button(disabled=True) never returns True, but assert the gate wiring
+    passes disabled=True through so Streamlit actually blocks the click."""
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "caption", lambda *a, **k: None)  # noqa: ARG005
+
+    captured_kwargs: dict[str, object] = {}
+
+    def fake_button(*args: object, **kwargs: object) -> bool:
+        captured_kwargs.update(kwargs)
+        return False
+
+    monkeypatch.setattr(st, "button", fake_button)
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+    wb._render_run_brief_gate(ctx, 0)
+
+    assert captured_kwargs.get("disabled") is True
+
+
+# ---------------------------------------------------------------------------
+# Needs-review auto-fetch: fully automatic, single progress bar, auto-land.
+# ---------------------------------------------------------------------------
+
+
+def _needs_review_holdings() -> list[dict[str, object]]:
+    return [
+        {"ticker": "AAA", "verdict": "TRIM", "unrealized_pct": 1.0, "why": "x"},
+        {"ticker": "BBB", "verdict": "REDUCE", "unrealized_pct": -2.0, "why": "y"},
+    ]
+
+
+def test_launch_case_fetcher_threads_real_news_and_extra_facts(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """The background worker must fetch real news + verdict/why/buzz facts,
+    not the old news=[] gap — mirrors the fix already landed for Screener and
+    Stock Analysis this session."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
+
+    calls: list[dict[str, object]] = []
+
+    def _fake_get_case_on_expand(ticker, card, news, *, expanded, summarizer, extra_facts=()):  # type: ignore[no-untyped-def]
+        calls.append(
+            {
+                "ticker": ticker,
+                "news": news,
+                "extra_facts": extra_facts,
+            }
+        )
+        return object()
+
+    monkeypatch.setattr(wb, "get_case_on_expand", _fake_get_case_on_expand)
+    monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [f"news-for-{ticker}"])
+    monkeypatch.setattr(
+        wb,
+        "personal_case_extra_facts",
+        lambda ticker, *, verdict, why: (f"Verdict: {verdict}. {why}",),
+    )
+
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
+
+        def start(self) -> None:
+            self._target()
+
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+    cases: dict[str, object] = {}
+    wb._launch_case_fetcher(cards, summarizer=object(), cases=cases)
+
+    assert {c["ticker"] for c in calls} == {"AAA", "BBB"}
+    aaa = next(c for c in calls if c["ticker"] == "AAA")
+    assert aaa["news"] == ["news-for-AAA"]
+    assert aaa["extra_facts"] == ("Verdict: TRIM. x",)
+    assert set(cases) == {"AAA", "BBB"}
+
+
+def test_needs_review_fetch_starts_without_button_click(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Fetch must start as soon as needs-review holdings render — zero clicks."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(wb, "select_case_summarizer", lambda: object())
+    monkeypatch.setattr(st, "progress", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "markdown", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(
+        wb, "_render_one_holding_fragment", lambda *a, **k: None
+    )  # noqa: ARG005
+
+    launch_calls: list[object] = []
+    monkeypatch.setattr(
+        wb,
+        "_launch_case_fetcher",
+        lambda cards, summarizer, cases: launch_calls.append(cards),
+    )
+
+    button_calls: list[object] = []
+    monkeypatch.setattr(
+        st,
+        "button",
+        lambda *a, **k: (button_calls.append((a, k)), False)[1],  # noqa: ARG005
+    )
+
+    wb._render_needs_review(_needs_review_holdings())
+
+    assert len(launch_calls) == 1
+    assert [t for t, _h in launch_calls[0]] == ["AAA", "BBB"]
+    assert button_calls == []  # no Fetch/Refresh button rendered
+
+
+def test_needs_review_progress_bar_reflects_done_total(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Progress bar must show done/total while the fetch is in flight."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    st.session_state[wb._HOME_CASES_KEY] = {"AAA": object()}  # 1 of 2 done
+    st.session_state[wb._HOME_FETCH_STARTED_KEY] = True
+    st.session_state[wb._HOME_FETCH_LANDED_KEY] = False
+
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+
+    progress_calls: list[tuple[object, object]] = []
+    monkeypatch.setattr(
+        st, "progress", lambda frac, **k: progress_calls.append((frac, k))
+    )
+
+    wb._render_needs_review_status(cards)
+
+    assert len(progress_calls) == 1
+    frac, kwargs = progress_calls[0]
+    assert frac == 0.5
+    assert "1 / 2" in kwargs.get("text", "")
+
+
+def test_needs_review_completion_reruns_exactly_once_then_shows_success(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """On completion, exactly one full rerun fires (guarded by a one-shot
+    flag) before the success state renders — it must not re-fire every tick."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+    st.session_state[wb._HOME_CASES_KEY] = {"AAA": object(), "BBB": object()}
+    st.session_state[wb._HOME_FETCH_STARTED_KEY] = True
+    st.session_state[wb._HOME_FETCH_LANDED_KEY] = False
+
+    rerun_calls: list[None] = []
+    monkeypatch.setattr(st, "rerun", lambda: rerun_calls.append(None))
+    success_calls: list[str] = []
+    monkeypatch.setattr(
+        st, "success", lambda msg, **k: success_calls.append(msg)  # noqa: ARG005
+    )
+    monkeypatch.setattr(st, "progress", lambda *a, **k: None)  # noqa: ARG005
+
+    # First call after completion: fires the one-shot rerun, no success yet.
+    wb._render_needs_review_status(cards)
+    assert len(rerun_calls) == 1
+    assert success_calls == []
+
+    # Second call (post-rerun): already landed — shows success, no second rerun.
+    wb._render_needs_review_status(cards)
+    assert len(rerun_calls) == 1
+    assert success_calls == ["Evidence ready for 2 holdings."]
+
+
+def test_needs_review_never_renders_fetch_or_refresh_button(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """No Fetch/Refresh button in any state — before, during, or after fetch."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(wb, "select_case_summarizer", lambda: object())
+    monkeypatch.setattr(
+        wb, "_launch_case_fetcher", lambda *a, **k: None
+    )  # noqa: ARG005
+    monkeypatch.setattr(st, "progress", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "success", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "rerun", lambda: None)
+    monkeypatch.setattr(st, "markdown", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(
+        wb, "_render_one_holding_fragment", lambda *a, **k: None
+    )  # noqa: ARG005
+
+    button_calls: list[object] = []
+    monkeypatch.setattr(
+        st,
+        "button",
+        lambda *a, **k: (button_calls.append((a, k)), False)[1],  # noqa: ARG005
+    )
+
+    holdings = _needs_review_holdings()
+    wb._render_needs_review(holdings)  # not started
+    st.session_state[wb._HOME_CASES_KEY] = {"AAA": object()}  # in flight
+    wb._render_needs_review(holdings)
+    st.session_state[wb._HOME_CASES_KEY] = {"AAA": object(), "BBB": object()}  # done
+    wb._render_needs_review(holdings)
+
+    assert button_calls == []

@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import streamlit as st
 
+from adapters.visualization.book_context import UIBookContext
 from adapters.visualization.components.onboarding import (
     render_landing_door_html,
     render_sample_banner_html,
@@ -88,8 +89,13 @@ def test_sample_book_loaded_on_first_landing() -> None:
             return_value=True,
         ),
         patch(
-            "adapters.visualization.tabs.weekly_brief.load_sample_book",
-            return_value=[],
+            "adapters.visualization.tabs.weekly_brief.resolve_ui_book_context",
+            return_value=UIBookContext(
+                book=[],
+                is_sample=True,
+                brief_path="data/sample/brief_summary.json",
+                reports_dir="data/sample",
+            ),
         ),
         patch("streamlit.session_state", session_state),
     ):
@@ -141,8 +147,13 @@ def test_csv_uploader_hidden_when_not_local() -> None:
             return_value=False,
         ),
         patch(
-            "adapters.visualization.tabs.weekly_brief.load_sample_book",
-            return_value=[],
+            "adapters.visualization.tabs.weekly_brief.resolve_ui_book_context",
+            return_value=UIBookContext(
+                book=[],
+                is_sample=True,
+                brief_path="data/sample/brief_summary.json",
+                reports_dir="data/sample",
+            ),
         ),
         patch("streamlit.session_state", session_state),
     ):

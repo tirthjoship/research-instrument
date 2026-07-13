@@ -1662,6 +1662,7 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .ri-chip:hover .ri-chip-tip,.ri-chip:focus .ri-chip-tip,.ri-chip:focus-within .ri-chip-tip{opacity:1;visibility:visible;transform:translateY(0);}
 .ri-chip-meaning{font-weight:600;color:#fff;}
 .ri-chip-band{color:#cbd5e1;}
+.ri-chip-tip-verdict{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;}
 .ri-chip-caveat{color:#cbd5e1;font-style:italic;border-top:1px solid rgba(255,255,255,.14);padding-top:.4rem;}
 /* ===== Stock Analysis redesign — design system ===== */
 .sa-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:2px 0 13px}

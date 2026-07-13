@@ -142,10 +142,15 @@ def _case_html(case: Any | None) -> str:
         '<div class="dc-case-hd"><span>The case — Google AI, from cited sources</span>'
         '<span class="dc-case-badge">informs you, not the verdict</span></div>'
     )
-    if case is None:
+    # Unified honest stub: case=None (never fetched / fetch failed) and
+    # case.data_gap=True (fetch completed, no linked signals or news to
+    # summarise) render identically — both are "no evidence found", not
+    # "still loading", so neither should claim the case is still pending.
+    if case is None or getattr(case, "data_gap", False):
         body = (
             '<div style="padding:14px;color:var(--ri-muted);font-size:11.5px">'
-            "The case loads when you open this card — summarised from cited articles only.</div>"
+            "No cited evidence found for this name — the case needs linked "
+            "signals or news, and none were available this week.</div>"
         )
         return f'<div class="dc-case">{hd}{body}</div>'
     favor = "<br>".join(

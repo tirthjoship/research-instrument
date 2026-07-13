@@ -107,6 +107,51 @@ def test_injected_summarizer_result_passed_through() -> None:
     assert res is expected
 
 
+def test_news_threaded_into_context_for_live_summarizer() -> None:
+    """Real news (application.news_context.NewsItem) passed via the news kwarg
+    must reach the summarizer's CaseContext.news as (source, title) pairs."""
+    from application.news_context import NewsItem
+    from application.risk_second_opinion import build_risk_second_opinion
+
+    captured: dict[str, object] = {}
+
+    class _SpySummarizer:
+        def summarize_case(self, ctx: object) -> CaseResult:
+            captured["ctx"] = ctx
+            return CaseResult((), (), False)
+
+    build_risk_second_opinion(
+        macro_facts=["net beta 1.18"],
+        summarizer=_SpySummarizer(),  # type: ignore[arg-type]
+        use_cache=False,
+        news=[NewsItem(source="Reuters", title="VIX spikes", date="", url="")],
+    )
+
+    ctx = captured["ctx"]
+    assert ctx.news == (("Reuters", "VIX spikes"),)  # type: ignore[attr-defined]
+
+
+def test_default_news_is_backward_compatible() -> None:
+    """Omitting news must behave identically to today (empty CaseContext.news)."""
+    from application.risk_second_opinion import build_risk_second_opinion
+
+    captured: dict[str, object] = {}
+
+    class _SpySummarizer:
+        def summarize_case(self, ctx: object) -> CaseResult:
+            captured["ctx"] = ctx
+            return CaseResult((), (), False)
+
+    build_risk_second_opinion(
+        macro_facts=["net beta 1.18"],
+        summarizer=_SpySummarizer(),  # type: ignore[arg-type]
+        use_cache=False,
+    )
+
+    ctx = captured["ctx"]
+    assert ctx.news == ()  # type: ignore[attr-defined]
+
+
 # ---------------------------------------------------------------------------
 # Cache behaviour tests (spec §9 — no live per-render Gemini calls)
 # ---------------------------------------------------------------------------

@@ -13,45 +13,63 @@ def test_threshold_constant():
 
 
 def test_resolve_book_prefers_session_upload(monkeypatch):
-    """An in-session uploaded book wins over CSV and SQLite, aggregated by ticker."""
+    """An in-session uploaded book (flagged non-sample) wins over the bundled
+    sample book, aggregated by ticker."""
     from application.holdings_reader import Holding
 
     monkeypatch.setattr(
         positions.st,
         "session_state",
-        {"book": [Holding("AC.TO", 30.0, 600.0, "FHSA")]},
+        {
+            "book": [Holding("AC.TO", 30.0, 600.0, "FHSA")],
+            "is_sample_book": False,
+        },
         raising=False,
     )
-    holdings, source = positions._resolve_book("unused.db")
+    holdings, source = positions._resolve_book()
     assert source == "uploaded book"
     assert {h.symbol for h in holdings} == {"AC.TO"}
 
 
-def test_resolve_book_falls_back_to_csv(monkeypatch, tmp_path):
-    """No session book → read the canonical holdings.csv."""
-    csv = tmp_path / "holdings.csv"
-    csv.write_text(
-        "Symbol,Quantity,Book Value (CAD),Exchange,Account Type\n"
-        "RY,10,1000,TSX,TFSA\n"
-    )
+def test_resolve_book_falls_back_to_sample_when_session_empty(monkeypatch):
+    """No session upload (cold start) → the bundled sample book, never
+    data/personal/holdings.csv or SQLite."""
     monkeypatch.setattr(positions.st, "session_state", {}, raising=False)
-    monkeypatch.setattr(positions, "HOLDINGS_CSV", str(csv))
-    holdings, source = positions._resolve_book("unused.db")
-    assert source == "holdings.csv"
-    assert {h.symbol for h in holdings} == {"RY.TO"}
+
+    holdings, source = positions._resolve_book()
+
+    assert source == "sample book"
+    assert {h.symbol for h in holdings} == {
+        "AAPL",
+        "MSFT",
+        "NVDA",
+        "GOOGL",
+        "AMZN",
+        "TSLA",
+        "META",
+        "JPM",
+        "V",
+        "BRK-B",
+    }
 
 
-def test_resolve_book_falls_back_to_sqlite(monkeypatch, tmp_path):
-    """No session book and no CSV → SQLite store (recorded trades / demo)."""
-    from domain.models import Holding as DomainHolding
+def test_resolve_book_falls_back_to_sample_when_still_flagged_sample(monkeypatch):
+    """Even if session_state["book"] holds a book, is_sample_book=True must
+    still route to the bundled sample book — matches _handle_onboarding's own
+    session seeding on cold start."""
+    from application.holdings_reader import Holding
 
-    sentinel = [DomainHolding("NVDA", 10.0, 100.0, "2026-01-01")]
-    monkeypatch.setattr(positions.st, "session_state", {}, raising=False)
-    monkeypatch.setattr(positions, "HOLDINGS_CSV", str(tmp_path / "missing.csv"))
     monkeypatch.setattr(
-        "adapters.visualization.data_loader.load_holdings",
-        lambda db_path: sentinel,
+        positions.st,
+        "session_state",
+        {
+            "book": [Holding("AAPL", 10.0, 1800.0, "TFSA")],
+            "is_sample_book": True,
+        },
+        raising=False,
     )
-    holdings, source = positions._resolve_book("unused.db")
-    assert source == "recorded trades"
-    assert holdings is sentinel
+
+    holdings, source = positions._resolve_book()
+
+    assert source == "sample book"
+    assert len(holdings) == 10
