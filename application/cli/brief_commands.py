@@ -353,9 +353,17 @@ def weekly_brief(
         # Prefetch Google-AI risk second-opinion into cache (spec §9 — cache-first, no
         # live calls at render time).  Fail-safe: build_risk_second_opinion swallows all
         # errors and never raises, so weekly-brief never crashes on this.
+        from application.risk_market_facts import (
+            dominant_sector,
+            risk_market_news,
+            risk_regime_fact,
+        )
         from application.risk_second_opinion import build_risk_second_opinion
 
-        build_risk_second_opinion(_risk_macro_facts(brief.macro), summarizer=None)
+        risk_facts = _risk_macro_facts(brief.macro)
+        risk_facts.append(risk_regime_fact(brief.regime))
+        risk_news = risk_market_news(dominant_sector(brief.macro.sector_weights))
+        build_risk_second_opinion(risk_facts, summarizer=None, news=risk_news)
 
     click.echo(to_stdout_masked(brief))
     click.echo(f"\nFull brief (gitignored) written to: {out_path}")

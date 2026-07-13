@@ -284,6 +284,93 @@ def test_cite_cases_builds_unified_facts_signals_news_verdict_buzz(
     assert not any(f.startswith("Trend:") for f in rivn_ctx.facts)
 
 
+def test_risk_second_opinion_fed_real_regime_and_market_news(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The risk second-opinion call site must pass a real regime fact
+    (brief.regime.value, already computed) plus real SPY/^VIX/sector-proxy
+    news (application.risk_market_facts) — not macro dial facts alone.
+    """
+    from domain.models import BookMacroExposure
+
+    assert isinstance(tmp_path, os.PathLike)
+    out_file = tmp_path / "weekly_brief.md"
+    holdings_csv = tmp_path / "holdings.csv"
+    holdings_csv.write_text(
+        "symbol,quantity,book value (cad),exchange,account type\nRIVN,10,500,NASDAQ,Margin\n"
+    )
+
+    macro = BookMacroExposure(
+        as_of="2026-07-12",
+        factors=("SPY",),
+        net_beta_by_factor={"SPY": 1.1},
+        systematic_share=0.71,
+        idiosyncratic_share=0.29,
+        dominant_factor="SPY",
+        flags=(),
+        holdings=(),
+        coverage_holdings=1,
+        total_holdings=1,
+        coverage_value_frac=1.0,
+        sector_weights={"Information Technology": 0.6, "Financials": 0.4},
+    )
+
+    def _fake_build(
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
+    ) -> tuple[WeeklyBriefUseCase, list[str]]:
+        uc = WeeklyBriefUseCase(
+            screen=_FakeScreen(),
+            holdings_risk=_FakeHoldingsRisk(),
+            regime_reader=RegimeReadUseCase(
+                vix_provider=lambda: 20.0, spy_trend_provider=lambda: 0.1
+            ),
+            screen_label_fn=lambda rd: ScreenLabel.RESEARCH_ONLY,
+            cluster_peers_fn=lambda t: [],
+            screen_scorecard_fn=lambda: (None, None, 0, False),
+            discipline_scorecard_fn=lambda: (0.58, 5462, "PENDING"),
+            macro_fn=lambda holdings, as_of: macro,
+        )
+        return uc, ["AAPL", "RIVN"]
+
+    monkeypatch.setattr(_brief_cmd, "_build_weekly_brief", _fake_build)
+
+    captured: dict[str, object] = {}
+
+    def _fake_build_risk_second_opinion(
+        macro_facts: list[str], summarizer: object, **kwargs: Any
+    ) -> CaseResult:
+        captured["macro_facts"] = macro_facts
+        captured["news"] = kwargs.get("news")
+        return CaseResult((), (), True)
+
+    import application.risk_market_facts as _rmf_mod
+    import application.risk_second_opinion as _rso_mod
+
+    monkeypatch.setattr(
+        _rso_mod, "build_risk_second_opinion", _fake_build_risk_second_opinion
+    )
+    monkeypatch.setattr(
+        _rmf_mod, "risk_market_news", lambda sector: [f"news-for-{sector}"]
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli_mod.cli,
+        [
+            "weekly-brief",
+            "--holdings",
+            str(holdings_csv),
+            "--out",
+            str(out_file),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+
+    macro_facts = captured["macro_facts"]
+    assert any(f.startswith("Regime:") for f in macro_facts)  # type: ignore[union-attr]
+    assert captured["news"] == ["news-for-Information Technology"]
+
+
 def test_no_cite_cases_skips_prefetch(
     tmp_path: object, monkeypatch: pytest.MonkeyPatch
 ) -> None:
