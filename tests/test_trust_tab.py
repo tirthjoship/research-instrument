@@ -390,3 +390,44 @@ def test_genuine_falsification_content_survives():  # type: ignore[no-untyped-de
 # build_screen_history_html and build_zone3_html tests relocated to
 # tests/test_research_candidates_tab.py on 2026-07-13 — the table now
 # renders on the screener tab itself, not here (see trust-tab-redesign spec).
+
+
+# ---------------------------------------------------------------------------
+# 2026-07-14: info-tooltip icons on the exhibit charts, so a reader unfamiliar
+# with SHAP/ablation/p-values can follow what the charts actually mean.
+# ---------------------------------------------------------------------------
+
+
+def test_exhibit_glossary_terms_defined():  # type: ignore[no-untyped-def]
+    from adapters.visualization.components.glossary import GLOSSARY
+
+    for term in ["Ablation study", "SHAP value", "Statistical significance (p-value)"]:
+        assert term in GLOSSARY, f"{term!r} must be a defined glossary entry"
+        assert GLOSSARY[term], f"{term!r} definition must not be empty"
+
+
+def test_ablation_exhibit_has_info_tooltips():  # type: ignore[no-untyped-def]
+    import inspect
+
+    from adapters.visualization.tabs import trust
+
+    heading_source = inspect.getsource(trust._render_dead_architecture_details)
+    assert "tooltip('Ablation study'" in heading_source or (
+        'tooltip("Ablation study"' in heading_source
+    )
+
+    body_source = inspect.getsource(trust._render_ablation_exhibit)
+    assert "tooltip('Statistical significance (p-value)'" in body_source or (
+        'tooltip("Statistical significance (p-value)"' in body_source
+    )
+
+
+def test_shap_exhibit_has_info_tooltip():  # type: ignore[no-untyped-def]
+    import inspect
+
+    from adapters.visualization.tabs import trust
+
+    heading_source = inspect.getsource(trust._render_dead_architecture_details)
+    assert "tooltip('SHAP value'" in heading_source or (
+        'tooltip("SHAP value"' in heading_source
+    )
