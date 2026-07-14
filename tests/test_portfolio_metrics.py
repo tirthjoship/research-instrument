@@ -47,3 +47,20 @@ def test_negative_pnl_red():
         top5=100.0,
     )
     assert "-$100" in html and "-10.0%" in html
+
+
+def test_hero_labels_are_not_duplicated():
+    """Regression: tooltip() already renders the label text, so appending the
+    same term again (' — Needs review' / ' — Concentration') printed it twice."""
+    html = build_hero_html(
+        book_value=1000.0,
+        cost=1000.0,
+        pnl=0.0,
+        pnl_pct=0.0,
+        spy_pct=None,
+        needs_review=3,
+        total_positions=10,
+        top5=50.0,
+    )
+    assert html.count("Needs review") == 1
+    assert html.count("Concentration") == 1

@@ -43,12 +43,12 @@ def build_hero_html(
         f'<div style="font-size:.72rem;">{badge}</div>'
         "</div>"
         "<div>"
-        f'<div class="ri-metric-lab">{review_tip} — Needs review</div>'
+        f'<div class="ri-metric-lab">{review_tip}</div>'
         f'<div class="ri-metric-num" style="color:#B45309;">{needs_review}</div>'
         f'<div style="font-size:.72rem;color:var(--ri-muted);">of {total_positions} positions</div>'
         "</div>"
         "<div>"
-        f'<div class="ri-metric-lab">{conc_tip} — Concentration</div>'
+        f'<div class="ri-metric-lab">{conc_tip}</div>'
         f'<div class="ri-metric-num">{top5:.0f}%</div>'
         '<div style="font-size:.72rem;color:var(--ri-muted);">top 5 of book</div>'
         "</div>"

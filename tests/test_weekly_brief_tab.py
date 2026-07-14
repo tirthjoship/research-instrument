@@ -344,6 +344,15 @@ def test_book_health_bar_flags_above_60() -> None:
     assert "60%" in html  # the flag reference
 
 
+def test_book_health_label_not_duplicated() -> None:
+    """Regression: 'Systematic share' used to print twice back-to-back
+    ('...systematic shareSystematic share')."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_book_health_html(systematic_share=0.628)
+    assert html.lower().count("systematic share") == 1
+
+
 def test_book_strip_single_net_beta(tmp_path) -> None:  # type: ignore[no-untyped-def]
     from adapters.visualization.tabs import weekly_brief as wb
 
@@ -361,6 +370,26 @@ def test_book_strip_single_net_beta(tmp_path) -> None:  # type: ignore[no-untype
     assert "1.21" in html and "ELEVATED" in html  # classify_net_beta band
     assert "+3.2%" in html and "RISK_ON" in html and "304" in html
     assert "63%" not in html  # systematic share does NOT appear in the beta tile
+
+
+def test_book_strip_tile_labels_are_not_duplicated(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Regression: each tile used to combine tooltip(term) with an evidence
+    chip that renders the same term again, printing e.g. 'Need review Need
+    review' / 'vs Market (1y) vs Market (1y)'."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    html = wb._render_book_strip_html(
+        need_review=4,
+        total=10,
+        vs_market=3.2,
+        net_beta=1.21,
+        regime="RISK_ON",
+        screen_cleared=304,
+        screen_universe=512,
+    )
+    assert html.lower().count("need review") == 1
+    assert html.lower().count("vs market (1y)") == 1
+    assert html.lower().count("net beta") == 1
 
 
 def test_book_strip_chips_have_no_inline_adr_or_badge() -> None:
