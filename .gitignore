@@ -34,6 +34,9 @@ data/reports/discipline_weekly_review.log
 data/reports/divergence_ic_21d.json
 data/reports/momentum_discipline.json
 data/reports/corroboration_weekly_resolve.log
+# Lazy Prices (ADR-057) verdict/smoke reports — regenerated locally, never commit
+data/reports/lazy_prices_ic_*.json
+data/reports/lazy_prices_fullrun.log
 
 # SP5 forward-gate resolution logs — local data, never commit
 data/corroboration_samples.jsonl

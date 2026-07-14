@@ -759,8 +759,8 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .ri-tip{position:absolute;bottom:142%;left:50%;transform:translateX(-50%) translateY(5px);background:#1b2733;color:#eef3f6;font-family:'IBM Plex Sans';font-size:.76rem;line-height:1.45;padding:.65rem .8rem;border-radius:10px;width:240px;box-shadow:0 10px 30px rgba(15,30,45,.22);opacity:0;visibility:hidden;transition:.15s;z-index:60;text-align:left;}
 .ri-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1b2733;}
 .ri-ttip:hover .ri-tip{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
-.ri-lens{transition:transform .15s;display:block;}
-.ri-lens:hover{transform:translateY(-2px);}
+.ri-lens,.tr-nav{transition:transform .15s;display:block;}
+.ri-lens:hover,.tr-nav:hover{transform:translateY(-2px);}
 
 /* ===== Research Instrument — Evidence Ledger ===== */
 .ri-ledger{display:flex;align-items:center;flex-wrap:wrap;border-top:1.5px solid var(--ri-ink);border-bottom:1px solid var(--ri-hair);font-family:'IBM Plex Mono',monospace;font-size:.78rem;letter-spacing:.04em;color:var(--ri-ink2);margin:.2rem 0 2rem;padding:.6rem 0;}
@@ -1644,6 +1644,184 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .pf-tip-tt{font-family:'Fraunces',serif;font-weight:700;font-size:.85rem;margin-bottom:3px;}
 .pf-tip-row{font-size:.69rem;color:#CBD5E1;display:flex;justify-content:space-between;margin-top:2px;}
 .pf-tip-row b{color:#fff;}
+
+/* ===== Research Instrument — Evidence Chip (P1) ===== */
+/* Inline backing for a metric: label + verdict badge + ADR ref + hover tooltip.
+   Rendered by adapters/visualization/components/evidence_chip.py. Additive only. */
+.ri-chip{position:relative;display:inline-flex;align-items:center;gap:.4rem;vertical-align:middle;cursor:help;font-family:'IBM Plex Mono',monospace;}
+.ri-chip-lab{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ri-muted);}
+.ri-chip-adr{font-size:.6rem;letter-spacing:.08em;color:var(--ri-muted);opacity:.85;}
+.ri-vbadge{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.16rem .44rem;border-radius:5px;border:1px solid currentColor;line-height:1;white-space:nowrap;}
+.ri-vbadge.v-validated{color:var(--ri-green);background:rgba(31,146,84,.10);}
+.ri-vbadge.v-descriptive{color:#475569;background:rgba(71,85,105,.10);}
+.ri-vbadge.v-research{color:var(--ri-amber);background:rgba(201,129,14,.10);}
+.ri-vbadge.v-inconclusive{color:var(--ri-muted);background:rgba(113,120,133,.10);border-style:dashed;}
+.ri-vbadge.v-falsified{color:var(--ri-crimson);background:rgba(206,47,38,.10);}
+.ri-vbadge.v-pending{color:#2563EB;background:rgba(37,99,235,.10);}
+.ri-chip-tip{position:absolute;bottom:142%;left:0;display:flex;flex-direction:column;gap:.4rem;background:#1b2733;color:#eef3f6;font-family:'IBM Plex Sans',sans-serif;font-size:.74rem;line-height:1.45;padding:.7rem .85rem;border-radius:10px;width:268px;box-shadow:0 10px 30px rgba(15,30,45,.22);opacity:0;visibility:hidden;transform:translateY(5px);transition:.15s;z-index:60;text-align:left;text-transform:none;letter-spacing:normal;}
+.ri-chip:hover .ri-chip-tip,.ri-chip:focus .ri-chip-tip,.ri-chip:focus-within .ri-chip-tip{opacity:1;visibility:visible;transform:translateY(0);}
+.ri-chip-meaning{font-weight:600;color:#fff;}
+.ri-chip-band{color:#cbd5e1;}
+.ri-chip-tip-verdict{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;}
+.ri-chip-caveat{color:#cbd5e1;font-style:italic;border-top:1px solid rgba(255,255,255,.14);padding-top:.4rem;}
+/* ===== Stock Analysis redesign — design system ===== */
+.sa-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:2px 0 13px}
+.sa-tile{border:1px solid var(--ri-line);border-top:3px solid var(--ri-muted);border-radius:8px;padding:7px 9px 8px;background:var(--ri-card)}
+.sa-tile.t-amber{border-top-color:var(--ri-amber)}.sa-tile.t-green{border-top-color:var(--ri-green)}
+.sa-tile.t-petrol{border-top-color:var(--ri-teal)}.sa-tile.t-crimson{border-top-color:var(--ri-crimson)}.sa-tile.t-grey{border-top-color:var(--ri-muted)}
+.sa-tile .lab{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.02em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:4px}
+.sa-tile .num{font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:var(--ri-ink);line-height:1.1;margin-top:3px}
+/* colour-code the value by measured tone so momentum reads at a glance */
+.sa-tile.t-green .num{color:var(--ri-green)}.sa-tile.t-crimson .num{color:var(--ri-crimson)}.sa-tile.t-amber .num{color:var(--ri-amber)}
+.sa-tile .sub{font-family:'IBM Plex Mono',monospace;font-size:8px;margin-top:2px;color:var(--ri-muted)}
+.sa-tile.t-green .sub{color:var(--ri-green)}.sa-tile.t-crimson .sub{color:var(--ri-crimson)}.sa-tile.t-amber .sub{color:var(--ri-amber)}
+.sa-panel{padding:14px 0 6px;border-top:1px solid var(--ri-hair)}
+.sa-twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.sa-chip{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;cursor:help;position:relative;display:inline-flex;align-items:center;gap:5px}
+.sa-chip.t-amber{color:#7a4a08;background:rgba(180,83,9,.13)}.sa-chip.t-green{color:#1f5130;background:rgba(21,128,61,.15)}
+.sa-chip.t-petrol{color:#0c5563;background:rgba(15,110,128,.13)}.sa-chip.t-grey{color:#3f4a4e;background:rgba(91,113,120,.13)}.sa-chip.t-crimson{color:#7a1414;background:rgba(185,28,28,.1)}
+.sa-info{display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;border-radius:50%;border:1px solid currentColor;font-size:8px;opacity:.55;cursor:help}
+.sa-tw{position:relative;display:inline-flex;align-items:center}.sa-tw:hover .sa-info{opacity:1}
+.sa-tip{position:absolute;bottom:150%;left:50%;transform:translateX(-50%) translateY(4px);width:236px;background:var(--ri-ink);color:#eef2f3;font-family:'DM Sans',sans-serif;font-weight:400;font-size:11px;line-height:1.5;padding:9px 11px;border-radius:8px;box-shadow:0 10px 26px rgba(0,0,0,.25);opacity:0;visibility:hidden;transition:opacity .14s;z-index:90;text-align:left}
+.sa-tw:hover .sa-tip{opacity:1;visibility:visible}
+.sa-tip-basis{display:block;margin-top:5px;padding-top:5px;border-top:1px solid #34424a;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#bcd}
+.sa-pe-row{display:flex;align-items:center;gap:8px;margin:3px 0;font-family:'IBM Plex Mono',monospace;font-size:9.5px}
+.sa-pe-row .tk{width:38px;color:var(--ri-ink2)}.sa-pe-row .bar{height:10px;border-radius:3px;background:#cdd7d9}.sa-pe-row.me .bar{background:var(--ri-amber)}.sa-pe-row.me .tk{color:var(--ri-ink);font-weight:700}
+.sa-rangebar{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,#dde4e5,#c4ced0);margin:18px 0 3px}
+.sa-rangebar.bearbull{background:linear-gradient(90deg,rgba(201,129,14,.34),rgba(201,129,14,.12) 38%,rgba(31,146,84,.14) 62%,rgba(31,146,84,.36))}
+.sa-rangebar .band{position:absolute;top:0;bottom:0;border-radius:4px}.sa-rangebar .mk{position:absolute;top:-4px;width:2px;height:16px}.sa-rangebar .lbl{position:absolute;top:-15px;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:8px;white-space:nowrap}
+.sa-group{border:1px solid var(--ri-line);border-radius:11px;margin:10px 0;overflow:visible;background:var(--ri-card)}
+.sa-gtiles{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
+.sa-claim{display:flex;gap:9px;padding:7px 9px;border:1px solid var(--ri-line);border-radius:8px;margin:5px 0;background:var(--ri-card)}
+/* ===== end Stock Analysis design system ===== */
+/* ===== Stock Analysis redesign — top sections ===== */
+.sa-stage{max-width:800px;margin:0 auto;--ri-amber:#b45309;--ri-green:#15803d;--ri-crimson:#b91c1c}
+.sa-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ri-muted)}
+.sa-tagmono{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--ri-amber);background:rgba(201,129,14,.1);border:1px solid rgba(201,129,14,.3);padding:2px 7px;border-radius:4px}
+/* hero */
+.sa-hero{border:1px solid var(--ri-line);border-radius:12px;overflow:hidden;background:var(--ri-card)}
+.sa-ribbon{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:var(--ri-teal);background:rgba(15,110,128,.06);padding:5px 16px;border-bottom:1px solid rgba(15,110,128,.15)}
+.sa-hbody{padding:14px 18px 16px}
+.sa-htop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.sa-coname{font-family:'Fraunces',serif;font-weight:700;font-size:28px;color:var(--ri-ink);line-height:1.05}
+.sa-tkr{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--ri-teal);font-size:17px}
+.sa-grade{display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;color:#3a4a2e;background:rgba(31,146,84,.12);border:1px solid rgba(31,146,84,.35);padding:4px 9px;border-radius:6px;white-space:nowrap}
+.sa-grade .dot{width:7px;height:7px;border-radius:50%;background:var(--ri-green)}
+.sa-prow{display:flex;justify-content:space-between;align-items:flex-end;margin-top:11px;gap:20px;flex-wrap:wrap}
+.sa-price{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:28px;color:var(--ri-ink)}
+.sa-chg{color:var(--ri-green);font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px}
+.sa-chg.dn{color:var(--ri-crimson)}
+.sa-metab{font-size:12px;color:var(--ri-ink2)}.sa-metab b{font-family:'IBM Plex Mono',monospace}
+.sa-rngw{min-width:230px;flex:0 1 270px}
+.sa-rngw .hd{display:flex;justify-content:space-between;align-items:baseline}
+.sa-rngw .ttl{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;color:var(--ri-muted)}
+.sa-rngw .pct{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--ri-teal)}
+.sa-rngw .track{position:relative;height:7px;border-radius:4px;margin:5px 0 3px;background:linear-gradient(90deg,#e7ebec,#c4ced0)}
+.sa-rngw .mk{position:absolute;top:-3px;width:3px;height:13px;background:var(--ri-teal);border-radius:2px}
+.sa-rngw .ends{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ri-muted)}
+/* synthesis */
+.sa-prose{font-family:'Fraunces',serif;font-size:16px;line-height:1.5;color:var(--ri-ink);font-style:italic;margin:7px 0 10px}.sa-prose b{font-style:normal;font-weight:700}
+.sa-chips{display:flex;flex-wrap:wrap;gap:8px}
+.sa-cchip{position:relative;font-size:11.5px;padding:4px 9px;border-radius:20px;border:1px solid;display:inline-flex;gap:6px;align-items:center;text-decoration:none}.sa-cchip b{font-family:'IBM Plex Mono',monospace;font-weight:700}
+.sa-cchip.t-amber{color:#7a4a08;background:rgba(201,129,14,.08);border-color:rgba(201,129,14,.35)}
+.sa-cchip.t-green{color:#1f5130;background:rgba(31,146,84,.08);border-color:rgba(31,146,84,.35)}
+.sa-cchip.t-crimson{color:#7a1414;background:rgba(206,47,38,.07);border-color:rgba(206,47,38,.3)}
+.sa-cchip.t-grey{color:#3f4a4e;background:rgba(113,120,133,.08);border-color:rgba(113,120,133,.3)}
+.sa-cchip.t-petrol{color:#0c5563;background:rgba(15,110,128,.08);border-color:rgba(15,110,128,.35)}
+/* vitals */
+.sa-grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+.sa-vt{position:relative;border:1px solid var(--ri-line);border-left:4px solid var(--ri-muted);border-radius:9px;padding:9px 10px;background:#fdfdfc}
+.sa-vt.t-amber{border-left-color:var(--ri-amber)}.sa-vt.t-green{border-left-color:var(--ri-green)}.sa-vt.t-crimson{border-left-color:var(--ri-crimson)}.sa-vt.t-petrol{border-left-color:var(--ri-teal)}.sa-vt.t-grey{border-left-color:var(--ri-muted)}
+.sa-vt .l{font-family:'IBM Plex Mono',monospace;font-size:8.5px;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:4px}
+.sa-vt .n{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:var(--ri-ink);margin-top:4px}
+.sa-vt .s{font-size:9.5px;color:var(--ri-ink2);margin-top:2px}
+/* snowflake + fit */
+.sa-twocol-fit{display:grid;grid-template-columns:.85fr 1.15fr;gap:20px;align-items:center}
+.sa-lgnd{display:flex;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--ri-ink2);margin-top:4px;justify-content:center}.sa-lgnd i{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.sa-ckey{border:1px solid var(--ri-line);border-radius:9px;background:#fbfbfa;padding:8px 12px;font-size:10.5px;color:var(--ri-ink2)}.sa-ckey b{font-family:'IBM Plex Mono',monospace}.sa-ckey .sw{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin:0 3px 0 8px}
+/* group shell header + micro-tiles */
+.sa-ghead{display:flex;align-items:center;gap:11px}
+.sa-chev{font-family:'IBM Plex Mono',monospace;color:var(--ri-muted);font-size:11px;transition:transform .15s}.sa-group[open] .sa-chev{transform:rotate(90deg)}
+.sa-gname{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:var(--ri-ink)}
+.sa-ggrade{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;color:#3a4a2e;background:rgba(31,146,84,.12);border:1px solid rgba(31,146,84,.3);padding:1px 6px;border-radius:4px}
+.sa-gweek{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:5px;margin-left:auto;color:var(--ri-amber);background:rgba(201,129,14,.07);border:1px solid rgba(201,129,14,.22)}
+.sa-group>summary{list-style:none;cursor:pointer;padding:12px 15px}.sa-group>summary::-webkit-details-marker{display:none}
+.sa-gt{display:flex;align-items:center;gap:8px;border:1px solid var(--ri-line);border-radius:8px;padding:6px 10px;background:#fdfdfc}
+.sa-gt .d{width:7px;height:7px;border-radius:2px;flex:0 0 auto}.sa-gt .col{display:flex;flex-direction:column;line-height:1.15}
+.sa-gt .gl{font-family:'IBM Plex Mono',monospace;font-size:8.5px;text-transform:uppercase;color:var(--ri-muted);display:inline-flex;align-items:center;gap:4px}.sa-gt .gv{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--ri-ink)}
+.sa-gt .pb{width:30px;height:5px;border-radius:3px;background:var(--ri-hair);position:relative;margin-left:auto;flex:0 0 auto}.sa-gt .pf{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
+/* ===== end Stock Analysis top sections ===== */
+/* ===== Stock Analysis redesign — fundamentals panels ===== */
+.sa-pnl{padding:14px 0 6px;border-top:1px solid var(--ri-line)}.sa-pnl:first-child{border-top:none}
+.sa-pnl-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ri-muted);display:flex;align-items:center;gap:6px}
+.sa-pnl-dot{font-size:10px}
+.sa-pnl-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sa-pnl-chips{margin-left:auto;display:flex;gap:7px}
+.sa-pnl-claim{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:var(--ri-ink);margin:5px 0 4px}
+.sa-pnl-reline{font-size:12px;color:var(--ri-ink2);font-style:italic;margin-bottom:12px}.sa-pnl-reline b{font-style:normal;font-family:'IBM Plex Mono',monospace}
+.sa-pnl-two{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.sa-pnl-viz-full{margin-top:4px}
+.sa-pnl-two--buzz{align-items:stretch}
+.sa-buzz-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(128px,34%);gap:14px;align-items:start}
+.sa-buzz-news-col{min-width:0}
+.sa-buzz-vol-col{display:flex;flex-direction:column;min-height:0;border-left:1px solid var(--ri-line);padding-left:14px}
+.sa-buzz-col{display:flex;flex-direction:column;min-height:0}
+.sa-buzz-hl{display:flex;gap:6px;align-items:baseline;padding:4px 0;border-top:1px solid var(--ri-line);font-size:11px;line-height:1.35}
+.sa-buzz-hl:first-child{border-top:none;padding-top:0}
+.sa-buzz-hl .src{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--ri-teal);flex:0 0 auto;min-width:48px;max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sa-buzz-hl .ti{color:var(--ri-ink2);flex:1 1 auto;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sa-buzz-hl .dt{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--ri-muted);margin-left:auto;flex:0 0 auto;padding-left:6px}
+.sa-buzz-chart-wrap{flex:1;display:flex;flex-direction:column;justify-content:flex-start;min-height:88px}
+.sa-buzz-chart-wrap--sparse{min-height:64px}
+.sa-buzz-chart-wrap .sa-buzz-vol{flex:1;width:100%;min-height:80px;height:auto;display:block}
+.sa-buzz-chart-wrap--sparse .sa-buzz-vol{min-height:52px;max-height:72px}
+.sa-buzz-vol .sa-buzz-bar{cursor:pointer}
+.sa-buzz-vol .sa-buzz-bar rect{transition:opacity .12s ease}
+.sa-buzz-vol .sa-buzz-bar:hover rect{opacity:.78}
+.sa-buzz-vol .sa-buzz-bar-tip{font-family:'IBM Plex Mono',monospace;font-size:7px;fill:#5c4a7a;opacity:0;pointer-events:none;transition:opacity .12s ease}
+.sa-buzz-vol .sa-buzz-bar:hover .sa-buzz-bar-tip{opacity:1}
+.sa-buzz-hl .src[title],.sa-buzz-hl .ti[title]{cursor:help}
+.sa-buzz-link{color:var(--ri-ink2);text-decoration:none}
+.sa-buzz-link:hover{color:var(--ri-teal);text-decoration:underline}
+.sa-buzz-more{margin-top:2px}
+.sa-buzz-more>summary{list-style:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ri-teal);padding:5px 0 3px;letter-spacing:.02em}
+.sa-buzz-more>summary::-webkit-details-marker{display:none}
+.sa-buzz-more[open]>summary{padding-bottom:5px}
+.sa-sentiment-mix{margin-bottom:12px}
+.sa-srcrow{display:flex;align-items:center;gap:8px;margin:7px 0;font-family:'IBM Plex Mono',monospace;font-size:9.5px}
+.sa-srcrow .lab{flex:0 0 42px;color:var(--ri-ink2)}
+.sa-srctrack{flex:0 0 88px;position:relative;height:8px;background:#eef1f2;border-radius:4px;max-width:88px}
+.sa-srcmid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#d4dadc;margin-left:-.5px}
+.sa-srcfill{position:absolute;top:0;bottom:0;border-radius:3px}
+.sa-srcval{flex:0 0 36px;text-align:right;color:var(--ri-ink2);font-size:9px}
+.sa-pnl-subh{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;color:var(--ri-muted);margin-bottom:8px}
+.sa-pnl-cap{font-size:10px;color:var(--ri-ink2);font-style:italic;margin-top:7px}
+.sa-vb{font-size:11px;color:var(--ri-ink2);display:flex;gap:7px;margin:5px 0;line-height:1.4}.sa-vb .i{font-family:'IBM Plex Mono',monospace;font-weight:700;flex:0 0 auto}
+.sa-vb.pos .i{color:var(--ri-green)}.sa-vb.cau .i{color:var(--ri-amber)}.sa-vb.neu .i{color:var(--ri-muted)}.sa-vb.stop .i{color:var(--ri-crimson)}
+.sa-verdrow{display:flex;gap:22px;margin-top:13px;padding-top:11px;border-top:1px solid var(--ri-line)}
+.sa-drill{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--ri-teal);margin-top:10px;display:inline-block}
+/* ===== end Stock Analysis fundamentals panels ===== */
+/* ===== Stock Analysis redesign — responsive reflow ===== */
+/* grid children must be allowed to shrink below content width, else mono text forces overflow */
+.sa-grid6>*,.sa-strip>*,.sa-gtiles>*,.sa-pnl-two>*,.sa-twocol-fit>*,.sa-vt,.sa-tile,.sa-gt{min-width:0}
+.sa-htop{flex-wrap:wrap}
+.sa-pnl-head{flex-wrap:wrap}
+@media (max-width:820px){
+  .sa-twocol-fit{grid-template-columns:1fr;gap:14px}
+}
+@media (max-width:680px){
+  .sa-grid6,.sa-strip{grid-template-columns:repeat(3,1fr)}
+  .sa-pnl-two{grid-template-columns:1fr;gap:14px}
+  .sa-pnl-chips{margin-left:0;width:100%}
+}
+@media (max-width:480px){
+  .sa-grid6,.sa-strip,.sa-gtiles{grid-template-columns:repeat(2,1fr)}
+}
+/* ===== end Stock Analysis responsive reflow ===== */
+/* ===== Stock Analysis — ⓘ tooltip escape (don't clip the absolutely-positioned tip) ===== */
+.sa-stage,.sa-group,.sa-pnl,.sa-strip,.sa-grid6,.sa-gtiles,.sa-pnl-two,.sa-twocol-fit,.sa-vt,.sa-tile,.sa-gt{overflow:visible}
+[data-testid="stMarkdown"],[data-testid="stMarkdownContainer"]{overflow:visible!important}
+/* ===== end ⓘ tooltip escape ===== */
 </style>
 """
 

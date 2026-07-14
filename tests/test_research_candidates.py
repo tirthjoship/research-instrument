@@ -182,30 +182,136 @@ def test_header_no_inline_hex_colours() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_legend_and_disclosure() -> None:
+def test_disclosure_honest_note() -> None:
     from adapters.visualization.tabs import research_candidates as rc
-
-    html = rc.build_legend_html()
-    for token in ("Exceptional", "Strong", "Flat", "Weak", "p95", "Evidence score"):
-        assert token in html, f"Legend missing token: {token!r}"
 
     dis = rc.build_disclosure_html()
     assert "not a forecast" in dis.lower()
     assert "momentum" in dis.lower() and "no proven edge" in dis.lower()
 
 
-def test_legend_has_grade_section() -> None:
-    """Fix 2: legend must include Grade line with STRONG / MODERATE labels."""
+def test_pipeline_visual_has_three_steps_and_tooltips() -> None:
+    """Always-visible Z-score -> Band -> Grade strip (replaces the old legend
+    prose). Band/Grade thresholds live in hover tooltips sourced from the
+    glossary, not inline — the tooltip's definition text still lands in the
+    HTML string, so the same tokens the old legend exposed are still present."""
     from adapters.visualization.tabs import research_candidates as rc
 
-    html = rc.build_legend_html()
-    assert "Grade" in html, "Legend must have a Grade section"
-    assert "STRONG" in html, "Legend Grade section must mention STRONG"
-    assert "MODERATE" in html, "Legend Grade section must mention MODERATE"
-    # Wording update: top-5% for Exceptional, 304 cohort reference
-    assert "5%" in html, "Legend Band line must say ~top 5%"
-    assert "304" in html, "Legend pNN line must reference the 304 trend-eligible cohort"
-    assert "Low-vol now live" in html, "Legend must say 'Low-vol now live' (5th factor)"
+    html = rc.build_pipeline_visual_html()
+    assert "Z-score" in html
+    assert "Band" in html
+    assert "Grade" in html
+    for token in (
+        "Exceptional",
+        "Strong",
+        "Flat",
+        "Weak",
+        "p95",
+        "5%",
+        "304",
+        "Evidence score",
+        "STRONG",
+        "MODERATE",
+        "Low-vol now live",
+    ):
+        assert token in html, f"Pipeline visual missing token: {token!r}"
+
+
+# ---------------------------------------------------------------------------
+# P0b: screener honesty — relabel "revision" → Analyst dispersion, disclose
+# universe scope + per-factor coverage + snapshot caveats.
+# ---------------------------------------------------------------------------
+
+
+def test_universe_scope_disclosure() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_universe_scope_html(_FAKE_SCREEN)
+    assert "Large-cap US" in html
+    assert "Nasdaq-100" in html
+    assert "570" in html
+    assert "survivor-biased" in html
+    assert "not the whole market" in html
+    # the live scanned count from diagnostics is surfaced
+    assert "512" in html
+
+
+def test_universe_scope_no_screen_omits_count() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_universe_scope_html(None)
+    assert "Large-cap US" in html
+    assert "names scanned" not in html
+
+
+def test_factor_honesty_dispersion_and_snapshot() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_factor_honesty_html()
+    assert "Analyst dispersion" in html
+    assert "DISPERSION" in html and "not revision drift" in html
+    # value + quality flagged as current snapshot, not point-in-time
+    assert "snapshot" in html.lower()
+    assert "point-in-time" in html.lower()
+
+
+def test_coverage_line_per_factor() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_coverage_html(_FAKE_SCREEN)
+    assert "COVERAGE" in html
+    # honest dispersion label, not "spread"/"signal"
+    assert "Analyst dispersion" in html
+    # lowvol absent in the fixture → DATA-GAP
+    assert "Low-vol" in html and "DATA-GAP" in html
+
+
+def test_coverage_line_empty_when_no_candidates() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    assert rc.build_coverage_html(_EMPTY_SCREEN) == ""
+
+
+def test_caveats_html_merges_three_disclosures() -> None:
+    """build_caveats_html() replaces the legend + folds in disclosure/scope/
+    factor-honesty content verbatim, for use inside one collapsed expander."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_caveats_html(_FAKE_SCREEN)
+    # Honest note (from build_disclosure_html)
+    assert "not a forecast" in html.lower()
+    assert "momentum" in html.lower() and "no proven edge" in html.lower()
+    # Universe scope (from build_universe_scope_html)
+    assert "Large-cap US" in html
+    assert "Nasdaq-100" in html
+    assert "570" in html
+    assert "survivor-biased" in html
+    assert "512" in html
+    # What each factor really is (from build_factor_honesty_html)
+    assert "Analyst dispersion" in html
+    assert "not revision drift" in html
+    assert "point-in-time" in html.lower()
+
+
+def test_caveats_html_no_screen_omits_scanned_count() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_caveats_html(None)
+    assert "Large-cap US" in html
+    assert "names scanned" not in html
+
+
+def test_friendly_label_is_dispersion() -> None:
+    from adapters.visualization.tabs.research_candidates import _FRIENDLY
+
+    assert _FRIENDLY["revision"] == "analyst dispersion"
+
+
+def test_factors_tile_subtitle_says_dispersion() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_header_html(_FAKE_SCREEN)
+    assert "analyst dispersion" in html
 
 
 # ---------------------------------------------------------------------------
@@ -304,7 +410,7 @@ def test_reason_view_factor_rows_present() -> None:
 
     html = rc.build_reason_view_html(_make_full_candidates_for_reason())
     # The 5 factor rows (4 live + 1 DATA-GAP for lowvol) should be in each card
-    for factor in ("Quality", "Value", "Analyst spread", "Momentum"):
+    for factor in ("Quality", "Value", "Analyst dispersion", "Momentum"):
         assert factor in html, f"Factor row {factor!r} missing from reason view"
     # Low-vol should appear as DATA-GAP (lowvol percentile=0.0)
     assert "Low-vol" in html
@@ -318,12 +424,29 @@ def test_reason_view_do_next_present() -> None:
     assert "Do next" in html
 
 
+def test_reason_view_score_does_not_wrap() -> None:
+    """The composite-score span (e.g. "0.85") sits in a narrow CSS-grid column
+    with no white-space rule, so the browser wraps it onto two lines at the
+    decimal point. Every score span must be white-space:nowrap, matching the
+    grade badge already styled that way in the same row."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    reason_html = rc.build_reason_view_html(_make_full_candidates_for_reason())
+    rank_html = rc.build_rank_view_html(_make_full_candidates_for_reason())
+    for html in (reason_html, rank_html):
+        assert "JetBrains Mono" in html
+        idx = html.index("JetBrains Mono")
+        span_chunk = html[idx : idx + 120]
+        assert "white-space:nowrap" in span_chunk
+
+
 def test_reason_view_google_ai_placeholder() -> None:
-    """Google-AI read placeholder div must be present (filled by S6 later)."""
+    """Google-AI read companion (live when local, else the Stock Analysis
+    pointer) must be present for every row."""
     from adapters.visualization.tabs import research_candidates as rc
 
     html = rc.build_reason_view_html(_make_full_candidates_for_reason())
-    assert "gai" in html  # the placeholder div id/class
+    assert "Stock Analysis" in html  # the permanent pointer, live or off-local
 
 
 def test_reason_view_repeat_badge() -> None:
@@ -349,6 +472,96 @@ def test_reason_view_no_forbidden_words() -> None:
 # ---------------------------------------------------------------------------
 # Task 7: build_rank_view_html + build_body_html (abstention path)
 # ---------------------------------------------------------------------------
+
+
+def test_enrich_candidates_adds_company_name_and_sector(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Candidates with no name/sector must be enriched from a cached ticker-info
+    lookup — display-only, never touches score/composite/factor data."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(
+        rc,
+        "fetch_ticker_info",
+        lambda t: (
+            {"longName": "Simon Property Group", "sector": "Real Estate"}
+            if t == "SPG"
+            else {}
+        ),
+    )
+    candidates = [{"ticker": "SPG", "composite": 1.27, "factor_scores": []}]
+    enriched = rc._enrich_candidates_with_company_info(candidates)
+    assert enriched[0]["name"] == "Simon Property Group"
+    assert enriched[0]["sector"] == "Real Estate"
+    # Original list/dict must not be mutated in place.
+    assert "name" not in candidates[0]
+
+
+def test_enrich_candidates_skips_when_name_already_present(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Never overwrite a name already carried by the candidate dict, and never
+    hit the network for it."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    called: list[str] = []
+
+    def _spy(t: str) -> dict[str, str]:
+        called.append(t)
+        return {"longName": "Wrong Name", "sector": "Wrong"}
+
+    monkeypatch.setattr(rc, "fetch_ticker_info", _spy)
+    candidates = [{"ticker": "SPG", "name": "Simon Property Group", "composite": 1.27}]
+    enriched = rc._enrich_candidates_with_company_info(candidates)
+    assert enriched[0]["name"] == "Simon Property Group"
+    assert called == []
+
+
+def test_sub_line_shows_sector_when_present() -> None:
+    """Fix: sub-line shows sector alongside company name when the candidate
+    carries one (enriched by _enrich_candidates_with_company_info)."""
+    from adapters.visualization.tabs.research_candidates import (
+        _build_candidate_row_html,
+    )
+
+    c = {
+        "ticker": "SPG",
+        "name": "Simon Property Group",
+        "sector": "Real Estate",
+        "composite": 1.27,
+        "factor_scores": [],
+    }
+    html = _build_candidate_row_html(rank=1, candidate=c)
+    assert "Simon Property Group" in html
+    assert "Real Estate" in html
+
+
+def test_summary_row_shows_company_name_not_just_ticker() -> None:
+    """The always-visible <summary> row (no expand needed — a collapsed
+    <details> still hides its body from the visitor, even though the body
+    text remains in the raw HTML) must itself show the company name, not
+    just the bare ticker — this is the row a visitor sees first without
+    clicking anything."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    candidates = [
+        {
+            "ticker": "SPG",
+            "name": "Simon Property Group",
+            "composite": 1.27,
+            "why": "x",
+            "label": "RESEARCH_ONLY",
+            "factor_scores": [
+                {"name": "quality", "value": 1.5, "percentile": 0.95},
+            ],
+        }
+    ]
+    reason_html = rc.build_reason_view_html(candidates)
+    rank_html = rc.build_rank_view_html(candidates)
+    for html in (reason_html, rank_html):
+        summary_start = html.index("<summary")
+        summary_end = html.index("</summary>")
+        assert "Simon Property Group" in html[summary_start:summary_end], (
+            "company name must be in the always-visible <summary>, not only "
+            "the collapsed body"
+        )
 
 
 def test_rank_view_is_flat_ranked() -> None:
@@ -452,7 +665,13 @@ def test_zone2_card_has_factor_rows() -> None:
     from adapters.visualization.tabs import research_candidates as rc
 
     html = rc.build_check_your_own_html(_make_fake_batch_rows())
-    for factor_label in ("Momentum", "Analyst spread", "Quality", "Value", "Low-vol"):
+    for factor_label in (
+        "Momentum",
+        "Analyst dispersion",
+        "Quality",
+        "Value",
+        "Low-vol",
+    ):
         assert factor_label in html, f"Factor label {factor_label!r} missing"
 
 
@@ -653,6 +872,70 @@ def test_fix3_sub_line_falls_back_to_ticker() -> None:
     assert "evidence 0.88" in html
 
 
+def test_candidate_row_wires_live_google_ai_read(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """The static gai placeholder must be replaced by a real maybe_render_gemini()
+    call fed with facts derived from the candidate's factor bands — when local
+    and a summarizer is available, real in-favor/to-watch content renders, not
+    just a link to Stock Analysis."""
+    from adapters.visualization.tabs import research_candidates as rc
+    from domain.case_models import CasePoint, CaseResult
+
+    class _StubAdapter:
+        def summarize_case(self, ctx: object) -> CaseResult:
+            return CaseResult(
+                in_favor=(CasePoint("Quality: Exceptional (p95)", "quality"),),
+                to_watch=(),
+                data_gap=False,
+            )
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    monkeypatch.setattr(rc, "_gemini_adapter", _StubAdapter())
+    monkeypatch.setattr(rc, "_fetch_recent_news_impl", lambda *a, **k: [])
+    monkeypatch.setattr(rc, "buzz_sentiment_fact", lambda *a, **k: None)
+    import streamlit as st
+
+    st.session_state.pop("_gai_ZZZ1", None)
+
+    c = {
+        "ticker": "ZZZ1",
+        "composite": 1.27,
+        "factor_scores": [
+            {"name": "quality", "value": 1.5, "percentile": 0.95},
+        ],
+    }
+    # open_by_default=True: only the hero row fires a live Gemini call — this
+    # test's purpose is verifying that live wiring, so it exercises the hero path.
+    html = rc._build_candidate_row_html(rank=1, candidate=c, open_by_default=True)
+    assert "Quality: Exceptional" in html, "stub's real case content must render"
+    assert (
+        "Stock Analysis" in html
+    ), "the Stock Analysis pointer must still be present alongside the read"
+
+
+def test_candidate_row_google_ai_off_local_shows_no_facts(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Privacy fail-safe: off-local, no facts/news leave the process — the
+    stub adapter must never be called, and only the static pointer shows."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    called: list[str] = []
+
+    class _SpyAdapter:
+        def summarize_case(self, ctx: object) -> object:
+            called.append("called")
+            from domain.case_models import CaseResult
+
+            return CaseResult((), (), True)
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: False)
+    monkeypatch.setattr(rc, "_gemini_adapter", _SpyAdapter())
+
+    c = {"ticker": "ZZZ2", "composite": 1.27, "factor_scores": []}
+    # open_by_default=True: exercises the hero/live path's own privacy gate.
+    html = rc._build_candidate_row_html(rank=1, candidate=c, open_by_default=True)
+    assert called == [], "summarize_case must not be called off-local"
+    assert "Stock Analysis" in html
+
+
 def test_fix5_gai_placeholder_no_s6_in_zone1() -> None:
     """Fix 5: Zone 1 gai placeholder must not contain 'S6' or 'arrives in'."""
     from adapters.visualization.tabs.research_candidates import (
@@ -738,9 +1021,113 @@ def test_card_factor_order_momentum_last():
     }
     html = _build_candidate_row_html(rank=1, candidate=c)
     # canonical display order (render_factor_row labels): Quality, Value,
-    # Analyst spread (revision), Low-vol, Momentum — momentum LAST.
+    # Analyst dispersion (revision), Low-vol, Momentum — momentum LAST.
     iq = html.index(">Quality")
     iv = html.index(">Value")
     il = html.index(">Low-vol")
     im = html.index(">Momentum")
     assert iq < iv < il < im, "factor display order must end with Momentum"
+
+
+# ---------------------------------------------------------------------------
+# maybe_render_gemini_cache_only — non-hero rows read the persistent cache
+# only, never a live call. Cache path is {reports_dir}/screen_cited_cases.json.
+# ---------------------------------------------------------------------------
+
+
+def test_cache_only_hit_renders_two_col(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import research_candidates as rc
+    from application.case_cache import write_case_cache
+    from domain.case_models import CasePoint, CaseResult
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    cache_path = tmp_path / "screen_cited_cases.json"
+    write_case_cache(
+        str(cache_path),
+        "2026-07-12",
+        {
+            "NVDA": CaseResult(
+                in_favor=(CasePoint("demand durable", "Reuters"),),
+                to_watch=(CasePoint("export controls", "Bloomberg"),),
+                data_gap=False,
+            )
+        },
+    )
+    html = rc.maybe_render_gemini_cache_only("NVDA", str(tmp_path))
+    assert "Green flags" in html
+    assert "demand durable" in html
+
+
+def test_cache_only_miss_shows_honest_note(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    html = rc.maybe_render_gemini_cache_only("NVDA", str(tmp_path))
+    assert "not cached yet" in html.lower()
+    assert "Green flags" not in html
+
+
+def test_cache_only_off_local_returns_empty(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: False)
+    assert rc.maybe_render_gemini_cache_only("NVDA", str(tmp_path)) == ""
+
+
+def test_hero_row_calls_live_non_hero_calls_cache_only(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Only the row rendered open_by_default fires a live call; other rows are
+    cache-only — this is the practical resolution of 'lazy on expand' given
+    Streamlit can't observe raw-HTML <details> toggles (see spec section 4)."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    live_calls: list[str] = []
+    cache_only_calls: list[str] = []
+    monkeypatch.setattr(
+        rc,
+        "maybe_render_gemini",
+        lambda ticker, facts, news: live_calls.append(ticker) or "",
+    )
+    monkeypatch.setattr(
+        rc,
+        "maybe_render_gemini_cache_only",
+        lambda ticker, reports_dir: cache_only_calls.append(ticker) or "",
+    )
+
+    c = {"ticker": "HERO", "composite": 1.0, "factor_scores": []}
+    rc._build_candidate_row_html(rank=1, candidate=c, open_by_default=True)
+    assert live_calls == ["HERO"]
+    assert cache_only_calls == []
+
+    live_calls.clear()
+    c2 = {"ticker": "NOTHERO", "composite": 1.0, "factor_scores": []}
+    rc._build_candidate_row_html(rank=2, candidate=c2, open_by_default=False)
+    assert live_calls == []
+    assert cache_only_calls == ["NOTHERO"]
+
+
+def test_run_screen_candidates_cli_includes_cite_cases(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """A live 'Run screener' click should also warm the Gemini cache."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    captured: dict[str, list[str]] = {}
+
+    def _fake_run(cmd: list[str], check: bool) -> None:
+        captured["cmd"] = cmd
+
+    monkeypatch.setattr(rc.subprocess, "run", _fake_run)
+    rc._run_screen_candidates_cli(str(tmp_path))
+    assert "--cite-cases" in captured["cmd"]
+
+
+def test_no_misleading_stock_analysis_cited_case_pointer() -> None:
+    """Stock Analysis does NOT implement the cited-case/Gemini feature (only
+    Home/Portfolio/Risk do) — Screener's pointer copy must never claim a
+    "cited case" awaits there."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    c = {"ticker": "KO", "composite": 0.88, "factor_scores": []}
+    row_html = rc._build_candidate_row_html(rank=1, candidate=c)
+    assert "full cited case" not in row_html
+
+    zone2_html = rc.build_check_your_own_html(_make_fake_batch_rows())
+    assert "full cited case" not in zone2_html

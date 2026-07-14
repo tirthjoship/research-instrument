@@ -28,6 +28,7 @@ domain/
   risk_stats.py          Risk statistics value objects
   macro_beta.py          Macro-beta domain model
   fit.py                 Portfolio-fit verdict model
+  filing_textchange_service.py  Lazy Prices text-change signal (ADR-057, stdlib-only)
 
 adapters/data/
   yfinance_*             Price, analyst estimates
@@ -36,6 +37,7 @@ adapters/data/
   sqlite_store.py        Persistence (1093 LOC — decomp candidate)
   fama_french_provider.py  Factor data (295 LOC)
   sector_provider.py     Sector taxonomy
+  sec_filing_text_adapter.py  10-K/10-Q section text, point-in-time (Lazy Prices / ADR-057)
   …
 
 adapters/ml/
@@ -47,6 +49,9 @@ adapters/ml/
 
 adapters/visualization/
   dashboard.py           Streamlit entry point (tab routing only)
+  book_context.py        resolve_ui_book_context() — sample vs session-upload split (2026-07-11)
+  run_gate.py            Gated Run buttons: single-flight/cooldown/freshness (2026-07-11)
+  holdings_syncer.py     Personal-dogfood CSV sync + weekly-brief rebuild trigger
   tabs/
     risk/                Risk tab — DECOMPOSED 2026-06-17 (was risk.py 1710 LOC)
       compose.py         Entry point: render()
@@ -83,6 +88,10 @@ application/
   evidence_screen_use_case.py Evidence screen (RESEARCH_ONLY)
   holdings_risk.py       Holdings risk assessment
   risk_second_opinion.py Google-AI risk second-opinion (cache-first)
+  divergence_ic_backtest.py  Pre-registered IC falsification (injected callables)
+  lazy_prices_backtest.py    Lazy Prices IC + net-of-cost gate (ADR-057, injected callables)
+  price_returns.py       Forward-return + yfinance loader (point-in-time)
+  ticker_universe.py     Static S&P500 ∪ NASDAQ-100 loader
   …
 
 config/
@@ -103,6 +112,36 @@ tests/
 ---
 
 ## Key structural decisions
+
+### Sample vs personal book split for the public UI (2026-07-11)
+
+**Problem:** cold start on Home/Portfolio/Risk auto-loaded the operator's real
+`data/personal/holdings.csv` and `data/personal/brief_summary.json` whenever those
+files existed on the machine running the dashboard — a hosted public deploy would leak
+real holdings to strangers.
+
+**Fix:** `adapters/visualization/book_context.py::resolve_ui_book_context()` is the
+single source of truth for which book + brief/screen artifacts the Streamlit UI shows.
+Priority: a session-uploaded book (`is_sample_book=False` in `st.session_state`) — else
+the bundled sample book (`application/sample_book.py` + committed `data/sample/`
+artifacts). It never reads `data/personal/*`. `weekly_brief.py::_handle_onboarding`,
+`positions.py::_resolve_book`, and `risk/compose.py::render` all resolve through it
+instead of hardcoded personal-path defaults.
+
+Uploads are session-only: `weekly_brief.py::_stage_csv_upload` stores the parsed book
+directly in `st.session_state` and rebuilds the brief into a `tempfile.mkdtemp()`
+directory — it no longer calls `holdings_syncer.save_and_sync_holdings()` (which writes
+`data/personal/holdings.csv`) on the public path. That function/its CLI dogfood callers
+are unchanged for local/offline use.
+
+`adapters/visualization/run_gate.py::evaluate_run_gate()` gates the in-app "Run brief" /
+"Run screener" buttons (single-flight, cooldown, disable if fresh &lt;1 day) — both
+always write into a fresh session-scoped temp dir, never the committed `data/sample/`
+artifacts or the operator's shared `data/reports/` output.
+
+Personal CLI dogfood (`weekly-brief --holdings data/personal/holdings.csv`) remains
+valid outside the public UI path — see
+`docs/superpowers/archive/2026-07-11-public-sample-book-design.md` for the full design.
 
 ### Why hexagonal?
 

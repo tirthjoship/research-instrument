@@ -82,17 +82,24 @@ def save_and_sync_holdings(content: str, filename: str) -> None:
     history_json.write_text(json.dumps(history, indent=2), encoding="utf-8")
 
 
-def rebuild_weekly_brief_cached() -> None:
-    """Run yfinance-cached weekly brief build via CLI command."""
+def rebuild_weekly_brief_cached(
+    holdings_csv: str | None = None, out_path: str | None = None
+) -> None:
+    """Run yfinance-cached weekly brief build via CLI command.
+
+    Defaults to the personal dogfood paths (CLI/local use). Pass ``holdings_csv``
+    / ``out_path`` pointing at a session/temp directory for the public upload
+    path — the rebuild must never write to ``data/personal/`` there.
+    """
     cmd = [
         sys.executable,
         "-m",
         "application.cli",
         "weekly-brief",
         "--holdings",
-        str(HOLDINGS_CSV_PATH),
+        str(holdings_csv or HOLDINGS_CSV_PATH),
         "--out",
-        "data/personal/weekly_brief.md",
+        str(out_path or "data/personal/weekly_brief.md"),
         "--use-cache",
     ]
     subprocess.run(cmd, check=True)

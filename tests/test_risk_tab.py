@@ -645,3 +645,133 @@ def test_compose_ai_html_not_present_without_arg() -> None:
     assert (
         "risk-ai" not in html
     ), "_compose alone must not inject risk-ai CSS class — AI HTML comes from render()"
+
+
+# ---------------------------------------------------------------------------
+# P2-Risk — evidence chips, benchmark card, impact-ranked decision levers
+# ---------------------------------------------------------------------------
+
+
+def test_vitals_carry_registry_evidence_chips() -> None:
+    """Key metrics must render the registry-backed evidence chip (ri-chip + verdict)."""
+    from adapters.visualization.tabs import risk
+
+    html = risk._compose(_MACRO_V8)
+    assert "ri-chip" in html, "vitals must render the evidence-chip component"
+    assert "ri-vbadge" in html, "evidence chip must carry a verdict badge"
+    # Registry labels for the chipped metrics (distinct from the short vital tooltips)
+    assert "Effective number of bets" in html, "ENB chip label must appear"
+    assert (
+        "Diversification ratio" in html
+    ), "diversification-ratio chip label must appear"
+    # Sector-HHI chip lives in the sector section
+    assert "Sector concentration (HHI)" in html, "sector-HHI chip label must appear"
+    # A registry healthy-band string must reach the page (chip tooltip + benchmark)
+    assert "broadly diversified book is 40+" in html, "ENB healthy band must surface"
+
+
+def test_benchmark_card_is_descriptive_with_reference_points() -> None:
+    """_benchmark must place book values next to reference points, tagged not-advice."""
+    from adapters.visualization.tabs.risk.evidence import _benchmark
+
+    html = _benchmark(_MACRO_V8)
+    assert "reference points" in html.lower(), "benchmark must frame reference points"
+    assert "NOT A TRADE CALL" in html, "benchmark must carry the descriptive disclaimer"
+    assert "71%" in html, "book systematic share (71%) must appear"
+    assert "0.34" in html, "book sector HHI (0.34) must appear"
+    assert "SPY" in html, "a reference point (SPY) must appear"
+    assert "Healthy band" in html, "registry healthy band must be shown"
+
+
+def test_benchmark_card_empty_when_no_metrics() -> None:
+    """_benchmark must return '' (skip) when none of its metrics are present."""
+    from adapters.visualization.tabs.risk.evidence import _benchmark
+
+    assert _benchmark({}) == "", "benchmark must skip cleanly with no metrics"
+
+
+def test_decision_levers_impact_ranked_and_descriptive() -> None:
+    """_decision_levers must rank by risk contribution and frame leverage, not advice."""
+    from adapters.visualization.tabs.risk.sections import _decision_levers
+
+    html = _decision_levers(_MACRO_V8)
+    assert "NOT A TRADE CALL" in html, "levers must carry the descriptive disclaimer"
+    assert "risk-per-dollar" in html, "leverage annotation must appear"
+    assert "leverage" in html.lower(), "card must be framed as leverage on the metric"
+    # NVDA (rc=0.14) is the top contributor → must be ranked first, before MSFT (0.11)
+    assert html.find("NVDA") < html.find("MSFT"), "must be impact-ranked by risk share"
+    # Systematic share 71% is 11 points past the 60% line — directional gap framing
+    assert "60% line" in html, "gap framing vs the 60% line must appear"
+
+
+def test_decision_levers_empty_without_risk_contribution() -> None:
+    """_decision_levers must return '' when the Euler decomposition is unavailable."""
+    from adapters.visualization.tabs.risk.sections import _decision_levers
+
+    no_rc = {**_MACRO_V8, "risk_contribution": {}}
+    assert _decision_levers(no_rc) == "", "levers must skip without risk_contribution"
+
+
+def test_decision_levers_no_forbidden_words() -> None:
+    """The new levers/benchmark copy must not introduce trade-recommendation words."""
+    import re
+
+    from adapters.visualization.tabs.risk.evidence import _benchmark
+    from adapters.visualization.tabs.risk.sections import _decision_levers
+    from domain.fit import FORBIDDEN_WORDS
+
+    blob = (_benchmark(_MACRO_V8) + _decision_levers(_MACRO_V8)).lower()
+    for w in FORBIDDEN_WORDS:
+        assert not re.search(
+            rf"\b{re.escape(w)}\b", blob
+        ), f"Forbidden word {w!r} found in new P2-Risk copy"
+
+
+def test_render_default_path_resolves_via_book_context(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """render() called with no explicit path (the real dashboard.py call) must
+    resolve through the book-context resolver — the sample brief on cold
+    start, never data/personal/brief_summary.json."""
+    from adapters.visualization.tabs import risk
+
+    captured: dict[str, str] = {}
+
+    def fake_load_brief_summary(path: str) -> None:
+        captured["path"] = path
+        return None
+
+    monkeypatch.setattr(risk.compose, "load_brief_summary", fake_load_brief_summary)
+
+    risk.render()
+
+    assert captured["path"] == "data/sample/brief_summary.json"
+
+
+def test_render_never_shows_personal_upload_history_table(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """The Risk tab must never render the operator's personal holdings
+    upload-history table — not for a hosted/public visitor (leaks the
+    operator's own upload filenames/cost basis), and not locally either
+    (unused dogfood table with no place in the Risk tab)."""
+    import pathlib
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import risk
+
+    monkeypatch.setattr(pathlib.Path, "exists", lambda self: True)
+    captured: list[object] = []
+    monkeypatch.setattr(
+        st, "subheader", lambda *a, **k: captured.append(a)
+    )  # noqa: ARG005
+
+    for local in (True, False):
+        monkeypatch.setattr(
+            risk.compose,
+            "holdings_upload_enabled",
+            lambda local=local: local,
+            raising=False,
+        )
+        risk.render(path=str(tmp_path / "brief.json"))
+
+    assert (
+        captured == []
+    ), "personal upload history table must never render on the Risk tab"

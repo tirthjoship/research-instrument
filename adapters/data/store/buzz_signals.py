@@ -20,8 +20,8 @@ class BuzzSignalsMixin:
         conn = self._conn()
         conn.execute(
             """INSERT OR IGNORE INTO buzz_signals
-            (ticker, source, mention_count, sentiment_raw, scorer, fetched_at, article_hash)
-            VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (ticker, source, mention_count, sentiment_raw, scorer, fetched_at, article_hash, article_text)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 signal.ticker,
                 signal.source,
@@ -30,6 +30,7 @@ class BuzzSignalsMixin:
                 signal.scorer,
                 signal.fetched_at.isoformat(),
                 signal.article_hash,
+                signal.article_text,
             ),
         )
         conn.commit()
@@ -67,6 +68,7 @@ class BuzzSignalsMixin:
                 scorer=r["scorer"],
                 fetched_at=datetime.fromisoformat(r["fetched_at"]),
                 article_hash=r["article_hash"],
+                article_text=r["article_text"] if "article_text" in r.keys() else None,
             )
             for r in rows
         ]

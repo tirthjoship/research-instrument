@@ -5,12 +5,12 @@ from unittest.mock import MagicMock, patch
 def test_google_news_emits_one_signal_per_ticker():
     from adapters.data.google_news_adapter import GoogleNewsAdapter
 
-    entry = {
-        "title": "AST SpaceMobile wins contract",
-        "published_parsed": (2026, 6, 1, 0, 0, 0, 0, 0, 0),
-    }
+    entry = MagicMock(
+        title="AST SpaceMobile wins contract",
+        link="https://example.com/asts",
+    )
     feed = MagicMock(entries=[entry, entry, entry])
-    with patch("adapters.data.google_news_adapter.feedparser.parse", return_value=feed):
+    with patch("adapters.data.google_news_adapter.fetch_feed", return_value=feed):
         sigs = GoogleNewsAdapter(alias_map={"ASTS": "AST SpaceMobile"}).scan_sources(
             datetime(2026, 6, 2, tzinfo=timezone.utc), tickers=["ASTS"]
         )
@@ -20,11 +20,28 @@ def test_google_news_emits_one_signal_per_ticker():
     assert sigs[0].mention_count == 3
 
 
+def test_google_news_headlines_emit_per_article():
+    from adapters.data.google_news_adapter import GoogleNewsAdapter
+
+    entries = [
+        MagicMock(title="NVDA beats earnings", link="https://example.com/1"),
+        MagicMock(title="NVIDIA guidance strong", link="https://example.com/2"),
+    ]
+    feed = MagicMock(entries=entries)
+    with patch("adapters.data.google_news_adapter.fetch_feed", return_value=feed):
+        sigs = GoogleNewsAdapter().scan_headline_sources(
+            datetime(2026, 6, 2, tzinfo=timezone.utc), tickers=["NVDA"]
+        )
+    assert len(sigs) == 2
+    assert all(s.scorer == "google_news_raw" for s in sigs)
+    assert all(s.article_text for s in sigs)
+
+
 def test_google_news_returns_empty_on_error():
     from adapters.data.google_news_adapter import GoogleNewsAdapter
 
     with patch(
-        "adapters.data.google_news_adapter.feedparser.parse",
+        "adapters.data.google_news_adapter.fetch_feed",
         side_effect=Exception("boom"),
     ):
         sigs = GoogleNewsAdapter().scan_sources(

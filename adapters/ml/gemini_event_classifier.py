@@ -7,12 +7,11 @@ All API calls go through _call_gemini() which is easily mockable for testing.
 from __future__ import annotations
 
 import json
-import os
 import time
 
 from loguru import logger
 
-from adapters.ml.gemini_models import generate_with_fallback
+from adapters.ml.gemini_models import generate_with_key_fallback, load_gemini_api_keys
 from domain.models import ClassifiedEvent, EventCategory
 
 _CATEGORIES_LIST = ", ".join(sorted(e.value for e in EventCategory))
@@ -31,11 +30,11 @@ Respond with a JSON object:
 Only respond with the JSON object or null. No explanation."""
 
 
-def _call_gemini(api_key: str, headline: str) -> dict[str, object] | None:
-    """Call Gemini API with multi-model fallback. Separated for easy mocking."""
+def _call_gemini(api_keys: tuple[str, ...], headline: str) -> dict[str, object] | None:
+    """Call Gemini API with multi-model + multi-key fallback. Separated for easy mocking."""
     try:
-        text = generate_with_fallback(
-            api_key,
+        text = generate_with_key_fallback(
+            api_keys,
             f"{_SYSTEM_PROMPT}\n\nHeadline: {headline}",
             temperature=0.0,  # deterministic classification (ADR-030)
         ).strip()
@@ -59,7 +58,10 @@ class GeminiEventClassifier:
         api_key: str | None = None,
         rate_limit_rpm: int = 14,
     ) -> None:
-        self._api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
+        # An explicit api_key is used as the sole key (caller's contract);
+        # otherwise collect GEMINI_API_KEY + any numbered fallbacks so a
+        # second key can absorb load once an earlier key's quota is exhausted.
+        self._api_keys = (api_key,) if api_key else load_gemini_api_keys()
         self._min_interval = 60.0 / max(rate_limit_rpm, 1)
         self._last_call_time = 0.0
 
@@ -73,7 +75,7 @@ class GeminiEventClassifier:
         """Classify a single headline. Returns None if unclassifiable or error."""
         try:
             self._throttle()
-            result = _call_gemini(self._api_key or "", headline)
+            result = _call_gemini(self._api_keys, headline)
             if result is None:
                 return None
             category_str = str(result.get("category", ""))

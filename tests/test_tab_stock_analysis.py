@@ -6,14 +6,49 @@ Pure-function tests only: no Streamlit import required.
 from __future__ import annotations
 
 from datetime import date
+from types import SimpleNamespace
+from typing import Any
 
 from adapters.visualization.data_loader import CorroborationTabView
 from adapters.visualization.tabs.stock_analysis import (
     _SECTION_LABELS,
     _convergence_badge_html,
 )
+from adapters.visualization.tabs.stock_analysis.market_section import (
+    _build_ownership_delta,
+    _build_vs_market_card,
+    _ownership_delta_html,
+    _vs_market_card_html,
+)
+from adapters.visualization.tabs.stock_analysis.signals_section import (
+    _build_sentiment_digest,
+    _sentiment_tally_html,
+)
 from domain.corroboration_models import ConvergenceTier
 from tests.fakes.corroboration_store_fake import FAKE_SNAPSHOT
+
+
+def test_corroboration_db_path_matches_cli_writer() -> None:
+    """compose.py must read the same DB the `corroborate` CLI writes to.
+
+    Regression: this constant used to point at a "data/corroboration.db" file
+    that is never created anywhere — the corroborate CLI always writes to
+    data/recommendations.db — so the Corroboration section silently stayed
+    empty forever regardless of how much real data existed.
+    """
+    from adapters.visualization.tabs.stock_analysis import compose
+
+    assert compose._CORR_DB_PATH == "data/recommendations.db"
+
+
+def _buzz(source: str, sentiment: float, mentions: int, date_str: str) -> Any:
+    """Minimal BuzzSignal-like object (the builders use getattr)."""
+    return SimpleNamespace(
+        source=source,
+        sentiment_raw=sentiment,
+        mention_count=mentions,
+        fetched_at=date_str,
+    )
 
 
 def _make_corr_view(snapshot=None):  # type: ignore[no-untyped-def]
@@ -34,8 +69,8 @@ def _make_corr_view(snapshot=None):  # type: ignore[no-untyped-def]
 
 
 def test_section_labels_length() -> None:
-    """_SECTION_LABELS must have exactly 10 entries."""
-    assert len(_SECTION_LABELS) == 10
+    """_SECTION_LABELS must have exactly 5 entries."""
+    assert len(_SECTION_LABELS) == 5
 
 
 def test_section_labels_has_corroboration() -> None:
@@ -107,3 +142,106 @@ def test_convergence_badge_present_when_snapshot_provided() -> None:
     assert badge != ""
     # FAKE_SNAPSHOT has ConvergenceTier.MODERATE
     assert "#2563EB" in badge
+
+
+# ---------------------------------------------------------------------------
+# Sentiment digest (signals_section)
+# ---------------------------------------------------------------------------
+
+
+def test_sentiment_digest_none_when_empty() -> None:
+    assert _build_sentiment_digest([]) is None
+
+
+def test_sentiment_digest_tally_and_breakdown() -> None:
+    buzz = [
+        _buzz("reuters_rss", 0.5, 3, "2026-06-20"),
+        _buzz("reuters_rss", -0.4, 2, "2026-06-21"),
+        _buzz("reddit_wsb", 0.01, 6, "2026-06-21"),
+    ]
+    d = _build_sentiment_digest(buzz)
+    assert d is not None
+    assert d.total_signals == 3
+    assert d.total_mentions == 11
+    assert (d.positive, d.neutral, d.negative) == (1, 1, 1)
+    # Two distinct sources; reddit has the most mentions so sorts first.
+    assert set(d.sources) == {"reuters_rss", "reddit_wsb"}
+    assert d.source_breakdown[0][0] == "reddit_wsb"
+    # Timeline has two dates, ascending.
+    assert [date_ for date_, _ in d.timeline] == ["2026-06-20", "2026-06-21"]
+
+
+def test_sentiment_tally_html_has_falsified_chip() -> None:
+    d = _build_sentiment_digest([_buzz("reuters_rss", 0.2, 1, "2026-06-20")])
+    assert d is not None
+    html = _sentiment_tally_html(d)
+    # Evidence chip for the FALSIFIED sentiment signal must be attached.
+    assert "FALSIFIED" in html
+    assert "ADR-044" in html
+    assert "Buzz mix" in html
+
+
+# ---------------------------------------------------------------------------
+# vs-market / technicals card (market_section)
+# ---------------------------------------------------------------------------
+
+
+def test_vs_market_card_computes_excess_and_trend() -> None:
+    info = {
+        "52WeekChange": 0.30,
+        "SandP52WeekChange": 0.10,
+        "beta": 1.2,
+        "twoHundredDayAverage": 100.0,
+        "fiftyDayAverage": 110.0,
+    }
+    card = _build_vs_market_card(info, current_price=120.0)
+    assert card.stock_1y_pct == 30.0
+    assert card.spy_1y_pct == 10.0
+    assert card.excess_1y_pct == 20.0
+    assert card.beta == 1.2
+    assert card.price_vs_ma200_pct == 20.0  # (120-100)/100
+
+
+def test_vs_market_card_html_data_gap() -> None:
+    card = _build_vs_market_card({}, current_price=0.0)
+    html = _vs_market_card_html(card)
+    assert "DATA GAP" in html
+    assert "vs Market" in html
+
+
+# ---------------------------------------------------------------------------
+# Ownership QoQ delta (market_section)
+# ---------------------------------------------------------------------------
+
+
+def test_ownership_delta_none_when_empty() -> None:
+    assert _build_ownership_delta([]) is None
+
+
+def test_ownership_delta_net_buyers_and_qoq() -> None:
+    quarters = [
+        {
+            "quarter": "Q1 2026",
+            "buys": 1,
+            "sells": 2,
+            "buy_value": 1e6,
+            "sell_value": 3e6,
+        },
+        {
+            "quarter": "Q2 2026",
+            "buys": 4,
+            "sells": 1,
+            "buy_value": 5e6,
+            "sell_value": 1e6,
+        },
+    ]
+    delta = _build_ownership_delta(quarters)
+    assert delta is not None
+    assert delta.latest_quarter == "Q2 2026"
+    assert delta.net_value == 4e6  # 5M - 1M
+    assert delta.prior_quarter == "Q1 2026"
+    assert delta.prior_net_value == -2e6  # 1M - 3M
+    assert delta.qoq_delta == 6e6
+    html = _ownership_delta_html(delta)
+    assert "net buyers" in html
+    assert "Q2 2026" in html

@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS buzz_signals (
     scorer TEXT NOT NULL,
     fetched_at TIMESTAMP NOT NULL,
     article_hash TEXT NOT NULL UNIQUE,
+    article_text TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -257,4 +258,13 @@ def connect_and_init(db_path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     conn.executescript(_SCHEMA)
+    _migrate_buzz_signals(conn)
     return conn
+
+
+def _migrate_buzz_signals(conn: sqlite3.Connection) -> None:
+    """Add article_text column for headline scoring (ADR-022 follow-up)."""
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(buzz_signals)")}
+    if "article_text" not in cols:
+        conn.execute("ALTER TABLE buzz_signals ADD COLUMN article_text TEXT")
+        conn.commit()

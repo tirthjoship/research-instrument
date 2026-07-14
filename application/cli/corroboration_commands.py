@@ -83,7 +83,7 @@ def corroborate(as_of_str: str | None) -> None:
             try:
                 from ddgs import DDGS
             except ImportError:
-                from duckduckgo_search import DDGS  # type: ignore[assignment]
+                from duckduckgo_search import DDGS  # type: ignore[assignment,no-redef]
 
             with DDGS() as ddgs:
                 return [

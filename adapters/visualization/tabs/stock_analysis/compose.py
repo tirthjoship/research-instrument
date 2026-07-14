@@ -10,47 +10,450 @@ from loguru import logger
 if TYPE_CHECKING:
     from domain.fit import FitVerdict
 
-from adapters.visualization.components.charts import apply_dossier_template
-from adapters.visualization.components.snowflake import build_snowflake
+# Pure builder imports — no Streamlit, safe at module level
+from adapters.visualization.analysis.corroboration_bridge import (
+    build_readout_from_analysis,
+)
+from adapters.visualization.components.info_tip import render_info
+from adapters.visualization.components.radar_svg import RadarAxis
 from adapters.visualization.data_loader import load_corroboration_snapshot
+from adapters.visualization.tabs.stock_analysis.analyst_view import (
+    build_analyst_panel as _build_analyst_panel,
+)
+from adapters.visualization.tabs.stock_analysis.buzz_view import (
+    build_buzz_panel as _build_buzz_panel,
+)
 from adapters.visualization.tabs.stock_analysis.corroboration_section import (
     render_corroboration_section,
 )
-from adapters.visualization.tabs.stock_analysis.financials_section import (
-    _render_growth,
-    _render_health,
-    _render_valuation,
+from adapters.visualization.tabs.stock_analysis.fit_card import (
+    COLOUR_KEY_HTML,
+    build_fit_card_html,
+    build_fit_card_view,
+    build_snowflake_fit_html,
 )
-from adapters.visualization.tabs.stock_analysis.market_section import (
-    _render_ownership,
-    _render_performance,
+from adapters.visualization.tabs.stock_analysis.group import (
+    MicroTile,
+    build_group_shell,
 )
-from adapters.visualization.tabs.stock_analysis.signals_section import (
-    _render_sentiment,
-    _render_supply_chain,
+from adapters.visualization.tabs.stock_analysis.growth_view import build_growth_panel
+from adapters.visualization.tabs.stock_analysis.health_view import build_health_panel
+from adapters.visualization.tabs.stock_analysis.hero import (
+    build_hero_html,
+    build_hero_view,
 )
-from adapters.visualization.tabs.stock_analysis.verdict_section import (
-    _render_analyst_panel,
-    _render_fit_card,
-    _render_news_context,
-    _render_verdict,
-    _snowflake_axes,
+from adapters.visualization.tabs.stock_analysis.ownership_view import (
+    build_ownership_panel as _build_ownership_panel,
+)
+from adapters.visualization.tabs.stock_analysis.performance_view import (
+    build_performance_panel as _build_performance_panel,
+)
+from adapters.visualization.tabs.stock_analysis.profitability_view import (
+    build_profitability_panel,
+)
+from adapters.visualization.tabs.stock_analysis.sentiment_view import (
+    build_sentiment_panel as _build_sentiment_panel,
+)
+from adapters.visualization.tabs.stock_analysis.supply_chain_view import (
+    build_supply_chain_panel as _build_supply_chain_panel,
+)
+from adapters.visualization.tabs.stock_analysis.synthesis import (
+    build_synthesis_html,
+    build_synthesis_view,
+)
+from adapters.visualization.tabs.stock_analysis.valuation_view import (
+    build_valuation_panel,
+)
+from adapters.visualization.tabs.stock_analysis.verdict_section import _snowflake_axes
+from adapters.visualization.tabs.stock_analysis.vitals import (
+    build_vitals_html,
+    build_vitals_view,
 )
 
 _SECTION_LABELS: list[str] = [
-    "Verdict",
-    "Fit",
-    "Valuation",
-    "Growth",
-    "Performance",
-    "Health",
-    "Ownership",
-    "Sentiment",
-    "Supply chain",
+    "Hero",
+    "Fundamentals",
+    "Market",
+    "Signals",
     "Corroboration",
 ]
 
-_CORR_DB_PATH = "data/corroboration.db"
+_SECTION_ANCHORS: dict[str, str] = {
+    "Hero": "sa-hero",
+    "Fundamentals": "sa-fundamentals",
+    "Market": "sa-market",
+    "Signals": "sa-signals",
+    "Corroboration": "sa-corroboration",
+}
+
+_CORR_DB_PATH = "data/recommendations.db"
+
+# ⓘ glance-tooltips for each group micro-tile — say what the category measures,
+# in descriptive terms (no trade call). Keyed by tile label.
+_CAT_INFO: dict[str, tuple[str, str]] = {
+    "Valuation": (
+        "Where this stock's price multiples sit versus its sector peers. "
+        "Higher percentile = pricier than peers; descriptive, not a call.",
+        "trailing multiples vs 4-6 industry peers · percentile",
+    ),
+    "Growth": (
+        "Revenue growth rate, year over year. A trailing fact, not a forecast.",
+        "info.revenueGrowth",
+    ),
+    "Health": (
+        "Balance-sheet strength — net cash vs net debt and coverage ratios. "
+        "Structural fact, not directional.",
+        "totalCash − totalDebt; coverage from EBITDA",
+    ),
+    "Performance": (
+        "Trailing 1-year price change versus the S&P 500. A return fact, not a forecast.",
+        "info.52WeekChange − SandP52WeekChange",
+    ),
+    "Ownership": (
+        "Share of stock held by institutions versus insiders. Trailing structural fact.",
+        "info.heldPercentInstitutions / heldPercentInsiders",
+    ),
+    "Analyst": (
+        "Mean analyst consensus rating (1 = most positive). Third-party opinion, not a signal.",
+        "info.recommendationMean",
+    ),
+    "Buzz": (
+        "Count of attention sources mentioning this name. "
+        "Buzz-to-return was tested and falsified (ADR-044); context only.",
+        "distinct buzz sources · ADR-044",
+    ),
+    "Sentiment": (
+        "Aggregated tone of recent mentions. Sentiment-to-return tested IC=0 "
+        "and falsified (ADR-044); descriptive only.",
+        "mean tone · ADR-044 (IC=0)",
+    ),
+}
+
+
+def _cat_info(label: str) -> str:
+    """ⓘ tooltip HTML for a micro-tile category (empty when unknown)."""
+    pair = _CAT_INFO.get(label)
+    return render_info(pair[0], pair[1]) if pair else ""
+
+
+# ---------------------------------------------------------------------------
+# Phase-2 answer-first top — pure assembler + Tier-2 wrapper
+# ---------------------------------------------------------------------------
+
+# Fixed navigation hues (spec D7) — category, never status
+_AXIS_COLOUR: dict[str, str] = {
+    "Valuation": "#d08218",
+    "Quality": "#0F6E80",
+    "Momentum": "#2f9e44",
+    "Revision": "#5c6bc0",
+    "Trend filter": "#2aa198",
+    "Book fit": "#6b7d84",
+}
+
+
+def _snowflake_radar_axes(fit: object | None) -> list[RadarAxis]:
+    """Adapt _snowflake_axes dict into a category-coloured RadarAxis list.
+
+    Degrades to an empty list when fit is None or lacks the attributes that
+    _snowflake_axes requires (e.g. ticker not present on a stub/simplified object).
+    """
+    if fit is None:
+        return []
+    try:
+        axes_map = _snowflake_axes(fit)  # type: ignore[arg-type]
+    except AttributeError:
+        axes_map = {}
+    # Short display labels so they don't overflow/clip the radar SVG viewBox
+    # (the full names live in the legend/copy). Colour still keyed by full name.
+    _SHORT: dict[str, str] = {
+        "Valuation": "Value",
+        "Momentum": "Mom",
+        "Revision": "Rev",
+        "Trend filter": "Filter",
+        "Book fit": "Fit",
+    }
+    out: list[RadarAxis] = []
+    for name, value in axes_map.items():
+        out.append(
+            RadarAxis(
+                _SHORT.get(name, name), float(value), _AXIS_COLOUR.get(name, "#6b7d84")
+            )
+        )
+    return out
+
+
+def _fundamentals_tile_values(result: object) -> tuple[str, str, str]:
+    """Compute the (valuation, growth, health) micro-tile glance values from result.
+
+    Pure + robust: every access is guarded so a sparse result never raises;
+    each value falls back to "—" when its source data is missing.
+    """
+    val = "—"
+    try:
+        percs = getattr(result, "peer_percentiles", None) or {}
+        pct = percs.get("P/E")
+        if pct is not None:
+            val = f"{int(round(float(pct)))}th"
+    except (TypeError, ValueError, AttributeError):
+        val = "—"
+
+    grow = "—"
+    info = getattr(result, "info", None) or {}
+    try:
+        g = info.get("revenueGrowth")
+        if g is not None:
+            pct_g = round(float(g) * 100)
+            grow = f"+{pct_g}%" if pct_g >= 0 else f"{pct_g}%"
+    except (TypeError, ValueError, AttributeError):
+        grow = "—"
+
+    health = "—"
+    try:
+        cash = info.get("totalCash")
+        debt = info.get("totalDebt")
+        if cash is not None and debt is not None:
+            net = float(cash) - float(debt)
+            health = "net cash" if net > 0 else "net debt" if net < 0 else "—"
+    except (TypeError, ValueError, AttributeError):
+        health = "—"
+
+    return val, grow, health
+
+
+def _market_tile_values(result: object) -> tuple[str, str]:
+    """Compute (performance_1y, ownership_inst) micro-tile glance values from result.
+
+    Pure + robust: guarded access; falls back to "—" when data is missing.
+    """
+    info = getattr(result, "info", None) or {}
+
+    perf = "—"
+    try:
+        chg = info.get("52WeekChange")
+        if chg is not None:
+            pct = round(float(chg) * 100)
+            perf = f"+{pct}%" if pct >= 0 else f"{pct}%"
+    except (TypeError, ValueError, AttributeError):
+        perf = "—"
+
+    own = "—"
+    try:
+        inst = info.get("heldPercentInstitutions")
+        if inst is not None:
+            own = f"{round(float(inst) * 100)}%"
+    except (TypeError, ValueError, AttributeError):
+        own = "—"
+
+    return perf, own
+
+
+def _signals_tile_values(result: object) -> tuple[str, str, str]:
+    """Compute (analyst_consensus, sentiment_ic, buzz_sources) micro-tile values.
+
+    Pure + robust: guarded access; falls back to "—" when data is missing.
+    Sentiment IC is always "IC 0" (the hypothesis was tested and FALSIFIED).
+    """
+    analyst = "—"
+    try:
+        panel = getattr(result, "analyst_panel", None)
+        if panel is not None:
+            rating = getattr(panel, "mean_rating", None)
+            if rating is not None:
+                analyst = f"{float(rating):.1f}"
+    except (TypeError, ValueError, AttributeError):
+        analyst = "—"
+
+    sentiment_ic = "IC 0"
+
+    buzz = "—"
+    try:
+        signals = getattr(result, "buzz_signals", None) or []
+        n = len(list(signals))
+        if n > 0:
+            word = "src" if n == 1 else "srcs"
+            buzz = f"{n} {word}"
+    except (TypeError, ValueError, AttributeError):
+        buzz = "—"
+
+    return analyst, sentiment_ic, buzz
+
+
+# D12 falsified banner — shown at the top of the Signals group.
+# Inline-styled amber/red. Must not contain any FORBIDDEN_WORDS
+# ({alpha, buy, conviction, outperform, predict, sell, winner}).
+_D12_FALSIFIED_BANNER = (
+    '<div style="background:#FEF3C7;border-left:4px solid #D97706;'
+    "padding:8px 14px;border-radius:4px;margin-bottom:10px;"
+    'font-size:12px;color:#92400E;">'
+    "<strong>Context only — not a signal:</strong> "
+    "These indicators were tested as return signals and FALSIFIED "
+    "(IC ≈ 0 across 2006–2024). They are shown here as context only, "
+    "never as a trade signal. See the Trust tab."
+    "</div>"
+)
+
+
+def build_fundamentals_inner(result: object) -> str:
+    """Pure assembler: concatenate the 4 Fundamentals panels into one HTML string.
+
+    Returns the inner content for the Fundamentals group shell (sa-fundamentals).
+    No Streamlit dependency — safe to call in tests and at module level.
+    """
+    return (
+        build_valuation_panel(result)
+        + build_growth_panel(result)
+        + build_profitability_panel(result)
+        + build_health_panel(result)
+    )
+
+
+def build_market_inner(result: object) -> str:
+    """Pure assembler: concatenate the 2 Market panels into one HTML string.
+
+    Returns the inner content for the Market group shell (sa-market).
+    No Streamlit dependency — safe to call in tests and at module level.
+    """
+    return _build_performance_panel(result) + _build_ownership_panel(result)
+
+
+def build_signals_inner(result: object) -> str:
+    """Pure assembler: D12 falsified banner + 4 Signals panels into one HTML string.
+
+    Returns the inner content for the Signals group shell (sa-signals).
+    The banner makes clear these indicators were FALSIFIED as return signals.
+    No Streamlit dependency — safe to call in tests and at module level.
+    """
+    return (
+        _D12_FALSIFIED_BANNER
+        + _build_analyst_panel(result)
+        + _build_buzz_panel(result)
+        + _build_sentiment_panel(result)
+        + _build_supply_chain_panel(result)
+    )
+
+
+def build_top_html(
+    result: object, fit: object | None, *, as_of: str = "", ai_read_html: str = ""
+) -> str:
+    """Pure assembler: produce the locked D0 answer-first top as a single HTML string.
+
+    Order: stage-wrapper → hero → synthesis → Google-AI read (optional) → vitals
+    → snowflake/fit → colour key → 3 empty group shells (sa-fundamentals,
+    sa-market, sa-signals).
+
+    ai_read_html: pre-rendered HTML for the Google-AI read companion block (see
+    ai_read.py::get_or_fetch_google_ai_read) — computed in render() since it may
+    involve a live network call; this function stays pure/Streamlit-free.
+    Defaults to "" (renders nothing, identical to before this parameter existed).
+
+    Degrades gracefully when fit is None (no snowflake, fit-card-only fallback).
+    No Streamlit dependency — safe to call in tests.
+    """
+    grade = getattr(fit, "evidence_grade", None) if fit is not None else None
+    hero = build_hero_html(build_hero_view(result, grade=grade, as_of=as_of))
+    synth = build_synthesis_html(build_synthesis_view(result))
+    vit = build_vitals_html(build_vitals_view(result))
+    axes = _snowflake_radar_axes(fit)
+    fit_view = build_fit_card_view(fit)
+    # sa-twocol-fit wrapper is always present for consistent layout;
+    # radar only rendered when >= 3 axes are available.
+    snowfit = (
+        build_snowflake_fit_html(axes, fit_view)
+        if len(axes) >= 3
+        else f'<div class="sa-twocol-fit">{build_fit_card_html(fit_view)}</div>'
+    )
+    val_tile, grow_tile, health_tile = _fundamentals_tile_values(result)
+    perf_tile, own_tile = _market_tile_values(result)
+    analyst_tile, sentiment_tile, buzz_tile = _signals_tile_values(result)
+    # Percentile-ish glance values (0-100) drive the micro-tile mini-bars; only
+    # set where the value is genuinely a 0-100 share/percentile (never faked).
+    _info = getattr(result, "info", None) or {}
+    val_pct = (getattr(result, "peer_percentiles", None) or {}).get("P/E")
+    inst_raw = _info.get("heldPercentInstitutions")
+    own_pct = float(inst_raw) * 100 if isinstance(inst_raw, (int, float)) else None
+    groups = (
+        build_group_shell(
+            anchor="sa-fundamentals",
+            name="Fundamentals",
+            grade=fit_view.grade,
+            week_delta="",
+            micro_tiles=[
+                MicroTile(
+                    "Valuation",
+                    val_tile,
+                    "#d08218",
+                    pct=float(val_pct) if val_pct is not None else None,
+                    info=_cat_info("Valuation"),
+                ),
+                MicroTile("Growth", grow_tile, "#2f9e44", info=_cat_info("Growth")),
+                MicroTile("Health", health_tile, "#0F6E80", info=_cat_info("Health")),
+            ],
+            inner_html=build_fundamentals_inner(result),
+        )
+        + build_group_shell(
+            anchor="sa-market",
+            name="Market",
+            grade=fit_view.grade,
+            week_delta="",
+            micro_tiles=[
+                MicroTile(
+                    "Performance", perf_tile, "#2aa198", info=_cat_info("Performance")
+                ),
+                MicroTile(
+                    "Ownership",
+                    own_tile,
+                    "#6b7d84",
+                    pct=own_pct,
+                    info=_cat_info("Ownership"),
+                ),
+            ],
+            inner_html=build_market_inner(result),
+        )
+        + build_group_shell(
+            anchor="sa-signals",
+            name="Signals",
+            grade=fit_view.grade,
+            week_delta="",
+            micro_tiles=[
+                MicroTile(
+                    "Analyst", analyst_tile, "#5c6bc0", info=_cat_info("Analyst")
+                ),
+                MicroTile("Buzz", buzz_tile, "#5c6bc0", info=_cat_info("Buzz")),
+                MicroTile(
+                    "Sentiment", sentiment_tile, "#b91c1c", info=_cat_info("Sentiment")
+                ),
+            ],
+            inner_html=build_signals_inner(result),
+        )
+    )
+    sep = '<hr style="border:none;border-top:1px solid var(--ri-hair);margin:20px 0">'
+    # Only emit the divider before the AI-read block when it's non-empty (the
+    # off-local privacy gate yields "" — a genuine data_gap still renders an
+    # honest "unavailable" note, so it is NOT empty and gets its divider).
+    ai_read_section = f"{sep}{ai_read_html}" if ai_read_html else ""
+    return (
+        '<div class="sa-stage">'
+        f"{hero}"
+        f"{sep}{synth}"
+        f"{ai_read_section}"
+        f"{sep}{vit}"
+        f"{sep}{snowfit}"
+        f"{sep}{COLOUR_KEY_HTML}"
+        f"{groups}"
+        "</div>"
+    )
+
+
+def _render_top(
+    result: object, fit: object | None, *, as_of: str = "", ai_read_html: str = ""
+) -> None:
+    """Tier-2 wrapper: render the answer-first top via st.markdown (lazy Streamlit import)."""
+    import streamlit as st
+
+    st.markdown(
+        build_top_html(result, fit, as_of=as_of, ai_read_html=ai_read_html),
+        unsafe_allow_html=True,
+    )
 
 
 def _ensure_fit_cached(
@@ -71,6 +474,17 @@ def _ensure_fit_cached(
         return None
     session_state[key] = verdict
     return verdict
+
+
+def _post_top_render_plan() -> list[str]:
+    """Return the ordered list of section names rendered AFTER _render_top().
+
+    Pure helper — no Streamlit, safe to call in tests.
+    Sections that live inside the sa-* group shells (build_top_html) must NOT
+    appear here. Headlines formerly in a separate Buzz Context block now live
+    in the Buzz panel; only corroboration remains below the groups.
+    """
+    return ["corroboration"]
 
 
 def render() -> None:
@@ -131,37 +545,11 @@ def render() -> None:
     if lookup_key and f"analysis_{lookup_key}" in st.session_state:
         result = st.session_state[f"analysis_{lookup_key}"]
 
-        # Load corroboration snapshot (None if store empty / DB missing)
+        # Load corroboration snapshot (None if store empty / DB missing) and bridge
+        # in a live OurReadout built from data already on `result` — no new fetch.
         corr_view = load_corroboration_snapshot(lookup_key, db_path=_CORR_DB_PATH)
+        readout = build_readout_from_analysis(result)
 
-        st.markdown(
-            " ".join(
-                f'<span class="section-chip">{i}</span>'
-                f'<span style="margin-right:14px;font-size:13px;color:#5C6370;">'
-                f"{name}</span>"
-                for i, name in enumerate(_SECTION_LABELS, start=1)
-            ),
-            unsafe_allow_html=True,
-        )
-        _render_decision_lead(result)
-        _render_verdict(result, corr_view=corr_view)
-        # Evidence-status framing header — make explicit this is attributed
-        # evidence, not a forecast, before any data panels.
-        st.markdown(
-            '<div class="ri-sec" style="'
-            "background:var(--ri-surface,#F8FAFC);"
-            "border-left:3px solid var(--ri-teal,#0F6E80);"
-            "padding:10px 14px;margin-bottom:12px;"
-            'border-radius:4px;">'
-            '<span style="font-weight:700;color:var(--ri-teal,#0F6E80);">'
-            "Evidence Status: not a forecast</span>"
-            '<span style="font-size:13px;color:#64748B;margin-left:8px;">'
-            "All panels below surface attributed third-party data "
-            "(yfinance, analyst consensus, buzz sources). "
-            "This tool describes what is true today; it does not forecast returns."
-            "</span></div>",
-            unsafe_allow_html=True,
-        )
         fit_key = f"fit_{lookup_key}"
 
         from datetime import datetime, timezone
@@ -172,6 +560,7 @@ def render() -> None:
             market_systematic_share_threshold,
         )
 
+        now = datetime.now(timezone.utc)
         fit = _ensure_fit_cached(
             st.session_state,
             fit_key,
@@ -181,34 +570,37 @@ def render() -> None:
                 summary_path="data/personal/brief_summary.json",
                 holdings_path="data/personal/holdings.csv",
                 beta_fn=default_beta_fn,
-                as_of=datetime.now(timezone.utc),
+                as_of=now,
                 systematic_share_threshold=market_systematic_share_threshold(),
             ),
         )
-        if fit is not None:
-            _render_fit_card(fit)
-        else:
-            st.caption("Fit verdict unavailable (see logs).")
-        axes = _snowflake_axes(fit)
-        fig = build_snowflake(axes)
-        if fig is not None:
-            st.markdown("##### Evidence snowflake")
-            apply_dossier_template(fig)
-            st.plotly_chart(fig, use_container_width=True)
-            st.caption(
-                "Factual percentiles vs the screened universe + fit "
-                "arithmetic — a description of today, not a forecast."
-            )
-        _render_analyst_panel(result)
-        _render_news_context(result)
-        _render_valuation(result)
-        _render_growth(result)
-        _render_performance(result)
-        _render_health(result)
-        _render_ownership(result)
-        _render_sentiment(result)
-        _render_supply_chain(result)
-        render_corroboration_section(corr_view)
+
+        from adapters.visualization.tabs.stock_analysis.ai_read import (
+            buzz_fact_from_signals,
+            get_or_fetch_google_ai_read,
+        )
+
+        val_tile, grow_tile, health_tile = _fundamentals_tile_values(result)
+        analyst_tile, _sentiment_tile, _buzz_tile = _signals_tile_values(result)
+        ai_facts = {
+            "Valuation": f"P/E percentile {val_tile}",
+            "Growth": f"revenue growth {grow_tile}",
+            "Health": health_tile,
+            "Analyst consensus": f"mean rating {analyst_tile}",
+        }
+        buzz_fact = buzz_fact_from_signals(getattr(result, "buzz_signals", []) or [])
+        if buzz_fact:
+            ai_facts["Market sentiment"] = buzz_fact
+        ai_read_html = get_or_fetch_google_ai_read(lookup_key, ai_facts)
+
+        # Answer-first top: hero → synthesis → vitals → snowflake/fit → colour key → group shells
+        # Deep-dive sections (valuation, growth, health, performance, ownership,
+        # sentiment, supply_chain, analyst_panel) now live inside the sa-* group
+        # shells rendered by build_top_html — do NOT re-render them flat here.
+        _render_top(
+            result, fit, as_of=now.strftime("%b %d %Y"), ai_read_html=ai_read_html
+        )
+        render_corroboration_section(corr_view, our_readout=readout)
     elif not ticker_input:
         st.markdown(
             '<div class="ws-card" style="text-align:center;padding:2rem;">'
@@ -218,117 +610,3 @@ def render() -> None:
             "</div></div>",
             unsafe_allow_html=True,
         )
-
-
-# ---------------------------------------------------------------------------
-# S3: Decision-card lead (v9 expanded card above the deep-dive)
-# ---------------------------------------------------------------------------
-
-
-def _snake_info(raw: dict[str, Any]) -> dict[str, Any]:
-    """Map raw yfinance camelCase info keys to the snake_case keys S1 expects."""
-    _MAP = {
-        "trailingPE": "trailing_pe",
-        "debtToEquity": "debt_to_equity",
-        "pegRatio": "peg_ratio",
-        "freeCashflow": "free_cashflow",
-        "marketCap": "market_cap",
-    }
-    return {_MAP.get(k, k): v for k, v in raw.items()}
-
-
-def select_case_summarizer() -> object:
-    """Proxy to application.card_loading.select_case_summarizer (patchable in tests)."""
-    from application.card_loading import select_case_summarizer as _sel
-
-    return _sel()
-
-
-def _render_decision_lead_html(
-    result: Any, verdict_value: str, *, with_case: bool = False
-) -> str:
-    """Pure function: build and return the v9 decision-card HTML for a ticker result.
-
-    Testable without Streamlit. Uses getattr with defaults for optional fields
-    (price_series, atr, ma200, vs_spy_pct) that may not exist on AnalysisResult.
-
-    When with_case=True, fetches the lazy cited case via the summarizer and renders it
-    in the expanded card (S5). Default False for backward compat.
-    """
-    from adapters.data.earnings_history_adapter import fetch_earnings_history
-    from adapters.visualization.card_fetch import get_case_on_expand
-    from adapters.visualization.components.decision_card import render_expanded_card
-    from application.analyst_panel import build_analyst_panel
-    from application.evidence_card import build_evidence_card
-    from domain.discipline import Verdict
-
-    info = _snake_info(result.info or {})
-    info["current_price"] = result.current_price
-
-    panel = result.analyst_panel or build_analyst_panel({}, "")
-    earnings = fetch_earnings_history(result.ticker)
-
-    prices: dict[str, Any] = {
-        "closes": getattr(result, "price_series", None) or [],
-        "atr": getattr(result, "atr", None),
-        "ma200": getattr(result, "ma200", None),
-        "spy_1y": None,
-        "book_1y": getattr(result, "vs_spy_pct", None),
-    }
-    peers = [p.get("pe") for p in (result.peer_data or [])]
-
-    card = build_evidence_card(
-        result.ticker,
-        info=info,
-        prices=prices,
-        panel=panel,
-        earnings=earnings,
-        peers=peers,
-    )
-
-    # S5: fetch lazy cited case when requested (expanded=True → always fetch here)
-    # Look up select_case_summarizer through the package namespace so tests can
-    # monkeypatch it via `sa.select_case_summarizer` (sa = the package __init__).
-    import sys
-
-    _pkg = sys.modules.get("adapters.visualization.tabs.stock_analysis", None)
-    _scsfn = getattr(_pkg, "select_case_summarizer", None) or select_case_summarizer
-    case = None
-    if with_case:
-        result_case = get_case_on_expand(
-            result.ticker,
-            card,
-            news=[],
-            expanded=True,
-            summarizer=_scsfn(),
-        )
-        # data_gap → pass None so _case_html renders honest placeholder
-        case = None if (result_case is None or result_case.data_gap) else result_case
-
-    verdict = Verdict(verdict_value)
-    return render_expanded_card(
-        card,
-        case=case,
-        verdict=verdict,
-        name=result.company_name,
-        unrealized_pct=None,
-        means=(
-            f"{result.ticker} — attributed evidence below; "
-            f"your rule's verdict is {verdict.value}."
-        ),
-        price=result.current_price,
-        cost=None,
-        returns=(),
-        reliability="measured forward; see Trust tab",
-    )
-
-
-def _render_decision_lead(result: Any) -> None:
-    """Render the v9 decision-card lead via st.markdown. Calls _render_decision_lead_html."""
-    import streamlit as st
-
-    verdict_value = getattr(result, "verdict", "REVIEW")
-    st.markdown(
-        _render_decision_lead_html(result, verdict_value, with_case=True),
-        unsafe_allow_html=True,
-    )

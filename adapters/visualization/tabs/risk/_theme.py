@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from adapters.visualization.components.evidence_chip import render_evidence_chip_by_key
+from domain.evidence_registry import get_evidence
+
 # ── colour constants (mirror risk-v8.html :root) ───────────────────────────
 _OK = "#15803d"
 _OK_L = "#e7f4ec"
@@ -90,6 +93,8 @@ __all__ = [
     "_BETA_DOMAIN_RANGE",
     "_SHARE_FLAG_PCT",
     "_strip_pct",
+    "_metric_evidence",
+    "_band_text",
 ]
 
 
@@ -100,6 +105,32 @@ __all__ = [
 
 def _strip_pct(value: float, lo: float, hi: float) -> float:
     return max(0.0, min(100.0, (value - lo) / (hi - lo) * 100.0))
+
+
+# ---------------------------------------------------------------------------
+# Helper: inline evidence chip for a registry metric key
+# ---------------------------------------------------------------------------
+
+
+def _metric_evidence(key: str, *, margin_top: int = 7) -> str:
+    """Return an inline evidence chip for *key*, wrapped for vertical spacing.
+
+    Renders the registry-backed chip (label + verdict badge + ADR + hover tooltip
+    carrying meaning / healthy band / caveat).  Returns ``""`` for an unregistered
+    key so callers can splice it unconditionally.
+    """
+    chip = render_evidence_chip_by_key(key)
+    if not chip:
+        return ""
+    return f'<div style="margin-top:{margin_top}px">{chip}</div>'
+
+
+def _band_text(key: str) -> str:
+    """Return the registry healthy-band string for *key* (empty if none)."""
+    entry = get_evidence(key)
+    if entry is None or entry.healthy_band is None:
+        return ""
+    return entry.healthy_band
 
 
 # ===========================================================================

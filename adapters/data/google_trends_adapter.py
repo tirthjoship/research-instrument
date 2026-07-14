@@ -14,12 +14,13 @@ from domain.models import AttentionPoint, BuzzSignal
 
 # Maximum tickers per pytrends request
 _BATCH_SIZE = 5
+_429_BACKOFF_SECONDS = (30.0, 60.0, 90.0)
 
 
 class GoogleTrendsAdapter:
     """BuzzDiscoveryPort implementation using Google Trends via pytrends."""
 
-    def __init__(self, rate_limit_seconds: float = 2.0) -> None:
+    def __init__(self, rate_limit_seconds: float = 6.0) -> None:
         self._rate_limit_seconds = rate_limit_seconds
         self._last_request_time: float = 0.0
 
@@ -61,8 +62,39 @@ class GoogleTrendsAdapter:
 
         results: list[BuzzSignal] = []
 
+        consecutive_429 = 0
         for batch_start in range(0, len(tickers), _BATCH_SIZE):
             batch = tickers[batch_start : batch_start + _BATCH_SIZE]
+            batch_signals = self._scan_batch(batch, scan_time)
+            if batch_signals is None:
+                consecutive_429 += 1
+                if consecutive_429 >= 2:
+                    logger.warning(
+                        "Google Trends still rate-limited after retries — "
+                        "skipping remaining {} ticker(s)",
+                        len(tickers) - batch_start,
+                    )
+                    break
+                continue
+            consecutive_429 = 0
+            results.extend(batch_signals)
+
+        return results
+
+    def _scan_batch(
+        self, batch: list[str], scan_time: datetime
+    ) -> list[BuzzSignal] | None:
+        """Fetch one pytrends batch; return None when rate-limited after retries."""
+        last_exc: Exception | None = None
+        for attempt, backoff in enumerate((0.0, *_429_BACKOFF_SECONDS)):
+            if backoff > 0:
+                logger.warning(
+                    "Google Trends 429 for batch {} — backing off {:.0f}s (retry {})",
+                    batch,
+                    backoff,
+                    attempt,
+                )
+                time.sleep(backoff)
             try:
                 self._throttle()
                 pytrends = self._get_pytrends()
@@ -73,31 +105,41 @@ class GoogleTrendsAdapter:
                     logger.warning(
                         "Google Trends returned empty data for batch {}", batch
                     )
-                    continue
+                    return []
 
-                # Use latest row for current snapshot
                 latest = df.iloc[-1]
-
+                batch_results: list[BuzzSignal] = []
                 for ticker in batch:
                     if ticker not in latest.index:
                         logger.warning("Ticker {} not in Trends response", ticker)
                         continue
                     interest = float(latest[ticker])
-                    signal = BuzzSignal(
-                        ticker=ticker,
-                        source="google_trends",
-                        mention_count=int(interest),
-                        sentiment_raw=self._interest_to_sentiment(interest),
-                        scorer="google_trends",
-                        fetched_at=scan_time,
-                        article_hash=self._make_hash(ticker, "scan", scan_time),
+                    batch_results.append(
+                        BuzzSignal(
+                            ticker=ticker,
+                            source="google_trends",
+                            mention_count=int(interest),
+                            sentiment_raw=self._interest_to_sentiment(interest),
+                            scorer="google_trends",
+                            fetched_at=scan_time,
+                            article_hash=self._make_hash(ticker, "scan", scan_time),
+                        )
                     )
-                    results.append(signal)
+                return batch_results
 
             except Exception as exc:  # noqa: BLE001
-                logger.warning("Google Trends scan failed for batch {}: {}", batch, exc)
-
-        return results
+                last_exc = exc
+                if "429" not in str(exc):
+                    logger.warning(
+                        "Google Trends scan failed for batch {}: {}", batch, exc
+                    )
+                    return []
+        logger.warning(
+            "Google Trends scan failed for batch {} after retries: {}",
+            batch,
+            last_exc,
+        )
+        return None
 
     def get_historical_interest(
         self, ticker: str, start_date: datetime, end_date: datetime

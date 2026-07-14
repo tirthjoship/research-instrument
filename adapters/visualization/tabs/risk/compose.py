@@ -6,6 +6,7 @@ from typing import Any
 
 import streamlit as st
 
+from adapters.visualization.book_context import resolve_ui_book_context
 from adapters.visualization.components.risk_second_opinion import (
     render_risk_second_opinion,
 )
@@ -22,9 +23,9 @@ from .components import (
     _vitals,
 )
 from .enb_section import _enb_section
-from .evidence import _evidence_bands, _flags_footer, _grill_drill
+from .evidence import _benchmark, _evidence_bands, _flags_footer, _grill_drill
 from .factor_chart import _factor_chart
-from .sections import _drift, _sector_section, _teach, _who_owns
+from .sections import _decision_levers, _drift, _sector_section, _teach, _who_owns
 
 
 def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
@@ -62,10 +63,12 @@ def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
         _dials(macro),
         _grill_drill(flags),
         _evidence_bands(macro),
+        _benchmark(macro),
         _factor_chart(macro),
         _enb_section(macro),
         _sector_section(macro),
         _who_owns(macro),
+        _decision_levers(macro),
         _drift(macro),
     ]
     # Mockup order: _drift → [Second opinion · Google AI] → _teach → _flags_footer
@@ -87,9 +90,15 @@ def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
 # ===========================================================================
 
 
-def render(path: str = "data/personal/brief_summary.json") -> None:
-    """Streamlit entrypoint: load macro → render v8 status-first layout."""
-    summary = load_brief_summary(path)
+def render(path: str | None = None) -> None:
+    """Streamlit entrypoint: load macro → render v8 status-first layout.
+
+    ``path`` defaults to the book-context resolver's brief path (sample on
+    cold start, session brief after an upload) — never data/personal/ unless
+    a caller explicitly passes that path.
+    """
+    effective_path = path if path is not None else resolve_ui_book_context().brief_path
+    summary = load_brief_summary(effective_path)
     macro = (summary or {}).get("macro") if summary else None
 
     # Build AI second-opinion panel HTML BEFORE composing (spec §9 — no live
@@ -111,40 +120,3 @@ def render(path: str = "data/personal/brief_summary.json") -> None:
         from adapters.visualization.components.lens_scroll import render_lens_scroll
 
         render_lens_scroll()
-
-    # Render holdings upload history table at the bottom of the Risk tab
-    import json
-    from pathlib import Path
-
-    import pandas as pd
-
-    upload_history_path = Path("data/personal/upload_history.json")
-    if upload_history_path.exists():
-        try:
-            with open(upload_history_path, encoding="utf-8") as f:
-                history = json.load(f)
-            if history:
-                st.write("---")
-                st.subheader("Holdings CSV Upload History")
-                df = pd.DataFrame(history)
-                # Rename columns for presentation
-                df = df.rename(
-                    columns={
-                        "timestamp": "Timestamp",
-                        "filename": "Filename",
-                        "positions_count": "Positions Count",
-                        "total_cost_basis": "Total Cost Basis (CAD)",
-                    }
-                )
-                # Select/reorder columns
-                df = df[
-                    [
-                        "Timestamp",
-                        "Filename",
-                        "Positions Count",
-                        "Total Cost Basis (CAD)",
-                    ]
-                ]
-                st.dataframe(df, use_container_width=True, hide_index=True)
-        except Exception:
-            pass
