@@ -1,0 +1,4 @@
+# False positives verified by hand; do not remove without re-checking the underlying diff.
+# adapters/data/sec_filing_text_adapter.py:67 - `accession_nodash` is an SEC EDGAR filing
+# accession-number field name, not a credential. High-entropy match on the field name only.
+c6ae5b360da6e423957770f3fa14f008e84afc6e:adapters/data/sec_filing_text_adapter.py:generic-api-key:67
