@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html as _html
 import json
 from pathlib import Path
 
@@ -25,6 +26,7 @@ from adapters.visualization.data_loader import (
 _SCOREBOARD = [
     {
         "hypothesis": "Does community conviction predict returns out of sample?",
+        "short": "Community conviction",
         "test": "Pre-registered OOS conviction backtest",
         "verdict": "KILL",
         "adr": "docs/adr/039-conviction-validation-findings.md",
@@ -32,6 +34,7 @@ _SCOREBOARD = [
     },
     {
         "hypothesis": "Do conviction sub-dimensions carry independent signal?",
+        "short": "Conviction sub-dimensions",
         "test": "Dimension-by-dimension IC audit",
         "verdict": "KILL",
         "adr": "docs/adr/043-conviction-dims-dead-divergence-led-surfacing.md",
@@ -39,6 +42,7 @@ _SCOREBOARD = [
     },
     {
         "hypothesis": "Does sentiment-vs-price divergence predict returns?",
+        "short": "Sentiment/price divergence",
         "test": "Cross-sectional IC, clean 430-ticker universe",
         "verdict": "KILL",
         "adr": "docs/adr/044-divergence-ic-verdict.md",
@@ -46,6 +50,7 @@ _SCOREBOARD = [
     },
     {
         "hypothesis": "Do momentum exits beat buy-and-hold risk-adjusted?",
+        "short": "Momentum-exit timing",
         "test": "Sharpe-difference bootstrap (CI spans 0)",
         "verdict": "KILL",
         "adr": "docs/adr/046-momentum-discipline-phase1-verdict.md",
@@ -53,6 +58,7 @@ _SCOREBOARD = [
     },
     {
         "hypothesis": "Does the evidence screen's top decile outperform?",
+        "short": "Evidence-screen top decile",
         "test": "Screen IC forward test",
         "verdict": "INCONCLUSIVE",
         "adr": "docs/adr/049-decision-support-engine-architecture.md",
@@ -60,6 +66,7 @@ _SCOREBOARD = [
     },
     {
         "hypothesis": "Does a trend-following sleeve clear the pre-registered bar?",
+        "short": "Trend-following sleeve",
         "test": "TSMOM sleeve backtest vs locked gate",
         "verdict": "INCONCLUSIVE",
         "adr": "docs/adr/050-trend-following-sleeve-verdict.md",
@@ -143,6 +150,7 @@ _FOUR_RULES = [
 def _unit_b_row(report_path: str) -> dict[str, str]:
     row: dict[str, str] = {
         "hypothesis": "Do insider buying clusters in sub-$1B names predict 21-day returns?",
+        "short": "Insider clusters",
         "test": "Event study vs liquidity-matched ETF, pre-registered coverage guard",
         "verdict": "PENDING",
         "adr": "docs/adr/053-insider-cluster-falsification-verdict.md",
@@ -364,17 +372,24 @@ def _render_experiment_row(r: dict[str, str]) -> None:
 
 
 def _decision_tree_html(rows: list[dict[str, str]]) -> str:
-    """Static branching diagram of the actual verdict logic, additive to the
-    scoreboard strip: the strip gives the at-a-glance count, this explains why
-    each verdict happened — including the honest fact that no hypothesis has
-    ever cleared the bar.
+    """Branching diagram of the actual verdict logic, naming which experiment
+    landed on each branch — not just an aggregate count (which only repeated
+    the scoreboard strip in a different shape). Additive to the strip: the
+    strip gives the one-glance color pattern, this explains *why* each
+    specific experiment landed where it did, including the honest fact that
+    no hypothesis has ever cleared the bar. Wrapped in a card so it reads as
+    a section of the page, not a floating diagram.
     """
     n_total = len(rows)
-    n_kill = sum(1 for r in rows if _verdict_rule_color(r["verdict"]) == "#DC2626")
-    n_inconclusive = sum(
-        1 for r in rows if _verdict_rule_color(r["verdict"]) == "#CA8A04"
-    )
-    n_pending = n_total - n_kill - n_inconclusive
+    kill_names = [
+        r["short"] for r in rows if _verdict_rule_color(r["verdict"]) == "#DC2626"
+    ]
+    inconclusive_names = [
+        r["short"] for r in rows if _verdict_rule_color(r["verdict"]) == "#CA8A04"
+    ]
+    pending_names = [
+        r["short"] for r in rows if _verdict_rule_color(r["verdict"]) == "#64748B"
+    ]
 
     def _node(text: str) -> str:
         return (
@@ -384,19 +399,31 @@ def _decision_tree_html(rows: list[dict[str, str]]) -> str:
             f'color:var(--ri-ink);font-weight:600;">{text}</div></div>'
         )
 
-    def _leaf(bg: str, border: str, color: str, text: str, dashed: bool = False) -> str:
+    def _leaf(
+        bg: str,
+        border: str,
+        color: str,
+        heading: str,
+        names: list[str],
+        dashed: bool = False,
+    ) -> str:
         style = "dashed" if dashed else "solid"
+        names_html = (
+            "<br>".join(_html.escape(n) for n in names) if names else "none right now"
+        )
         return (
             f'<div style="background:{bg};border:1px {style} {border};'
             f"border-radius:8px;padding:9px 12px;font-size:11px;text-align:center;"
-            f'min-width:150px;color:{color};flex:1;">{text}</div>'
+            f'min-width:150px;color:{color};flex:1;">{heading}'
+            f'<div style="margin-top:6px;font-size:10.5px;line-height:1.5;">{names_html}</div>'
+            "</div>"
         )
 
     arrow = (
         '<div style="text-align:center;color:var(--ri-muted);font-size:13px;">↓</div>'
     )
 
-    return (
+    diagram = (
         _node(
             "Pre-registration "
             '<span style="font-weight:400;font-size:10.5px;color:var(--ri-muted);">'
@@ -415,31 +442,40 @@ def _decision_tree_html(rows: list[dict[str, str]]) -> str:
             "#FEF2F2",
             "#FCA5A5",
             "#991B1B",
-            f"No → <b>KILL</b><br>idea dies, never trades — {n_kill}/{n_total}",
+            f"No → <b>KILL</b> ({len(kill_names)}/{n_total})",
+            kill_names,
         )
         + _leaf(
             "#FFFBEB",
             "#FDE68A",
             "#92400E",
-            "Underpowered / ambiguous → <b>INCONCLUSIVE</b><br>"
-            f"treated as dead until proven — {n_inconclusive}/{n_total}",
+            f"Underpowered / ambiguous → <b>INCONCLUSIVE</b> ({len(inconclusive_names)}/{n_total})",
+            inconclusive_names,
         )
         + _leaf(
             "var(--ri-app)",
             "var(--ri-line)",
             "var(--ri-ink2)",
-            f"Still accruing evidence → <b>PENDING</b><br>"
-            f"live, resolves on a fixed schedule — {n_pending}/{n_total}",
+            f"Still accruing evidence → <b>PENDING</b> ({len(pending_names)}/{n_total})",
+            pending_names,
         )
         + _leaf(
             "var(--ri-app)",
             "var(--ri-line)",
             "var(--ri-muted)",
-            "Yes → <b>would advance to a live signal</b><br>"
-            f"0/{n_total} has ever reached this branch",
+            "Yes → <b>would advance to a live signal</b>",
+            [],
             dashed=True,
         )
         + "</div>"
+    )
+    return (
+        '<div style="background:var(--ri-card);border:1px solid var(--ri-line);'
+        'border-radius:16px;padding:18px 20px;margin-bottom:16px;">'
+        f"{diagram}"
+        f'<div style="text-align:center;font-size:10.5px;color:var(--ri-muted);'
+        f'margin-top:8px;">0/{n_total} hypotheses have ever reached the "yes" branch.</div>'
+        "</div>"
     )
 
 
@@ -509,33 +545,38 @@ def _pipeline_diagram_html() -> str:
 
 
 def _render_four_rules() -> None:
+    """Header + anchor stay always visible (other tabs assume #tr-honest
+    exists); the pipeline diagram + rule cards collapse behind one click —
+    2026-07-14 trim, page was too long for a fast skim.
+    """
     st.markdown(
         '<div id="tr-honest" style="font-weight:700;font-size:16px;margin-bottom:8px;">'
         "How this project keeps itself honest"
         "</div>",
         unsafe_allow_html=True,
     )
-    st.markdown(_pipeline_diagram_html(), unsafe_allow_html=True)
-    rule_pairs = [_FOUR_RULES[i : i + 2] for i in range(0, len(_FOUR_RULES), 2)]
-    for pair in rule_pairs:
-        rule_cols = st.columns(2)
-        for col, rule in zip(rule_cols, pair):
-            idx = _FOUR_RULES.index(rule) + 1
-            chip_html = (
-                f'<span class="section-chip">{idx}</span> '
-                f'<strong>{rule["title"]}</strong>'
-            )
-            card_html = (
-                f'<div style="background:var(--ri-card);border:1px solid var(--ri-line);'
-                f'border-radius:16px;padding:14px 18px;margin-bottom:12px;">'
-                f"{chip_html}<br>"
-                f'<span style="font-size:14px;">{rule["body"]}</span><br>'
-                f'<span style="color:var(--ri-muted);font-size:13px;font-style:italic;">'
-                f'Example: {rule["example"]}'
-                f"</span></div>"
-            )
-            with col:
-                st.markdown(card_html, unsafe_allow_html=True)
+    with st.expander("The pipeline + the four rules"):
+        st.markdown(_pipeline_diagram_html(), unsafe_allow_html=True)
+        rule_pairs = [_FOUR_RULES[i : i + 2] for i in range(0, len(_FOUR_RULES), 2)]
+        for pair in rule_pairs:
+            rule_cols = st.columns(2)
+            for col, rule in zip(rule_cols, pair):
+                idx = _FOUR_RULES.index(rule) + 1
+                chip_html = (
+                    f'<span class="section-chip">{idx}</span> '
+                    f'<strong>{rule["title"]}</strong>'
+                )
+                card_html = (
+                    f'<div style="background:var(--ri-card);border:1px solid var(--ri-line);'
+                    f'border-radius:16px;padding:14px 18px;margin-bottom:12px;">'
+                    f"{chip_html}<br>"
+                    f'<span style="font-size:14px;">{rule["body"]}</span><br>'
+                    f'<span style="color:var(--ri-muted);font-size:13px;font-style:italic;">'
+                    f'Example: {rule["example"]}'
+                    f"</span></div>"
+                )
+                with col:
+                    st.markdown(card_html, unsafe_allow_html=True)
 
 
 def _gate_strip(log_path: str) -> None:
@@ -679,15 +720,18 @@ def _lead_banner_html(n_total: int, n_dead: int, n_open: int) -> str:
     )
 
 
-def _render_exhibits() -> None:
-    """Falsified-era exhibits: one expander, both charts side-by-side on expand.
+def _render_dead_architecture_details() -> None:
+    """Old-architecture stats + exhibits, one expander, both charts side-by-side.
 
-    Previously nested two more sub-sections inside the expander before either
-    chart rendered. Flattened to one level so both charts — including the
-    SHAP chart, the more visually legible of the two — are immediately
-    visible on first expand, not two clicks deep.
+    2026-07-14 trim: folded the 2 stat tiles (previously always-visible above
+    this expander) inside it, alongside the exhibits — both are about the
+    same killed model_confidence architecture, so grouping them behind one
+    click reduces always-on-screen height without losing any content.
+    Exhibits themselves are one level deep (not nested sub-expanders): both
+    charts, including the SHAP chart, render immediately on first expand.
     """
-    with st.expander("Falsified-era exhibits (kept for the record)"):
+    with st.expander("Old metrics + falsified-era exhibits (kept for the record)"):
+        _render_dead_architecture_stats()
         col_a, col_b = st.columns(2)
         with col_a:
             st.markdown("**Exhibit A: Ablation analysis (FALSIFIED era)**")
@@ -758,8 +802,7 @@ def render(
         "way as everything above — kept here, not deleted, because honesty means "
         "showing dead work too, not just curating a highlight reel."
     )
-    _render_dead_architecture_stats()
-    _render_exhibits()
+    _render_dead_architecture_details()
 
     st.divider()
 
