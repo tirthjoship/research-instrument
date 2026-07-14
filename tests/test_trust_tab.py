@@ -132,7 +132,10 @@ def test_render_trophy_grid_groups_rows():  # type: ignore[no-untyped-def]
     assert "_scoreboard_strip_html(" in source
 
 
-def test_decision_tree_html_shows_branching_counts():  # type: ignore[no-untyped-def]
+def test_decision_tree_html_names_each_experiment_on_its_branch():  # type: ignore[no-untyped-def]
+    """Per-experiment branches, not just aggregate counts (2026-07-14 revision:
+    the first version only repeated the scoreboard-strip counts in tree form —
+    the ask was to show *which* experiment landed on each branch)."""
     from adapters.visualization.tabs.trust import (
         _SCOREBOARD,
         _decision_tree_html,
@@ -144,11 +147,41 @@ def test_decision_tree_html_shows_branching_counts():  # type: ignore[no-untyped
     assert "Pre-registration" in html
     assert "point-in-time" in html
     assert "net of" in html and "trading costs" in html
-    assert "KILL" in html and "4/7" in html
-    assert "INCONCLUSIVE" in html and "2/7" in html
-    assert "PENDING" in html and "1/7" in html
+
+    # The 4 external-signal hypotheses must be named on the KILL branch.
+    for name in [
+        "Community conviction",
+        "Conviction sub-dimensions",
+        "Sentiment/price divergence",
+        "Momentum-exit timing",
+    ]:
+        assert name in html
+    # The 2 methodology hypotheses must be named on the INCONCLUSIVE branch.
+    assert "Evidence-screen top decile" in html
+    assert "Trend-following sleeve" in html
+    # Insider clusters defaults to PENDING when no report file exists.
+    assert "Insider clusters" in html
+
     assert "would advance to a live signal" in html
-    assert "0/7" in html
+    # No two branches should show the bare, unlabelled digit pair "0/7" —
+    # a currently-empty branch and the permanently-empty branch must read
+    # differently, or a skimming viewer sees two "0/7"s and assumes a bug.
+    assert html.count("0/7") <= 1
+
+
+def test_decision_tree_html_wrapped_in_card():  # type: ignore[no-untyped-def]
+    """The tree must sit inside a bordered card like the rest of the page,
+    not float unstyled against the background (looked "abrupt" otherwise)."""
+    from adapters.visualization.tabs.trust import (
+        _SCOREBOARD,
+        _decision_tree_html,
+        _unit_b_row,
+    )
+
+    rows = _SCOREBOARD + [_unit_b_row("nonexistent.json")]
+    html = _decision_tree_html(rows)
+    assert "var(--ri-card)" in html
+    assert "var(--ri-line)" in html
 
 
 def test_render_trophy_grid_includes_decision_tree():  # type: ignore[no-untyped-def]
@@ -182,17 +215,45 @@ def test_four_rules_cards_migrated_off_ws_card():  # type: ignore[no-untyped-def
     assert "_pipeline_diagram_html(" in source
 
 
+def test_four_rules_body_collapsed_to_trim_page_length():  # type: ignore[no-untyped-def]
+    """2026-07-14: page was too long for a fast skim — collapse the pipeline
+    diagram + rule cards behind one click, keep the section header visible."""
+    import inspect
+
+    from adapters.visualization.tabs import trust
+
+    source = inspect.getsource(trust._render_four_rules)
+    assert "st.expander(" in source
+    # The #tr-honest anchor id must stay on something always visible (other
+    # tabs' nav chips link here), not buried inside the collapsed body.
+    assert 'id="tr-honest"' in source
+
+
 def test_exhibits_render_side_by_side_not_nested():  # type: ignore[no-untyped-def]
     import inspect
 
     from adapters.visualization.tabs import trust
 
-    source = inspect.getsource(trust._render_exhibits)
+    source = inspect.getsource(trust._render_dead_architecture_details)
     assert "st.columns(2)" in source
     assert "_render_ablation_exhibit(" in source
     assert "_render_shap_exhibit(" in source
     # Exactly one expander at this level — no nested sub-expanders
     assert source.count("st.expander(") == 1
+
+
+def test_dead_architecture_stats_folded_into_details_expander():  # type: ignore[no-untyped-def]
+    """2026-07-14 trim: the 2 stat tiles used to sit always-visible before the
+    exhibits expander; folded inside it so less is always-on-screen."""
+    import inspect
+
+    from adapters.visualization.tabs import trust
+
+    source = inspect.getsource(trust._render_dead_architecture_details)
+    assert "_render_dead_architecture_stats(" in source
+
+    render_source = inspect.getsource(trust.render)
+    assert "_render_dead_architecture_stats()" not in render_source
 
 
 def test_nav_relabeled_dead_architecture_and_anchors_preserved():  # type: ignore[no-untyped-def]
