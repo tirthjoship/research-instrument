@@ -223,23 +223,19 @@ def _render_book_strip_html(
     screen_universe: int,
 ) -> str:
     t_review = render_tile(
-        label=tooltip("Need review")
-        + render_evidence_chip_by_key("need_review", compact=True),
+        label=render_evidence_chip_by_key("need_review", compact=True),
         number=f"{need_review} / {total}",
         tone="crimson" if need_review else "muted",
         sub="holdings a rule fired on",
     )
     vm = "—" if vs_market is None else f"{vs_market:+.1f}%"
     t_vm = render_tile(
-        label=tooltip("vs Market (1y)")
-        + render_evidence_chip_by_key("vs_market_1y", compact=True),
+        label=render_evidence_chip_by_key("vs_market_1y", compact=True),
         number=vm,
         tone="muted",
         sub="realized, vs SPY",
     )
-    nb_label = tooltip("Net beta") + render_evidence_chip_by_key(
-        "net_beta", compact=True
-    )
+    nb_label = render_evidence_chip_by_key("net_beta", compact=True)
     if net_beta is None:
         t_nb = render_tile(
             label=nb_label, number="—", tone="muted", sub="no macro data"
@@ -254,8 +250,7 @@ def _render_book_strip_html(
             sub=f"moves ~{net_beta:.2f}x the market",
         )
     t_scr = render_tile(
-        label=tooltip("Screen")
-        + render_evidence_chip_by_key("screen_cleared", compact=True),
+        label=render_evidence_chip_by_key("screen_cleared", compact=True),
         number=str(screen_cleared),
         tone="green" if screen_cleared else "muted",
         sub=f"cleared of {screen_universe}",
@@ -297,7 +292,7 @@ def _render_book_health_html(systematic_share: float) -> str:
         f"{ring}"
         f"<div><div style=\"font-family:'IBM Plex Mono';font-size:10px;"
         f'text-transform:uppercase;color:#94a8ad">'
-        f'{tooltip("Systematic share", "Book health — systematic share")}'
+        f"Book health &mdash; "
         f'{render_evidence_chip_by_key("systematic_share", compact=True)}</div>'
         f'<div style="font-size:13px;margin-top:3px"><b>{pct}% {band.lower()}</b> &middot; {flag} &mdash; '
         f"adding another same-direction name won't diversify.</div></div></div>"
