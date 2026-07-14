@@ -38,6 +38,7 @@ from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import (
     load_latest_screen,
     load_latest_screened,
+    load_screen_history,
     staleness_days,
 )
 from adapters.visualization.price_cache import (
@@ -1148,7 +1149,13 @@ def build_body_html(
 
 
 def build_zone3_html() -> str:
-    """Return HTML for Zone ③ — link to Trust tab screen history."""
+    """Return HTML for Zone ③ — track-record note.
+
+    Screen history itself renders directly above, in the "Screen history —
+    past runs" expander on this same page (build_screen_history_html) — this
+    zone used to point readers to the Trust tab for it, which was stale after
+    the 2026-07-13 relocation.
+    """
     return (
         "<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
         "font-weight:600;letter-spacing:.14em;color:var(--text-muted);"
@@ -1157,9 +1164,8 @@ def build_zone3_html() -> str:
         "&#9411; Track record"
         "</div>"
         '<div style="font-size:12px;color:var(--text-secondary);">'
-        "Past-screen history lives on the <b>Trust tab</b>. "
-        '<a href="#" style="color:var(--accent);text-decoration:none;">'
-        "See past screens &rarr;</a>"
+        "Every screen run is logged, including abstentions — see "
+        '"Screen history &mdash; past runs" above.'
         "</div>"
     )
 
@@ -1335,7 +1341,7 @@ def build_check_your_own_html(rows: list[Any]) -> str:
 def _render_history_and_upload(reports_dir: str) -> None:
     """Render Zone ② check-your-own-list upload section.
 
-    Screen-history table now lives on the Trust tab (see build_zone3_html link);
+    Screen-history table renders in Zone ① above (build_screen_history_html);
     this section keeps only the "check your own list" upload.
     """
     # (The mono section header is rendered by render() — no duplicate here.)
@@ -1490,6 +1496,49 @@ def _render_run_screener_gate(ctx: UIBookContext, days: int | None) -> None:
         st.error("Screen run failed. The previous screen above is still shown.")
 
 
+def build_screen_history_html(history: list[dict[str, object]]) -> str:
+    """Render the past-screen history table (relocated from the Trust tab, 2026-07-13).
+
+    Trust-tab audit: this table is about live screener operations, not a killed
+    hypothesis — it belongs where the screener itself lives, not the credibility
+    page. Columns: Date / Universe / Passed / Abstained. Empty history still
+    returns a valid string (a short 'no past screens yet' note).
+    """
+    head = (
+        "<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;"
+        "font-weight:600;letter-spacing:.14em;color:var(--text-muted,#94A3B8);"
+        'text-transform:uppercase;margin:6px 0 10px;">Screen history</div>'
+    )
+    if not history:
+        return (
+            head + '<div style="font-size:12px;color:var(--text-secondary,#5C6370);">'
+            "No past screens recorded yet.</div>"
+        )
+    rows = "".join(
+        '<tr><td style="padding:4px 14px 4px 0;">{date}</td>'
+        '<td style="padding:4px 14px 4px 0;">{uni}</td>'
+        '<td style="padding:4px 14px 4px 0;">{passed}</td>'
+        '<td style="padding:4px 0;">{abst}</td></tr>'.format(
+            date=h.get("as_of", "?"),
+            uni=h.get("universe_size", "?"),
+            passed=h.get("n_candidates", "?"),
+            abst="yes" if h.get("abstained") else "no",
+        )
+        for h in history
+    )
+    table = (
+        '<table style="font-size:12px;color:var(--text-secondary,#5C6370);'
+        'border-collapse:collapse;font-variant-numeric:tabular-nums;">'
+        '<thead><tr style="color:var(--text-muted,#94A3B8);text-align:left;">'
+        '<th style="padding:4px 14px 4px 0;font-weight:600;">Date</th>'
+        '<th style="padding:4px 14px 4px 0;font-weight:600;">Universe</th>'
+        '<th style="padding:4px 14px 4px 0;font-weight:600;">Passed</th>'
+        '<th style="padding:4px 0;font-weight:600;">Abstained</th></tr></thead>'
+        f"<tbody>{rows}</tbody></table>"
+    )
+    return head + table
+
+
 # ---------------------------------------------------------------------------
 # render() — Streamlit entry point (wires all components)
 # ---------------------------------------------------------------------------
@@ -1565,6 +1614,15 @@ def render(reports_dir: str | None = None) -> None:
     st.markdown(build_pipeline_visual_html(), unsafe_allow_html=True)
     with st.expander("▸ Learn more — caveats & methodology", expanded=False):
         st.markdown(build_caveats_html(screen), unsafe_allow_html=True)
+    with st.expander("▸ Screen history — past runs", expanded=False):
+        st.caption(
+            "Every screen run is logged — including the ones that abstained — so "
+            "this can't be quietly re-run until it produces a nicer-looking result."
+        )
+        st.markdown(
+            build_screen_history_html(load_screen_history(reports_dir)),
+            unsafe_allow_html=True,
+        )
     if candidates:
         st.markdown(build_coverage_html(screen), unsafe_allow_html=True)
 

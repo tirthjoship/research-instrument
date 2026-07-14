@@ -376,6 +376,22 @@ GLOSSARY: dict[str, str] = {
         "Your portfolio's return minus the S&P 500's over the same window. "
         "Positive means you beat the benchmark; actual, not projected."
     ),
+    # ── Trust tab exhibit terms (2026-07-14) ──────────────────────────────────
+    "Ablation study": (
+        "A test that removes one ingredient at a time (e.g. sentiment data) to "
+        "see how much each one actually contributes — the gap between 'with' "
+        "and 'without' is that ingredient's real effect."
+    ),
+    "SHAP value": (
+        "A game-theory-based score (Shapley value) showing how much each "
+        "input feature pushed a single model output up or down. Averaged "
+        "across many outputs here to rank which features mattered most."
+    ),
+    "Statistical significance (p-value)": (
+        "The probability a result this large could have happened by chance "
+        'alone. p < 0.05 is the conventional bar for "probably real, not '
+        'noise" — still not proof, just unlikely to be a fluke.'
+    ),
 }
 
 
