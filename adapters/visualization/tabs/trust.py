@@ -273,6 +273,12 @@ def _render_ablation_exhibit(reports_dir: str = "data/reports") -> None:
             f"{r.get('variant', '?').replace('_', ' ').title()}: {pill}",
             unsafe_allow_html=True,
         )
+    st.markdown(
+        f'<span style="font-size:11px;color:var(--ri-muted);">'
+        f"{tooltip('Statistical significance (p-value)', label='ⓘ')} "
+        'what "Significant" means here</span>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_shap_exhibit(shap_path: str = "data/reports/shap_importance.json") -> None:
@@ -734,10 +740,18 @@ def _render_dead_architecture_details() -> None:
         _render_dead_architecture_stats()
         col_a, col_b = st.columns(2)
         with col_a:
-            st.markdown("**Exhibit A: Ablation analysis (FALSIFIED era)**")
+            st.markdown(
+                "**Exhibit A: Ablation analysis (FALSIFIED era)** "
+                f"{tooltip('Ablation study', label='ⓘ')}",
+                unsafe_allow_html=True,
+            )
             _render_ablation_exhibit()
         with col_b:
-            st.markdown("**Exhibit B: SHAP feature importance (FALSIFIED era)**")
+            st.markdown(
+                "**Exhibit B: SHAP feature importance (FALSIFIED era)** "
+                f"{tooltip('SHAP value', label='ⓘ')}",
+                unsafe_allow_html=True,
+            )
             _render_shap_exhibit()
 
 
