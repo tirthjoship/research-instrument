@@ -22,7 +22,7 @@ DERA_URL = (
     "https://www.sec.gov/files/structureddata/data/"
     "insider-transactions-data-sets/{q}_form345.zip"
 )
-SEC_USER_AGENT = "tirthjoshi95@gmail.com portfolio-research"
+SEC_USER_AGENT = "StockRecommender research@example.com"
 
 
 def _parse_dera_date(s: str) -> date:
