@@ -25,6 +25,186 @@ def test_unit_b_row_maps_real_thin_coverage_verdict(tmp_path):  # type: ignore[n
     assert _unit_b_row(str(p))["verdict"] == "INCONCLUSIVE → practical KILL"
 
 
+def test_header_html_uses_ri_classes():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs.trust import _header_html
+
+    html = _header_html()
+    assert 'class="ri-h1"' in html
+    assert 'class="ri-sub"' in html
+    assert "Trust" in html
+    assert "receipts behind the app" in html
+
+
+def test_lead_banner_html_uses_ri_card_not_ws_card():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs.trust import _lead_banner_html
+
+    html = _lead_banner_html(n_total=7, n_dead=5, n_open=2)
+    assert "ws-card" not in html
+    assert "var(--ri-card)" in html
+    assert "7" in html and "5" in html and "2" in html
+    assert "Screener, Risk, and Stock Analysis" in html
+
+
+def test_under_the_hood_is_stamp_tiles_not_expanders():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import trust
+
+    assert len(trust._UNDER_THE_HOOD) == 4
+    for label, number, sub in trust._UNDER_THE_HOOD:
+        assert label and number and sub
+    numbers = {n for _, n, _ in trust._UNDER_THE_HOOD}
+    assert numbers == {"22", "500", "52", "4"}
+
+    import inspect
+
+    source = inspect.getsource(trust._render_under_the_hood)
+    assert "render_tile(" in source
+    assert "st.expander" not in source
+
+
+def test_dead_architecture_stats_has_two_tiles_not_three():  # type: ignore[no-untyped-def]
+    """Hero tiles relocated + retired-count tile dropped (redundant with lead banner)."""
+    import inspect
+
+    from adapters.visualization.tabs import trust
+
+    assert not hasattr(trust, "_render_hero_tiles"), (
+        "_render_hero_tiles should be renamed to _render_dead_architecture_stats "
+        "once relocated out of the top-of-page hero position"
+    )
+    source = inspect.getsource(trust._render_dead_architecture_stats)
+    assert "st.columns(2)" in source
+    assert source.count("render_tile(") == 2
+    assert "label=retired_label" not in source
+    assert "FALSIFIED" in source
+    assert "= EMH" in source
+
+
+def test_scoreboard_rows_carry_group_tag():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import trust
+
+    groups = [r["group"] for r in trust._SCOREBOARD]
+    assert groups == [
+        "external",
+        "external",
+        "external",
+        "external",
+        "methodology",
+        "methodology",
+    ]
+    assert trust._unit_b_row("nonexistent.json")["group"] == "methodology"
+
+
+def test_verdict_rule_color():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs.trust import _verdict_rule_color
+
+    assert _verdict_rule_color("KILL") == "#DC2626"
+    assert _verdict_rule_color("INCONCLUSIVE → practical KILL") == "#DC2626"
+    assert _verdict_rule_color("INCONCLUSIVE") == "#CA8A04"
+    assert _verdict_rule_color("PENDING") == "#64748B"
+
+
+def test_scoreboard_strip_html_has_legend_and_seven_blocks():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs.trust import (
+        _SCOREBOARD,
+        _scoreboard_strip_html,
+        _unit_b_row,
+    )
+
+    rows = _SCOREBOARD + [_unit_b_row("nonexistent.json")]
+    html = _scoreboard_strip_html(rows)
+    assert "KILL" in html and "dead, will never trade" in html
+    assert "INCONCLUSIVE" in html and "unproven, resolving" in html
+    assert "PENDING" in html and "still accruing evidence" in html
+    assert html.count("#DC2626") >= 4  # legend swatch + 4 KILL blocks
+    # No leftover placeholder glyphs inside the blocks themselves
+    assert ">?</div>" not in html
+    assert ">•</div>" not in html
+
+
+def test_render_trophy_grid_groups_rows():  # type: ignore[no-untyped-def]
+    import inspect
+
+    from adapters.visualization.tabs import trust
+
+    source = inspect.getsource(trust._render_trophy_grid)
+    assert "External signals — all killed" in source
+    assert "Our own methodology — resolving" in source
+    assert "_scoreboard_strip_html(" in source
+
+
+def test_decision_tree_html_shows_branching_counts():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs.trust import (
+        _SCOREBOARD,
+        _decision_tree_html,
+        _unit_b_row,
+    )
+
+    rows = _SCOREBOARD + [_unit_b_row("nonexistent.json")]
+    html = _decision_tree_html(rows)
+    assert "Pre-registration" in html
+    assert "point-in-time" in html
+    assert "net of" in html and "trading costs" in html
+    assert "KILL" in html and "4/7" in html
+    assert "INCONCLUSIVE" in html and "2/7" in html
+    assert "PENDING" in html and "1/7" in html
+    assert "would advance to a live signal" in html
+    assert "0/7" in html
+
+
+def test_render_trophy_grid_includes_decision_tree():  # type: ignore[no-untyped-def]
+    import inspect
+
+    from adapters.visualization.tabs import trust
+
+    source = inspect.getsource(trust._render_trophy_grid)
+    assert "_decision_tree_html(" in source
+
+
+def test_pipeline_diagram_html_has_four_steps_in_order():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs.trust import _pipeline_diagram_html
+
+    html = _pipeline_diagram_html()
+    for step in ["Pre-registration", "Point-in-time gate", "Cost model", "Verdict"]:
+        assert step in html
+    assert html.index("Pre-registration") < html.index("Point-in-time gate")
+    assert html.index("Point-in-time gate") < html.index("Cost model")
+    assert html.index("Cost model") < html.index("Verdict")
+
+
+def test_four_rules_cards_migrated_off_ws_card():  # type: ignore[no-untyped-def]
+    import inspect
+
+    from adapters.visualization.tabs import trust
+
+    source = inspect.getsource(trust._render_four_rules)
+    assert "ws-card" not in source
+    assert "var(--ri-card)" in source
+    assert "_pipeline_diagram_html(" in source
+
+
+def test_exhibits_render_side_by_side_not_nested():  # type: ignore[no-untyped-def]
+    import inspect
+
+    from adapters.visualization.tabs import trust
+
+    source = inspect.getsource(trust._render_exhibits)
+    assert "st.columns(2)" in source
+    assert "_render_ablation_exhibit(" in source
+    assert "_render_shap_exhibit(" in source
+    # Exactly one expander at this level — no nested sub-expanders
+    assert source.count("st.expander(") == 1
+
+
+def test_nav_relabeled_dead_architecture_and_anchors_preserved():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs.trust import _trust_nav
+
+    html = _trust_nav()
+    assert "Dead architecture" in html
+    assert "Deep data" not in html
+    for anchor in ["#tr-hood", "#tr-tested", "#tr-honest", "#tr-live", "#tr-raw"]:
+        assert anchor in html, f"nav must keep {anchor} — other tabs link to it"
+
+
 def test_render_no_raise(tmp_path):  # type: ignore[no-untyped-def]
     from adapters.visualization.tabs import trust
 
@@ -132,11 +312,12 @@ def test_genuine_falsification_content_survives():  # type: ignore[no-untyped-de
     ), "Genuine falsification verdict language must survive in Trust tab text"
 
     # The anti-KPI tile renders "FALSIFIED" stamp — verify it appears in render output
-    # by checking the module-level constant used in _render_hero_tiles
-    # (stamp="FALSIFIED" is hardcoded in the render_tile call)
+    # by checking the module-level constant used in _render_dead_architecture_stats
+    # (stamp="FALSIFIED" is hardcoded in the render_tile call; this function was
+    # renamed from _render_hero_tiles when it was relocated into "Dead architecture")
     import inspect
 
-    source = inspect.getsource(trust._render_hero_tiles)
+    source = inspect.getsource(trust._render_dead_architecture_stats)
     assert (
         "FALSIFIED" in source
     ), "Hero tile must still carry FALSIFIED stamp from return-prediction falsification"
@@ -145,72 +326,6 @@ def test_genuine_falsification_content_survives():  # type: ignore[no-untyped-de
     ), "Hero tile must still carry '= EMH' stamp on directional accuracy (47.4% = coin flip)"
 
 
-# ---------------------------------------------------------------------------
-# Task 1 (S7): build_screen_history_html renders history table on Trust tab
-# ---------------------------------------------------------------------------
-
-
-def test_build_screen_history_html_contains_headers():  # type: ignore[no-untyped-def]
-    """build_screen_history_html renders Date/Universe/Passed/Abstained headers."""
-    from adapters.visualization.tabs.trust import build_screen_history_html
-
-    history = [
-        {
-            "as_of": "2026-06-13",
-            "universe_size": 512,
-            "n_candidates": 15,
-            "abstained": False,
-        },
-        {
-            "as_of": "2026-06-06",
-            "universe_size": 500,
-            "n_candidates": 0,
-            "abstained": True,
-        },
-    ]
-    html = build_screen_history_html(history)
-    assert "Universe" in html
-    assert "Passed" in html
-    assert "Abstained" in html
-
-
-def test_build_screen_history_html_contains_heading():  # type: ignore[no-untyped-def]
-    """build_screen_history_html output contains 'Screen history' or 'Past screens'."""
-    from adapters.visualization.tabs.trust import build_screen_history_html
-
-    history = [
-        {
-            "as_of": "2026-06-13",
-            "universe_size": 512,
-            "n_candidates": 15,
-            "abstained": False,
-        },
-    ]
-    html = build_screen_history_html(history)
-    assert "Screen history" in html or "Past screens" in html
-
-
-def test_build_screen_history_html_renders_row_data():  # type: ignore[no-untyped-def]
-    """build_screen_history_html includes actual row values from history list."""
-    from adapters.visualization.tabs.trust import build_screen_history_html
-
-    history = [
-        {
-            "as_of": "2026-06-13",
-            "universe_size": 512,
-            "n_candidates": 15,
-            "abstained": False,
-        },
-    ]
-    html = build_screen_history_html(history)
-    assert "2026-06-13" in html
-    assert "512" in html
-    assert "15" in html
-
-
-def test_build_screen_history_html_empty_returns_string():  # type: ignore[no-untyped-def]
-    """build_screen_history_html with empty list still returns a string (no crash)."""
-    from adapters.visualization.tabs.trust import build_screen_history_html
-
-    html = build_screen_history_html([])
-    assert isinstance(html, str)
+# build_screen_history_html and build_zone3_html tests relocated to
+# tests/test_research_candidates_tab.py on 2026-07-13 — the table now
+# renders on the screener tab itself, not here (see trust-tab-redesign spec).

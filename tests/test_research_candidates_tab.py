@@ -482,14 +482,14 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
     assert (
         "Have your own names" in joined or "evidence card" in joined
     ), "Zone 2 'check your own names' section was not reached on abstention week"
-    # S7: the screen-history table was MOVED to the Trust tab; the screener now
-    # shows only a link, not the in-tab DATAFRAME/'Screen history' heading.
-    assert (
-        "Trust tab" in joined or "See past screens" in joined
-    ), "Trust-tab history link not found — Zone ③ link should replace the in-screener history table"
+    # 2026-07-13: the screen-history table was relocated back onto the screener
+    # itself (it's about live screener operations, not a killed hypothesis) —
+    # it now renders directly in Zone ①, and Zone ③ no longer points to Trust.
+    assert "Screen history" in joined, "Screen-history table must render in Zone ①"
+    assert "Trust tab" not in joined, "Zone ③ must not point back to Trust anymore"
     assert (
         "DATAFRAME" not in joined
-    ), "Screen-history DATAFRAME still rendered in the screener — it should live on Trust now"
+    ), "Screen history renders as a markdown table, not st.dataframe"
 
 
 # ---------------------------------------------------------------------------
@@ -1091,3 +1091,98 @@ def test_run_screener_button_triggers_session_scoped_background_run(monkeypatch)
     from adapters.visualization.book_context import SESSION_SAMPLE_REFRESH_REPORTS_KEY
 
     assert st.session_state[SESSION_SAMPLE_REFRESH_REPORTS_KEY] == target
+
+
+# ---------------------------------------------------------------------------
+# build_screen_history_html — relocated here from trust.py (2026-07-13), since
+# this table is about live screener operations, not a killed hypothesis; it
+# belongs where the screener itself lives, not the credibility page.
+# ---------------------------------------------------------------------------
+
+
+def test_build_screen_history_html_contains_headers():  # type: ignore[no-untyped-def]
+    """build_screen_history_html renders Date/Universe/Passed/Abstained headers."""
+    from adapters.visualization.tabs.research_candidates import (
+        build_screen_history_html,
+    )
+
+    history = [
+        {
+            "as_of": "2026-06-13",
+            "universe_size": 512,
+            "n_candidates": 15,
+            "abstained": False,
+        },
+        {
+            "as_of": "2026-06-06",
+            "universe_size": 500,
+            "n_candidates": 0,
+            "abstained": True,
+        },
+    ]
+    html = build_screen_history_html(history)
+    assert "Universe" in html
+    assert "Passed" in html
+    assert "Abstained" in html
+
+
+def test_build_screen_history_html_contains_heading():  # type: ignore[no-untyped-def]
+    """build_screen_history_html output contains 'Screen history' or 'Past screens'."""
+    from adapters.visualization.tabs.research_candidates import (
+        build_screen_history_html,
+    )
+
+    history = [
+        {
+            "as_of": "2026-06-13",
+            "universe_size": 512,
+            "n_candidates": 15,
+            "abstained": False,
+        },
+    ]
+    html = build_screen_history_html(history)
+    assert "Screen history" in html or "Past screens" in html
+
+
+def test_build_screen_history_html_renders_row_data():  # type: ignore[no-untyped-def]
+    """build_screen_history_html includes actual row values from history list."""
+    from adapters.visualization.tabs.research_candidates import (
+        build_screen_history_html,
+    )
+
+    history = [
+        {
+            "as_of": "2026-06-13",
+            "universe_size": 512,
+            "n_candidates": 15,
+            "abstained": False,
+        },
+    ]
+    html = build_screen_history_html(history)
+    assert "2026-06-13" in html
+    assert "512" in html
+    assert "15" in html
+
+
+def test_build_screen_history_html_empty_returns_string():  # type: ignore[no-untyped-def]
+    """build_screen_history_html with empty list still returns a string (no crash)."""
+    from adapters.visualization.tabs.research_candidates import (
+        build_screen_history_html,
+    )
+
+    html = build_screen_history_html([])
+    assert isinstance(html, str)
+
+
+# ---------------------------------------------------------------------------
+# build_zone3_html — must not claim history "lives on the Trust tab" now that
+# the table renders directly above it, on this same page (2026-07-13 fix).
+# ---------------------------------------------------------------------------
+
+
+def test_build_zone3_html_does_not_reference_trust_tab():  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs.research_candidates import build_zone3_html
+
+    html = build_zone3_html()
+    assert "Trust tab" not in html
+    assert "Track record" in html
