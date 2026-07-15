@@ -46,6 +46,10 @@ from adapters.visualization.price_cache import (
     fetch_ticker_info,
 )
 from adapters.visualization.run_gate import RUN_GATE_HELP, evaluate_run_gate
+from adapters.visualization.run_gate import get_last_run_ts as _gate_get_last_run_ts
+from adapters.visualization.run_gate import is_processing as _gate_is_processing
+from adapters.visualization.run_gate import set_last_run_ts as _gate_set_last_run_ts
+from adapters.visualization.run_gate import set_processing as _gate_set_processing
 from application.card_loading import select_case_summarizer
 from application.case_cache import load_cached_case
 from application.runtime_guard import is_local_runtime
@@ -1424,6 +1428,13 @@ _SCREENER_PROCESSING_KEY = "screener_run_processing"
 _SCREENER_LAST_RUN_KEY = "screener_run_last_ts"
 _SCREENER_RUN_ERROR_KEY = "screener_run_error"
 
+# run_gate.py state name — shared process-wide (see run_gate.py's module
+# docstring) so concurrent visitors can't each trigger their own full-universe
+# scan. Distinct from _SCREENER_PROCESSING_KEY (st.session_state), which
+# stays purely for this one session's own "show a spinner, rerun when my
+# click's run finishes" UI bookkeeping.
+_GATE_NAME = "screener"
+
 
 def _run_screen_candidates_cli(report_dir: str) -> None:
     cmd = [
@@ -1443,6 +1454,7 @@ def _start_screener_run_background(report_dir: str) -> None:
         return
     st.session_state[_SCREENER_PROCESSING_KEY] = True
     st.session_state.pop(_SCREENER_RUN_ERROR_KEY, None)
+    _gate_set_processing(_GATE_NAME, True)
 
     def _worker() -> None:
         try:
@@ -1451,6 +1463,7 @@ def _start_screener_run_background(report_dir: str) -> None:
             st.session_state[_SCREENER_RUN_ERROR_KEY] = True
         finally:
             st.session_state[_SCREENER_PROCESSING_KEY] = False
+            _gate_set_processing(_GATE_NAME, False)
 
     threading.Thread(target=_worker, daemon=True).start()
 
@@ -1458,7 +1471,9 @@ def _start_screener_run_background(report_dir: str) -> None:
 def _trigger_screener_run(ctx: UIBookContext) -> None:
     import time as _time  # noqa: PLC0415
 
-    st.session_state[_SCREENER_LAST_RUN_KEY] = _time.time()
+    now = _time.time()
+    st.session_state[_SCREENER_LAST_RUN_KEY] = now
+    _gate_set_last_run_ts(_GATE_NAME, now)
     tmp_dir = tempfile.mkdtemp(prefix="stockrec_screen_run_")
     if ctx.is_sample:
         st.session_state[SESSION_SAMPLE_REFRESH_REPORTS_KEY] = tmp_dir
@@ -1476,8 +1491,8 @@ def _render_run_screener_gate(ctx: UIBookContext, days: int | None) -> None:
     )
     gate = evaluate_run_gate(
         staleness_days=days,
-        is_running=bool(st.session_state.get(_SCREENER_PROCESSING_KEY)),
-        last_run_ts=st.session_state.get(_SCREENER_LAST_RUN_KEY),
+        is_running=_gate_is_processing(_GATE_NAME),
+        last_run_ts=_gate_get_last_run_ts(_GATE_NAME),
     )
     with st.container(horizontal=True, vertical_alignment="center", gap="small"):
         st.caption(f"Screener — {age_label}")

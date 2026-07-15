@@ -48,6 +48,10 @@ from adapters.visualization.data_loader import (
 )
 from adapters.visualization.holdings_syncer import rebuild_weekly_brief_cached
 from adapters.visualization.run_gate import RUN_GATE_HELP, evaluate_run_gate
+from adapters.visualization.run_gate import get_last_run_ts as _gate_get_last_run_ts
+from adapters.visualization.run_gate import is_processing as _gate_is_processing
+from adapters.visualization.run_gate import set_last_run_ts as _gate_set_last_run_ts
+from adapters.visualization.run_gate import set_processing as _gate_set_processing
 from application.card_loading import select_case_summarizer
 from application.holdings_reader import read_holdings
 from application.personal_case_facts import (
@@ -466,6 +470,13 @@ _HOME_FETCH_LANDED_KEY = "_home_fetch_landed"  # one-shot: already reran on comp
 _HOME_BRIEF_PROCESSING_KEY = "home_brief_processing"
 _UPLOAD_KEY_VER = "ob_upload_key_ver"
 
+# run_gate.py state name — shared process-wide (see run_gate.py's module
+# docstring) so concurrent visitors can't each trigger their own full-universe
+# scan. Distinct from _HOME_BRIEF_PROCESSING_KEY (st.session_state), which
+# stays purely for this one session's own "show a spinner, rerun when my
+# click's rebuild finishes" UI bookkeeping.
+_GATE_NAME = "home_brief"
+
 
 def _start_dashboard_rebuild_background(
     holdings_csv: str | None = None, out_path: str | None = None
@@ -480,6 +491,7 @@ def _start_dashboard_rebuild_background(
         return
     st.session_state[_HOME_BRIEF_PROCESSING_KEY] = True
     st.session_state.pop("home_brief_rebuild_error", None)
+    _gate_set_processing(_GATE_NAME, True)
 
     def _worker() -> None:
         try:
@@ -489,6 +501,7 @@ def _start_dashboard_rebuild_background(
         finally:
             st.session_state[_HOME_BRIEF_PROCESSING_KEY] = False
             st.session_state["home_brief_rebuild_done"] = True
+            _gate_set_processing(_GATE_NAME, False)
 
     threading.Thread(target=_worker, daemon=True).start()
 
@@ -506,7 +519,9 @@ def _trigger_brief_run(ctx: UIBookContext) -> None:
     """
     import time as _time  # noqa: PLC0415
 
-    st.session_state[_HOME_LAST_BRIEF_RUN_KEY] = _time.time()
+    now = _time.time()
+    st.session_state[_HOME_LAST_BRIEF_RUN_KEY] = now
+    _gate_set_last_run_ts(_GATE_NAME, now)
     tmp_dir = tempfile.mkdtemp(prefix="stockrec_brief_run_")
     out_path = str(Path(tmp_dir) / "weekly_brief.md")
     brief_path = str(Path(tmp_dir) / "brief_summary.json")
@@ -535,8 +550,8 @@ def _render_run_brief_gate(ctx: UIBookContext, days: int | None) -> None:
     )
     gate = evaluate_run_gate(
         staleness_days=days,
-        is_running=bool(st.session_state.get(_HOME_BRIEF_PROCESSING_KEY)),
-        last_run_ts=st.session_state.get(_HOME_LAST_BRIEF_RUN_KEY),
+        is_running=_gate_is_processing(_GATE_NAME),
+        last_run_ts=_gate_get_last_run_ts(_GATE_NAME),
     )
     with st.container(horizontal=True, vertical_alignment="center", gap="small"):
         st.caption(f"Weekly brief — {age_label}")
