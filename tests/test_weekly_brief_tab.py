@@ -1527,6 +1527,47 @@ def test_stage_csv_upload_is_session_only(monkeypatch) -> None:  # type: ignore[
     assert "data/personal" not in st.session_state[wb.SESSION_BRIEF_PATH_KEY]
 
 
+def test_stage_csv_upload_deletes_previous_upload_tmp_dir(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """A second CSV upload must delete the FIRST upload's tmp dir (holdings
+    CSV + its rebuild artifacts) — it's immediately superseded, since
+    session_state pointers only ever reference the newest upload. Otherwise
+    every upload on a long-lived Cloud container leaks another visitor's
+    holdings CSV on disk forever (tempfile.mkdtemp has no built-in cleanup)."""
+    from pathlib import Path
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(st, "toast", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "rerun", lambda: None)
+    monkeypatch.setattr(
+        wb, "_start_dashboard_rebuild_background", lambda *a, **k: None
+    )  # noqa: ARG005
+
+    old_dir = tmp_path / "old_upload_dir"
+    old_dir.mkdir()
+    (old_dir / "holdings.csv").write_text("stale holder data")
+    st.session_state[wb._HOME_UPLOAD_TMP_DIR_KEY] = str(old_dir)
+
+    class FakeUpload:
+        name = "portfolio.csv"
+
+        def getvalue(self) -> bytes:
+            return (
+                b"symbol,quantity,book value (cad),exchange,account type\n"
+                b"COST,5,900,NASDAQ,TFSA\n"
+            )
+
+    wb._stage_csv_upload(FakeUpload())
+
+    assert not old_dir.exists(), "previous upload's tmp dir must be deleted"
+    new_dir = st.session_state[wb._HOME_UPLOAD_TMP_DIR_KEY]
+    assert new_dir != str(old_dir)
+    assert Path(new_dir).exists(), "the new upload's own tmp dir must still exist"
+
+
 def test_run_brief_button_sample_context_refreshes_to_session_temp(  # type: ignore[no-untyped-def]
     monkeypatch,
 ) -> None:
@@ -1573,6 +1614,47 @@ def test_run_brief_button_sample_context_refreshes_to_session_temp(  # type: ign
     assert kw["out_path"] != "data/sample/weekly_brief.md"
     refreshed = st.session_state[wb.SESSION_SAMPLE_REFRESH_BRIEF_KEY]
     assert refreshed != "data/sample/brief_summary.json"
+
+
+def test_trigger_brief_run_deletes_previous_click_tmp_dir(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Each Run brief click creates a fresh output tmp dir (per its own
+    docstring: 'each Run click never collides with an earlier one') — the
+    PREVIOUS click's dir must be deleted since it's immediately superseded
+    (SESSION_SAMPLE_REFRESH_BRIEF_KEY/SESSION_BRIEF_PATH_KEY always point at
+    only the newest). Otherwise repeated clicks leak a tmp dir forever."""
+    from pathlib import Path
+
+    import streamlit as st
+
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    old_dir = tmp_path / "old_run_dir"
+    old_dir.mkdir()
+    (old_dir / "brief_summary.json").write_text("{}")
+
+    monkeypatch.setattr(
+        st,
+        "session_state",
+        {wb._HOME_BRIEF_RUN_TMP_DIR_KEY: str(old_dir)},
+        raising=False,
+    )
+    monkeypatch.setattr(
+        wb, "_start_dashboard_rebuild_background", lambda *a, **k: None
+    )  # noqa: ARG005
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+    wb._trigger_brief_run(ctx)
+
+    assert not old_dir.exists(), "previous Run brief click's tmp dir must be deleted"
+    new_dir = st.session_state[wb._HOME_BRIEF_RUN_TMP_DIR_KEY]
+    assert new_dir != str(old_dir)
+    assert Path(new_dir).exists()
 
 
 def test_run_brief_button_disabled_when_fresh_never_triggers_rebuild(  # type: ignore[no-untyped-def]
@@ -1644,6 +1726,36 @@ def test_start_rebuild_records_start_timestamp(monkeypatch) -> None:  # type: ig
     assert st.session_state[wb._HOME_BRIEF_STARTED_AT_KEY] == 1000.0
 
 
+def test_start_rebuild_passes_and_records_progress_path(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
+
+        def start(self) -> None:
+            self._target()
+
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+
+    rebuild_calls: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        wb, "rebuild_weekly_brief_cached", lambda **k: rebuild_calls.append(k)
+    )
+
+    wb._start_dashboard_rebuild_background(progress_path="/tmp/fake_progress.json")
+
+    assert (
+        st.session_state[wb._HOME_BRIEF_PROGRESS_PATH_KEY] == "/tmp/fake_progress.json"
+    )
+    assert rebuild_calls
+    assert rebuild_calls[0]["progress_path"] == "/tmp/fake_progress.json"
+
+
 def test_processing_status_shows_elapsed_seconds(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     import streamlit as st
 
@@ -1668,6 +1780,86 @@ def test_processing_status_shows_elapsed_seconds(monkeypatch) -> None:  # type: 
 
     assert captured
     assert "17" in captured[0]
+
+
+def test_processing_status_shows_real_ticker_progress_when_file_present(  # type: ignore[no-untyped-def]
+    monkeypatch, tmp_path
+) -> None:
+    """When the CLI subprocess's progress file exists, show real
+    succeeded/failed ticker counts — not just elapsed seconds."""
+    import json
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    progress_file = tmp_path / "progress.json"
+    progress_file.write_text(
+        json.dumps(
+            {
+                "completed": 12,
+                "total": 45,
+                "succeeded": 10,
+                "failed": 2,
+                "failed_tickers": ["XYZ", "ABC"],
+                "last_ticker": "MSFT",
+            }
+        )
+    )
+    monkeypatch.setattr(
+        st,
+        "session_state",
+        {
+            wb._HOME_BRIEF_PROCESSING_KEY: True,
+            wb._HOME_BRIEF_STARTED_AT_KEY: 1000.0,
+            wb._HOME_BRIEF_PROGRESS_PATH_KEY: str(progress_file),
+        },
+        raising=False,
+    )
+    monkeypatch.setattr(wb, "_time_time", lambda: 1017.0)
+    captured: list[str] = []
+    monkeypatch.setattr(
+        st, "info", lambda msg, **k: captured.append(msg)
+    )  # noqa: ARG005
+
+    wb._render_brief_processing_status()
+
+    assert captured
+    msg = captured[0]
+    assert "12/45" in msg
+    assert "2 failed" in msg
+
+
+def test_processing_status_falls_back_to_elapsed_when_progress_file_missing(  # type: ignore[no-untyped-def]
+    monkeypatch, tmp_path
+) -> None:
+    """A configured progress_path that doesn't exist yet (early in the
+    rebuild, before the first ticker completes) must degrade gracefully to
+    the elapsed-only message — never crash on a missing/malformed file."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(
+        st,
+        "session_state",
+        {
+            wb._HOME_BRIEF_PROCESSING_KEY: True,
+            wb._HOME_BRIEF_STARTED_AT_KEY: 1000.0,
+            wb._HOME_BRIEF_PROGRESS_PATH_KEY: str(tmp_path / "nonexistent.json"),
+        },
+        raising=False,
+    )
+    monkeypatch.setattr(wb, "_time_time", lambda: 1005.0)
+    captured: list[str] = []
+    monkeypatch.setattr(
+        st, "info", lambda msg, **k: captured.append(msg)
+    )  # noqa: ARG005
+
+    wb._render_brief_processing_status()
+
+    assert captured
+    assert "5s elapsed" in captured[0]
 
 
 def test_processing_status_no_op_when_not_processing(monkeypatch) -> None:  # type: ignore[no-untyped-def]

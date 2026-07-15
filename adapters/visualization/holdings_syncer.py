@@ -83,7 +83,9 @@ def save_and_sync_holdings(content: str, filename: str) -> None:
 
 
 def rebuild_weekly_brief_cached(
-    holdings_csv: str | None = None, out_path: str | None = None
+    holdings_csv: str | None = None,
+    out_path: str | None = None,
+    progress_path: str | None = None,
 ) -> None:
     """Run yfinance-cached weekly brief build via CLI command.
 
@@ -97,6 +99,11 @@ def rebuild_weekly_brief_cached(
     (``data/reports/``) is the operator's private, gitignored dogfood
     directory and is empty on a fresh Cloud clone; omitting this flag makes
     ``SnapshotScreenReader`` come back abstained/empty for every visitor.
+
+    ``progress_path``, when given, is passed through as ``--progress-path``
+    so the dashboard's background rebuild can poll real per-ticker fetch
+    progress (see application/cli/brief_commands.py::_fetch_correlation_signals)
+    instead of showing only elapsed wall-clock time.
     """
     cmd = [
         sys.executable,
@@ -111,4 +118,6 @@ def rebuild_weekly_brief_cached(
         "data/sample",
         "--use-cache",
     ]
+    if progress_path is not None:
+        cmd += ["--progress-path", progress_path]
     subprocess.run(cmd, check=True)
