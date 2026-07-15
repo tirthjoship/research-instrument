@@ -2407,11 +2407,13 @@ dependencies = [
     { name = "ddgs" },
     { name = "feedparser" },
     { name = "google-api-python-client" },
+    { name = "google-generativeai" },
     { name = "lightgbm" },
     { name = "loguru" },
     { name = "lxml" },
     { name = "networkx" },
     { name = "pandas" },
+    { name = "plotly" },
     { name = "praw" },
     { name = "pytrends" },
     { name = "pyyaml" },
@@ -2420,16 +2422,12 @@ dependencies = [
     { name = "scipy" },
     { name = "shap" },
     { name = "statsmodels" },
+    { name = "streamlit" },
     { name = "xgboost" },
     { name = "yfinance" },
 ]
 
 [package.optional-dependencies]
-dashboard = [
-    { name = "google-generativeai" },
-    { name = "plotly" },
-    { name = "streamlit" },
-]
 dev = [
     { name = "black" },
     { name = "hypothesis" },
@@ -2460,7 +2458,7 @@ requires-dist = [
     { name = "ddgs", specifier = ">=6.0" },
     { name = "feedparser", specifier = ">=6.0.0" },
     { name = "google-api-python-client", specifier = ">=2.0.0" },
-    { name = "google-generativeai", marker = "extra == 'dashboard'", specifier = ">=0.8.0" },
+    { name = "google-generativeai", specifier = ">=0.8.0" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.0" },
     { name = "lightgbm", specifier = ">=4.0.0" },
@@ -2470,7 +2468,7 @@ requires-dist = [
     { name = "networkx", specifier = ">=3.0" },
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "pandas-stubs", marker = "extra == 'dev'", specifier = ">=2.0.0" },
-    { name = "plotly", marker = "extra == 'dashboard'", specifier = ">=5.18.0" },
+    { name = "plotly", specifier = ">=5.18.0" },
     { name = "praw", specifier = ">=7.7.1" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
@@ -2486,7 +2484,7 @@ requires-dist = [
     { name = "scipy", marker = "extra == 'dev'", specifier = ">=1.11" },
     { name = "shap", specifier = ">=0.50.0" },
     { name = "statsmodels", specifier = ">=0.14.0" },
-    { name = "streamlit", marker = "extra == 'dashboard'", specifier = ">=1.30.0" },
+    { name = "streamlit", specifier = ">=1.30.0" },
     { name = "types-click", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.0.0" },

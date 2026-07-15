@@ -22,7 +22,7 @@ def test_tab_module_exposes_render() -> None:
     assert callable(tab.render)
 
 
-def test_render_with_summary_fixture(tmp_path) -> None:  # type: ignore[no-untyped-def]
+def test_render_with_summary_fixture(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     import json
 
     p = tmp_path / "brief_summary.json"
@@ -45,6 +45,11 @@ def test_render_with_summary_fixture(tmp_path) -> None:  # type: ignore[no-untyp
         )
     )
     from adapters.visualization.tabs import weekly_brief
+
+    # REDUCE verdict is in _NEEDS_REVIEW — an unmocked render() spawns a real
+    # background daemon thread hitting live yfinance for "ARKK". This test
+    # only cares that render() doesn't raise.
+    monkeypatch.setattr(weekly_brief, "_launch_case_fetcher", lambda *a, **k: None)
 
     weekly_brief.render(path=str(p))  # must not raise outside streamlit runtime
 
@@ -83,7 +88,7 @@ def test_render_with_adherence_log(tmp_path) -> None:  # type: ignore[no-untyped
     weekly_brief.render(path=str(p), adherence_path=str(a))  # must not raise
 
 
-def test_render_hero_counts_attention(tmp_path) -> None:  # type: ignore[no-untyped-def]
+def test_render_hero_counts_attention(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     import json
 
     p = tmp_path / "brief_summary.json"
@@ -114,6 +119,10 @@ def test_render_hero_counts_attention(tmp_path) -> None:  # type: ignore[no-unty
         )
     )
     from adapters.visualization.tabs import weekly_brief
+
+    # ticker "A" has verdict REDUCE (in _NEEDS_REVIEW) — an unmocked render()
+    # spawns a real background daemon thread hitting live yfinance.
+    monkeypatch.setattr(weekly_brief, "_launch_case_fetcher", lambda *a, **k: None)
 
     # reports_dir points to tmp_path — no screen file → degrades to "no screen yet"
     # adherence_path points to missing file → degrades to 0 rows
@@ -507,7 +516,7 @@ def test_screen_tile_content_under_powered_no_emh() -> None:
     ), f"Expected 'under-powered' in number for UNDER_POWERED verdict, got {number!r}"
 
 
-def test_rendered_home_triage_strip_present(tmp_path) -> None:  # type: ignore[no-untyped-def]
+def test_rendered_home_triage_strip_present(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     """Rendering Home with a diagnostics-bearing screen must produce a 'Need review'
     triage element in the captured markdown calls."""
     p = tmp_path / "brief_summary.json"
@@ -561,6 +570,11 @@ def test_rendered_home_triage_strip_present(tmp_path) -> None:  # type: ignore[n
         original_markdown(content, **kwargs)  # type: ignore[arg-type]
 
     from adapters.visualization.tabs import weekly_brief
+
+    # This fixture's holding has verdict REDUCE (in _NEEDS_REVIEW), so an
+    # unmocked render() spawns a real background daemon thread hitting live
+    # yfinance for "ARKK" — this test only cares about the triage strip HTML.
+    monkeypatch.setattr(weekly_brief, "_launch_case_fetcher", lambda *a, **k: None)
 
     with patch.object(st, "markdown", side_effect=capture_markdown):
         weekly_brief.render(
@@ -1656,6 +1670,42 @@ def test_launch_case_fetcher_threads_real_news_and_extra_facts(monkeypatch) -> N
     assert aaa["news"] == ["news-for-AAA"]
     assert aaa["extra_facts"] == ("Verdict: TRIM. x",)
     assert set(cases) == {"AAA", "BBB"}
+
+
+def test_launch_case_fetcher_paces_yfinance_calls(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """The background worker fires ~4 yfinance calls per ticker (info, prices,
+    price history, earnings) via fetch_card. Firing all needs-review tickers
+    back-to-back with zero pacing is what tripped Yahoo's burst rate-limit on
+    the Cloud deploy (DATA-GAP on Valuation/Financials/Earnings/Analysts for
+    tickers that plainly have the data). The worker must sleep between tickers."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
+    monkeypatch.setattr(
+        wb, "get_case_on_expand", lambda *a, **k: object()
+    )  # noqa: ARG005
+    monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [])
+    monkeypatch.setattr(
+        wb, "personal_case_extra_facts", lambda ticker, *, verdict, why: ()
+    )
+
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
+
+        def start(self) -> None:
+            self._target()
+
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+
+    sleep_calls: list[float] = []
+    monkeypatch.setattr(wb, "_SLEEP", sleep_calls.append)
+
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+    wb._launch_case_fetcher(cards, summarizer=object(), cases={})
+
+    assert len(sleep_calls) == len(cards)
+    assert all(s > 0 for s in sleep_calls)
 
 
 def test_needs_review_fetch_starts_without_button_click(monkeypatch) -> None:  # type: ignore[no-untyped-def]
