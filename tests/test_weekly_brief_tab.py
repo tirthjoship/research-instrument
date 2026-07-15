@@ -291,6 +291,9 @@ def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-de
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
         patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
+        # _launch_case_fetcher's background worker also calls personal_case_news,
+        # which hits live yfinance if unmocked (fetch_card alone isn't enough).
+        patch.object(wb, "personal_case_news", return_value=[]),
         # FIX B: stub network fetches so _render_one_holding doesn't hit yfinance
         patch(
             "adapters.visualization.price_cache.fetch_prices",
@@ -817,6 +820,9 @@ def test_home_render_shows_door_and_book_vitals_together(tmp_path: object) -> No
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
         patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
+        # _launch_case_fetcher's background worker also calls personal_case_news,
+        # which hits live yfinance if unmocked (fetch_card alone isn't enough).
+        patch.object(wb, "personal_case_news", return_value=[]),
         patch(
             "adapters.visualization.price_cache.fetch_price_history",
             return_value=None,
