@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from adapters.visualization.data_loader import is_screen_report_filename
 from application.sample_book import load_sample_book
 
 SAMPLE_DIR = Path("data/sample")
@@ -39,7 +40,9 @@ def test_sample_weekly_brief_markdown_exists() -> None:
 
 
 def test_sample_screen_report_exists_and_parses() -> None:
-    screens = sorted(SAMPLE_DIR.glob("screen_*.json"))
+    screens = sorted(
+        f for f in SAMPLE_DIR.glob("screen_*.json") if is_screen_report_filename(f.name)
+    )
     assert screens, "a committed data/sample/screen_<date>.json is required"
     data = json.loads(screens[-1].read_text())
     assert "candidates" in data
