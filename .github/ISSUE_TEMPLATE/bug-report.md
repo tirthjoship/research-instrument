@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug in the multi-modal stock recommender project
+about: Report a bug in the research instrument project
 labels: bug
 ---
 

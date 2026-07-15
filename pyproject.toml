@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "multi_modal_stock_recommender"
+name = "research_instrument"
 version = "0.1.0"
-description = "Multi-modal stock recommender with point-in-time backtesting and sentiment"
+description = "Evidence-based equity research instrument with point-in-time backtesting and sentiment"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

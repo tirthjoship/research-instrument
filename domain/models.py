@@ -1,4 +1,4 @@
-"""Domain models for multi-modal stock recommender.
+"""Domain models for the research instrument.
 
 Pure Python value objects. No pandas, numpy, or external ML/data imports.
 """
