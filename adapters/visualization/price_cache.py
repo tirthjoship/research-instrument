@@ -7,6 +7,7 @@ module is safely importable in non-Streamlit contexts (CI, tests, CLI).
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, time
 from typing import Any, cast
 from zoneinfo import ZoneInfo
@@ -486,6 +487,27 @@ def _parse_yfinance_news_item(item: dict[str, Any]) -> dict[str, str] | None:
     return {"source": source, "title": title, "date": pub.strip(), "url": url}
 
 
+_OTHER_TICKER_RE = re.compile(r"\(([A-Z]{1,5}(?:\.[A-Z])?)\)")
+
+
+def _headline_is_about_other_ticker(title: str, ticker: str) -> bool:
+    """True when *title* names a different company's ticker in parentheses
+    (e.g. "UBS Raises its Price Target on Astera Labs, Inc. (ALAB)") and never
+    mentions *ticker* itself.
+
+    yfinance's per-ticker ``.news`` endpoint mixes in Yahoo's general
+    "trending" feed, not just headlines about the requested company — without
+    this filter, an unrelated company's news gets attributed to the ticker
+    being researched (e.g. ALAB news cited as evidence in NVDA's read).
+    """
+    other_tickers = set(_OTHER_TICKER_RE.findall(title))
+    if not other_tickers:
+        return False
+    if ticker.upper() in other_tickers:
+        return False
+    return not re.search(rf"\b{re.escape(ticker)}\b", title, re.IGNORECASE)
+
+
 def _fetch_recent_news_impl(ticker: str, limit: int = 8) -> list[dict[str, str]]:
     """Fetch recent attributed headlines for *ticker* via yfinance. Returns [] on error."""
     try:
@@ -498,8 +520,11 @@ def _fetch_recent_news_impl(ticker: str, limit: int = 8) -> list[dict[str, str]]
         if not isinstance(item, dict):
             continue
         parsed = _parse_yfinance_news_item(item)
-        if parsed is not None:
-            out.append(parsed)
+        if parsed is None:
+            continue
+        if _headline_is_about_other_ticker(parsed["title"], ticker):
+            continue
+        out.append(parsed)
         if len(out) >= limit:
             break
     return out

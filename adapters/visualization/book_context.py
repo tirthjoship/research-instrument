@@ -2,7 +2,7 @@
 UI shows: a session-uploaded book, or the bundled sample book.
 
 Never reads ``data/personal/*`` — that stays the CLI dogfood path, outside the
-public UI (see docs/superpowers/specs/2026-07-11-public-sample-book-design.md).
+public UI.
 """
 
 from __future__ import annotations

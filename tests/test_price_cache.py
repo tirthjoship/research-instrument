@@ -368,3 +368,59 @@ class TestYfinanceNews:
             out = _fetch_recent_news_impl("NVDA", limit=5)
         assert len(out) == 1
         assert out[0]["title"] == "One"
+
+    def test_headline_about_other_ticker_is_dropped(self):
+        """Regression: yfinance's per-ticker news feed mixes in Yahoo's general
+        trending news. A headline naming a different company's ticker in
+        parentheses must not be attributed to the requested ticker (e.g. ALAB
+        news showing up as evidence in an NVDA read)."""
+        from adapters.visualization.price_cache import _fetch_recent_news_impl
+
+        mock_ticker = MagicMock()
+        mock_ticker.news = [
+            {
+                "content": {
+                    "title": "UBS Raises its Price Target on Astera Labs, Inc. (ALAB)",
+                    "pubDate": "2026-07-14",
+                    "provider": {"displayName": "Insider Monkey"},
+                }
+            },
+            {
+                "content": {
+                    "title": "Micron and Nvidia are powering a $700 billion chip profit boom",
+                    "pubDate": "2026-07-14",
+                    "provider": {"displayName": "Yahoo Finance"},
+                }
+            },
+            {
+                "content": {
+                    "title": "NVIDIA (NVDA) and Astera Labs (ALAB) partner on rack-scale AI",
+                    "pubDate": "2026-07-14",
+                    "provider": {"displayName": "Yahoo Finance"},
+                }
+            },
+        ]
+        with patch(
+            "adapters.visualization.price_cache.yf.Ticker", return_value=mock_ticker
+        ):
+            out = _fetch_recent_news_impl("NVDA", limit=5)
+        titles = [item["title"] for item in out]
+        assert "UBS Raises its Price Target on Astera Labs, Inc. (ALAB)" not in titles
+        assert (
+            "Micron and Nvidia are powering a $700 billion chip profit boom" in titles
+        )
+        assert "NVIDIA (NVDA) and Astera Labs (ALAB) partner on rack-scale AI" in titles
+
+    def test_headline_is_about_other_ticker_helper(self):
+        from adapters.visualization.price_cache import _headline_is_about_other_ticker
+
+        assert _headline_is_about_other_ticker(
+            "UBS Raises its Price Target on Astera Labs, Inc. (ALAB)", "NVDA"
+        )
+        assert not _headline_is_about_other_ticker(
+            "NVIDIA (NVDA) beats on revenue", "NVDA"
+        )
+        assert not _headline_is_about_other_ticker(
+            "Micron and Nvidia are powering a $700 billion chip profit boom", "NVDA"
+        )
+        assert not _headline_is_about_other_ticker("Markets close mixed", "NVDA")

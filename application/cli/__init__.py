@@ -1,4 +1,4 @@
-"""application.cli package — multi-modal stock recommender CLI.
+"""application.cli package — research instrument CLI.
 
 The `cli` group is defined in `_cli_group`; each `*_commands` module registers
 its commands against that group on import.  This __init__ re-exports everything

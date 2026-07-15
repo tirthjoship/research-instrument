@@ -22,10 +22,17 @@ def build_review_card_html(row: PortfolioRow) -> str:
     pnl_color = "#16A34A" if row.pnl >= 0 else "#DC2626"
     sign = "+" if row.pnl >= 0 else ""
     why = row.why or "Discipline rule fired — review."
+    # The outer element must be a block-level tag (div) — CommonMark only
+    # recognizes a fixed set of block-starting tags for raw-HTML passthrough,
+    # and <a> isn't one of them. Opening the string with <a> made Streamlit's
+    # markdown renderer fragment the card into a stray empty anchor plus one
+    # duplicated <a> per inner <div> (each independently picking up the
+    # .pf-review border). Nesting the <a> inside a <div> keeps the whole card
+    # as a single raw-HTML block.
     return (
+        f'<div class="pf-review {cls}">'
         f'<a href="?inspect={row.ticker}" target="_self" '
-        f'style="text-decoration:none;color:inherit;display:block;" '
-        f'class="pf-review {cls}">'
+        f'style="text-decoration:none;color:inherit;display:block;">'
         '<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">'
         f"<span style=\"font-family:'Fraunces',serif;font-weight:700;font-size:1.1rem;\">{row.ticker}</span>"
         f'<span style="color:var(--ri-muted);font-size:.76rem;">{row.weight:.1f}% · {row.sector}</span>'
@@ -38,6 +45,7 @@ def build_review_card_html(row: PortfolioRow) -> str:
         '<div style="margin-top:5px;font-size:.72rem;color:var(--ri-teal);">'
         "▾ click for full detail (RAG · rubric · case)</div>"
         "</a>"
+        "</div>"
     )
 
 

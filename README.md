@@ -1,4 +1,4 @@
-# Multi-Modal Stock Recommender
+# Market Research Instrument
 
 A weekly research cockpit for one family's portfolio. It flags risk concentrations,
 tracks whether we follow our own discipline rules, and ranks stocks by factual evidence.
@@ -83,11 +83,10 @@ or upload a CSV (capped at 25 names) and each name gets an evidence grade and a 
 check against your book.
 
 **Risk** — the macro-beta scrubber: fits a simple statistical model to expose how much
-of the portfolio's movement is really just one big bet on the overall market; as of
-the last real-book run, 63% of variance was one market factor (66 names, mostly one
-leveraged market bet).
+of a portfolio's movement is really just one big bet on the overall market — surfacing
+concentration risk that isn't obvious from the position list alone.
 
-**My Portfolio** — position tracking for the household's holdings.
+**My Portfolio** — position tracking for your holdings.
 
 **Stock Analysis** — for any stock you look up: the portfolio-fit verdict, an evidence
 snowflake (valuation, quality, financial health vs the ~430-stock universe), and a
@@ -103,7 +102,7 @@ are archived in `docs/adr/` (ADRs 039–053); the portfolio-fit verdict's
 honest-boundary design is recorded in [ADR-054](docs/adr/054-portfolio-fit-verdict.md).
 
 The discipline forward-calibration gate (ADR-048) resolves in mid-July 2026 and will
-tell us honestly whether the tool improved the household's adherence to its own rules.
+tell us honestly whether the tool improved adherence to its own rules.
 
 ---
 
@@ -281,10 +280,10 @@ in every backtest; a signal that looks profitable before costs and disappears af
 them is not an edge, and we modeled the real cost of trading thinly-traded stocks
 (called slippage).
 
-What survived is not a predictor — it is a cockpit. The macro-beta scrubber showed
-that the real family portfolio was, at the time of analysis, 63% driven by a single
-market factor: 66 positions that looked diversified were mostly one leveraged market
-bet. That finding is actionable and requires no forecasting. The discipline tracker
+What survived is not a predictor — it is a cockpit. Run on a real book, the macro-beta
+scrubber has surfaced how much of a seemingly-diversified portfolio's movement actually
+traces back to a single market factor — a finding that's actionable and requires no
+forecasting. The discipline tracker
 surfaces whether stated investment rules are actually followed week to week; that gap
 between intention and behavior is the honest problem the tool now addresses. The
 evidence screen ranks stocks by factual, point-in-time metrics (valuation, quality,
@@ -315,11 +314,11 @@ never tested it.
 ### Installation
 
 ```bash
-git clone https://github.com/tirthjoship/multi-modal-stock-recommender.git
-cd multi-modal-stock-recommender
+git clone https://github.com/tirthjoship/research-instrument.git
+cd research-instrument
 
-conda create -n multi-modal-stock-ml python=3.12 -y
-conda activate multi-modal-stock-ml
+conda create -n research-instrument python=3.12 -y
+conda activate research-instrument
 
 pip install -e ".[dev,dashboard]"
 pre-commit install
