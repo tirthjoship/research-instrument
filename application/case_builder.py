@@ -39,6 +39,11 @@ class TemplateCaseSummarizer:
             in_favor=tuple(favor[:5]), to_watch=tuple(watch[:5]), data_gap=False
         )
 
+    def summarize_cases(self, contexts: list[CaseContext]) -> dict[str, CaseResult]:
+        """Batch-shaped protocol parity with GeminiNarratorAdapter.summarize_cases
+        — no network cost here, so this is just a per-ticker loop."""
+        return {ctx.ticker: self.summarize_case(ctx) for ctx in contexts}
+
 
 def _reads_favorable(detail: str) -> bool:
     d = detail.lower()

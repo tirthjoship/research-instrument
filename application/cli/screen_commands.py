@@ -37,12 +37,13 @@ def _prefetch_screener_cited_cases(
 ) -> str:
     """Prefetch Gemini green/red-flag reads for the top-N shown candidates.
 
-    Mirrors weekly-brief's `_prefetch_cited_cases` (rate-limited via
-    select_case_summarizer(), progress echoed per ticker) but feeds real
+    Mirrors weekly-brief's `_prefetch_cited_cases` (batched via
+    run_cases_in_batches — one Gemini call per chunk of up to 15 tickers,
+    not one per ticker; progress still echoed per ticker) but feeds real
     per-ticker news + market-sentiment facts, not just factor-band facts.
     Writes <report_dir>/screen_cited_cases.json. Returns the cache file path.
     """
-    from application.case_batch import run_cases_with_progress
+    from application.case_batch import run_cases_in_batches
     from application.case_cache import write_case_cache
     from domain.case_models import CaseContext
 
@@ -85,7 +86,7 @@ def _prefetch_screener_cited_cases(
     def _progress(fraction: float, i: int, total: int) -> None:
         click.echo(f"  Analysing {i}/{total}: {tickers[i - 1]} ({fraction:.0%})")
 
-    results = run_cases_with_progress(contexts, summarizer, progress=_progress)  # type: ignore[arg-type]
+    results = run_cases_in_batches(contexts, summarizer, progress=_progress)  # type: ignore[arg-type]
     cases = dict(zip(tickers, results))
     cache_path = os.path.join(report_dir, "screen_cited_cases.json")
     write_case_cache(cache_path, as_of, cases)

@@ -18,6 +18,7 @@ from domain.case_models import CaseContext, CaseResult
 @runtime_checkable
 class _CaseSummarizerLike(Protocol):
     def summarize_case(self, ctx: CaseContext) -> CaseResult: ...
+    def summarize_cases(self, contexts: list[CaseContext]) -> dict[str, CaseResult]: ...
 
 
 class RateLimitedCaseSummarizer:
@@ -48,3 +49,15 @@ class RateLimitedCaseSummarizer:
                 self._sleep(remainder)
         self._last_call_time = self._clock()
         return self._inner.summarize_case(ctx)
+
+    def summarize_cases(self, contexts: list[CaseContext]) -> dict[str, CaseResult]:
+        """Batched variant — throttles once for the whole call, not once per
+        ticker (per-ticker throttling would defeat batching's purpose)."""
+        now = self._clock()
+        if self._last_call_time is not None:
+            elapsed = now - self._last_call_time
+            remainder = self._min_interval_s - elapsed
+            if remainder > 0:
+                self._sleep(remainder)
+        self._last_call_time = self._clock()
+        return self._inner.summarize_cases(contexts)

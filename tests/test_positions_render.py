@@ -26,7 +26,7 @@ def test_resolve_book_prefers_session_upload(monkeypatch):
         },
         raising=False,
     )
-    holdings, source = positions._resolve_book()
+    holdings, source, _reports_dir = positions._resolve_book()
     assert source == "uploaded book"
     assert {h.symbol for h in holdings} == {"AC.TO"}
 
@@ -36,7 +36,7 @@ def test_resolve_book_falls_back_to_sample_when_session_empty(monkeypatch):
     data/personal/holdings.csv or SQLite."""
     monkeypatch.setattr(positions.st, "session_state", {}, raising=False)
 
-    holdings, source = positions._resolve_book()
+    holdings, source, _reports_dir = positions._resolve_book()
 
     assert source == "sample book"
     assert {h.symbol for h in holdings} == {
@@ -69,7 +69,7 @@ def test_resolve_book_falls_back_to_sample_when_still_flagged_sample(monkeypatch
         raising=False,
     )
 
-    holdings, source = positions._resolve_book()
+    holdings, source, _reports_dir = positions._resolve_book()
 
     assert source == "sample book"
     assert len(holdings) == 10

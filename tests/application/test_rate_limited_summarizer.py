@@ -48,6 +48,10 @@ class StubSummarizer:
     def summarize_case(self, ctx: CaseContext) -> CaseResult:
         return self.RESULT
 
+    def summarize_cases(self, contexts: list[CaseContext]) -> dict[str, CaseResult]:
+        self.batch_calls = getattr(self, "batch_calls", 0) + 1
+        return {ctx.ticker: self.RESULT for ctx in contexts}
+
 
 def _ctx(ticker: str = "AAPL") -> CaseContext:
     return CaseContext(ticker=ticker, facts=("Revenue up 10%",), news=())
@@ -124,3 +128,27 @@ def test_satisfies_case_summarizer_port() -> None:
     """isinstance check against CaseSummarizerPort must pass (runtime_checkable)."""
     throttle, _, _, _ = _make_throttle()
     assert isinstance(throttle, CaseSummarizerPort)
+
+
+def test_summarize_cases_delegates_to_inner_batch_method() -> None:
+    """The throttle wraps summarize_cases too — one throttled call for the
+    whole batch, not one per ticker (that would defeat batching's purpose)."""
+    throttle, _, sleep, inner = _make_throttle(min_interval=10.0)
+    contexts = [_ctx("AAPL"), _ctx("MSFT")]
+
+    results = throttle.summarize_cases(contexts)
+
+    assert inner.batch_calls == 1
+    assert results["AAPL"] == StubSummarizer.RESULT
+    assert results["MSFT"] == StubSummarizer.RESULT
+    assert sleep.calls == []  # first call never sleeps
+
+
+def test_summarize_cases_and_summarize_case_share_one_throttle_clock() -> None:
+    """A batch call counts as ONE throttled event — a following single-ticker
+    call must still wait the full interval, proving they share timing state."""
+    throttle, clock, sleep, _ = _make_throttle(min_interval=5.0)
+    throttle.summarize_cases([_ctx("AAPL"), _ctx("MSFT")])  # t=0, no sleep
+    throttle.summarize_case(_ctx("GOOGL"))  # clock unchanged → must sleep 5.0
+    assert len(sleep.calls) == 1
+    assert sleep.calls[0] == pytest.approx(5.0, abs=1e-6)
