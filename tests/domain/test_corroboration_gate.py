@@ -143,8 +143,17 @@ def test_evaluated_at_propagated() -> None:
         min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False
     ),
 )
-@settings(max_examples=50)
+@settings(max_examples=50, deadline=None)
 def test_always_pending_when_n_below_30(n: int, excess: float) -> None:
+    # deadline=None: this test's real work (up to 2000 moving-block-bootstrap
+    # resamples per example at n=29) took 0.49s total for all 50 examples in
+    # isolation, but occasionally exceeded hypothesis's default 200ms
+    # per-example wall-clock deadline under `-n auto` parallel CPU contention
+    # in the full suite (confirmed via a standalone repro raising
+    # DeadlineExceeded at 252ms, fixed by deadline=None) — a scheduling
+    # artifact of the test runner, not a defect in evaluate_gate (the PENDING
+    # branch is an unconditional `if n < min_n`, independent of bootstrap
+    # results).
     beat = excess > 0
     result = evaluate_gate(_samples(n, excess=excess, beat=beat), evaluated_at=TODAY)
     assert result.verdict == "PENDING"
