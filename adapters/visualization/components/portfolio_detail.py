@@ -26,7 +26,12 @@ from domain.discipline import Verdict
 
 
 def resolve_case(
-    ticker: str, card: object, *, verdict: str = "", why: str = ""
+    ticker: str,
+    card: object,
+    *,
+    verdict: str = "",
+    why: str = "",
+    reports_dir: str | None = None,
 ) -> object | None:
     """Fetch the cited Google-AI case (cache-first, lazy) for a holding.
 
@@ -36,11 +41,19 @@ def resolve_case(
     with zero network; a miss makes one throttled Gemini call, fed real news
     + verdict/why + real buzz sentiment. Any failure degrades to None
     (DATA-GAP) — never crash, never fabricate.
+
+    ``reports_dir``: same {reports_dir}/home_cited_cases.json cache Home uses
+    — without it this call falls back to card_fetch's hardcoded, gitignored
+    default (never exists on Cloud), so every inspect-panel click would fire
+    an uncached live Gemini call.
     """
     try:
         summarizer = select_case_summarizer()
         news = personal_case_news(ticker)
         extra_facts = personal_case_extra_facts(ticker, verdict=verdict, why=why)
+        cache_path = (
+            f"{reports_dir}/home_cited_cases.json" if reports_dir is not None else None
+        )
         return get_case_on_expand(
             ticker,
             card,  # type: ignore[arg-type]
@@ -48,6 +61,7 @@ def resolve_case(
             expanded=True,
             summarizer=summarizer,
             extra_facts=extra_facts,
+            cache_path=cache_path,
         )
     except Exception:  # noqa: BLE001
         return None
@@ -80,7 +94,7 @@ def build_detail_header_html(row: PortfolioRow) -> str:
     )
 
 
-def render_inspect_detail(row: PortfolioRow) -> None:
+def render_inspect_detail(row: PortfolioRow, reports_dir: str | None = None) -> None:
     """Render the shared detail panel for an inspected holding (live fetch)."""
     st.markdown(
         f'<div style="border:1px solid var(--ri-teal);border-radius:12px;'
@@ -103,7 +117,13 @@ def render_inspect_detail(row: PortfolioRow) -> None:
         except ValueError:
             verdict = Verdict.REVIEW
         # Google-AI case: cache-first lazy fetch, DATA-GAP (None) on any failure
-        case = resolve_case(row.ticker, card, verdict=row.verdict, why=row.why)
+        case = resolve_case(
+            row.ticker,
+            card,
+            verdict=row.verdict,
+            why=row.why,
+            reports_dir=reports_dir,
+        )
         html = render_expanded_card(
             card,
             case=case,
