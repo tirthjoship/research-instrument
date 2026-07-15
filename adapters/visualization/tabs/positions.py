@@ -18,16 +18,18 @@ DB_PATH = "data/recommendations.db"
 SMALL_BOOK_MAX = 5
 
 
-def _resolve_book() -> tuple[list[Any], str]:
+def _resolve_book() -> tuple[list[Any], str, str]:
     """Resolve the portfolio book via the same resolver Home/Risk use.
 
     Priority: session-uploaded book (flagged non-sample) -> bundled sample
     book. Never falls back to the operator's ``data/personal/holdings.csv`` or
     SQLite in the public UI — see book_context.resolve_ui_book_context().
 
-    Returns ``(holdings, source_label)`` where ``holdings`` are domain Holdings
-    aggregated one-row-per-ticker. The label is shown to the user so they always
-    know which book they are looking at (legibility over silent magic).
+    Returns ``(holdings, source_label, reports_dir)`` where ``holdings`` are
+    domain Holdings aggregated one-row-per-ticker. The label is shown to the
+    user so they always know which book they are looking at (legibility over
+    silent magic). ``reports_dir`` is threaded to the inspect-detail panel so
+    its Gemini case cache is scoped per-book, like Home's.
     """
     from adapters.visualization.book_context import resolve_ui_book_context
     from application.holdings_reader import aggregate_to_book
@@ -35,7 +37,7 @@ def _resolve_book() -> tuple[list[Any], str]:
     ctx = resolve_ui_book_context()
     book = aggregate_to_book(ctx.book)
     source = "sample book" if ctx.is_sample else "uploaded book"
-    return book, source
+    return book, source, ctx.reports_dir
 
 
 def render(db_path: str = DB_PATH) -> None:
@@ -66,7 +68,7 @@ def render(db_path: str = DB_PATH) -> None:
 
     st.markdown('<div class="ri-h1">My Portfolio</div>', unsafe_allow_html=True)
 
-    holdings, book_source = _resolve_book()
+    holdings, book_source, reports_dir = _resolve_book()
     trades = load_trades(db_path)
 
     if not holdings and not trades:
@@ -151,7 +153,7 @@ def render(db_path: str = DB_PATH) -> None:
     if inspect:
         match = next((r for r in rows if r.ticker == inspect), None)
         if match:
-            render_inspect_detail(match)
+            render_inspect_detail(match, reports_dir)
 
     st.markdown(
         f'<div class="ri-sec">Healthy holdings — {len(healthy)} of {len(rows)}</div>',
