@@ -1618,6 +1618,72 @@ def test_run_brief_button_disabled_when_fresh_never_triggers_rebuild(  # type: i
     assert captured_kwargs.get("disabled") is True
 
 
+# ---------------------------------------------------------------------------
+# Background rebuild elapsed-time status — so a visitor uploading holdings
+# (or clicking Run brief) sees real evidence the background job is alive,
+# not a static banner that looks frozen for up to ~90s (correlation-graph
+# pacing + holdings-risk + macro-beta).
+# ---------------------------------------------------------------------------
+
+
+def test_start_rebuild_records_start_timestamp(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(
+        wb.threading,
+        "Thread",
+        lambda **k: type("T", (), {"start": lambda self: None})(),
+    )  # noqa: ARG005
+    monkeypatch.setattr(wb, "_time_time", lambda: 1000.0)
+
+    wb._start_dashboard_rebuild_background()
+
+    assert st.session_state[wb._HOME_BRIEF_STARTED_AT_KEY] == 1000.0
+
+
+def test_processing_status_shows_elapsed_seconds(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(
+        st,
+        "session_state",
+        {
+            wb._HOME_BRIEF_PROCESSING_KEY: True,
+            wb._HOME_BRIEF_STARTED_AT_KEY: 1000.0,
+        },
+        raising=False,
+    )
+    monkeypatch.setattr(wb, "_time_time", lambda: 1017.0)
+    captured: list[str] = []
+    monkeypatch.setattr(
+        st, "info", lambda msg, **k: captured.append(msg)
+    )  # noqa: ARG005
+
+    wb._render_brief_processing_status()
+
+    assert captured
+    assert "17" in captured[0]
+
+
+def test_processing_status_no_op_when_not_processing(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    called: list[str] = []
+    monkeypatch.setattr(st, "info", lambda msg, **k: called.append(msg))  # noqa: ARG005
+
+    wb._render_brief_processing_status()
+
+    assert called == []
+
+
 def test_run_brief_gate_blocks_a_second_independent_session_while_first_runs(  # type: ignore[no-untyped-def]
     monkeypatch,
 ) -> None:
