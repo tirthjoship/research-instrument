@@ -8,6 +8,7 @@ from collections.abc import Callable, Sequence
 from datetime import timedelta
 from pathlib import Path
 from time import sleep as _time_sleep
+from time import time as _time_time
 from typing import Any
 
 import streamlit as st
@@ -476,6 +477,7 @@ _HOME_CASES_KEY = "_home_holding_cases"  # dict[ticker -> CaseResult|None]
 _HOME_FETCH_STARTED_KEY = "_home_fetch_started"
 _HOME_FETCH_LANDED_KEY = "_home_fetch_landed"  # one-shot: already reran on completion
 _HOME_BRIEF_PROCESSING_KEY = "home_brief_processing"
+_HOME_BRIEF_STARTED_AT_KEY = "home_brief_rebuild_started_at"
 _UPLOAD_KEY_VER = "ob_upload_key_ver"
 
 # run_gate.py state name — shared process-wide (see run_gate.py's module
@@ -498,6 +500,7 @@ def _start_dashboard_rebuild_background(
     if st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
         return
     st.session_state[_HOME_BRIEF_PROCESSING_KEY] = True
+    st.session_state[_HOME_BRIEF_STARTED_AT_KEY] = _time_time()
     st.session_state.pop("home_brief_rebuild_error", None)
     _gate_set_processing(_GATE_NAME, True)
 
@@ -572,6 +575,31 @@ def _render_run_brief_gate(ctx: UIBookContext, days: int | None) -> None:
     if clicked:
         _trigger_brief_run(ctx)
         st.rerun()
+
+
+def _render_brief_processing_status() -> None:
+    """Show real elapsed time while a background rebuild is running.
+
+    The rebuild (correlation-graph pacing + holdings-risk + macro-beta) can
+    take up to ~90s worst case — a static banner looks frozen for that long.
+    Elapsed seconds is real, observed data (never a fabricated percentage,
+    since we can't know true completion from outside the subprocess) —
+    matches this project's honesty-first design (never fake a series).
+    """
+    if not st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
+        return
+    started_at = st.session_state.get(_HOME_BRIEF_STARTED_AT_KEY)
+    elapsed = int(_time_time() - started_at) if started_at is not None else 0
+    st.info(
+        f"⟳ Processing your uploaded holdings — {elapsed}s elapsed, "
+        "fetching tickers and rebuilding metrics…",
+        icon="ℹ️",
+    )
+
+
+_render_brief_processing_status_fragment: Any = _fragment(
+    run_every=timedelta(seconds=1)
+)(_render_brief_processing_status)
 
 
 @_fragment(run_every=timedelta(seconds=2))
@@ -899,10 +927,7 @@ def render(
     summary = load_brief_summary(path)
 
     if st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
-        st.info(
-            "⟳ Processing your uploaded holdings — fetching tickers and rebuilding metrics…",
-            icon="ℹ️",
-        )
+        _render_brief_processing_status_fragment()
     elif st.session_state.get("home_brief_rebuild_error"):
         st.error(
             "Dashboard rebuild failed. Check terminal logs or run "
