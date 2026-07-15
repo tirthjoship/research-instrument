@@ -119,6 +119,42 @@ def test_rebuild_weekly_brief_cached_passes_report_dir_data_sample(monkeypatch):
     assert cmd[cmd.index("--report-dir") + 1] == "data/sample"
 
 
+def test_rebuild_weekly_brief_cached_passes_progress_path_when_given(
+    monkeypatch, tmp_path
+):
+    """When given, --progress-path must reach the CLI subprocess so the
+    dashboard can poll real per-ticker fetch progress instead of showing
+    only elapsed wall-clock time."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check):  # type: ignore[no-untyped-def]
+        calls.append(cmd)
+
+    monkeypatch.setattr(holdings_syncer.subprocess, "run", fake_run)
+
+    progress_file = tmp_path / "progress.json"
+    holdings_syncer.rebuild_weekly_brief_cached(progress_path=str(progress_file))
+
+    cmd = calls[0]
+    assert "--progress-path" in cmd
+    assert cmd[cmd.index("--progress-path") + 1] == str(progress_file)
+
+
+def test_rebuild_weekly_brief_cached_omits_progress_path_by_default(monkeypatch):
+    """Personal CLI dogfood callers never pass progress_path — must not add
+    the flag at all in that case (not even an empty value)."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check):  # type: ignore[no-untyped-def]
+        calls.append(cmd)
+
+    monkeypatch.setattr(holdings_syncer.subprocess, "run", fake_run)
+
+    holdings_syncer.rebuild_weekly_brief_cached()
+
+    assert "--progress-path" not in calls[0]
+
+
 def test_save_and_sync_holdings_overwrites_existing(temp_env):
     store = temp_env["store"]
     from domain.models import Holding as DomainHolding
