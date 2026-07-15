@@ -16,6 +16,38 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+import os  # noqa: E402
+
+from application.access_gate import (  # noqa: E402
+    check_password,
+    is_access_gate_required,
+)
+
+
+def _render_access_gate() -> bool:
+    """Whole-app password gate — bounds the public Cloud deploy's quota/rate-
+    limit exposure to invited friends, not arbitrary internet visitors.
+    Bypassed automatically for local/operator use (is_access_gate_required()
+    wraps is_local_runtime()). Returns whether the rest of the app may render.
+    """
+    if not is_access_gate_required():
+        return True
+    if st.session_state.get("_access_granted"):
+        return True
+
+    entered = st.text_input("Password", type="password", key="_access_gate_password")
+    if st.button("Enter", key="_access_gate_submit"):
+        if check_password(entered, os.environ.get("APP_PASSWORD")):
+            st.session_state["_access_granted"] = True
+            st.rerun()
+        else:
+            st.error("Incorrect password.")
+    return False
+
+
+if not _render_access_gate():
+    st.stop()
+
 from adapters.visualization.components.styles import inject_global_css  # noqa: E402
 
 inject_global_css()
