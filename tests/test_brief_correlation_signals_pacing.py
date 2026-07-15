@@ -10,6 +10,7 @@ deploy scaling workstream targeted, just a spot that wasn't touched yet."""
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 
 from application.cli.brief_commands import _fetch_correlation_signals
@@ -68,3 +69,65 @@ def test_empty_ticker_list_returns_empty_dict_no_sleep() -> None:
 
     assert result == {}
     assert sleep_calls == []
+
+
+# ---------------------------------------------------------------------------
+# progress_path — cross-process progress reporting. rebuild_weekly_brief_cached
+# runs the CLI in a subprocess, so the parent Streamlit process can't observe
+# per-ticker progress directly; writing a small JSON status file after each
+# ticker is the seam that lets the UI show "12/45 (2 failed)" instead of only
+# elapsed wall-clock seconds.
+# ---------------------------------------------------------------------------
+
+
+def test_progress_path_written_after_each_ticker(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    md = _FakeMarketData()
+    progress_file = tmp_path / "progress.json"
+
+    _fetch_correlation_signals(
+        md,
+        ["AAA", "BBB", "CCC"],
+        datetime.now(timezone.utc),
+        sleep=lambda s: None,
+        progress_path=str(progress_file),
+    )
+
+    final = json.loads(progress_file.read_text())
+    assert final == {
+        "completed": 3,
+        "total": 3,
+        "succeeded": 3,
+        "failed": 0,
+        "failed_tickers": [],
+        "last_ticker": "CCC",
+    }
+
+
+def test_progress_path_tracks_failed_tickers(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    md = _FakeMarketData(fail_for={"BBB"})
+    progress_file = tmp_path / "progress.json"
+
+    _fetch_correlation_signals(
+        md,
+        ["AAA", "BBB"],
+        datetime.now(timezone.utc),
+        sleep=lambda s: None,
+        progress_path=str(progress_file),
+    )
+
+    final = json.loads(progress_file.read_text())
+    assert final["succeeded"] == 1
+    assert final["failed"] == 1
+    assert final["failed_tickers"] == ["BBB"]
+
+
+def test_progress_path_none_writes_nothing() -> None:
+    """Default behaviour (no progress_path) must not attempt any file IO —
+    the personal CLI dogfood path never passes this."""
+    md = _FakeMarketData()
+
+    result = _fetch_correlation_signals(
+        md, ["AAA"], datetime.now(timezone.utc), sleep=lambda s: None
+    )
+
+    assert result["AAA"] == ["signal-for-AAA"]

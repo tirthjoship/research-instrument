@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 import tempfile
 import threading
 from collections.abc import Callable, Sequence
@@ -478,7 +479,28 @@ _HOME_FETCH_STARTED_KEY = "_home_fetch_started"
 _HOME_FETCH_LANDED_KEY = "_home_fetch_landed"  # one-shot: already reran on completion
 _HOME_BRIEF_PROCESSING_KEY = "home_brief_processing"
 _HOME_BRIEF_STARTED_AT_KEY = "home_brief_rebuild_started_at"
+_HOME_BRIEF_PROGRESS_PATH_KEY = "home_brief_rebuild_progress_path"
 _UPLOAD_KEY_VER = "ob_upload_key_ver"
+
+# tempfile.mkdtemp() has no built-in cleanup — on a long-lived Cloud
+# container these session-scoped tmp dirs (holdings CSV + rebuild
+# artifacts) would otherwise accumulate on disk indefinitely, one per
+# upload / one per "Run brief" click. Each new dir immediately supersedes
+# the previous one (session_state pointers only ever reference the
+# newest), so the previous dir is safe to delete right before creating
+# the new one.
+_HOME_UPLOAD_TMP_DIR_KEY = "home_upload_tmp_dir"
+_HOME_BRIEF_RUN_TMP_DIR_KEY = "home_brief_run_tmp_dir"
+
+
+def _replace_tracked_tmp_dir(session_key: str, new_dir: str) -> None:
+    """Delete the tmp dir previously tracked under session_key (if any), then
+    record new_dir as the current one."""
+    old_dir = st.session_state.get(session_key)
+    if old_dir:
+        shutil.rmtree(old_dir, ignore_errors=True)
+    st.session_state[session_key] = new_dir
+
 
 # run_gate.py state name — shared process-wide (see run_gate.py's module
 # docstring) so concurrent visitors can't each trigger their own full-universe
@@ -489,24 +511,34 @@ _GATE_NAME = "home_brief"
 
 
 def _start_dashboard_rebuild_background(
-    holdings_csv: str | None = None, out_path: str | None = None
+    holdings_csv: str | None = None,
+    out_path: str | None = None,
+    progress_path: str | None = None,
 ) -> None:
     """Rebuild brief_summary.json in a daemon thread (non-blocking).
 
     ``holdings_csv``/``out_path`` default to the personal dogfood paths; the
     session-upload path passes a session/temp pair so the rebuild never
-    touches ``data/personal/``.
+    touches ``data/personal/``. ``progress_path``, when given, is the file
+    the CLI subprocess writes real per-ticker fetch progress to (see
+    _fetch_correlation_signals) — recorded in session_state so
+    _render_brief_processing_status can poll it.
     """
     if st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
         return
     st.session_state[_HOME_BRIEF_PROCESSING_KEY] = True
     st.session_state[_HOME_BRIEF_STARTED_AT_KEY] = _time_time()
+    st.session_state[_HOME_BRIEF_PROGRESS_PATH_KEY] = progress_path
     st.session_state.pop("home_brief_rebuild_error", None)
     _gate_set_processing(_GATE_NAME, True)
 
     def _worker() -> None:
         try:
-            rebuild_weekly_brief_cached(holdings_csv=holdings_csv, out_path=out_path)
+            rebuild_weekly_brief_cached(
+                holdings_csv=holdings_csv,
+                out_path=out_path,
+                progress_path=progress_path,
+            )
         except Exception:  # noqa: BLE001
             st.session_state["home_brief_rebuild_error"] = True
         finally:
@@ -534,21 +566,27 @@ def _trigger_brief_run(ctx: UIBookContext) -> None:
     st.session_state[_HOME_LAST_BRIEF_RUN_KEY] = now
     _gate_set_last_run_ts(_GATE_NAME, now)
     tmp_dir = tempfile.mkdtemp(prefix="stockrec_brief_run_")
+    _replace_tracked_tmp_dir(_HOME_BRIEF_RUN_TMP_DIR_KEY, tmp_dir)
     out_path = str(Path(tmp_dir) / "weekly_brief.md")
     brief_path = str(Path(tmp_dir) / "brief_summary.json")
+    progress_path = str(Path(tmp_dir) / "rebuild_progress.json")
 
     if ctx.is_sample:
         st.session_state[SESSION_SAMPLE_REFRESH_BRIEF_KEY] = brief_path
         st.session_state[SESSION_SAMPLE_REFRESH_REPORTS_KEY] = _REPORTS_DIR
         _start_dashboard_rebuild_background(
-            holdings_csv="data/sample/sample_book.csv", out_path=out_path
+            holdings_csv="data/sample/sample_book.csv",
+            out_path=out_path,
+            progress_path=progress_path,
         )
     else:
         holdings_csv = st.session_state.get(SESSION_HOLDINGS_CSV_KEY)
         st.session_state[SESSION_BRIEF_PATH_KEY] = brief_path
         st.session_state[SESSION_REPORTS_DIR_KEY] = _REPORTS_DIR
         _start_dashboard_rebuild_background(
-            holdings_csv=holdings_csv, out_path=out_path
+            holdings_csv=holdings_csv,
+            out_path=out_path,
+            progress_path=progress_path,
         )
 
 
@@ -577,19 +615,59 @@ def _render_run_brief_gate(ctx: UIBookContext, days: int | None) -> None:
         st.rerun()
 
 
+def _read_rebuild_progress(progress_path: str) -> dict[str, Any] | None:
+    """Read the CLI subprocess's ticker-fetch progress file, if present.
+
+    Returns None on any failure (file doesn't exist yet, still being
+    written, malformed JSON) — never raises. The file is written by
+    application/cli/brief_commands.py::_fetch_correlation_signals after
+    every ticker; a torn read (mid-write) is expected and just means "no
+    real progress to show yet," not an error.
+    """
+    import json  # noqa: PLC0415
+
+    try:
+        with open(progress_path) as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return None
+        return data
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _render_brief_processing_status() -> None:
-    """Show real elapsed time while a background rebuild is running.
+    """Show real fetch progress (or elapsed time as fallback) while a
+    background rebuild is running.
 
     The rebuild (correlation-graph pacing + holdings-risk + macro-beta) can
     take up to ~90s worst case — a static banner looks frozen for that long.
-    Elapsed seconds is real, observed data (never a fabricated percentage,
-    since we can't know true completion from outside the subprocess) —
-    matches this project's honesty-first design (never fake a series).
+    Prefers real per-ticker progress (succeeded/failed counts) read from the
+    CLI subprocess's progress file when available; falls back to elapsed
+    seconds otherwise. Both are real, observed data — never a fabricated
+    percentage, matching this project's honesty-first design (never fake a
+    series).
     """
     if not st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
         return
     started_at = st.session_state.get(_HOME_BRIEF_STARTED_AT_KEY)
     elapsed = int(_time_time() - started_at) if started_at is not None else 0
+
+    progress_path = st.session_state.get(_HOME_BRIEF_PROGRESS_PATH_KEY)
+    progress = _read_rebuild_progress(progress_path) if progress_path else None
+
+    if progress is not None:
+        completed = progress.get("completed", 0)
+        total = progress.get("total", 0)
+        failed = progress.get("failed", 0)
+        failed_note = f", {failed} failed" if failed else ""
+        st.info(
+            f"⟳ Processing your uploaded holdings — fetching tickers "
+            f"{completed}/{total}{failed_note} ({elapsed}s elapsed)…",
+            icon="ℹ️",
+        )
+        return
+
     st.info(
         f"⟳ Processing your uploaded holdings — {elapsed}s elapsed, "
         "fetching tickers and rebuilding metrics…",
@@ -800,6 +878,7 @@ def _stage_csv_upload(uploaded: Any) -> None:
             return
 
         tmp_dir = tempfile.mkdtemp(prefix="stockrec_session_")
+        _replace_tracked_tmp_dir(_HOME_UPLOAD_TMP_DIR_KEY, tmp_dir)
         session_csv = Path(tmp_dir) / "holdings.csv"
         session_csv.write_text(content, encoding="utf-8")
         session_out = Path(tmp_dir) / "weekly_brief.md"
@@ -818,7 +897,9 @@ def _stage_csv_upload(uploaded: Any) -> None:
             int(st.session_state.get(_UPLOAD_KEY_VER, 0)) + 1
         )
         _start_dashboard_rebuild_background(
-            holdings_csv=str(session_csv), out_path=str(session_out)
+            holdings_csv=str(session_csv),
+            out_path=str(session_out),
+            progress_path=str(Path(tmp_dir) / "rebuild_progress.json"),
         )
         st.toast(f"Processing {len(holdings)} holdings from {uploaded.name}")
         st.rerun()
