@@ -38,7 +38,7 @@ Save the file below as `~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cyc
 
     <!-- Working directory (must match the repo root) -->
     <key>WorkingDirectory</key>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender</string>
+    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument</string>
 
     <!-- Run at 08:00 local machine time (pre-market, ~30 min before US open)
          DST caveat: launchd uses LOCAL time, not UTC. When the machine observes
@@ -55,9 +55,9 @@ Save the file below as `~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cyc
     <!-- Log files — directory must exist; create with:
          mkdir -p data/reports  (relative to WorkingDirectory above) -->
     <key>StandardOutPath</key>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/daily_cycle.log</string>
+    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/daily_cycle.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/daily_cycle.log</string>
+    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/daily_cycle.log</string>
 
     <!-- Environment variables
          Reddit credentials are optional. Remove the three Reddit keys entirely
@@ -88,7 +88,7 @@ Save the file below as `~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cyc
 ### 1. Ensure the log directory exists
 
 ```bash
-mkdir -p "/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports"
+mkdir -p "/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports"
 ```
 
 ### 2. Copy the plist to LaunchAgents
@@ -118,7 +118,7 @@ launchctl list | grep stockrec
 ```bash
 launchctl start com.tirthjoshi.stockrec.daily-cycle
 # Then tail the log:
-tail -f "/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/daily_cycle.log"
+tail -f "/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/daily_cycle.log"
 ```
 
 ### Unload (disable scheduling)
@@ -266,7 +266,7 @@ forward log accrues date-diverse `as_of` snapshots. Save as
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/scripts/discipline_daily.sh</string>
+    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/scripts/discipline_daily.sh</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
@@ -276,9 +276,9 @@ forward log accrues date-diverse `as_of` snapshots. Save as
   <key>StartCalendarInterval</key>
   <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
   <key>StandardOutPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/discipline_daily.log</string>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/discipline_daily.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/discipline_daily.log</string>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/discipline_daily.log</string>
 </dict>
 </plist>
 ```
@@ -310,7 +310,7 @@ whether the approach needs revision. Runs `scripts/discipline_weekly_review.sh`
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/scripts/discipline_weekly_review.sh</string>
+    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/scripts/discipline_weekly_review.sh</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
@@ -324,9 +324,9 @@ whether the approach needs revision. Runs `scripts/discipline_weekly_review.sh`
     <key>Minute</key><integer>0</integer>
   </dict>
   <key>StandardOutPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/discipline_weekly_review.log</string>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/discipline_weekly_review.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/discipline_weekly_review.log</string>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/discipline_weekly_review.log</string>
 </dict>
 </plist>
 ```
@@ -376,7 +376,7 @@ Save the plist below as
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/scripts/corroboration_weekly_resolve.sh</string>
+    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/scripts/corroboration_weekly_resolve.sh</string>
   </array>
   <key>StartCalendarInterval</key>
   <dict>
@@ -385,9 +385,9 @@ Save the plist below as
     <key>Minute</key><integer>0</integer>
   </dict>
   <key>StandardOutPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/corroboration_weekly_resolve.log</string>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/corroboration_weekly_resolve.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender/data/reports/corroboration_weekly_resolve.log</string>
+  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/corroboration_weekly_resolve.log</string>
   <key>RunAtLoad</key><false/>
 </dict>
 </plist>
