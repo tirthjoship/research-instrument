@@ -1618,6 +1618,85 @@ def test_run_brief_button_disabled_when_fresh_never_triggers_rebuild(  # type: i
     assert captured_kwargs.get("disabled") is True
 
 
+def test_run_brief_gate_blocks_a_second_independent_session_while_first_runs(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """The Cloud incident this fixes: st.session_state is per-visitor, so two
+    different visitors (simulated here by two fresh session_state dicts) must
+    NOT both be able to start a background rebuild concurrently — the gate
+    must be enforced process-globally, not per-session."""
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization import run_gate
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "caption", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "rerun", lambda: None)
+    monkeypatch.setattr(
+        wb, "rebuild_weekly_brief_cached", lambda **k: None
+    )  # noqa: ARG005
+
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
+
+        def start(self) -> None:
+            self._target()
+
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+
+    # Reset global gate state so this test is isolated from others.
+    run_gate.set_processing("home_brief", False)
+    run_gate.set_last_run_ts("home_brief", None)  # type: ignore[arg-type]
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+
+    # Visitor 1: fresh session, gate must be ready (no prior global run).
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    gate1 = run_gate.evaluate_run_gate(
+        staleness_days=3,
+        is_running=run_gate.is_processing("home_brief"),
+        last_run_ts=run_gate.get_last_run_ts("home_brief"),
+    )
+    assert gate1.can_run is True, "visitor 1 should be able to run"
+
+    # Visitor 1 clicks — this sets the GLOBAL processing flag while running,
+    # and (since the fake thread runs synchronously) clears it once done, but
+    # the last-run timestamp is now set globally.
+    monkeypatch.setattr(st, "button", lambda *a, **k: True)  # noqa: ARG005
+    wb._render_run_brief_gate(ctx, 3)
+
+    # Visitor 2: a totally independent session (fresh session_state dict) —
+    # must now be blocked by the global cooldown, not "ready" again.
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    gate2 = run_gate.evaluate_run_gate(
+        staleness_days=3,
+        is_running=run_gate.is_processing("home_brief"),
+        last_run_ts=run_gate.get_last_run_ts("home_brief"),
+    )
+    assert gate2.can_run is False
+    assert gate2.reason == "cooldown", (
+        "a second, independent visitor session must see the global cooldown "
+        "from visitor 1's run, not a fresh 'ready' gate"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Needs-review auto-fetch: fully automatic, single progress bar, auto-land.
 # ---------------------------------------------------------------------------
