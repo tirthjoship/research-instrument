@@ -1644,6 +1644,36 @@ def test_start_rebuild_records_start_timestamp(monkeypatch) -> None:  # type: ig
     assert st.session_state[wb._HOME_BRIEF_STARTED_AT_KEY] == 1000.0
 
 
+def test_start_rebuild_passes_and_records_progress_path(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
+
+        def start(self) -> None:
+            self._target()
+
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+
+    rebuild_calls: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        wb, "rebuild_weekly_brief_cached", lambda **k: rebuild_calls.append(k)
+    )
+
+    wb._start_dashboard_rebuild_background(progress_path="/tmp/fake_progress.json")
+
+    assert (
+        st.session_state[wb._HOME_BRIEF_PROGRESS_PATH_KEY] == "/tmp/fake_progress.json"
+    )
+    assert rebuild_calls
+    assert rebuild_calls[0]["progress_path"] == "/tmp/fake_progress.json"
+
+
 def test_processing_status_shows_elapsed_seconds(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     import streamlit as st
 
@@ -1668,6 +1698,86 @@ def test_processing_status_shows_elapsed_seconds(monkeypatch) -> None:  # type: 
 
     assert captured
     assert "17" in captured[0]
+
+
+def test_processing_status_shows_real_ticker_progress_when_file_present(  # type: ignore[no-untyped-def]
+    monkeypatch, tmp_path
+) -> None:
+    """When the CLI subprocess's progress file exists, show real
+    succeeded/failed ticker counts — not just elapsed seconds."""
+    import json
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    progress_file = tmp_path / "progress.json"
+    progress_file.write_text(
+        json.dumps(
+            {
+                "completed": 12,
+                "total": 45,
+                "succeeded": 10,
+                "failed": 2,
+                "failed_tickers": ["XYZ", "ABC"],
+                "last_ticker": "MSFT",
+            }
+        )
+    )
+    monkeypatch.setattr(
+        st,
+        "session_state",
+        {
+            wb._HOME_BRIEF_PROCESSING_KEY: True,
+            wb._HOME_BRIEF_STARTED_AT_KEY: 1000.0,
+            wb._HOME_BRIEF_PROGRESS_PATH_KEY: str(progress_file),
+        },
+        raising=False,
+    )
+    monkeypatch.setattr(wb, "_time_time", lambda: 1017.0)
+    captured: list[str] = []
+    monkeypatch.setattr(
+        st, "info", lambda msg, **k: captured.append(msg)
+    )  # noqa: ARG005
+
+    wb._render_brief_processing_status()
+
+    assert captured
+    msg = captured[0]
+    assert "12/45" in msg
+    assert "2 failed" in msg
+
+
+def test_processing_status_falls_back_to_elapsed_when_progress_file_missing(  # type: ignore[no-untyped-def]
+    monkeypatch, tmp_path
+) -> None:
+    """A configured progress_path that doesn't exist yet (early in the
+    rebuild, before the first ticker completes) must degrade gracefully to
+    the elapsed-only message — never crash on a missing/malformed file."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(
+        st,
+        "session_state",
+        {
+            wb._HOME_BRIEF_PROCESSING_KEY: True,
+            wb._HOME_BRIEF_STARTED_AT_KEY: 1000.0,
+            wb._HOME_BRIEF_PROGRESS_PATH_KEY: str(tmp_path / "nonexistent.json"),
+        },
+        raising=False,
+    )
+    monkeypatch.setattr(wb, "_time_time", lambda: 1005.0)
+    captured: list[str] = []
+    monkeypatch.setattr(
+        st, "info", lambda msg, **k: captured.append(msg)
+    )  # noqa: ARG005
+
+    wb._render_brief_processing_status()
+
+    assert captured
+    assert "5s elapsed" in captured[0]
 
 
 def test_processing_status_no_op_when_not_processing(monkeypatch) -> None:  # type: ignore[no-untyped-def]
