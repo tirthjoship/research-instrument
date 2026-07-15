@@ -128,6 +128,9 @@ class _FakeCaseSummarizer:
         self.calls.append(ctx)
         return CaseResult(in_favor=(), to_watch=(), data_gap=True)
 
+    def summarize_cases(self, contexts: list[CaseContext]) -> dict[str, CaseResult]:
+        return {ctx.ticker: self.summarize_case(ctx) for ctx in contexts}
+
 
 def _fake_select_summarizer(fake: _FakeCaseSummarizer) -> object:
     return fake
