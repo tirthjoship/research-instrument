@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from datetime import datetime, timedelta
 from typing import Any, Callable
@@ -35,23 +36,54 @@ def _fetch_correlation_signals(
     tickers: "list[str]",
     as_of: datetime,
     sleep: Callable[[float], None] = time.sleep,
+    progress_path: str | None = None,
 ) -> "dict[str, list[Any]]":
     """Fetch get_signals() per ticker for the concentration/correlation graph,
     paced to avoid a Cloud rate-limit burst. Any per-ticker failure degrades
     to an empty signal list — never raises, never blocks the rest of the
-    brief on one bad ticker."""
+    brief on one bad ticker.
+
+    ``progress_path``: when given, writes a small JSON status snapshot after
+    every ticker (completed/total/succeeded/failed/failed_tickers/last_ticker).
+    This CLI runs as a subprocess from the Streamlit dashboard
+    (holdings_syncer.py::rebuild_weekly_brief_cached), so a file is the only
+    channel back to the parent process for real per-ticker progress — lets
+    the UI show "12/45 (2 failed)" instead of only elapsed wall-clock time.
+    """
     signals_by_ticker: dict[str, list[Any]] = {}
-    for t in tickers:
+    succeeded = 0
+    failed_tickers: list[str] = []
+    total = len(tickers)
+    for i, t in enumerate(tickers):
         try:
             signals_by_ticker[t] = market_data.get_signals(t, as_of)
+            succeeded += 1
         except Exception:
             signals_by_ticker[t] = []
+            failed_tickers.append(t)
+        if progress_path is not None:
+            with open(progress_path, "w") as f:
+                json.dump(
+                    {
+                        "completed": i + 1,
+                        "total": total,
+                        "succeeded": succeeded,
+                        "failed": len(failed_tickers),
+                        "failed_tickers": failed_tickers,
+                        "last_ticker": t,
+                    },
+                    f,
+                )
         sleep(_CORR_FETCH_PACE_S)
     return signals_by_ticker
 
 
 def _build_weekly_brief(
-    market: str, holdings: "list[Any]", report_dir: str, use_cache: bool = True
+    market: str,
+    holdings: "list[Any]",
+    report_dir: str,
+    use_cache: bool = True,
+    progress_path: str | None = None,
 ) -> "tuple[Any, list[str]]":
     """Wire real adapters into a WeeklyBriefUseCase. Returns (use_case, universe)."""
     from datetime import timezone
@@ -108,7 +140,10 @@ def _build_weekly_brief(
     held = [h.ticker for h in holdings]
     graph_tickers = list(dict.fromkeys(held + universe[:100]))
     signals_by_ticker = _fetch_correlation_signals(
-        market_data, graph_tickers, datetime.now(timezone.utc)
+        market_data,
+        graph_tickers,
+        datetime.now(timezone.utc),
+        progress_path=progress_path,
     )
     try:
         analyzer.build_graph(signals_by_ticker)
@@ -325,6 +360,15 @@ def _prefetch_cited_cases(brief: "Any", as_of: datetime) -> None:
     show_default=True,
     help="Use local cached yfinance responses",
 )
+@click.option(
+    "--progress-path",
+    default=None,
+    help=(
+        "Internal — write correlation-graph fetch progress (JSON) to this path. "
+        "Used by the dashboard's background rebuild to show real ticker "
+        "fetch progress; not needed for interactive CLI use."
+    ),
+)
 def weekly_brief(
     market: str,
     holdings: str,
@@ -333,6 +377,7 @@ def weekly_brief(
     top_n: int,
     cite_cases: bool,
     use_cache: bool,
+    progress_path: str | None,
 ) -> None:
     """Generate the unified weekly brief (masked stdout + gitignored full markdown).
 
@@ -351,7 +396,9 @@ def weekly_brief(
     from domain.brief import to_markdown, to_stdout_masked
 
     held = read_holdings(holdings)
-    uc, universe = _build_weekly_brief(market, held, report_dir, use_cache=use_cache)
+    uc, universe = _build_weekly_brief(
+        market, held, report_dir, use_cache=use_cache, progress_path=progress_path
+    )
     as_of = datetime.now()
     brief = uc.execute(
         universe=universe,

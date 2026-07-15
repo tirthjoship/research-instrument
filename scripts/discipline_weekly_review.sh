@@ -22,7 +22,7 @@
 # (>=3 wks no data) are pruned + skipped, not failed. A health summary line
 # (fetched OK / no-data / FAILED / pruned) precedes the verdict output.
 set -euo pipefail
-REPO="/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/multi-modal-stock-recommender"
+REPO="/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument"
 cd "$REPO"
 PYTHON="${DISCIPLINE_PYTHON:-python}"           # adjust to your venv python if not on PATH
 HOLDINGS="${DISCIPLINE_HOLDINGS:-data/personal/holdings-report-2026-06-07.csv}"
