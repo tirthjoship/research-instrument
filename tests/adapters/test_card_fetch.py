@@ -168,6 +168,44 @@ def test_cache_miss_calls_summarizer_once(
     assert fetched is not None
 
 
+def test_explicit_cache_path_overrides_module_default(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An explicit cache_path kwarg is used over the module-level _CITED_CASES_PATH.
+
+    This is what lets Home/Portfolio pass a {reports_dir}-scoped cache file
+    instead of the hardcoded, gitignored data/personal/cited_cases.json (which
+    never exists on a fresh Cloud clone).
+    """
+    import os
+
+    assert isinstance(tmp_path, os.PathLike)
+    explicit_path = str(tmp_path / "home_cited_cases.json")
+    unused_default_path = str(tmp_path / "should_not_be_read.json")
+
+    from application.case_cache import write_case_cache
+
+    result = _cached_result()
+    write_case_cache(explicit_path, "2026-06-14", {"YUMC": result})
+
+    import adapters.visualization.card_fetch as cf_mod
+
+    monkeypatch.setattr(cf_mod, "_CITED_CASES_PATH", unused_default_path)
+
+    spy = _SpySummarizer()
+    fetched = get_case_on_expand(
+        "YUMC",
+        _card(),
+        news=[],
+        expanded=True,
+        summarizer=spy,
+        cache_path=explicit_path,
+    )
+
+    assert spy.calls == 0, "explicit cache_path hit must skip the summarizer"
+    assert fetched == result
+
+
 def test_no_cache_file_calls_summarizer(
     tmp_path: object, monkeypatch: pytest.MonkeyPatch
 ) -> None:

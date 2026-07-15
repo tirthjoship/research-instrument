@@ -324,13 +324,20 @@ def _launch_case_fetcher(
     cards: list[tuple[str, dict[str, Any]]],
     summarizer: object,
     cases: dict[str, Any],
+    reports_dir: str,
 ) -> None:
     """Start a daemon thread that pre-fetches Gemini case data into `cases` dict.
 
     The thread runs independently of tab navigation — the user can switch tabs
     while it works.  Results land in `cases` (same object held in session_state)
     so subsequent Home renders use cached data with zero Gemini re-calls.
+
+    ``reports_dir``-scoped cache_path (mirrors Screener/Stock Analysis) —
+    ``data/personal/cited_cases.json`` is gitignored and never exists on a
+    fresh Cloud clone, so every visitor would otherwise fire a live, uncached
+    Gemini call for every needs-review holding on every Home tab load.
     """
+    cache_path = f"{reports_dir}/home_cited_cases.json"
 
     def _worker() -> None:
         for ticker, h in cards:
@@ -351,6 +358,7 @@ def _launch_case_fetcher(
                     expanded=True,
                     summarizer=summarizer,
                     extra_facts=extra_facts,
+                    cache_path=cache_path,
                 )
                 cases[ticker] = result
             except Exception:  # noqa: BLE001
@@ -582,12 +590,13 @@ def _ensure_evidence_fetch_started(
     cards: list[tuple[str, dict[str, Any]]],
     summarizer: object,
     cases: dict[str, Any],
+    reports_dir: str,
 ) -> None:
     """Kick off the background evidence fetch automatically, once per session."""
     if st.session_state.get(_HOME_FETCH_STARTED_KEY, False):
         return
     st.session_state[_HOME_FETCH_STARTED_KEY] = True
-    _launch_case_fetcher(cards, summarizer, cases)
+    _launch_case_fetcher(cards, summarizer, cases, reports_dir)
 
 
 def _render_needs_review_status(cards: list[tuple[str, dict[str, Any]]]) -> None:
@@ -626,7 +635,7 @@ _render_needs_review_status_fragment: Any = _fragment(run_every=timedelta(second
 )
 
 
-def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
+def _render_needs_review(holdings: list[dict[str, Any]], reports_dir: str) -> None:
     """Render holdings using background-fetched case data (fully automatic)."""
     cards = _needs_review_cards(holdings)
     if not cards:
@@ -642,7 +651,7 @@ def _render_needs_review(holdings: list[dict[str, Any]]) -> None:
 
     cases: dict[str, Any] = st.session_state[_HOME_CASES_KEY]
 
-    _ensure_evidence_fetch_started(cards, summarizer, cases)
+    _ensure_evidence_fetch_started(cards, summarizer, cases, reports_dir)
     _render_needs_review_status_fragment(cards)
 
     for ticker, h in cards:
@@ -987,7 +996,7 @@ def render(
         '<div class="ri-sec">NEEDS REVIEW — A RULE FIRED, YOUR CALL</div>',
         unsafe_allow_html=True,
     )
-    _render_needs_review(holdings)
+    _render_needs_review(holdings, reports_dir)
 
     steady = sum(1 for h in holdings if h.get("verdict") in ("HOLD", "ADD_OK"))
     st.caption(f"Holding steady · {steady} — no rule fired, nothing to do")

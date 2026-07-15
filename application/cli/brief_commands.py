@@ -10,12 +10,12 @@ from loguru import logger
 
 from application.holdings_risk import HoldingsRiskAssessmentUseCase
 from application.price_returns import load_price_series
+from application.snapshot_screen import SnapshotScreenReader
 
 from ._cli_group import cli
 from ._deps import (
     MACRO_HISTORY_PATH,
     _build_dependencies,
-    _build_evidence_screen,
     _get_backtest_universe,
     _risk_macro_facts,
 )
@@ -40,8 +40,11 @@ def _build_weekly_brief(
     market_data = deps["market_data"]
     universe = _get_backtest_universe(market)
 
-    # Screen ports: same adapters as screen-candidates (DRY via shared helper).
-    screen = _build_evidence_screen(deps)
+    # Read the published screen_<date>.json snapshot (written by the scheduled
+    # GitHub Actions job) instead of running a live ~512-ticker scan inline on
+    # every "Run brief" click — that inline scan was the actual source of the
+    # sustained yfinance rate-limiting seen on the Cloud deploy.
+    screen = SnapshotScreenReader(report_dir)
 
     def _price_provider(ticker: str) -> "list[tuple[Any, float]]":
         end = datetime.now(timezone.utc)
@@ -209,13 +212,15 @@ def _prefetch_cited_cases(brief: "Any", as_of: datetime) -> None:
     these calls aren't rate-limited like Gemini.
 
     Throttle: the summarizer returned by select_case_summarizer() is already a
-    RateLimitedCaseSummarizer when GEMINI_API_KEY is set, so run_cases_with_progress
-    drives the pings (one per holding) at the configured interval (default 5 s).
+    RateLimitedCaseSummarizer when GEMINI_API_KEY is set. run_cases_in_batches
+    chunks holdings into groups of up to 15 and makes one Gemini call per
+    chunk (not one call per holding) — the throttle still spaces one call
+    per chunk at the configured interval (default 5 s).
     GEMINI_MIN_INTERVAL_S=0 in tests collapses the wait to zero.
     """
     from adapters.visualization.card_fetch import fetch_card
     from application.card_loading import select_case_summarizer
-    from application.case_batch import run_cases_with_progress
+    from application.case_batch import run_cases_in_batches
     from application.case_builder import build_case_context
     from application.case_cache import CITED_CASES_PATH, write_case_cache
     from application.personal_case_facts import (
@@ -256,7 +261,7 @@ def _prefetch_cited_cases(brief: "Any", as_of: datetime) -> None:
     def _progress(fraction: float, i: int, total: int) -> None:
         click.echo(f"  Analysing {i}/{total}: {tickers[i - 1]} ({fraction:.0%})")
 
-    results = run_cases_with_progress(contexts, summarizer, progress=_progress)  # type: ignore[arg-type]
+    results = run_cases_in_batches(contexts, summarizer, progress=_progress)  # type: ignore[arg-type]
 
     cases = {ticker: result for ticker, result in zip(tickers, results)}
     as_of_iso = as_of.date().isoformat()

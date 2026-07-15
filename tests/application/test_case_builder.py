@@ -30,3 +30,20 @@ def test_template_summarizer_splits_favor_and_watch():
     watch_text = " ".join(p.text for p in res.to_watch).lower()
     assert "valuation" in favor_text or "earnings" in favor_text
     assert "technicals" in watch_text
+
+
+def test_template_summarizer_summarize_cases_matches_per_ticker_loop():
+    """summarize_cases must exist (protocol parity with GeminiNarratorAdapter's
+    batch method) and match what summarize_case would give each ticker."""
+    ctx1 = build_case_context("YUMC", _signals(), [])
+    ctx2 = build_case_context("AAPL", (), [])
+    summarizer = TemplateCaseSummarizer()
+
+    results = summarizer.summarize_cases([ctx1, ctx2])
+
+    assert results["YUMC"] == summarizer.summarize_case(ctx1)
+    assert results["AAPL"] == summarizer.summarize_case(ctx2)
+
+
+def test_template_summarizer_summarize_cases_empty_list():
+    assert TemplateCaseSummarizer().summarize_cases([]) == {}

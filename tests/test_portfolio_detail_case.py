@@ -25,7 +25,7 @@ def test_resolve_case_threads_real_news_and_extra_facts(monkeypatch):
     buzz facts threaded through via the shared application.personal_case_facts."""
     captured: dict[str, object] = {}
 
-    def _fake_get_case_on_expand(ticker, card, *, news, expanded, summarizer, extra_facts=()):  # type: ignore[no-untyped-def]
+    def _fake_get_case_on_expand(ticker, card, *, news, expanded, summarizer, extra_facts=(), cache_path=None):  # type: ignore[no-untyped-def]
         captured["news"] = news
         captured["extra_facts"] = extra_facts
         return object()
@@ -43,6 +43,29 @@ def test_resolve_case_threads_real_news_and_extra_facts(monkeypatch):
 
     assert captured["news"] == ["real-news"]
     assert captured["extra_facts"] == ("Verdict: HOLD. steady trend",)
+
+
+def test_resolve_case_threads_reports_dir_into_cache_path(monkeypatch):
+    """Portfolio's inspect-detail panel must use the same {reports_dir}-scoped
+    cache as Home — the hardcoded data/personal/cited_cases.json default is
+    gitignored and never exists on a fresh Cloud clone, so every visitor who
+    clicks a holding would otherwise fire a live, uncached Gemini call."""
+    captured: dict[str, object] = {}
+
+    def _fake_get_case_on_expand(ticker, card, *, news, expanded, summarizer, extra_facts=(), cache_path=None):  # type: ignore[no-untyped-def]
+        captured["cache_path"] = cache_path
+        return object()
+
+    monkeypatch.setattr(pd, "select_case_summarizer", lambda: object())
+    monkeypatch.setattr(pd, "get_case_on_expand", _fake_get_case_on_expand)
+    monkeypatch.setattr(pd, "personal_case_news", lambda ticker: [])
+    monkeypatch.setattr(
+        pd, "personal_case_extra_facts", lambda ticker, *, verdict, why: ()
+    )
+
+    pd.resolve_case("AAA", object(), reports_dir="data/reports/sample")
+
+    assert captured["cache_path"] == "data/reports/sample/home_cited_cases.json"
 
 
 def test_detail_not_hardcoded_none():

@@ -1483,12 +1483,22 @@ def _trigger_screener_run(ctx: UIBookContext) -> None:
 
 
 def _render_run_screener_gate(ctx: UIBookContext, days: int | None) -> None:
-    """Status caption + gated Run button for the screener."""
+    """Status caption + gated Run button for the screener.
+
+    Item 5 of the Cloud deploy scaling design: the full-universe scan now
+    runs on a daily schedule (GitHub Actions), not live per-visitor-click —
+    visitors get a passive "last updated" caption; the Run button becomes an
+    operator/local-only manual trigger (mirrors the is_local_runtime() idiom
+    already used for the AI-panel/quota guards elsewhere in this tab).
+    """
     age_label = (
         f"{days} day{'s' if days != 1 else ''} old"
         if days is not None
         else "no screen yet"
     )
+    if not is_local_runtime():
+        st.caption(f"Screener — {age_label} (updated on a daily schedule)")
+        return
     gate = evaluate_run_gate(
         staleness_days=days,
         is_running=_gate_is_processing(_GATE_NAME),

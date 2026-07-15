@@ -1719,7 +1719,7 @@ def test_launch_case_fetcher_threads_real_news_and_extra_facts(monkeypatch) -> N
 
     calls: list[dict[str, object]] = []
 
-    def _fake_get_case_on_expand(ticker, card, news, *, expanded, summarizer, extra_facts=()):  # type: ignore[no-untyped-def]
+    def _fake_get_case_on_expand(ticker, card, news, *, expanded, summarizer, extra_facts=(), cache_path=None):  # type: ignore[no-untyped-def]
         calls.append(
             {
                 "ticker": ticker,
@@ -1748,13 +1748,58 @@ def test_launch_case_fetcher_threads_real_news_and_extra_facts(monkeypatch) -> N
 
     cards = [(h["ticker"], h) for h in _needs_review_holdings()]
     cases: dict[str, object] = {}
-    wb._launch_case_fetcher(cards, summarizer=object(), cases=cases)
+    wb._launch_case_fetcher(
+        cards, summarizer=object(), cases=cases, reports_dir="data/reports/sample"
+    )
 
     assert {c["ticker"] for c in calls} == {"AAA", "BBB"}
     aaa = next(c for c in calls if c["ticker"] == "AAA")
     assert aaa["news"] == ["news-for-AAA"]
     assert aaa["extra_facts"] == ("Verdict: TRIM. x",)
     assert set(cases) == {"AAA", "BBB"}
+
+
+def test_launch_case_fetcher_threads_reports_dir_into_cache_path(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """The background worker must pass a {reports_dir}-scoped cache_path to
+    get_case_on_expand, not the hardcoded data/personal/cited_cases.json —
+    that path is gitignored and never exists on a fresh Cloud clone, so every
+    visitor was silently firing live, uncached Gemini calls on Home tab load."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
+    monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [])
+    monkeypatch.setattr(
+        wb, "personal_case_extra_facts", lambda ticker, *, verdict, why: ()
+    )
+
+    calls: list[dict[str, object]] = []
+
+    def _fake_get_case_on_expand(
+        ticker, card, news, *, expanded, summarizer, extra_facts=(), cache_path=None
+    ):  # type: ignore[no-untyped-def]
+        calls.append({"ticker": ticker, "cache_path": cache_path})
+        return object()
+
+    monkeypatch.setattr(wb, "get_case_on_expand", _fake_get_case_on_expand)
+
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
+
+        def start(self) -> None:
+            self._target()
+
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+    wb._launch_case_fetcher(
+        cards, summarizer=object(), cases={}, reports_dir="data/reports/sample"
+    )
+
+    assert calls
+    assert all(
+        c["cache_path"] == "data/reports/sample/home_cited_cases.json" for c in calls
+    )
 
 
 def test_launch_case_fetcher_paces_yfinance_calls(monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -1787,7 +1832,9 @@ def test_launch_case_fetcher_paces_yfinance_calls(monkeypatch) -> None:  # type:
     monkeypatch.setattr(wb, "_SLEEP", sleep_calls.append)
 
     cards = [(h["ticker"], h) for h in _needs_review_holdings()]
-    wb._launch_case_fetcher(cards, summarizer=object(), cases={})
+    wb._launch_case_fetcher(
+        cards, summarizer=object(), cases={}, reports_dir="data/reports/sample"
+    )
 
     assert len(sleep_calls) == len(cards)
     assert all(s > 0 for s in sleep_calls)
@@ -1811,7 +1858,7 @@ def test_needs_review_fetch_starts_without_button_click(monkeypatch) -> None:  #
     monkeypatch.setattr(
         wb,
         "_launch_case_fetcher",
-        lambda cards, summarizer, cases: launch_calls.append(cards),
+        lambda cards, summarizer, cases, reports_dir: launch_calls.append(cards),
     )
 
     button_calls: list[object] = []
@@ -1821,7 +1868,7 @@ def test_needs_review_fetch_starts_without_button_click(monkeypatch) -> None:  #
         lambda *a, **k: (button_calls.append((a, k)), False)[1],  # noqa: ARG005
     )
 
-    wb._render_needs_review(_needs_review_holdings())
+    wb._render_needs_review(_needs_review_holdings(), "data/reports/sample")
 
     assert len(launch_calls) == 1
     assert [t for t, _h in launch_calls[0]] == ["AAA", "BBB"]
@@ -1915,10 +1962,10 @@ def test_needs_review_never_renders_fetch_or_refresh_button(monkeypatch) -> None
     )
 
     holdings = _needs_review_holdings()
-    wb._render_needs_review(holdings)  # not started
+    wb._render_needs_review(holdings, "data/reports/sample")  # not started
     st.session_state[wb._HOME_CASES_KEY] = {"AAA": object()}  # in flight
-    wb._render_needs_review(holdings)
+    wb._render_needs_review(holdings, "data/reports/sample")
     st.session_state[wb._HOME_CASES_KEY] = {"AAA": object(), "BBB": object()}  # done
-    wb._render_needs_review(holdings)
+    wb._render_needs_review(holdings, "data/reports/sample")
 
     assert button_calls == []
