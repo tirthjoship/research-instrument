@@ -98,6 +98,27 @@ def test_rebuild_weekly_brief_cached_invokes_cli(monkeypatch):
     assert "weekly-brief" in calls[0]
 
 
+def test_rebuild_weekly_brief_cached_passes_report_dir_data_sample(monkeypatch):
+    """Must explicitly pass --report-dir data/sample — the shared candidates
+    snapshot location every visitor's Home/Screener tab reads (item 5 of the
+    Cloud deploy scaling design). Omitting this silently defaults to the
+    CLI's own data/reports/, which is empty on Cloud, so the rebuilt brief's
+    candidates section comes back abstained/empty for every visitor."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check):  # type: ignore[no-untyped-def]
+        calls.append(cmd)
+
+    monkeypatch.setattr(holdings_syncer.subprocess, "run", fake_run)
+
+    holdings_syncer.rebuild_weekly_brief_cached()
+
+    assert len(calls) == 1
+    cmd = calls[0]
+    assert "--report-dir" in cmd
+    assert cmd[cmd.index("--report-dir") + 1] == "data/sample"
+
+
 def test_save_and_sync_holdings_overwrites_existing(temp_env):
     store = temp_env["store"]
     from domain.models import Holding as DomainHolding
