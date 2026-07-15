@@ -22,7 +22,7 @@ def test_tab_module_exposes_render() -> None:
     assert callable(tab.render)
 
 
-def test_render_with_summary_fixture(tmp_path) -> None:  # type: ignore[no-untyped-def]
+def test_render_with_summary_fixture(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     import json
 
     p = tmp_path / "brief_summary.json"
@@ -45,6 +45,11 @@ def test_render_with_summary_fixture(tmp_path) -> None:  # type: ignore[no-untyp
         )
     )
     from adapters.visualization.tabs import weekly_brief
+
+    # REDUCE verdict is in _NEEDS_REVIEW — an unmocked render() spawns a real
+    # background daemon thread hitting live yfinance for "ARKK". This test
+    # only cares that render() doesn't raise.
+    monkeypatch.setattr(weekly_brief, "_launch_case_fetcher", lambda *a, **k: None)
 
     weekly_brief.render(path=str(p))  # must not raise outside streamlit runtime
 
@@ -83,7 +88,7 @@ def test_render_with_adherence_log(tmp_path) -> None:  # type: ignore[no-untyped
     weekly_brief.render(path=str(p), adherence_path=str(a))  # must not raise
 
 
-def test_render_hero_counts_attention(tmp_path) -> None:  # type: ignore[no-untyped-def]
+def test_render_hero_counts_attention(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     import json
 
     p = tmp_path / "brief_summary.json"
@@ -114,6 +119,10 @@ def test_render_hero_counts_attention(tmp_path) -> None:  # type: ignore[no-unty
         )
     )
     from adapters.visualization.tabs import weekly_brief
+
+    # ticker "A" has verdict REDUCE (in _NEEDS_REVIEW) — an unmocked render()
+    # spawns a real background daemon thread hitting live yfinance.
+    monkeypatch.setattr(weekly_brief, "_launch_case_fetcher", lambda *a, **k: None)
 
     # reports_dir points to tmp_path — no screen file → degrades to "no screen yet"
     # adherence_path points to missing file → degrades to 0 rows
@@ -282,6 +291,9 @@ def test_home_render_new_layout(tmp_path) -> None:  # type: ignore[no-untyped-de
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
         patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
+        # _launch_case_fetcher's background worker also calls personal_case_news,
+        # which hits live yfinance if unmocked (fetch_card alone isn't enough).
+        patch.object(wb, "personal_case_news", return_value=[]),
         # FIX B: stub network fetches so _render_one_holding doesn't hit yfinance
         patch(
             "adapters.visualization.price_cache.fetch_prices",
@@ -507,7 +519,7 @@ def test_screen_tile_content_under_powered_no_emh() -> None:
     ), f"Expected 'under-powered' in number for UNDER_POWERED verdict, got {number!r}"
 
 
-def test_rendered_home_triage_strip_present(tmp_path) -> None:  # type: ignore[no-untyped-def]
+def test_rendered_home_triage_strip_present(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     """Rendering Home with a diagnostics-bearing screen must produce a 'Need review'
     triage element in the captured markdown calls."""
     p = tmp_path / "brief_summary.json"
@@ -561,6 +573,11 @@ def test_rendered_home_triage_strip_present(tmp_path) -> None:  # type: ignore[n
         original_markdown(content, **kwargs)  # type: ignore[arg-type]
 
     from adapters.visualization.tabs import weekly_brief
+
+    # This fixture's holding has verdict REDUCE (in _NEEDS_REVIEW), so an
+    # unmocked render() spawns a real background daemon thread hitting live
+    # yfinance for "ARKK" — this test only cares about the triage strip HTML.
+    monkeypatch.setattr(weekly_brief, "_launch_case_fetcher", lambda *a, **k: None)
 
     with patch.object(st, "markdown", side_effect=capture_markdown):
         weekly_brief.render(
@@ -803,6 +820,9 @@ def test_home_render_shows_door_and_book_vitals_together(tmp_path: object) -> No
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch.object(wb, "select_case_summarizer", return_value=MagicMock()),
         patch.object(wb, "_render_one_holding_fragment", wb._render_one_holding),
+        # _launch_case_fetcher's background worker also calls personal_case_news,
+        # which hits live yfinance if unmocked (fetch_card alone isn't enough).
+        patch.object(wb, "personal_case_news", return_value=[]),
         patch(
             "adapters.visualization.price_cache.fetch_price_history",
             return_value=None,
@@ -1598,6 +1618,85 @@ def test_run_brief_button_disabled_when_fresh_never_triggers_rebuild(  # type: i
     assert captured_kwargs.get("disabled") is True
 
 
+def test_run_brief_gate_blocks_a_second_independent_session_while_first_runs(  # type: ignore[no-untyped-def]
+    monkeypatch,
+) -> None:
+    """The Cloud incident this fixes: st.session_state is per-visitor, so two
+    different visitors (simulated here by two fresh session_state dicts) must
+    NOT both be able to start a background rebuild concurrently — the gate
+    must be enforced process-globally, not per-session."""
+    from unittest.mock import MagicMock
+
+    import streamlit as st
+
+    from adapters.visualization import run_gate
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(
+        st,
+        "container",
+        lambda *a, **k: MagicMock(  # noqa: ARG005
+            __enter__=MagicMock(return_value=MagicMock()),
+            __exit__=MagicMock(return_value=False),
+        ),
+    )
+    monkeypatch.setattr(st, "caption", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "rerun", lambda: None)
+    monkeypatch.setattr(
+        wb, "rebuild_weekly_brief_cached", lambda **k: None
+    )  # noqa: ARG005
+
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
+
+        def start(self) -> None:
+            self._target()
+
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+
+    # Reset global gate state so this test is isolated from others.
+    run_gate.set_processing("home_brief", False)
+    run_gate.set_last_run_ts("home_brief", None)  # type: ignore[arg-type]
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+
+    # Visitor 1: fresh session, gate must be ready (no prior global run).
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    gate1 = run_gate.evaluate_run_gate(
+        staleness_days=3,
+        is_running=run_gate.is_processing("home_brief"),
+        last_run_ts=run_gate.get_last_run_ts("home_brief"),
+    )
+    assert gate1.can_run is True, "visitor 1 should be able to run"
+
+    # Visitor 1 clicks — this sets the GLOBAL processing flag while running,
+    # and (since the fake thread runs synchronously) clears it once done, but
+    # the last-run timestamp is now set globally.
+    monkeypatch.setattr(st, "button", lambda *a, **k: True)  # noqa: ARG005
+    wb._render_run_brief_gate(ctx, 3)
+
+    # Visitor 2: a totally independent session (fresh session_state dict) —
+    # must now be blocked by the global cooldown, not "ready" again.
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    gate2 = run_gate.evaluate_run_gate(
+        staleness_days=3,
+        is_running=run_gate.is_processing("home_brief"),
+        last_run_ts=run_gate.get_last_run_ts("home_brief"),
+    )
+    assert gate2.can_run is False
+    assert gate2.reason == "cooldown", (
+        "a second, independent visitor session must see the global cooldown "
+        "from visitor 1's run, not a fresh 'ready' gate"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Needs-review auto-fetch: fully automatic, single progress bar, auto-land.
 # ---------------------------------------------------------------------------
@@ -1656,6 +1755,42 @@ def test_launch_case_fetcher_threads_real_news_and_extra_facts(monkeypatch) -> N
     assert aaa["news"] == ["news-for-AAA"]
     assert aaa["extra_facts"] == ("Verdict: TRIM. x",)
     assert set(cases) == {"AAA", "BBB"}
+
+
+def test_launch_case_fetcher_paces_yfinance_calls(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """The background worker fires ~4 yfinance calls per ticker (info, prices,
+    price history, earnings) via fetch_card. Firing all needs-review tickers
+    back-to-back with zero pacing is what tripped Yahoo's burst rate-limit on
+    the Cloud deploy (DATA-GAP on Valuation/Financials/Earnings/Analysts for
+    tickers that plainly have the data). The worker must sleep between tickers."""
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
+    monkeypatch.setattr(
+        wb, "get_case_on_expand", lambda *a, **k: object()
+    )  # noqa: ARG005
+    monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [])
+    monkeypatch.setattr(
+        wb, "personal_case_extra_facts", lambda ticker, *, verdict, why: ()
+    )
+
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
+
+        def start(self) -> None:
+            self._target()
+
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+
+    sleep_calls: list[float] = []
+    monkeypatch.setattr(wb, "_SLEEP", sleep_calls.append)
+
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+    wb._launch_case_fetcher(cards, summarizer=object(), cases={})
+
+    assert len(sleep_calls) == len(cards)
+    assert all(s > 0 for s in sleep_calls)
 
 
 def test_needs_review_fetch_starts_without_button_click(monkeypatch) -> None:  # type: ignore[no-untyped-def]
