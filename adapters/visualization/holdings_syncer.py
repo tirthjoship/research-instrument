@@ -90,6 +90,13 @@ def rebuild_weekly_brief_cached(
     Defaults to the personal dogfood paths (CLI/local use). Pass ``holdings_csv``
     / ``out_path`` pointing at a session/temp directory for the public upload
     path — the rebuild must never write to ``data/personal/`` there.
+
+    Always passes ``--report-dir data/sample`` explicitly — the shared
+    candidates snapshot location every visitor's Home/Screener tab reads
+    (item 5, Cloud deploy scaling design). The CLI's own default
+    (``data/reports/``) is the operator's private, gitignored dogfood
+    directory and is empty on a fresh Cloud clone; omitting this flag makes
+    ``SnapshotScreenReader`` come back abstained/empty for every visitor.
     """
     cmd = [
         sys.executable,
@@ -100,6 +107,8 @@ def rebuild_weekly_brief_cached(
         str(holdings_csv or HOLDINGS_CSV_PATH),
         "--out",
         str(out_path or "data/personal/weekly_brief.md"),
+        "--report-dir",
+        "data/sample",
         "--use-cache",
     ]
     subprocess.run(cmd, check=True)

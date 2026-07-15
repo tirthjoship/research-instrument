@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import time
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Callable
 
 import click
 from loguru import logger
@@ -19,6 +20,34 @@ from ._deps import (
     _get_backtest_universe,
     _risk_macro_facts,
 )
+
+#: seconds between tickers when fetching correlation-graph signals below.
+#: Without pacing, this loop fires up to ~100 unpaced live yfinance history
+#: fetches (held_tickers + universe[:100]) — exactly the burst shape that
+#: trips Cloud's shared-IP rate limit and hangs "Run brief"/CSV-upload
+#: rebuilds for many minutes. Mirrors weekly_brief.py's
+#: _CASE_FETCH_PACE_S for the Home tab's needs-review fetcher.
+_CORR_FETCH_PACE_S = 0.6
+
+
+def _fetch_correlation_signals(
+    market_data: Any,
+    tickers: "list[str]",
+    as_of: datetime,
+    sleep: Callable[[float], None] = time.sleep,
+) -> "dict[str, list[Any]]":
+    """Fetch get_signals() per ticker for the concentration/correlation graph,
+    paced to avoid a Cloud rate-limit burst. Any per-ticker failure degrades
+    to an empty signal list — never raises, never blocks the rest of the
+    brief on one bad ticker."""
+    signals_by_ticker: dict[str, list[Any]] = {}
+    for t in tickers:
+        try:
+            signals_by_ticker[t] = market_data.get_signals(t, as_of)
+        except Exception:
+            signals_by_ticker[t] = []
+        sleep(_CORR_FETCH_PACE_S)
+    return signals_by_ticker
 
 
 def _build_weekly_brief(
@@ -78,14 +107,9 @@ def _build_weekly_brief(
     analyzer = CorrelationAnalyzer()
     held = [h.ticker for h in holdings]
     graph_tickers = list(dict.fromkeys(held + universe[:100]))
-    signals_by_ticker = {}
-    for t in graph_tickers:
-        try:
-            signals_by_ticker[t] = market_data.get_signals(
-                t, datetime.now(timezone.utc)
-            )
-        except Exception:
-            signals_by_ticker[t] = []
+    signals_by_ticker = _fetch_correlation_signals(
+        market_data, graph_tickers, datetime.now(timezone.utc)
+    )
     try:
         analyzer.build_graph(signals_by_ticker)
     except Exception:
