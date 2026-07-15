@@ -10,12 +10,12 @@ from loguru import logger
 
 from application.holdings_risk import HoldingsRiskAssessmentUseCase
 from application.price_returns import load_price_series
+from application.snapshot_screen import SnapshotScreenReader
 
 from ._cli_group import cli
 from ._deps import (
     MACRO_HISTORY_PATH,
     _build_dependencies,
-    _build_evidence_screen,
     _get_backtest_universe,
     _risk_macro_facts,
 )
@@ -40,8 +40,11 @@ def _build_weekly_brief(
     market_data = deps["market_data"]
     universe = _get_backtest_universe(market)
 
-    # Screen ports: same adapters as screen-candidates (DRY via shared helper).
-    screen = _build_evidence_screen(deps)
+    # Read the published screen_<date>.json snapshot (written by the scheduled
+    # GitHub Actions job) instead of running a live ~512-ticker scan inline on
+    # every "Run brief" click — that inline scan was the actual source of the
+    # sustained yfinance rate-limiting seen on the Cloud deploy.
+    screen = SnapshotScreenReader(report_dir)
 
     def _price_provider(ticker: str) -> "list[tuple[Any, float]]":
         end = datetime.now(timezone.utc)

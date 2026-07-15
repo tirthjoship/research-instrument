@@ -1,0 +1,59 @@
+name: Scheduled screen snapshot
+
+# Item 5 of the Cloud deploy scaling design
+# (docs/superpowers/specs/2026-07-14-cloud-deploy-scaling-and-access-design.md):
+# runs the ~512-ticker full-universe screen from a clean GH-hosted runner
+# (not Cloud's shared/rate-limited IP) and commits the snapshot the public
+# dashboard reads, so a visitor's own click never triggers a live scan.
+on:
+  schedule:
+    # 21:30 UTC, weekdays only — shortly after US market close, well before
+    # the next morning's visitor traffic. Markets are closed weekends, so a
+    # weekend run would just re-screen stale prices.
+    - cron: "30 21 * * 1-5"
+  workflow_dispatch: {}
+
+concurrency:
+  group: scheduled-screen
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scheduled-screen:
+    name: Screen candidates + commit snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+      - name: Install dependencies
+        run: uv sync --extra dev --extra dashboard
+      - name: Run full-universe screen
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          uv run python -m application.cli screen-candidates \
+            --report-dir data/sample --cite-cases
+      - name: Prune to last 14 daily snapshots
+        run: |
+          cd data/sample
+          ls -1 screen_20*.json 2>/dev/null \
+            | grep -v '^screen_ic_' \
+            | sort \
+            | head -n -14 \
+            | xargs -r rm -f
+      - name: Commit snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/sample/screen_20*.json data/sample/screen_cited_cases.json
+          git diff --cached --quiet || git commit -m "chore(data): scheduled screen snapshot $(date -u +%F)"
+          git push
