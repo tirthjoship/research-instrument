@@ -140,8 +140,7 @@ always write into a fresh session-scoped temp dir, never the committed `data/sam
 artifacts or the operator's shared `data/reports/` output.
 
 Personal CLI dogfood (`weekly-brief --holdings data/personal/holdings.csv`) remains
-valid outside the public UI path — see
-`docs/superpowers/archive/2026-07-11-public-sample-book-design.md` for the full design.
+valid outside the public UI path.
 
 ### Why hexagonal?
 

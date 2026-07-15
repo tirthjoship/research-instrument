@@ -39,10 +39,8 @@ def _prefetch_screener_cited_cases(
 
     Mirrors weekly-brief's `_prefetch_cited_cases` (rate-limited via
     select_case_summarizer(), progress echoed per ticker) but feeds real
-    per-ticker news + market-sentiment facts, not just factor-band facts —
-    see docs/superpowers/specs/2026-07-12-screener-gemini-cache-and-real-
-    signal-design.md. Writes <report_dir>/screen_cited_cases.json. Returns
-    the cache file path.
+    per-ticker news + market-sentiment facts, not just factor-band facts.
+    Writes <report_dir>/screen_cited_cases.json. Returns the cache file path.
     """
     from application.case_batch import run_cases_with_progress
     from application.case_cache import write_case_cache
