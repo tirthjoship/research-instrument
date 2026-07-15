@@ -113,9 +113,7 @@ def test_app_title_uses_fraunces_not_dm_sans() -> None:
     assert "Fraunces" in src, "App title h1 must use Fraunces font"
     # The title h1 must NOT have DM Sans in the inline style
     # (DM Sans is still used in CSS for sub-elements, but not the title tag itself)
-    title_line = next(
-        line for line in src.splitlines() if "Multi-Modal Stock Recommender" in line
-    )
+    title_line = next(line for line in src.splitlines() if "ri-app-title" in line)
     assert (
         "DM Sans" not in title_line
     ), f"App title must not reference DM Sans, found: {title_line!r}"

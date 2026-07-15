@@ -1,4 +1,4 @@
-# Multi-Modal Stock Recommender
+# Market Research Instrument
 
 A weekly research cockpit for one family's portfolio. It flags risk concentrations,
 tracks whether we follow our own discipline rules, and ranks stocks by factual evidence.
@@ -315,11 +315,11 @@ never tested it.
 ### Installation
 
 ```bash
-git clone https://github.com/tirthjoship/multi-modal-stock-recommender.git
-cd multi-modal-stock-recommender
+git clone https://github.com/tirthjoship/research-instrument.git
+cd research-instrument
 
-conda create -n multi-modal-stock-ml python=3.12 -y
-conda activate multi-modal-stock-ml
+conda create -n research-instrument python=3.12 -y
+conda activate research-instrument
 
 pip install -e ".[dev,dashboard]"
 pre-commit install
