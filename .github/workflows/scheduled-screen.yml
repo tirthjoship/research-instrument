@@ -38,7 +38,13 @@ jobs:
         run: uv sync --extra dev --extra dashboard
       - name: Run full-universe screen
         env:
+          # GEMINI_API_KEY_2 (etc.) is picked up automatically by
+          # adapters/ml/gemini_models.py::load_gemini_api_keys() once the
+          # primary key's daily free-tier quota is exhausted — same
+          # multi-key fallback used locally and on Streamlit Cloud. Add one
+          # more line here (+ the matching repo secret) for a future _3.
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
         run: |
           uv run python -m application.cli screen-candidates \
             --report-dir data/sample --cite-cases
