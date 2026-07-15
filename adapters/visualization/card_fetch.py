@@ -159,6 +159,7 @@ def get_case_on_expand(
     expanded: bool,
     summarizer: object,
     extra_facts: tuple[str, ...] = (),
+    cache_path: str | None = None,
 ) -> CaseResult | None:
     """Fetch the cited case ONLY when the card is expanded. Returns None when collapsed.
 
@@ -169,12 +170,19 @@ def get_case_on_expand(
     ``extra_facts``: additional plain-English fact lines (e.g. verdict/why,
     real buzz sentiment — see application.personal_case_facts) appended onto
     the card-signal facts before summarization. Default empty is a no-op.
+
+    ``cache_path``: overrides the module-level ``_CITED_CASES_PATH`` default.
+    Callers with a per-book ``reports_dir`` (Home/Portfolio) should pass their
+    own scoped cache file so the cache is real on Cloud, where
+    ``data/personal/cited_cases.json`` never exists.
     """
     if not expanded:
         return None
 
     # Cache-first: weekly prefetch wins over live ping.
-    cached = load_cached_case(_CITED_CASES_PATH, ticker)
+    cached = load_cached_case(
+        cache_path if cache_path is not None else _CITED_CASES_PATH, ticker
+    )
     if cached is not None:
         return cached
 

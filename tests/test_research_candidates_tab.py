@@ -1008,8 +1008,43 @@ def test_render_default_reports_dir_resolves_to_sample_on_cold_start(monkeypatch
     assert captured["reports_dir"] == "data/sample"
 
 
+def test_run_screener_gate_is_passive_display_for_visitors(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Item 5 of the Cloud deploy scaling design: visitors (not local runtime)
+    get a passive "last updated" caption only — never a live-triggering
+    button. The full-universe scan now runs on a schedule, not per-click."""
+    import streamlit as st
+
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: False)
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    captions: list[str] = []
+    monkeypatch.setattr(
+        st, "caption", lambda msg, **k: captions.append(msg)
+    )  # noqa: ARG005
+
+    button_calls: list[object] = []
+    monkeypatch.setattr(
+        st,
+        "button",
+        lambda *a, **k: (button_calls.append((a, k)), False)[1],  # noqa: ARG005
+    )
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+    rc._render_run_screener_gate(ctx, 3)
+
+    assert button_calls == [], "visitors must never see a live-triggering button"
+    assert any("3 day" in c for c in captions)
+
+
 def test_run_screener_gate_disabled_when_fresh(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    """A fresh (<1 day old) screen must render the Run button disabled."""
+    """A fresh (<1 day old) screen must render the Run button disabled (operator/local only)."""
     from unittest.mock import MagicMock
 
     import streamlit as st
@@ -1017,6 +1052,7 @@ def test_run_screener_gate_disabled_when_fresh(monkeypatch) -> None:  # type: ig
     from adapters.visualization.book_context import UIBookContext
     from adapters.visualization.tabs import research_candidates as rc
 
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
     monkeypatch.setattr(st, "session_state", {}, raising=False)
     monkeypatch.setattr(
         st,
@@ -1086,6 +1122,7 @@ def test_run_screener_gate_blocks_a_second_independent_session_while_first_runs(
     monkeypatch.setattr(
         rc, "_run_screen_candidates_cli", lambda report_dir: None
     )  # noqa: ARG005
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
 
     # Reset global gate state so this test is isolated from others.
     run_gate.set_processing("screener", False)
@@ -1150,6 +1187,7 @@ def test_run_screener_button_triggers_session_scoped_background_run(monkeypatch)
     monkeypatch.setattr(st, "caption", lambda *a, **k: None)  # noqa: ARG005
     monkeypatch.setattr(st, "button", lambda *a, **k: True)  # noqa: ARG005
     monkeypatch.setattr(st, "rerun", lambda: None)
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
 
     run_calls: list[str] = []
     monkeypatch.setattr(

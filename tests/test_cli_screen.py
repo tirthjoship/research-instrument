@@ -466,6 +466,9 @@ class _FakeCiteSummarizer:
         self.calls.append(ctx)
         return CaseResult(in_favor=(), to_watch=(), data_gap=True)
 
+    def summarize_cases(self, contexts: list[object]) -> dict[str, object]:
+        return {ctx.ticker: self.summarize_case(ctx) for ctx in contexts}  # type: ignore[attr-defined]
+
 
 def _patch_cite_deps(monkeypatch: pytest.MonkeyPatch, fake_summarizer: object) -> None:
     import application.card_loading as cl_mod
