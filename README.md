@@ -70,8 +70,9 @@ The dashboard (Streamlit) is organised into six tabs. On first visit (local or
 hosted) it always loads a bundled 10-stock **sample book** (`data/sample/`) —
 never the operator's real holdings. Uploading your own CSV replaces it for that
 browser session only (never written to disk); refreshing or opening a new tab
-returns to the sample book. Stale Home/Screener artifacts can be refreshed
-in-app via a gated "Run" button (single-flight, cooldown, disabled while fresh).
+returns to the sample book. Home's brief refresh is gated (single-flight, cooldown,
+disabled while fresh); the Screener's candidate list is refreshed on a daily schedule
+rather than per-click, so every visitor sees the same evidence-screen run.
 
 **Home** — a plain-English book-health summary: how many holdings need attention this
 week, a gauge for how much of the book's movement is one market-wide bet, the latest
@@ -297,7 +298,7 @@ honestly, whatever it is.
 
 For a recruiter: this project demonstrates pre-registered hypothesis testing, rigorous
 negative-result reporting, point-in-time enforcement as a code invariant, hexagonal
-architecture applied to a real data pipeline, and 2,392 tests covering domain logic,
+architecture applied to a real data pipeline, and 3,025 tests covering domain logic,
 adapters, use cases, and integration paths. The negative findings are the portfolio
 piece — a system that falsified its own thesis honestly is more credible than one that
 never tested it.
@@ -327,7 +328,7 @@ pre-commit install
 ### Verify
 
 ```bash
-# Full suite (1628 tests, ~28 s)
+# Full suite (3,025 tests, ~25 s)
 pytest tests/ -q
 
 # With coverage gate (90% required)
