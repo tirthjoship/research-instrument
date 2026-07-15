@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 import tempfile
 import threading
 from collections.abc import Callable, Sequence
@@ -481,6 +482,26 @@ _HOME_BRIEF_STARTED_AT_KEY = "home_brief_rebuild_started_at"
 _HOME_BRIEF_PROGRESS_PATH_KEY = "home_brief_rebuild_progress_path"
 _UPLOAD_KEY_VER = "ob_upload_key_ver"
 
+# tempfile.mkdtemp() has no built-in cleanup — on a long-lived Cloud
+# container these session-scoped tmp dirs (holdings CSV + rebuild
+# artifacts) would otherwise accumulate on disk indefinitely, one per
+# upload / one per "Run brief" click. Each new dir immediately supersedes
+# the previous one (session_state pointers only ever reference the
+# newest), so the previous dir is safe to delete right before creating
+# the new one.
+_HOME_UPLOAD_TMP_DIR_KEY = "home_upload_tmp_dir"
+_HOME_BRIEF_RUN_TMP_DIR_KEY = "home_brief_run_tmp_dir"
+
+
+def _replace_tracked_tmp_dir(session_key: str, new_dir: str) -> None:
+    """Delete the tmp dir previously tracked under session_key (if any), then
+    record new_dir as the current one."""
+    old_dir = st.session_state.get(session_key)
+    if old_dir:
+        shutil.rmtree(old_dir, ignore_errors=True)
+    st.session_state[session_key] = new_dir
+
+
 # run_gate.py state name — shared process-wide (see run_gate.py's module
 # docstring) so concurrent visitors can't each trigger their own full-universe
 # scan. Distinct from _HOME_BRIEF_PROCESSING_KEY (st.session_state), which
@@ -545,6 +566,7 @@ def _trigger_brief_run(ctx: UIBookContext) -> None:
     st.session_state[_HOME_LAST_BRIEF_RUN_KEY] = now
     _gate_set_last_run_ts(_GATE_NAME, now)
     tmp_dir = tempfile.mkdtemp(prefix="stockrec_brief_run_")
+    _replace_tracked_tmp_dir(_HOME_BRIEF_RUN_TMP_DIR_KEY, tmp_dir)
     out_path = str(Path(tmp_dir) / "weekly_brief.md")
     brief_path = str(Path(tmp_dir) / "brief_summary.json")
     progress_path = str(Path(tmp_dir) / "rebuild_progress.json")
@@ -856,6 +878,7 @@ def _stage_csv_upload(uploaded: Any) -> None:
             return
 
         tmp_dir = tempfile.mkdtemp(prefix="stockrec_session_")
+        _replace_tracked_tmp_dir(_HOME_UPLOAD_TMP_DIR_KEY, tmp_dir)
         session_csv = Path(tmp_dir) / "holdings.csv"
         session_csv.write_text(content, encoding="utf-8")
         session_out = Path(tmp_dir) / "weekly_brief.md"

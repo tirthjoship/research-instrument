@@ -1527,6 +1527,47 @@ def test_stage_csv_upload_is_session_only(monkeypatch) -> None:  # type: ignore[
     assert "data/personal" not in st.session_state[wb.SESSION_BRIEF_PATH_KEY]
 
 
+def test_stage_csv_upload_deletes_previous_upload_tmp_dir(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """A second CSV upload must delete the FIRST upload's tmp dir (holdings
+    CSV + its rebuild artifacts) — it's immediately superseded, since
+    session_state pointers only ever reference the newest upload. Otherwise
+    every upload on a long-lived Cloud container leaks another visitor's
+    holdings CSV on disk forever (tempfile.mkdtemp has no built-in cleanup)."""
+    from pathlib import Path
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(st, "toast", lambda *a, **k: None)  # noqa: ARG005
+    monkeypatch.setattr(st, "rerun", lambda: None)
+    monkeypatch.setattr(
+        wb, "_start_dashboard_rebuild_background", lambda *a, **k: None
+    )  # noqa: ARG005
+
+    old_dir = tmp_path / "old_upload_dir"
+    old_dir.mkdir()
+    (old_dir / "holdings.csv").write_text("stale holder data")
+    st.session_state[wb._HOME_UPLOAD_TMP_DIR_KEY] = str(old_dir)
+
+    class FakeUpload:
+        name = "portfolio.csv"
+
+        def getvalue(self) -> bytes:
+            return (
+                b"symbol,quantity,book value (cad),exchange,account type\n"
+                b"COST,5,900,NASDAQ,TFSA\n"
+            )
+
+    wb._stage_csv_upload(FakeUpload())
+
+    assert not old_dir.exists(), "previous upload's tmp dir must be deleted"
+    new_dir = st.session_state[wb._HOME_UPLOAD_TMP_DIR_KEY]
+    assert new_dir != str(old_dir)
+    assert Path(new_dir).exists(), "the new upload's own tmp dir must still exist"
+
+
 def test_run_brief_button_sample_context_refreshes_to_session_temp(  # type: ignore[no-untyped-def]
     monkeypatch,
 ) -> None:
@@ -1573,6 +1614,47 @@ def test_run_brief_button_sample_context_refreshes_to_session_temp(  # type: ign
     assert kw["out_path"] != "data/sample/weekly_brief.md"
     refreshed = st.session_state[wb.SESSION_SAMPLE_REFRESH_BRIEF_KEY]
     assert refreshed != "data/sample/brief_summary.json"
+
+
+def test_trigger_brief_run_deletes_previous_click_tmp_dir(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Each Run brief click creates a fresh output tmp dir (per its own
+    docstring: 'each Run click never collides with an earlier one') — the
+    PREVIOUS click's dir must be deleted since it's immediately superseded
+    (SESSION_SAMPLE_REFRESH_BRIEF_KEY/SESSION_BRIEF_PATH_KEY always point at
+    only the newest). Otherwise repeated clicks leak a tmp dir forever."""
+    from pathlib import Path
+
+    import streamlit as st
+
+    from adapters.visualization.book_context import UIBookContext
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    old_dir = tmp_path / "old_run_dir"
+    old_dir.mkdir()
+    (old_dir / "brief_summary.json").write_text("{}")
+
+    monkeypatch.setattr(
+        st,
+        "session_state",
+        {wb._HOME_BRIEF_RUN_TMP_DIR_KEY: str(old_dir)},
+        raising=False,
+    )
+    monkeypatch.setattr(
+        wb, "_start_dashboard_rebuild_background", lambda *a, **k: None
+    )  # noqa: ARG005
+
+    ctx = UIBookContext(
+        book=[],
+        is_sample=True,
+        brief_path="data/sample/brief_summary.json",
+        reports_dir="data/sample",
+    )
+    wb._trigger_brief_run(ctx)
+
+    assert not old_dir.exists(), "previous Run brief click's tmp dir must be deleted"
+    new_dir = st.session_state[wb._HOME_BRIEF_RUN_TMP_DIR_KEY]
+    assert new_dir != str(old_dir)
+    assert Path(new_dir).exists()
 
 
 def test_run_brief_button_disabled_when_fresh_never_triggers_rebuild(  # type: ignore[no-untyped-def]
