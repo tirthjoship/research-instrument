@@ -29,6 +29,17 @@ dependencies = [
     "statsmodels>=0.14.0",
     "scipy>=1.11",
     "ddgs>=6.0",
+    # Dashboard deps live in base dependencies (not the "dashboard" extra below)
+    # because Streamlit Community Cloud auto-detects uv.lock and runs a bare
+    # `uv sync` (no --extra flags) to provision the deploy — see the Cloud
+    # deploy logs' "Used: uv-sync with uv.lock" line. Cloud separately
+    # hardcodes a streamlit install regardless of pyproject, which is why only
+    # plotly (an extra-only dep with no such special case) went missing and
+    # crashed My Portfolio's ModuleNotFoundError. Keeping these in base
+    # dependencies is what a bare `uv sync` actually needs to match.
+    "streamlit>=1.30.0",
+    "plotly>=5.18.0",
+    "google-generativeai>=0.8.0",
 ]
 
 [project.optional-dependencies]
@@ -36,11 +47,10 @@ eval = []
 s3 = [
     "boto3>=1.28",
 ]
-dashboard = [
-    "streamlit>=1.30.0",
-    "plotly>=5.18.0",
-    "google-generativeai>=0.8.0",
-]
+# Kept as an empty, harmless alias so existing `--extra dashboard` invocations
+# (CI, docs) don't error — the packages themselves now live in base
+# dependencies; see the comment above.
+dashboard = []
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
