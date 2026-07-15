@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, time
+from time import sleep as _time_sleep
 from typing import Any, cast
 from zoneinfo import ZoneInfo
 
@@ -16,7 +17,12 @@ import yfinance as yf
 from loguru import logger
 from pandas import DataFrame
 
+from adapters.data.retry import retry_with_backoff
+
 ET = ZoneInfo("America/New_York")
+
+# Module-level seam so tests can stub retry backoff waits (no real sleeping).
+_SLEEP = _time_sleep
 
 _INDEX_TICKERS = ("SPY", "QQQ", "DIA", "IWM")
 
@@ -179,12 +185,17 @@ def _batch_fetch_closes_impl(
 
 
 def _fetch_ticker_info_impl(ticker: str) -> dict[str, Any]:
-    """Fetch full ticker info dict from yfinance. Returns {} on any error."""
+    """Fetch full ticker info dict from yfinance.
+
+    Retries transient failures (rate-limit, timeout) with backoff before
+    giving up — a single hiccup must not get cached as an hour-long DATA-GAP
+    (st.cache_data on the wrapper is process-wide, shared across visitors).
+    Returns {} only once retries are exhausted.
+    """
     try:
-        t = yf.Ticker(ticker)
-        return dict(t.info)
+        return retry_with_backoff(lambda: dict(yf.Ticker(ticker).info), sleep=_SLEEP)
     except Exception as exc:
-        logger.warning("yf.Ticker({}).info failed: {}", ticker, exc)
+        logger.warning("yf.Ticker({}).info failed after retries: {}", ticker, exc)
         return {}
 
 

@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from time import sleep as _time_sleep
 from typing import Any
 
 import pandas as pd
+
+from adapters.data.retry import retry_with_backoff
+
+# Module-level seam so tests can stub retry backoff waits (no real sleeping).
+_SLEEP = _time_sleep
 
 
 @dataclass(frozen=True)
@@ -52,12 +58,16 @@ def _f(v: Any) -> float | None:
 
 
 def _fetch_earnings_history_impl(ticker: str) -> EarningsHistory | None:
+    """Fetch earnings history from yfinance, retrying transient failures
+    (rate-limit, timeout) with backoff before falling back to None (DATA-GAP).
+    """
     import yfinance as yf  # lazy import for CI safety
 
     try:
-        df = yf.Ticker(
-            ticker
-        ).earnings_dates  # verified: returns DataFrame with EPS columns
+        df = retry_with_backoff(
+            lambda: yf.Ticker(ticker).earnings_dates,  # verified: DataFrame w/ EPS cols
+            sleep=_SLEEP,
+        )
     except Exception:  # noqa: BLE001 — network/parse failures → honest None (DATA-GAP)
         return None
     return parse_earnings_frame(df)
