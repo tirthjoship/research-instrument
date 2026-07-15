@@ -53,9 +53,11 @@ def is_local_runtime() -> bool:
 def holdings_upload_enabled() -> bool:
     """Whether the Home tab may show the holdings CSV uploader.
 
-    Uses STOCKREC_LOCAL_ONLY for local dev (reliable) and falls back to the full
-    loopback guard when the env flag is unset.
+    Always True — unlike is_local_runtime() (which guards the operator's own
+    real data / AI-panel quota use), an uploaded CSV is each visitor's own file,
+    parsed into a session-scoped temp dir and st.session_state only. It is never
+    written to data/personal/ and never persisted or shared across sessions, so
+    it is safe to offer on a public hosted deploy too — see
+    weekly_brief.py::_stage_csv_upload.
     """
-    if os.environ.get("STOCKREC_LOCAL_ONLY") == "1":
-        return True
-    return is_local_runtime()
+    return True

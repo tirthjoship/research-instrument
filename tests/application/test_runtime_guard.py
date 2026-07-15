@@ -38,6 +38,18 @@ def test_holdings_upload_enabled_with_env_flag(monkeypatch):  # type: ignore[no-
     assert holdings_upload_enabled() is True
 
 
+def test_holdings_upload_enabled_on_hosted_deploy_too(monkeypatch):  # type: ignore[no-untyped-def]
+    """Upload is a public feature (any visitor's own CSV, parsed into a session-scoped
+    temp dir, never written to data/personal/) — unlike is_local_runtime(), it must stay
+    enabled on a hosted deploy so public visitors can see their own portfolio performance.
+    """
+    from application.runtime_guard import holdings_upload_enabled
+
+    monkeypatch.delenv("STOCKREC_LOCAL_ONLY", raising=False)
+    monkeypatch.setattr("application.runtime_guard.is_local_runtime", lambda: False)
+    assert holdings_upload_enabled() is True
+
+
 def test_risk_tab_omits_ai_panel_when_not_local(monkeypatch):  # type: ignore[no-untyped-def]
     """INTEGRATION TRIPWIRE: risk tab must never embed AI HTML when not running locally.
 
