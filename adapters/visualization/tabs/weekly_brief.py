@@ -7,6 +7,7 @@ import threading
 from collections.abc import Callable, Sequence
 from datetime import timedelta
 from pathlib import Path
+from time import sleep as _time_sleep
 from typing import Any
 
 import streamlit as st
@@ -306,6 +307,15 @@ def _needs_review_cards(
     return [(h["ticker"], h) for h in holdings if h.get("verdict") in _NEEDS_REVIEW]
 
 
+#: seconds between tickers in the background case-fetch worker below. Each
+#: ticker fires ~4 yfinance calls (info, prices, price history, earnings) via
+#: fetch_card; firing all needs-review tickers back-to-back with zero pacing
+#: is what tripped Yahoo's burst rate-limit on the Cloud deploy. Module-level
+#: seam so tests can stub it out (no real sleeping).
+_CASE_FETCH_PACE_S = 0.6
+_SLEEP = _time_sleep
+
+
 def _launch_case_fetcher(
     cards: list[tuple[str, dict[str, Any]]],
     summarizer: object,
@@ -341,6 +351,7 @@ def _launch_case_fetcher(
                 cases[ticker] = result
             except Exception:  # noqa: BLE001
                 cases[ticker] = None  # mark attempted; expander shows honest "—"
+            _SLEEP(_CASE_FETCH_PACE_S)
 
     threading.Thread(target=_worker, daemon=True).start()
 

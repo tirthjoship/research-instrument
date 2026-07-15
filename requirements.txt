@@ -1,7 +1,11 @@
-# Generated via: uv export --format requirements.txt --extra dashboard --no-hashes
+# Generated via: uv export --format requirements.txt --no-hashes --no-emit-project
 # For Streamlit Cloud (and any environment that runs the dashboard directly via
 # `streamlit run adapters/visualization/dashboard.py` from the repo root, not as
 # an installed package) -- the project's own package isn't installed, only its deps.
+# NOTE: streamlit/plotly/google-generativeai now live in pyproject.toml's base
+# dependencies (not a "dashboard" extra) so a bare `uv sync` -- which is what
+# Streamlit Cloud actually runs when it detects uv.lock, see that file's
+# comment -- installs them too. This file stays in sync via the same command.
 altair==6.2.1
     # via streamlit
 annotated-types==0.7.0
