@@ -20,7 +20,7 @@ _API = (
     "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/"
     "en.wikipedia/all-access/all-agents/{article}/daily/{start}/{end}"
 )
-_HEADERS = {"User-Agent": "multi-modal-stock-recommender/1.0 (research)"}
+_HEADERS = {"User-Agent": "research-instrument/1.0 (research)"}
 
 
 class WikipediaPageviewsAdapter:

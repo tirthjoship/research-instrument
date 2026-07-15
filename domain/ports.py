@@ -1,4 +1,4 @@
-"""Port interfaces (protocols) for multi-modal stock recommender.
+"""Port interfaces (protocols) for the research instrument.
 
 Adapters implement these ports; domain and application depend only
 on these abstractions. Ports support point-in-time access and leakage pruning.

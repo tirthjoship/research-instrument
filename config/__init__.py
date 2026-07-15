@@ -1,1 +1,1 @@
-"""Configuration package for multi-modal stock recommender."""
+"""Configuration package for the research instrument."""

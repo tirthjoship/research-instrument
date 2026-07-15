@@ -1,4 +1,4 @@
-"""Domain exceptions for multi-modal stock recommender.
+"""Domain exceptions for the research instrument.
 
 All domain-level errors inherit from DomainError.
 """

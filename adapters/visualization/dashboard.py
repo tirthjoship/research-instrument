@@ -10,7 +10,7 @@ load_dotenv()
 import streamlit as st  # noqa: E402
 
 st.set_page_config(
-    page_title="Stock Intelligence",
+    page_title="Market Research Instrument",
     page_icon=None,
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -23,7 +23,7 @@ inject_global_css()
 # fmt: off
 _APP_TITLE_HTML = (
     "<div style=\"margin:0 0 2px 0;\">"
-    "<h1 class='ri-app-title' style=\"font-family:'Fraunces',Georgia,serif !important;font-weight:600 !important;font-size:30px !important;letter-spacing:-0.01em !important;color:#14181F !important;margin:0 0 2px 0 !important;line-height:1.1 !important;\">Multi-Modal Stock Recommender</h1>"  # noqa: E501
+    "<h1 class='ri-app-title' style=\"font-family:'Fraunces',Georgia,serif !important;font-weight:600 !important;font-size:30px !important;letter-spacing:-0.01em !important;color:#14181F !important;margin:0 0 2px 0 !important;line-height:1.1 !important;\">Market Research Instrument</h1>"  # noqa: E501
     "<p class='ri-app-sub'>Evidence-based equity research instrument &mdash; attribution, not forecast</p>"  # noqa: E501
     "</div>"
 )
@@ -84,6 +84,6 @@ if tabs[5].open:
         render_trust()
 
 st.markdown(
-    '<div class="ws-footer">Multi-Modal Stock Recommender · Hexagonal Architecture · Built by Tirth Joshi</div>',
+    '<div class="ws-footer">Market Research Instrument · Hexagonal Architecture · Built by Tirth Joshi</div>',
     unsafe_allow_html=True,
 )
