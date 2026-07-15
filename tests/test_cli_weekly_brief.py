@@ -107,6 +107,55 @@ def test_weekly_brief_cli_masks_stdout_and_writes_gitignored_file(tmp_path, monk
     assert "RIVN" in out_file.read_text()
 
 
+def test_weekly_brief_cli_threads_progress_path(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """--progress-path must reach _build_weekly_brief so the correlation-graph
+    fetch can write real per-ticker progress for the dashboard's background
+    rebuild to poll (not just elapsed wall-clock seconds)."""
+    out_file = tmp_path / "weekly_brief.md"
+    holdings_csv = tmp_path / "holdings.csv"
+    holdings_csv.write_text(
+        "symbol,quantity,book value (cad),exchange,account type\nRIVN,10,500,NASDAQ,Margin\n"
+    )
+    progress_file = tmp_path / "progress.json"
+
+    captured: dict[str, object] = {}
+
+    def _fake_build(
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
+    ) -> tuple[WeeklyBriefUseCase, list[str]]:
+        captured["progress_path"] = kwargs.get("progress_path")
+        uc = WeeklyBriefUseCase(
+            screen=_FakeScreen(),
+            holdings_risk=_FakeHoldingsRisk(),
+            regime_reader=RegimeReadUseCase(
+                vix_provider=lambda: 20.0, spy_trend_provider=lambda: 0.1
+            ),
+            screen_label_fn=lambda rd: ScreenLabel.RESEARCH_ONLY,
+            cluster_peers_fn=lambda t: [],
+            screen_scorecard_fn=lambda: (None, None, 0, False),
+            discipline_scorecard_fn=lambda: (0.58, 5462, "PENDING"),
+        )
+        return uc, ["AAPL", "RIVN"]
+
+    monkeypatch.setattr(_brief_cmd, "_build_weekly_brief", _fake_build)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli_mod.cli,
+        [
+            "weekly-brief",
+            "--holdings",
+            str(holdings_csv),
+            "--out",
+            str(out_file),
+            "--progress-path",
+            str(progress_file),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert captured["progress_path"] == str(progress_file)
+
+
 def test_weekly_brief_default_out_is_gitignored_personal_dir() -> None:
     # The default --out must live under data/personal/ (gitignored).
     params = {p.name: p for p in cli_mod.weekly_brief.params}
