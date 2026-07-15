@@ -179,13 +179,41 @@ class TestFetchTickerInfo:
         mock_ticker = MagicMock()
         mock_ticker.info = MagicMock(side_effect=Exception("API error"))
 
-        with patch(
-            "adapters.visualization.price_cache.yf.Ticker",
-            side_effect=Exception("Ticker error"),
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                side_effect=Exception("Ticker error"),
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
         ):
             result = _fetch_ticker_info_impl("BADINPUT")
 
         assert result == {}
+
+    def test_retries_transient_failure_then_succeeds(self):
+        """A single transient Yahoo hiccup (rate-limit, timeout) must not surface as
+        a permanent DATA-GAP — retry_with_backoff should recover within the call."""
+        calls = {"n": 0}
+
+        def flaky_ticker(_symbol: str) -> MagicMock:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise Exception("transient 429")
+            mock_ticker = MagicMock()
+            mock_ticker.info = {"symbol": "AAPL", "trailingPE": 32.4}
+            return mock_ticker
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                side_effect=flaky_ticker,
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
+        ):
+            result = _fetch_ticker_info_impl("AAPL")
+
+        assert result["trailingPE"] == 32.4
+        assert calls["n"] == 2
 
 
 class TestFetchInsiderTransactions:
