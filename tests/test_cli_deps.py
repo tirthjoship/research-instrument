@@ -37,3 +37,17 @@ def test_ca_market_config_loads_and_uses_tsx60():
     # the .TO suffix is added at runtime by _get_backtest_universe, not here).
     assert "RY" in tickers  # Royal Bank of Canada, first real entry in the file
     assert len(tickers) == 52
+
+
+def test_in_market_config_loads_and_uses_nifty50():
+    from config.loader import load_market_config
+
+    config = load_market_config("in")
+    assert config["market"] == "in"
+
+    tickers = _get_ticker_universe(config)
+    # nifty50.txt has 50 real, dated (2025-12-08) tickers — see the file's
+    # own header for sourcing and open caveats before trusting it further.
+    assert "RELIANCE" in tickers
+    assert "TCS" in tickers
+    assert len(tickers) == 50
