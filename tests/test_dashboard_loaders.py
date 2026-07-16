@@ -30,6 +30,22 @@ def test_load_latest_screen_picks_newest_and_ignores_ic(tmp_path):
     assert got["as_of"] == "2026-06-08"
 
 
+def test_load_latest_screen_ignores_cited_cases_sidecar(tmp_path):
+    (tmp_path / "screen_2026-06-01.json").write_text(
+        json.dumps({"as_of": "2026-06-01"})
+    )
+    (tmp_path / "screen_2026-06-08.json").write_text(
+        json.dumps({"as_of": "2026-06-08", "universe_size": 512, "candidates": []})
+    )
+    # Sorts alphabetically after any screen_<date>.json — must not be picked as latest.
+    (tmp_path / "screen_cited_cases.json").write_text(
+        json.dumps({"as_of": "2026-06-08", "cases": {}})
+    )
+    got = load_latest_screen(str(tmp_path))
+    assert got["as_of"] == "2026-06-08"
+    assert got["universe_size"] == 512
+
+
 def test_load_latest_screen_empty_dir(tmp_path):
     assert load_latest_screen(str(tmp_path)) is None
 
@@ -98,3 +114,23 @@ def test_load_screen_history_empty(tmp_path):
     from adapters.visualization.data_loader import load_screen_history
 
     assert load_screen_history(str(tmp_path)) == []
+
+
+def test_load_screen_history_excludes_cited_cases_sidecar(tmp_path):
+    from adapters.visualization.data_loader import load_screen_history
+
+    (tmp_path / "screen_2026-06-08.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-06-08",
+                "universe_size": 512,
+                "candidates": [{"ticker": "A"}],
+            }
+        )
+    )
+    (tmp_path / "screen_cited_cases.json").write_text(
+        json.dumps({"as_of": "2026-06-08", "cases": {}})
+    )
+    hist = load_screen_history(str(tmp_path))
+    assert len(hist) == 1
+    assert hist[0]["as_of"] == "2026-06-08"

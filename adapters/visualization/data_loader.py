@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sqlite3
 from dataclasses import dataclass
 from datetime import date
@@ -24,6 +25,18 @@ from domain.corroboration_models import (
 from domain.models import Holding, StockRecommendation
 
 logger = logging.getLogger(__name__)
+
+# Matches screen_<YYYY-MM-DD>.json only — excludes sidecar files that also start
+# with "screen_" (e.g. screen_cited_cases.json, screen_ic_<date>.json), which
+# otherwise sort alongside real reports and can be mistaken for "the latest".
+_SCREEN_REPORT_RE = re.compile(r"^screen_\d{4}-\d{2}-\d{2}\.json$")
+
+
+def is_screen_report_filename(name: str) -> bool:
+    """True if `name` is a real screen_<date>.json report, not a sidecar file
+    (screen_cited_cases.json, screen_ic_<date>.json) that happens to share the
+    screen_ prefix."""
+    return bool(_SCREEN_REPORT_RE.match(name))
 
 
 @dataclass(frozen=True)
@@ -421,7 +434,7 @@ def load_screen_history(reports_dir: str = "data/reports") -> list[dict[str, Any
     abstained. Excludes screen_ic_*; skips unreadable files."""
     out: list[dict[str, Any]] = []
     for f in sorted(Path(reports_dir).glob("screen_*.json"), reverse=True):
-        if f.name.startswith("screen_ic_"):
+        if not _SCREEN_REPORT_RE.match(f.name):
             continue
         try:
             d = json.loads(f.read_text())
@@ -449,9 +462,7 @@ def load_latest_screen(reports_dir: str = "data/reports") -> dict[str, Any] | No
     @st.cache_data(ttl=300)
     def _load(d: str) -> dict[str, Any] | None:
         candidates = sorted(
-            f
-            for f in Path(d).glob("screen_*.json")
-            if not f.name.startswith("screen_ic_")
+            f for f in Path(d).glob("screen_*.json") if _SCREEN_REPORT_RE.match(f.name)
         )
         if not candidates:
             return None
