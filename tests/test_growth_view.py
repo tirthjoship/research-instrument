@@ -18,11 +18,11 @@ def _df() -> pd.DataFrame:
     )
 
 
-def _result(qf: pd.DataFrame | None = None) -> SimpleNamespace:
+def _result(qf: pd.DataFrame | None = None, ticker: str = "NVDA") -> SimpleNamespace:
     return SimpleNamespace(
         info={"revenueGrowth": 0.69, "earningsGrowth": 0.82},
         quarterly_financials=qf if qf is not None else _df(),
-        ticker="NVDA",
+        ticker=ticker,
     )
 
 
@@ -142,6 +142,17 @@ def test_rising_trajectory_is_green_and_accelerating() -> None:
 def test_panel_renders() -> None:
     html = growth_view.build_growth_panel(_result())
     assert "sa-pnl" in html and "Growth" in html and "sa-drill" not in html
+
+
+def test_revenue_trend_caption_shows_rupee_symbol_for_nse_ticker() -> None:
+    """An NSE-suffixed ticker's revenue trend caption (bars = revenue ...) must
+    show the rupee symbol, not bare $ — bare $ would misrepresent INR revenue
+    amounts as USD. (The "($B, by quarter)" subheading is a unit label, not a
+    currency amount, so it is left as-is.)"""
+    html = growth_view.build_growth_panel(_result(ticker="RELIANCE.NS"))
+    caption = html.split("bars = revenue")[1].split("</div>")[0]
+    assert "₹" in caption
+    assert "$" not in caption
 
 
 def test_no_streamlit_and_clean() -> None:

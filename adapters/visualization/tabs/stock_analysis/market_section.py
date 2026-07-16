@@ -12,6 +12,10 @@ from adapters.visualization.components.charts import (
     insider_bars,
     ownership_pie,
 )
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 from adapters.visualization.stock_analyzer import AnalysisResult
 from adapters.visualization.tabs.stock_analysis.financials_section import (
     _build_margin_items,
@@ -227,20 +231,22 @@ def _build_ownership_delta(quarters: list[dict[str, Any]]) -> OwnershipDelta | N
     )
 
 
-def _fmt_money(v: float) -> str:
-    """Compact signed dollar formatting for insider values."""
+def _fmt_money(v: float, ticker: str = "") -> str:
+    """Compact signed dollar formatting for insider values, using the ticker's
+    market currency symbol (C$/₹) instead of always assuming USD."""
     sign = "-" if v < 0 else ""
     a = abs(v)
+    sym = currency_symbol(currency_for_ticker(ticker))
     if a >= 1e9:
-        return f"{sign}${a / 1e9:.1f}B"
+        return f"{sign}{sym}{a / 1e9:.1f}B"
     if a >= 1e6:
-        return f"{sign}${a / 1e6:.1f}M"
+        return f"{sign}{sym}{a / 1e6:.1f}M"
     if a >= 1e3:
-        return f"{sign}${a / 1e3:.0f}K"
-    return f"{sign}${a:.0f}"
+        return f"{sign}{sym}{a / 1e3:.0f}K"
+    return f"{sign}{sym}{a:.0f}"
 
 
-def _ownership_delta_html(delta: OwnershipDelta) -> str:
+def _ownership_delta_html(delta: OwnershipDelta, ticker: str = "") -> str:
     """Render the insider net-stance + QoQ delta card as HTML. Pure function."""
     if delta.net_value > 0:
         stance, colour = "net buyers", "#16A34A"
@@ -260,8 +266,8 @@ def _ownership_delta_html(delta: OwnershipDelta) -> str:
             f'<div style="font-size:12px;color:#64748B;margin-top:4px;">'
             f"Quarter-over-quarter: "
             f'<span style="color:{d_col};font-weight:600;">'
-            f"{_fmt_money(delta.qoq_delta)}</span> "
-            f"vs {delta.prior_quarter} ({_fmt_money(delta.prior_net_value or 0.0)})</div>"
+            f"{_fmt_money(delta.qoq_delta, ticker)}</span> "
+            f"vs {delta.prior_quarter} ({_fmt_money(delta.prior_net_value or 0.0, ticker)})</div>"
         )
 
     return (
@@ -270,7 +276,7 @@ def _ownership_delta_html(delta: OwnershipDelta) -> str:
         f'Insiders were <span style="color:{colour};font-weight:700;">{stance}</span> '
         f"in {delta.latest_quarter} "
         f'<span style="color:#94A3B8;">'
-        f"({delta.buys} buy(s), {delta.sells} sell(s), net {_fmt_money(delta.net_value)})</span>"
+        f"({delta.buys} buy(s), {delta.sells} sell(s), net {_fmt_money(delta.net_value, ticker)})</span>"
         f"</div>"
         f"{qoq_html}"
         f'<div style="font-size:11px;color:#94A3B8;margin-top:6px;">'
@@ -321,7 +327,7 @@ def _render_ownership(result: AnalysisResult) -> None:
     # Insider net-stance + quarter-over-quarter delta context (FLOW of ownership).
     delta = _build_ownership_delta(quarters)
     if delta is not None:
-        st.markdown(_ownership_delta_html(delta), unsafe_allow_html=True)
+        st.markdown(_ownership_delta_html(delta, result.ticker), unsafe_allow_html=True)
 
     for status, text in section.verdicts:
         st.markdown(verdict_bullet(status, text), unsafe_allow_html=True)

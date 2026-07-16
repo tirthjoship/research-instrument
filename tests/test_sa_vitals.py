@@ -64,6 +64,20 @@ def test_insiders_q_tile_uses_latest_quarter_not_alltime_sum():
     assert tile["value"] == "-186M"
 
 
+def test_canadian_ticker_target_and_fcf_tiles_show_cad_symbol():
+    """A TSX-suffixed ticker's Price-vs-target and Free-cash-flow tiles must
+    show C$, not bare $ — bare $ would misrepresent CAD amounts as USD."""
+    r = _result()
+    r.ticker = "RY.TO"
+    v = vitals.build_vitals_view(r)
+    tgt = next(t for t in v.tiles if "tgt" in t["label"])
+    fcf = next(t for t in v.tiles if "Free cash flow" in t["label"])
+    assert tgt["value"].startswith("C$")
+    assert fcf["value"].startswith("C$")
+    assert "$" not in tgt["value"].replace("C$", "")
+    assert "$" not in fcf["value"].replace("C$", "")
+
+
 def test_no_streamlit_and_clean():
     src = inspect.getsource(vitals)
     assert "import streamlit" not in src

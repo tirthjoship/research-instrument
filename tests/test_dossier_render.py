@@ -140,6 +140,40 @@ def test_render_analyst_panel_source_no_forbidden_words() -> None:
         assert word not in src, f"forbidden word {word!r} in _render_analyst_panel"
 
 
+class _FakeMetricCol:
+    """Captures st.metric(label, value) calls without rendering anything."""
+
+    def __init__(self) -> None:
+        self.metrics: list[tuple[str, str]] = []
+
+    def metric(self, label: str, value: str, *args: object, **kwargs: object) -> None:
+        self.metrics.append((label, str(value)))
+
+
+def test_render_analyst_panel_indian_ticker_shows_rupee_symbol(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Mean target / dispersion metrics for an NSE-suffixed ticker must show the
+    rupee symbol, not bare $ — bare $ would misrepresent INR amounts as USD."""
+    import streamlit as st
+
+    from adapters.visualization.tabs.stock_analysis import _render_analyst_panel
+
+    cols = [_FakeMetricCol() for _ in range(4)]
+    monkeypatch.setattr(st, "columns", lambda n: cols)
+
+    result = _make_analysis_result()
+    result.ticker = "RELIANCE.NS"
+    _render_analyst_panel(result)
+
+    mean_target = dict(cols[2].metrics)["Mean target"]
+    # c4's label is the "Dispersion" glossary tooltip HTML, not a plain string —
+    # there's only one metric call on this column, so grab its value directly.
+    _, dispersion = cols[3].metrics[0]
+    assert "₹" in mean_target
+    assert "$" not in mean_target
+    assert "₹" in dispersion
+    assert "$" not in dispersion
+
+
 # ---------------------------------------------------------------------------
 # E3: News context render
 # ---------------------------------------------------------------------------
@@ -308,3 +342,43 @@ def test_dossier_sections_source_has_no_forbidden_words() -> None:
         src = inspect.getsource(fn).lower()
         for word in FORBIDDEN_WORDS:
             assert word not in src, f"forbidden word {word!r} found in {fn.__name__}"
+
+
+# ---------------------------------------------------------------------------
+# Currency migration (Phase 2 Task 3, batch B) — verdict header price/market
+# cap. Note: before this change, no test in the suite invoked _render_verdict
+# directly (only source-inspected it, e.g. test_verdict_reframe_has_no_grade_
+# language in test_phase54_integration.py) — this is the first direct-call
+# test for it.
+# ---------------------------------------------------------------------------
+
+
+def test_fmt_market_cap_canadian_ticker_shows_cad_symbol() -> None:
+    """_fmt_market_cap must show C$ for a TSX-suffixed ticker, not bare $ —
+    bare $ would misrepresent CAD amounts as USD."""
+    from adapters.visualization.tabs.stock_analysis import verdict_section
+
+    assert verdict_section._fmt_market_cap(2.1e12, "RY.TO") == "C$2.1T"
+    assert verdict_section._fmt_market_cap(2.1e12, "NVDA") == "$2.1T"
+
+
+def test_render_verdict_canadian_ticker_shows_cad_symbol(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """_render_verdict's price and market-cap figures for a TSX-suffixed ticker
+    must show C$, not bare $ — bare $ would misrepresent CAD amounts as USD."""
+    import streamlit as st
+
+    from adapters.visualization.tabs.stock_analysis import _render_verdict
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        st, "markdown", lambda html, **kw: calls.append(html)  # type: ignore[misc]
+    )
+    monkeypatch.setattr(st, "button", lambda *a, **kw: False)  # type: ignore[misc]
+
+    result = _make_analysis_result()
+    result.ticker = "RY.TO"
+    _render_verdict(result)
+
+    joined = "".join(calls)
+    assert "C$" in joined
+    assert "$" not in joined.replace("C$", "")

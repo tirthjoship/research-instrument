@@ -5,10 +5,15 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from adapters.visualization.analysis.models import SectionScore
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 
 
-def score_health(info: dict[str, Any]) -> SectionScore:
+def score_health(info: dict[str, Any], ticker: str = "") -> SectionScore:
     """6 financial health checks: D/E, current ratio, cash vs debt, FCF, D/E trend, interest coverage."""
+    sym = currency_symbol(currency_for_ticker(ticker))
     verdicts: list[tuple[Literal["pass", "warn", "fail"], str]] = []
     score = 0
 
@@ -58,14 +63,14 @@ def score_health(info: dict[str, Any]) -> SectionScore:
             verdicts.append(
                 (
                     "pass",
-                    f"Cash (${cash / 1e9:.1f}B) exceeds total debt (${total_debt / 1e9:.1f}B)",
+                    f"Cash ({sym}{cash / 1e9:.1f}B) exceeds total debt ({sym}{total_debt / 1e9:.1f}B)",
                 )
             )
         else:
             verdicts.append(
                 (
                     "warn",
-                    f"Debt (${total_debt / 1e9:.1f}B) exceeds cash (${cash / 1e9:.1f}B)",
+                    f"Debt ({sym}{total_debt / 1e9:.1f}B) exceeds cash ({sym}{cash / 1e9:.1f}B)",
                 )
             )
     else:
@@ -76,12 +81,14 @@ def score_health(info: dict[str, Any]) -> SectionScore:
     if fcf is not None:
         if fcf > 0:
             score += 1
-            verdicts.append(("pass", f"Free cash flow positive at ${fcf / 1e9:.1f}B"))
+            verdicts.append(
+                ("pass", f"Free cash flow positive at {sym}{fcf / 1e9:.1f}B")
+            )
         else:
             verdicts.append(
                 (
                     "fail",
-                    f"Negative free cash flow (${fcf / 1e9:.1f}B) — cash burn risk",
+                    f"Negative free cash flow ({sym}{fcf / 1e9:.1f}B) — cash burn risk",
                 )
             )
     else:

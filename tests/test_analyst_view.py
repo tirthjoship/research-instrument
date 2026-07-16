@@ -18,8 +18,8 @@ def _panel(gap=False):
     )
 
 
-def _result(gap=False):
-    return SimpleNamespace(analyst_panel=_panel(gap), ticker="NVDA")
+def _result(gap=False, ticker="NVDA"):
+    return SimpleNamespace(analyst_panel=_panel(gap), ticker=ticker)
 
 
 def test_six_metrics_consensus_dispersion():
@@ -155,6 +155,21 @@ def test_verdict_uses_analyst_context_not_chart_meta():
     )
     v_have = analyst_view.build_analyst_view(with_history)
     assert any("third-party context" in vv.text for vv in v_have["verdicts"])
+
+
+def test_canadian_ticker_shows_cad_symbol_not_bare_dollar():
+    """A TSX-suffixed ticker's mean-target, dispersion, and reframe summary
+    must show C$, not bare $ — bare $ would misrepresent CAD price targets
+    as USD."""
+    v = analyst_view.build_analyst_view(_result(ticker="RY.TO"))
+    mean_tgt = next(m for m in v["metrics"] if "tgt" in m.label.lower())
+    disp = next(m for m in v["metrics"] if "ispersion" in m.label)
+    assert "C$200" in mean_tgt.value
+    assert "C$110" in disp.value
+    html = v["reframe_html"] or ""
+    assert "C$150" in html and "C$260" in html
+    assert "$150" not in html.replace("C$150", "")
+    assert "$260" not in html.replace("C$260", "")
 
 
 def test_no_streamlit_and_clean():

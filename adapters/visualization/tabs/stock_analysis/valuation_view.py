@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from adapters.visualization.components import panel_charts
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.status_chip import render_status_chip
 from adapters.visualization.components.stock_metrics import STOCK_METRICS
@@ -227,14 +231,15 @@ def _valuation_ranges_html(result: Any) -> str:
     t_mean = getattr(panel, "target_mean", None) if panel is not None else None
     t_hi = getattr(panel, "target_high", None) if panel is not None else None
     if t_lo and t_hi and t_hi > t_lo:
+        sym = currency_symbol(currency_for_ticker(getattr(result, "ticker", "")))
         markers: list[tuple[float, str, str]] = []
         if price:
             markers.append(
-                (float(price), f"now ${panel_charts.fmt_num(price)}", "#0F6E80")
+                (float(price), f"now {sym}{panel_charts.fmt_num(price)}", "#0F6E80")
             )
         if t_mean:
             markers.append(
-                (float(t_mean), f"base ${panel_charts.fmt_num(t_mean)}", "#1a2226")
+                (float(t_mean), f"base {sym}{panel_charts.fmt_num(t_mean)}", "#1a2226")
             )
         parts.append(
             '<div class="sa-pnl-subh" style="margin-top:12px">'
@@ -245,8 +250,8 @@ def _valuation_ranges_html(result: Any) -> str:
                 float(t_lo),
                 float(t_hi),
                 markers,
-                left_label=f"bear ${panel_charts.fmt_num(t_lo)}",
-                right_label=f"bull ${panel_charts.fmt_num(t_hi)}",
+                left_label=f"bear {sym}{panel_charts.fmt_num(t_lo)}",
+                right_label=f"bull {sym}{panel_charts.fmt_num(t_hi)}",
                 gradient=True,
             )
         )

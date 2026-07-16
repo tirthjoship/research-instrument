@@ -175,6 +175,13 @@ class TestScoreValuation:
         result = _score_valuation(good_info, [])
         assert result.score >= 4
 
+    def test_cad_ticker_shows_cad_symbol_in_target_verdict(self) -> None:
+        from adapters.visualization.stock_analyzer import _score_valuation
+
+        result = _score_valuation(MOCK_INFO, [], ticker="RY.TO")
+        target_verdicts = [v for v in result.verdicts if "Analyst target" in v[1]]
+        assert target_verdicts and "Analyst target C$1000.00" in target_verdicts[0][1]
+
 
 class TestScoreGrowth:
     def test_returns_section_score(self) -> None:
@@ -244,6 +251,14 @@ class TestScoreHealth:
         # MOCK_INFO: cash > debt, FCF positive, low D/E
         result = _score_health(MOCK_INFO)
         assert result.score >= 4
+
+    def test_indian_ticker_shows_rupee_symbol_in_cash_debt_verdict(self) -> None:
+        from adapters.visualization.stock_analyzer import _score_health
+
+        result = _score_health(MOCK_INFO, ticker="RELIANCE.NS")
+        cash_verdicts = [v for v in result.verdicts if v[1].startswith("Cash (")]
+        assert cash_verdicts and "₹" in cash_verdicts[0][1]
+        assert "$" not in cash_verdicts[0][1]
 
     def test_empty_info_returns_zeros(self) -> None:
         from adapters.visualization.stock_analyzer import _score_health

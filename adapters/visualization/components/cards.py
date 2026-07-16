@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import Literal
 
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
+
 
 def tooltip(text: str, help_text: str) -> str:
     """Wrap text with a hover tooltip icon."""
@@ -110,6 +115,7 @@ def price_range_bar(
     low: float,
     high: float,
     target: float | None = None,
+    ticker: str = "",
 ) -> str:
     """Render a horizontal price range bar.
 
@@ -118,10 +124,13 @@ def price_range_bar(
         low: 52-week (or range) low — displayed at left.
         high: 52-week (or range) high — displayed at right.
         target: Optional analyst price target shown as a purple marker.
+        ticker: Ticker whose market determines the currency symbol shown
+            (defaults to USD "$" when omitted, preserving prior behavior).
 
     Returns:
         HTML string with inline SVG-free CSS bar.
     """
+    sym = currency_symbol(currency_for_ticker(ticker))
     span = high - low if high != low else 1.0
     current_pct = max(0.0, min(100.0, (current - low) / span * 100))
 
@@ -132,7 +141,7 @@ def price_range_bar(
             f'<div style="position:absolute; left:{target_pct:.1f}%; top:-18px;'
             f" transform:translateX(-50%); font-family:'JetBrains Mono', monospace;"
             f' font-size:11px; color:#7C3AED; font-weight:600; white-space:nowrap;">'
-            f"${target:.2f}</div>"
+            f"{sym}{target:.2f}</div>"
             f'<div style="position:absolute; left:{target_pct:.1f}%; top:0; bottom:0;'
             f' transform:translateX(-50%); width:2px; background:#7C3AED; border-radius:1px;"></div>'
         )
@@ -148,7 +157,7 @@ def price_range_bar(
         # Current price label above
         f'<div style="position:absolute; left:{current_pct:.1f}%; top:-22px; transform:translateX(-50%);'
         f" font-family:'JetBrains Mono', monospace; font-size:12px; color:#2563EB; font-weight:600;"
-        f' white-space:nowrap;">${current:.2f}</div>'
+        f' white-space:nowrap;">{sym}{current:.2f}</div>'
         # Current price dot
         f'<div style="position:absolute; left:{current_pct:.1f}%; top:50%; transform:translate(-50%, -50%);'
         f" width:14px; height:14px; background:#2563EB; border-radius:50%; border:2px solid #FFFFFF;"
@@ -156,8 +165,8 @@ def price_range_bar(
         f"</div>"
         # Low / high labels
         f'<div style="display:flex; justify-content:space-between;">'
-        f"<span style=\"font-family:'Inter', sans-serif; font-size:11px; color:#94A3B8;\">${low:.2f}</span>"
-        f"<span style=\"font-family:'Inter', sans-serif; font-size:11px; color:#94A3B8;\">${high:.2f}</span>"
+        f"<span style=\"font-family:'Inter', sans-serif; font-size:11px; color:#94A3B8;\">{sym}{low:.2f}</span>"
+        f"<span style=\"font-family:'Inter', sans-serif; font-size:11px; color:#94A3B8;\">{sym}{high:.2f}</span>"
         f"</div>"
         f"</div>"
     )

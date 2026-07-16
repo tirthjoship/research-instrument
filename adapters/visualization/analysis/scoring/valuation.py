@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from adapters.visualization.analysis.models import SectionScore
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 
 
 def sector_pe_avg(sector: str) -> float:
@@ -25,8 +29,11 @@ def sector_pe_avg(sector: str) -> float:
     return _SECTOR_PE.get(sector, 22)
 
 
-def score_valuation(info: dict[str, Any], peers: list[dict[str, Any]]) -> SectionScore:
+def score_valuation(
+    info: dict[str, Any], peers: list[dict[str, Any]], ticker: str = ""
+) -> SectionScore:
     """6 valuation checks: P/E, PEG, P/B, analyst consensus, price vs target, FCF yield."""
+    sym = currency_symbol(currency_for_ticker(ticker))
     verdicts: list[tuple[Literal["pass", "warn", "fail"], str]] = []
     score = 0
 
@@ -101,13 +108,16 @@ def score_valuation(info: dict[str, Any], peers: list[dict[str, Any]]) -> Sectio
         if upside > 0:
             score += 1
             verdicts.append(
-                ("pass", f"Analyst target ${target:.2f} implies {upside:.1f}% upside")
+                (
+                    "pass",
+                    f"Analyst target {sym}{target:.2f} implies {upside:.1f}% upside",
+                )
             )
         else:
             verdicts.append(
                 (
                     "fail",
-                    f"Analyst target ${target:.2f} implies {abs(upside):.1f}% downside",
+                    f"Analyst target {sym}{target:.2f} implies {abs(upside):.1f}% downside",
                 )
             )
     else:

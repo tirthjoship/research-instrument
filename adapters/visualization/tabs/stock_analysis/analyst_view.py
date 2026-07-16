@@ -18,6 +18,10 @@ import html as _html
 from typing import Any
 
 from adapters.visualization.components import panel_charts
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.status_chip import render_status_chip
 from adapters.visualization.tabs.stock_analysis.panel import Verdict, build_panel
@@ -73,25 +77,27 @@ def _summary_reframe_html(
     target_low: float | None,
     target_high: float | None,
     is_wide: bool,
+    ticker: str = "",
 ) -> str:
     """Mockup-style one-line data summary with bold key figures."""
     e = _html.escape
+    sym = currency_symbol(currency_for_ticker(ticker))
     parts: list[str] = []
     if count:
         parts.append(f"{e(str(count))} analysts")
     if mean_rating is not None:
         parts.append(f"consensus <b>{mean_rating:.1f}</b>")
     if target_mean is not None:
-        tgt = f"mean target <b>${target_mean:.0f}</b>"
+        tgt = f"mean target <b>{sym}{target_mean:.0f}</b>"
         if upside_pct is not None:
             sign = "+" if upside_pct >= 0 else ""
             tgt += f" ({sign}{upside_pct:.0f}%)"
         parts.append(tgt)
     if target_low is not None and target_high is not None:
         tail = (
-            f"Spread <b>${target_low:.0f}–${target_high:.0f}</b> — real disagreement."
+            f"Spread <b>{sym}{target_low:.0f}–{sym}{target_high:.0f}</b> — real disagreement."
             if is_wide
-            else f"Target range <b>${target_low:.0f}–${target_high:.0f}</b>."
+            else f"Target range <b>{sym}{target_low:.0f}–{sym}{target_high:.0f}</b>."
         )
         parts.append(tail)
     if not parts:
@@ -164,7 +170,7 @@ def _upside_metric(target_mean: float | None, current_price: float | None) -> Me
     )
 
 
-def _fwd_eps_metric(info: dict[str, Any]) -> Metric:
+def _fwd_eps_metric(info: dict[str, Any], ticker: str = "") -> Metric:
     """Consensus forward EPS estimate — an analyst output we do have, in place of
     the unavailable 90-day EPS-estimate history. Petrol tone (Street's estimate)."""
     meaning = (
@@ -177,8 +183,15 @@ def _fwd_eps_metric(info: dict[str, Any]) -> Metric:
         return Metric(
             "fwd_eps", "Fwd EPS", _DATA_GAP, "data gap", "grey", meaning, basis
         )
+    sym = currency_symbol(currency_for_ticker(ticker))
     return Metric(
-        "fwd_eps", "Fwd EPS", f"${eps:.2f}", "consensus est", "petrol", meaning, basis
+        "fwd_eps",
+        "Fwd EPS",
+        f"{sym}{eps:.2f}",
+        "consensus est",
+        "petrol",
+        meaning,
+        basis,
     )
 
 
@@ -203,6 +216,8 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
     Chips use petrol tone only — the Street's ratings are reported, not adopted.
     """
     panel = getattr(result, "analyst_panel", None)
+    ticker = getattr(result, "ticker", "")
+    sym = currency_symbol(currency_for_ticker(ticker))
 
     # If no panel or explicit data_gap, degrade all metrics
     if panel is None or getattr(panel, "data_gap", False):
@@ -357,7 +372,7 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
         m_mean_target = Metric(
             "mean_target",
             "Mean tgt",
-            f"${target_mean:.0f}",
+            f"{sym}{target_mean:.0f}",
             tgt_sub,
             "petrol",
             mean_target_meaning,
@@ -390,11 +405,11 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             target_mean is not None and target_mean > 0 and spread / target_mean >= 0.30
         )
         tone = "amber" if is_wide else "grey"
-        sub = "wide" if is_wide else f"${target_low:.0f}–${target_high:.0f}"
+        sub = "wide" if is_wide else f"{sym}{target_low:.0f}–{sym}{target_high:.0f}"
         m_dispersion = Metric(
             "dispersion",
             "Dispersion",
-            f"${spread:.0f}",
+            f"{sym}{spread:.0f}",
             sub,
             tone,
             dispersion_meaning,
@@ -415,7 +430,7 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
         )
 
     # 6. Forward EPS consensus (replaces the unavailable 90-day EPS-estimate history)
-    m_fwd_eps = _fwd_eps_metric(getattr(result, "info", {}) or {})
+    m_fwd_eps = _fwd_eps_metric(getattr(result, "info", {}) or {}, ticker)
 
     metrics = [
         m_analysts,
@@ -461,6 +476,7 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
         target_low=target_low,
         target_high=target_high,
         is_wide=is_wide,
+        ticker=ticker,
     )
 
     return {
@@ -474,8 +490,8 @@ def build_analyst_view(result: Any) -> dict[str, Any]:
             (
                 Verdict(
                     "cau",
-                    f"Wide ${target_low:.0f}–${target_high:.0f} spread = real disagreement "
-                    "among analysts — consensus may mask divergence.",
+                    f"Wide {sym}{target_low:.0f}–{sym}{target_high:.0f} spread = real "
+                    "disagreement among analysts — consensus may mask divergence.",
                 )
                 if is_wide and target_low is not None and target_high is not None
                 else Verdict(
@@ -497,6 +513,7 @@ def _price_vs_target_html(result: Any, target_mean: float | None) -> str:
     closes = [float(c) for c in closes] if closes else []
     subh = '<div class="sa-pnl-subh">Price vs. mean target</div>'
     if len(closes) >= 30 and target_mean:
+        sym = currency_symbol(currency_for_ticker(getattr(result, "ticker", "")))
         series = [
             ("price", closes, "#0F6E80"),
             ("target", [float(target_mean)] * len(closes), "#9AA5AD"),
@@ -507,7 +524,7 @@ def _price_vs_target_html(result: Any, target_mean: float | None) -> str:
                 series, x_labels=("start", "now"), label_lines=False
             )
             + '<div class="sa-pnl-cap">Trailing price (teal) vs. today\'s '
-            f"${target_mean:.0f} mean target (grey) — not a 12-mo revision history "
+            f"{sym}{target_mean:.0f} mean target (grey) — not a 12-mo revision history "
             "(that series is a data gap).</div>"
         )
     return subh + '<div class="sa-pnl-cap">data gap — price history unavailable</div>'

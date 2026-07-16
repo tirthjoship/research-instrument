@@ -6,6 +6,10 @@ import html as _html
 from typing import Any
 
 from adapters.visualization.components import panel_charts
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.status_chip import render_status_chip
 from adapters.visualization.components.stock_metrics import STOCK_METRICS
@@ -36,17 +40,19 @@ def _bs_row(qbs: Any, names: list[str]) -> list[float]:
     return []
 
 
-def _fmt_cash(val: float) -> str:
-    """Format net cash as +$XB / -$XB (billions/millions/trillions)."""
+def _fmt_cash(val: float, ticker: str) -> str:
+    """Format net cash as +$XB / -$XB (billions/millions/trillions), using the
+    ticker's market currency symbol (C$/₹) instead of always assuming USD."""
     abs_val = abs(val)
     sign = "+" if val >= 0 else "-"
+    sym = currency_symbol(currency_for_ticker(ticker))
     if abs_val >= 1e12:
-        return f"{sign}${abs_val / 1e12:.0f}T"
+        return f"{sign}{sym}{abs_val / 1e12:.0f}T"
     if abs_val >= 1e9:
-        return f"{sign}${abs_val / 1e9:.0f}B"
+        return f"{sign}{sym}{abs_val / 1e9:.0f}B"
     if abs_val >= 1e6:
-        return f"{sign}${abs_val / 1e6:.0f}M"
-    return f"{sign}${abs_val:.0f}"
+        return f"{sign}{sym}{abs_val / 1e6:.0f}M"
+    return f"{sign}{sym}{abs_val:.0f}"
 
 
 _STRIP_TILE = (
@@ -211,7 +217,7 @@ def build_health_view(result: Any) -> dict[str, Any]:
             Metric(
                 "net_cash",
                 "Net cash",
-                _fmt_cash(net_cash_val),
+                _fmt_cash(net_cash_val, getattr(result, "ticker", "")),
                 "cash minus debt",
                 tone,
                 net_cash_meaning,
@@ -424,9 +430,12 @@ def build_health_panel(result: Any) -> str:
                 if cash_b[-1] > cash_b[0]
                 else "softening" if cash_b[-1] < cash_b[0] else "steady"
             )
+            cash_sym = currency_symbol(
+                currency_for_ticker(getattr(result, "ticker", ""))
+            )
             cap = (
                 '<div class="sa-pnl-cap">cash '
-                f"${cash_b[0]:.0f}B → ${cash_b[-1]:.0f}B — {word}</div>"
+                f"{cash_sym}{cash_b[0]:.0f}B → {cash_sym}{cash_b[-1]:.0f}B — {word}</div>"
             )
         right = (
             '<div class="sa-pnl-subh">Cash &amp; debt trend ($B)</div>'
