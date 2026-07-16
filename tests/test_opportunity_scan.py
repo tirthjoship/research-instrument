@@ -192,6 +192,48 @@ def test_scan_skips_thin_history_names():
     assert all(not c["surfaced"] for c in store.candidates if c["ticker"] == "NEW")
 
 
+def test_execute_uses_configured_benchmark_ticker():
+    """OpportunityScanUseCase(benchmark_ticker=...) resolves spy_at_surface from
+    that ticker's signals, not a hardcoded "SPY" key — needed so CA/India scans
+    surface a real benchmark price instead of a missing/zero value."""
+    buzz = FakeBuzzDiscovery([_buzz_sig("ASTS", d) for d in (1, 2, 3, 4, 5)])
+    store = FakeSurfacedCallStore()
+    md = FakeMarketData(
+        signals={
+            "ASTS": _prices("ASTS"),
+            "DUD": _prices("DUD"),
+            "XIC.TO": [
+                Signal(
+                    symbol="XIC.TO",
+                    timestamp=NOW,
+                    price=42.0,
+                    volume=1.0,
+                    open_=42.0,
+                    high=42.0,
+                    low=42.0,
+                )
+            ],
+            "QQQ": _prices("QQQ"),
+        },
+        ticker_info={"ASTS": {"marketCap": 3e9}, "DUD": {"marketCap": 5e8}},
+    )
+    uc = OpportunityScanUseCase(
+        universe_provider=FakeUniverseProvider(
+            [UniverseEntry("ASTS", "space"), UniverseEntry("DUD", "space")]
+        ),
+        conviction_provider=_conviction("ASTS"),
+        buzz_discovery=buzz,
+        market_data=md,
+        store=store,
+        cmin=6.0,
+        dmin=6.0,
+        benchmark_ticker="XIC.TO",
+    )
+    calls = uc.execute(NOW)
+    assert [c.ticker for c in calls] == ["ASTS"]
+    assert calls[0].spy_at_surface == 42.0
+
+
 def test_cap_tier_uses_marketcap_for_large():
     from tests.fakes.fake_attention_series import FakeAttentionSeries
 

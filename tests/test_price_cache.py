@@ -13,6 +13,7 @@ from adapters.visualization.price_cache import (
     _fetch_index_prices_impl,
     _fetch_insider_transactions_impl,
     _fetch_ticker_info_impl,
+    _index_tickers_for_market,
     _is_market_hours,
     parse_price_history,
 )
@@ -339,6 +340,46 @@ class TestFetchIndexPrices:
         assert "SPY" in result
         assert "QQQ" in result
         assert result["SPY"]["price"] == pytest.approx(405.0)
+
+
+class TestIndexTickersForMarket:
+    def test_us_returns_existing_four_tuple(self):
+        assert _index_tickers_for_market("us") == ("SPY", "QQQ", "DIA", "IWM")
+
+    def test_ca_returns_single_benchmark_tuple(self):
+        assert _index_tickers_for_market("ca") == ("XIC.TO",)
+
+    def test_in_returns_single_benchmark_tuple(self):
+        assert _index_tickers_for_market("in") == ("NIFTYBEES.NS",)
+
+    def test_fetch_index_prices_impl_defaults_to_us(self):
+        arrays = [["Close", "Close", "Close", "Close"], ["SPY", "QQQ", "DIA", "IWM"]]
+        multi_idx = pd.MultiIndex.from_arrays(arrays, names=["Price", "Ticker"])
+        data = pd.DataFrame(
+            [[400.0, 350.0, 340.0, 200.0], [405.0, 355.0, 345.0, 202.0]],
+            columns=multi_idx,
+            index=pd.date_range("2026-01-01", periods=2),
+        )
+
+        with patch("adapters.visualization.price_cache.yf.download", return_value=data):
+            result = _fetch_index_prices_impl()
+
+        assert "SPY" in result and "QQQ" in result
+
+    def test_fetch_index_prices_impl_uses_single_ticker_for_ca(self):
+        data = pd.DataFrame(
+            {"Close": [42.0, 43.0]},
+            index=pd.date_range("2026-01-01", periods=2),
+        )
+
+        with patch(
+            "adapters.visualization.price_cache.yf.download", return_value=data
+        ) as mock_download:
+            result = _fetch_index_prices_impl(market="ca")
+
+        mock_download.assert_called_once()
+        assert mock_download.call_args[0][0] == ["XIC.TO"]
+        assert result["XIC.TO"]["price"] == pytest.approx(43.0)
 
 
 class TestYfinanceNews:

@@ -51,6 +51,7 @@ class OpportunityScanUseCase:
         cmin: float = 6.0,
         dmin: float = 6.0,
         min_history_days: int = 21,
+        benchmark_ticker: str = "SPY",
     ) -> None:
         self._universe = universe_provider
         self._conviction = conviction_provider
@@ -61,6 +62,7 @@ class OpportunityScanUseCase:
         self._cmin = cmin
         self._dmin = dmin
         self._min_history_days = min_history_days
+        self._benchmark_ticker = benchmark_ticker
 
     def _intensity_series(
         self, ticker: str, now: datetime
@@ -83,7 +85,7 @@ class OpportunityScanUseCase:
     def execute(
         self, now: datetime, *, allow_abstention: bool = True
     ) -> list[SurfacedCall]:
-        spy = self._benchmark("SPY", now)
+        spy = self._benchmark(self._benchmark_ticker, now)
         ndx = self._benchmark("QQQ", now)
         surfaced: list[SurfacedCall] = []
         for entry in self._universe.get_universe(now):

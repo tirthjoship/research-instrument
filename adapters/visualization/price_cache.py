@@ -18,6 +18,7 @@ from loguru import logger
 from pandas import DataFrame
 
 from adapters.data.retry import retry_with_backoff
+from config.loader import load_market_config
 
 ET = ZoneInfo("America/New_York")
 
@@ -298,9 +299,24 @@ def _fetch_revenue_estimate_impl(ticker: str) -> float | None:
         return None
 
 
-def _fetch_index_prices_impl() -> dict[str, dict[str, float]]:
-    """Fetch prices for SPY, QQQ, DIA, IWM."""
-    return _batch_fetch_prices_impl(_INDEX_TICKERS)
+def _index_tickers_for_market(market: str) -> tuple[str, ...]:
+    """Index tickers to fetch for *market*.
+
+    US keeps the existing 4-ticker breadth basket unchanged. CA/India have no
+    verified QQQ/DIA/IWM equivalents (non-fabrication boundary — see
+    docs/superpowers/sdd/p4-task2-brief.md), so they fetch only the single
+    configured benchmark ETF (``macro_symbols.spy`` in that market's config).
+    """
+    if market == "us":
+        return _INDEX_TICKERS
+    benchmark = load_market_config(market)["macro_symbols"]["spy"]
+    return (benchmark,)
+
+
+def _fetch_index_prices_impl(market: str = "us") -> dict[str, dict[str, float]]:
+    """Fetch index prices for *market* (SPY/QQQ/DIA/IWM for US; the single
+    configured benchmark ETF for CA/India)."""
+    return _batch_fetch_prices_impl(_index_tickers_for_market(market))
 
 
 # ---------------------------------------------------------------------------
