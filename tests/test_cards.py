@@ -117,6 +117,24 @@ def test_price_range_bar_no_target() -> None:
     assert "155" in html
 
 
+def test_price_range_bar_shows_rupee_symbol_for_nse_ticker() -> None:
+    """An NSE-suffixed ticker's range bar must show ₹, not a bare $."""
+    html = price_range_bar(
+        current=155.0, low=140.0, high=180.0, target=170.0, ticker="RELIANCE.NS"
+    )
+    assert "₹155.00" in html
+    assert "₹170.00" in html
+    assert "₹140.00" in html
+    assert "₹180.00" in html
+    assert "$155.00" not in html
+
+
+def test_price_range_bar_defaults_to_dollar_when_ticker_omitted() -> None:
+    """Backward compatibility: omitting ticker keeps the prior bare-$ output."""
+    html = price_range_bar(current=155.0, low=140.0, high=180.0)
+    assert "$155.00" in html
+
+
 # ---------------------------------------------------------------------------
 # mini_sparkline
 # ---------------------------------------------------------------------------

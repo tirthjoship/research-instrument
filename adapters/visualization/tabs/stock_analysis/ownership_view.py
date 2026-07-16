@@ -11,6 +11,10 @@ import html as _html
 from typing import Any
 
 from adapters.visualization.components import panel_charts
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.status_chip import render_status_chip
 from adapters.visualization.tabs.stock_analysis.panel import Verdict, build_panel
@@ -72,17 +76,19 @@ def _strip_html(metrics: list[Metric]) -> str:
     return f'<div class="sa-strip">{tiles}</div>'
 
 
-def _fmt_net_q(net_q: float) -> str:
-    """Format insider net quarterly transaction value as abbreviated dollar amount."""
+def _fmt_net_q(net_q: float, ticker: str) -> str:
+    """Format insider net quarterly transaction value as abbreviated dollar amount,
+    using the ticker's market currency symbol (C$/₹) instead of always assuming USD."""
     abs_val = abs(net_q)
     sign = "-" if net_q < 0 else "+"
+    sym = currency_symbol(currency_for_ticker(ticker))
     if abs_val >= 1_000_000_000:
-        return f"{sign}${abs_val / 1_000_000_000:.1f}B"
+        return f"{sign}{sym}{abs_val / 1_000_000_000:.1f}B"
     if abs_val >= 1_000_000:
-        return f"{sign}${abs_val / 1_000_000:.0f}M"
+        return f"{sign}{sym}{abs_val / 1_000_000:.0f}M"
     if abs_val >= 1_000:
-        return f"{sign}${abs_val / 1_000:.0f}K"
-    return f"{sign}${abs_val:.0f}"
+        return f"{sign}{sym}{abs_val / 1_000:.0f}K"
+    return f"{sign}{sym}{abs_val:.0f}"
 
 
 def _short_interest_metric(info: dict[str, Any]) -> Metric:
@@ -302,7 +308,7 @@ def build_ownership_view(result: Any) -> dict[str, Any]:
             net_q_basis,
         )
     else:
-        net_q_str = _fmt_net_q(net_q)
+        net_q_str = _fmt_net_q(net_q, getattr(result, "ticker", ""))
         net_q_direction = "net reducing" if net_q < 0 else "net accumulating"
         m_netq = Metric(
             "insider_net_q",

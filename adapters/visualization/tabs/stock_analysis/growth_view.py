@@ -13,6 +13,10 @@ import html as _html
 from typing import Any
 
 from adapters.visualization.components import panel_charts
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.status_chip import render_status_chip
 from adapters.visualization.tabs.stock_analysis.panel import Verdict, build_panel
@@ -405,8 +409,10 @@ def build_growth_panel(result: Any) -> str:
         rev_b, ni_b, unit="B", x_labels=(f"{nq}q ago", "latest") if nq >= 2 else None
     )
     if combo:
+        rev_sym = currency_symbol(currency_for_ticker(getattr(result, "ticker", "")))
         rev_txt = (
-            f"${panel_charts.fmt_num(rev_b[0])}B → ${panel_charts.fmt_num(rev_b[-1])}B"
+            f"{rev_sym}{panel_charts.fmt_num(rev_b[0])}B → "
+            f"{rev_sym}{panel_charts.fmt_num(rev_b[-1])}B"
             if rev_b
             else ""
         )

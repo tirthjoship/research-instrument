@@ -6,6 +6,10 @@ import html as _html
 from dataclasses import dataclass
 from typing import Any
 
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 from adapters.visualization.components.info_tip import render_info
 from adapters.visualization.components.mini_charts import percentile_bar, sparkline
 from adapters.visualization.tabs.stock_analysis.ownership_view import (
@@ -146,9 +150,10 @@ def _target_tile(result: Any) -> dict[str, Any]:
         )
     upside = round((float(tgt) - price) / price * 100)
     pos = max(0.0, min(100.0, price / float(tgt) * 100)) if float(tgt) else 0.0
+    sym = currency_symbol(currency_for_ticker(getattr(result, "ticker", "")))
     return dict(
         label="Price vs tgt",
-        value=f"${float(tgt):.0f}",
+        value=f"{sym}{float(tgt):.0f}",
         sub=f"{upside:+d}% to mean",
         tone="petrol",
         meaning="Current price relative to the mean analyst target. Third-party; reported, not adopted.",
@@ -208,9 +213,10 @@ def _fcf_tile(result: Any) -> dict[str, Any]:
             basis="info.freeCashflow",
             viz="",
         )
+    sym = currency_symbol(currency_for_ticker(getattr(result, "ticker", "")))
     return dict(
         label="Free cash flow",
-        value=f"${float(fcf) / 1e9:.0f}B",
+        value=f"{sym}{float(fcf) / 1e9:.0f}B",
         sub="TTM",
         tone="green",
         meaning="Trailing-twelve-month free cash flow.",

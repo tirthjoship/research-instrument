@@ -192,3 +192,30 @@ def test_expanded_card_includes_rubric() -> None:
         "How this verdict was decided" in html
     ), "rubric header missing from expanded card"
     assert "REDUCE" in html  # marked as current verdict in rubric
+
+
+def test_expanded_card_shows_cad_symbol_for_tsx_ticker() -> None:
+    """A TSX-suffixed ticker's price/cost must show C$, not a bare $ — the real
+    caller (portfolio_detail.py) passes the ticker itself as `name`."""
+    from adapters.visualization.components.decision_card import render_expanded_card
+    from application.evidence_card import EvidenceCard
+    from domain.discipline import Verdict
+    from domain.evidence_rag import RagColor, RagSignal
+
+    sigs = (RagSignal("Technicals", RagColor.GREEN, "above trend"),)
+    card = EvidenceCard(ticker="RY.TO", signals=sigs, sparkline=())
+    html = render_expanded_card(
+        card,
+        case=None,
+        verdict=Verdict.HOLD,
+        name="RY.TO",
+        unrealized_pct=2.0,
+        means="Trend intact.",
+        price=150.0,
+        cost=140.0,
+        returns=(1.0, 2.0, 3.0, 4.0, 5.0),
+        reliability="n/a",
+    )
+    assert "C$150.00" in html
+    assert "C$140.00" in html
+    assert "$150.00" not in html.replace("C$150.00", "")

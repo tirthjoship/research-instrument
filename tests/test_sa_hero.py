@@ -67,6 +67,19 @@ def test_html_escapes_company_name():
     assert "<b>X" not in html and "&lt;b&gt;X" in html
 
 
+def test_canadian_ticker_shows_cad_symbol():
+    """A TSX-suffixed ticker's price/range/market-cap must show C$, not bare
+    $ — showing bare $ would misrepresent CAD amounts as USD."""
+    r = _result()
+    r.ticker = "RY.TO"
+    v = hero.build_hero_view(r, grade="B", as_of="Jun 27 2026")
+    assert v.price.startswith("C$")
+    assert v.low.startswith("C$") and v.high.startswith("C$")
+    assert v.market_cap.startswith("C$")
+    assert "$" not in v.price.replace("C$", "")
+    assert "$" not in v.market_cap.replace("C$", "")
+
+
 def test_no_streamlit_and_clean():
     src = inspect.getsource(hero)
     assert "import streamlit" not in src

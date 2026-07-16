@@ -7,11 +7,11 @@ from adapters.visualization.tabs.stock_analysis import ownership_view
 from domain.fit import FORBIDDEN_WORDS
 
 
-def _result(**info_over):
+def _result(ticker="NVDA", **info_over):
     info = {"heldPercentInstitutions": 0.66, "heldPercentInsiders": 0.04}
     info.update(info_over)
     return SimpleNamespace(
-        info=info, insider_transactions=[{"value": -48_000_000}], ticker="NVDA"
+        info=info, insider_transactions=[{"value": -48_000_000}], ticker=ticker
     )
 
 
@@ -112,6 +112,15 @@ def test_insider_quarterly_net_aggregates_by_quarter():
     assert len(qn) == 3
     assert qn[0][0] == "Q4 2025" and qn[-1][0] == "Q2 2026"  # chronological
     assert qn[-1][1] == -186e6  # latest quarter net is signed (reducing)
+
+
+def test_indian_ticker_insider_net_shows_rupee_symbol():
+    """An NSE-suffixed ticker's Insider net Q tile must show the rupee symbol,
+    not bare $ — bare $ would misrepresent INR amounts as USD."""
+    v = ownership_view.build_ownership_view(_result(ticker="RELIANCE.NS"))
+    net = next(m for m in v["metrics"] if "net" in m.label.lower())
+    assert "₹" in net.value
+    assert "$" not in net.value
 
 
 def test_no_streamlit_and_clean():
