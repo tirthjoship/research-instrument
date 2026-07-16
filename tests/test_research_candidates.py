@@ -1160,6 +1160,21 @@ def test_no_misleading_stock_analysis_cited_case_pointer() -> None:
     assert "full cited case" not in zone2_html
 
 
+def test_zone2_collapsed_summary_shows_plain_read_why() -> None:
+    """An unfamiliar ticker in 'check your own list' shouldn't require
+    expanding the card to see why it scored the way it did — the collapsed
+    <summary> must carry the same plain-read reason the shortlist rows show
+    collapsed (source_note alone, e.g. 'your list · live-computed', doesn't
+    explain anything to a first-time visitor)."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_check_your_own_html(_make_fake_batch_rows())
+    summary_end = html.index("</summary>")
+    collapsed = html[:summary_end]
+    assert "Strong on quality" in collapsed
+    assert "your list" in collapsed.lower() or "in this week" in collapsed.lower()
+
+
 def test_candidate_cards_carry_rc_card_class_for_tooltip_escape() -> None:
     """The collapsible <details> card sets inline overflow:hidden for rounded
     corners, which also clips the factor-row (i) tooltip once expanded. The
