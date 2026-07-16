@@ -480,12 +480,27 @@ def load_latest_screened(reports_dir: str = "data/reports") -> dict[str, Any] | 
     Returns dict with key 'rows' (list of ScreenedRow dicts) if screened file found,
     or standard screen dict with key 'candidates' if falling back.
     The caller checks for 'rows' key to distinguish.
+
+    The screened_<date>.json sidecar only ever contains {as_of,
+    corroboration_run_date, rows} -- it never carries universe_size/
+    diagnostics/candidates (see screen_commands.py::_write_screened_json).
+    Callers like build_header_html() need those fields for the Universe/
+    Cleared/Shown summary tiles, so they're merged in here from the
+    underlying screen_<date>.json when available -- otherwise those tiles
+    silently show 0/0/0 despite real candidates being listed below (caught
+    testing this locally: the committed Cloud data never has this sidecar
+    committed, so production isn't affected, but any local
+    screen-candidates run always writes both files).
     """
     screened = sorted(Path(reports_dir).glob("screened_*.json"))
     if screened:
         try:
             data = cast(dict[str, Any], json.loads(screened[-1].read_text()))
             data["_source"] = "screened"
+            underlying = load_latest_screen(reports_dir)
+            if underlying:
+                for key in ("universe_size", "diagnostics", "candidates"):
+                    data.setdefault(key, underlying.get(key))
             return data
         except (json.JSONDecodeError, OSError):
             pass

@@ -58,7 +58,7 @@ def _glossary_tooltip(glossary_term: str) -> str:
                 f"margin-left:4px;vertical-align:middle;cursor:help;"
                 f'line-height:1;flex-shrink:0;">'
                 f"i"
-                f'<span class="ri-tip">{safe_def}</span>'
+                f'<span class="ri-tip ri-tip-left">{safe_def}</span>'
                 f"</span>"
             )
     except ImportError:

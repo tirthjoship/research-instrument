@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from adapters.visualization.data_loader import (
     load_brief_summary,
     load_latest_screen,
+    load_latest_screened,
     staleness_days,
 )
 
@@ -48,6 +49,52 @@ def test_load_latest_screen_ignores_cited_cases_sidecar(tmp_path):
 
 def test_load_latest_screen_empty_dir(tmp_path):
     assert load_latest_screen(str(tmp_path)) is None
+
+
+def test_load_latest_screened_merges_universe_fields_from_underlying_screen(tmp_path):
+    """screened_<date>.json (SP3 blended sidecar) only ever contains {as_of,
+    corroboration_run_date, rows} -- see screen_commands.py::_write_screened_json.
+    Without merging in universe_size/diagnostics from the underlying
+    screen_<date>.json, build_header_html()'s Universe/Cleared/Shown tiles
+    silently show 0/0/0 despite real candidates being listed below (caught
+    running a real local screen-candidates for CA/India, which always
+    writes both files)."""
+    (tmp_path / "screen_2026-07-16.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-16",
+                "universe_size": 52,
+                "diagnostics": {"cleared": 29, "scanned": 52},
+                "candidates": [{"ticker": "RY.TO"}],
+            }
+        )
+    )
+    (tmp_path / "screened_2026-07-16.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-16",
+                "corroboration_run_date": None,
+                "rows": [{"ticker": "RY.TO", "composite": 0.5}],
+            }
+        )
+    )
+    got = load_latest_screened(str(tmp_path))
+    assert got["_source"] == "screened"
+    assert got["rows"] == [{"ticker": "RY.TO", "composite": 0.5}]
+    assert got["universe_size"] == 52
+    assert got["diagnostics"] == {"cleared": 29, "scanned": 52}
+
+
+def test_load_latest_screened_no_underlying_screen_stays_none(tmp_path):
+    """If only the sidecar exists (no matching screen_<date>.json), the merge
+    is a no-op -- universe_size/diagnostics stay absent rather than crashing,
+    matching this project's DATA-GAP-not-fabricate discipline."""
+    (tmp_path / "screened_2026-07-16.json").write_text(
+        json.dumps({"as_of": "2026-07-16", "rows": []})
+    )
+    got = load_latest_screened(str(tmp_path))
+    assert got.get("universe_size") is None
+    assert got.get("diagnostics") is None
 
 
 def test_staleness_days():

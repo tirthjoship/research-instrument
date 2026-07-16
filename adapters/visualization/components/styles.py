@@ -759,6 +759,14 @@ html,body,[data-testid="stApp"],.stApp{background:radial-gradient(1100px 520px a
 .ri-tip{position:absolute;bottom:142%;left:50%;transform:translateX(-50%) translateY(5px);background:#1b2733;color:#eef3f6;font-family:'IBM Plex Sans';font-size:.76rem;line-height:1.45;padding:.65rem .8rem;border-radius:10px;width:240px;box-shadow:0 10px 30px rgba(15,30,45,.22);opacity:0;visibility:hidden;transition:.15s;z-index:60;text-align:left;}
 .ri-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1b2733;}
 .ri-ttip:hover .ri-tip{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+/* factor_row.py's glossary tooltip trigger sits in the leftmost grid column of
+   each factor row -- a centered 240px-wide tooltip there overflows past the
+   card's left edge and gets clipped. Left-anchor this variant instead of
+   centering (the trigger is always near the row's left edge here, never
+   elsewhere, so this never needs to be responsive/edge-detecting). */
+.ri-tip-left{left:0;transform:translateY(5px);}
+.ri-tip-left::after{left:14px;transform:none;}
+.ri-ttip:hover .ri-tip-left{transform:translateY(0);}
 .ri-lens,.tr-nav{transition:transform .15s;display:block;}
 .ri-lens:hover,.tr-nav:hover{transform:translateY(-2px);}
 
