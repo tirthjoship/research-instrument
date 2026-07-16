@@ -390,7 +390,9 @@ def backtest_screen(
         tickers = tickers[:limit]
         universe_size = len(tickers)
 
-    click.echo(f"Universe: {universe_size} tickers (sp500+nasdaq100+tsx60, deduped)")
+    _UNIVERSE_LABELS = {"us": "sp500+nasdaq100", "ca": "tsx60", "in": "nifty50"}
+    universe_label = _UNIVERSE_LABELS.get(market, market)
+    click.echo(f"Universe: {universe_size} tickers ({universe_label}, deduped)")
 
     # ------------------------------------------------------------------
     # Date range: monthly cadence (first-of-month / 28-day steps)

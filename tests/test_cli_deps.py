@@ -51,3 +51,34 @@ def test_in_market_config_loads_and_uses_nifty50():
     assert "RELIANCE" in tickers
     assert "TCS" in tickers
     assert len(tickers) == 50
+
+
+def test_get_backtest_universe_us_excludes_tsx60_and_nifty():
+    from application.cli._deps import _get_backtest_universe
+
+    us_tickers = _get_backtest_universe("us")
+    # RY (Royal Bank of Canada) and RELIANCE.NS are real entries in the
+    # other markets' files and NOT US sp500/nasdaq100 constituents —
+    # today's bug includes CA in "us" anyway (India wasn't even wired yet).
+    assert "RY.TO" not in us_tickers
+    assert "RELIANCE.NS" not in us_tickers
+
+
+def test_get_backtest_universe_ca_returns_tsx60_with_to_suffix():
+    from application.cli._deps import _get_backtest_universe
+
+    ca_tickers = _get_backtest_universe("ca")
+    assert "RY.TO" in ca_tickers
+    assert len(ca_tickers) == 52
+    # Must NOT silently include the full US universe too.
+    assert "AAPL" not in ca_tickers
+
+
+def test_get_backtest_universe_in_returns_nifty50_with_ns_suffix():
+    from application.cli._deps import _get_backtest_universe
+
+    in_tickers = _get_backtest_universe("in")
+    assert "RELIANCE.NS" in in_tickers
+    assert "TCS.NS" in in_tickers
+    assert len(in_tickers) == 50
+    assert "AAPL" not in in_tickers
