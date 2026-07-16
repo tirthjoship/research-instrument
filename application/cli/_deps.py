@@ -178,6 +178,22 @@ def _load_spine_tickers(market: str) -> list[str]:
         return list(_load_wiki_map(market).keys())
 
 
+def _apply_yf_market_suffix(tickers: list[str], market: str) -> list[str]:
+    """Map bare ticker-file symbols to their yfinance-resolvable form.
+
+    US tickers need no suffix. Class shares use dotted notation on disk
+    (GIB.A) -> dash + suffix for yfinance (GIB-A.TO), mirroring
+    holdings_reader._to_yf and _get_backtest_universe's existing CA/India
+    handling (this is the same mapping, shared so screen-candidates'
+    live universe and the offline backtest universe never drift apart).
+    """
+    if market == "ca":
+        return [f"{t.replace('.', '-')}.TO" for t in tickers]
+    if market == "in":
+        return [f"{t}.NS" for t in tickers]
+    return tickers
+
+
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     """Load ticker universe from the market config's declared ticker files.
 
@@ -185,8 +201,12 @@ def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     Falls back to the US sp500+nasdaq100 files if the config has no
     "universe" section (defends against a malformed/partial config), and to
     a small hardcoded list if even those files are missing (dev/testing).
+    Non-US tickers are suffixed for yfinance via config["market"] — the
+    ticker files themselves store bare symbols (see tsx60.txt/nifty50.txt's
+    own file headers).
     """
     repo_root = Path(__file__).parent.parent.parent
+    market = config.get("market", "us")
     universe_cfg = config.get("universe", {})
     configured_files = universe_cfg.get("ticker_files")
 
@@ -202,6 +222,8 @@ def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
     existing = [f for f in files if f.exists()]
     if not existing:
         # Fallback to small list for dev/testing when config files missing
+        # (an emergency US-mega-cap safety net, not associated with any
+        # particular market -- never suffix this).
         return [
             "AAPL",
             "MSFT",
@@ -221,7 +243,7 @@ def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
         ]
     from application.ticker_universe import load_ticker_universe
 
-    return load_ticker_universe(existing)
+    return _apply_yf_market_suffix(load_ticker_universe(existing), market)
 
 
 # Mega-caps / semis scanned first so daily-scan is not limited to A* tickers.
@@ -294,11 +316,8 @@ def _get_backtest_universe(market: str) -> list[str]:
             for line in tsx_path.read_text().splitlines():
                 s = line.strip()
                 if s and not s.startswith("#"):
-                    # Class shares use dotted notation in the file (GIB.A);
-                    # yfinance wants dash + .TO (GIB-A.TO). Mirrors
-                    # holdings_reader._to_yf.
-                    tickers.append(f"{s.replace('.', '-')}.TO")
-        return tickers
+                    tickers.append(s)
+        return _apply_yf_market_suffix(tickers, market)
 
     if market == "in":
         nifty_path = config_dir / "nifty50.txt"
@@ -311,8 +330,8 @@ def _get_backtest_universe(market: str) -> list[str]:
                     # TMPV have NOT been verified against a live yfinance
                     # query — Task 5 below adds that verification step
                     # before this is trusted in a live screen.
-                    tickers.append(f"{s}.NS")
-        return tickers
+                    tickers.append(s)
+        return _apply_yf_market_suffix(tickers, market)
 
     us_files = [
         config_dir / "sp500.txt",
