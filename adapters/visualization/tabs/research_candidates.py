@@ -122,18 +122,23 @@ def maybe_render_gemini_cache_only(ticker: str, reports_dir: str) -> str:
     """Cache-only read for non-hero rows — never fires a live Gemini call.
 
     Reads the persistent {reports_dir}/screen_cited_cases.json cache (written
-    by the `screen-candidates --cite-cases` CLI prefetch). On a hit, renders
-    the same two-column block the hero row would show. On a miss, returns an
-    honest "not cached yet" note. Same privacy fail-safe as maybe_render_gemini.
+    by the `screen-candidates --cite-cases` CLI prefetch, including the daily
+    scheduled-screen.yml GH Actions job). On a hit, renders the same
+    two-column block the hero row would show. On a miss, returns an honest
+    "not cached yet" note.
+
+    Deliberately NOT gated by is_local_runtime() (unlike maybe_render_gemini,
+    the live-call path): this only ever reads an already-committed file —
+    no live API call, no visitor data leaves the process — so it's safe to
+    show Cloud visitors too. This is what makes the scheduled batch cited-case
+    prefetch (screen_cited_cases.json) actually useful for public visitors
+    instead of local-dev-only.
 
     This is the practical resolution of "lazy fetch on expand": Streamlit has
     no visibility into raw-HTML <details>/<summary> toggle state (no rerun
     fires on a client-side-only disclosure open), so true per-click fetching
     isn't reachable without converting rows to real st.expander widgets.
     """
-    if not is_local_runtime():
-        return ""
-
     cache_path = f"{reports_dir}/screen_cited_cases.json"
     cached = load_cached_case(cache_path, ticker)
     if cached is None:
@@ -970,7 +975,7 @@ def build_reason_view_html(
             shadow = "0 1px 3px rgba(15,23,42,.08)" if is_hero else "var(--shadow-sm)"
 
             row_html = (
-                f'<details{open_attr} style="background:var(--bg-primary);'
+                f'<details{open_attr} class="rc-card" style="background:var(--bg-primary);'
                 f"border:1px solid {border_color};border-radius:10px;"
                 f"margin-bottom:7px;overflow:hidden;content-visibility:auto;contain-intrinsic-size:0 64px;"
                 f'box-shadow:{shadow};">'
@@ -1039,7 +1044,7 @@ def build_rank_view_html(
         shadow = "0 1px 3px rgba(15,23,42,.08)" if is_hero else "var(--shadow-sm)"
 
         row_html = (
-            f'<details{open_attr} style="background:var(--bg-primary);'
+            f'<details{open_attr} class="rc-card" style="background:var(--bg-primary);'
             f"border:1px solid {border_color};border-radius:10px;"
             f"margin-bottom:7px;overflow:hidden;content-visibility:auto;contain-intrinsic-size:0 64px;"
             f'box-shadow:{shadow};">'
@@ -1300,7 +1305,7 @@ def _build_zone2_row_html(row: Any) -> str:
     )
 
     return (
-        f'<details style="background:var(--bg-primary);'
+        f'<details class="rc-card" style="background:var(--bg-primary);'
         f"border:1px solid var(--border);border-radius:10px;"
         f"margin-bottom:7px;overflow:hidden;content-visibility:auto;contain-intrinsic-size:0 64px;"
         f'box-shadow:var(--shadow-sm);">'

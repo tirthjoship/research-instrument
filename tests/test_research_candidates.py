@@ -1067,11 +1067,38 @@ def test_cache_only_miss_shows_honest_note(monkeypatch, tmp_path) -> None:  # ty
     assert "Green flags" not in html
 
 
-def test_cache_only_off_local_returns_empty(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+def test_cache_only_ignores_local_runtime_hit(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Unlike the live-call path, cache-only reads a committed file — no live
+    API call, no visitor data leaves the process — so it must show on Cloud
+    (is_local_runtime()=False) too, not just local dev."""
+    from adapters.visualization.tabs import research_candidates as rc
+    from application.case_cache import write_case_cache
+    from domain.case_models import CasePoint, CaseResult
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: False)
+    cache_path = tmp_path / "screen_cited_cases.json"
+    write_case_cache(
+        str(cache_path),
+        "2026-07-12",
+        {
+            "NVDA": CaseResult(
+                in_favor=(CasePoint("demand durable", "Reuters"),),
+                to_watch=(CasePoint("export controls", "Bloomberg"),),
+                data_gap=False,
+            )
+        },
+    )
+    html = rc.maybe_render_gemini_cache_only("NVDA", str(tmp_path))
+    assert "Green flags" in html
+    assert "demand durable" in html
+
+
+def test_cache_only_ignores_local_runtime_miss(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
     from adapters.visualization.tabs import research_candidates as rc
 
     monkeypatch.setattr(rc, "is_local_runtime", lambda: False)
-    assert rc.maybe_render_gemini_cache_only("NVDA", str(tmp_path)) == ""
+    html = rc.maybe_render_gemini_cache_only("NVDA", str(tmp_path))
+    assert "not cached yet" in html.lower()
 
 
 def test_hero_row_calls_live_non_hero_calls_cache_only(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
@@ -1131,3 +1158,19 @@ def test_no_misleading_stock_analysis_cited_case_pointer() -> None:
 
     zone2_html = rc.build_check_your_own_html(_make_fake_batch_rows())
     assert "full cited case" not in zone2_html
+
+
+def test_candidate_cards_carry_rc_card_class_for_tooltip_escape() -> None:
+    """The collapsible <details> card sets inline overflow:hidden for rounded
+    corners, which also clips the factor-row (i) tooltip once expanded. The
+    rc-card class is how styles.py's `.rc-card[open]{overflow:visible}` rule
+    finds these cards to override that clipping — losing the class silently
+    re-breaks the tooltip."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    candidates = _FAKE_SCREEN["candidates"]
+    assert 'class="rc-card"' in rc.build_reason_view_html(candidates)
+    assert 'class="rc-card"' in rc.build_rank_view_html(candidates)
+
+    zone2_html = rc.build_check_your_own_html(_make_fake_batch_rows())
+    assert 'class="rc-card"' in zone2_html
