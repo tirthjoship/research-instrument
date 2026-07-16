@@ -63,3 +63,24 @@ def test_aggregate_to_book_empty_returns_empty():
     from application.holdings_reader import aggregate_to_book
 
     assert aggregate_to_book([]) == []
+
+
+def test_to_yf_maps_nse_exchange():
+    from application.holdings_reader import _to_yf
+
+    assert _to_yf("RELIANCE", "NSE") == "RELIANCE.NS"
+
+
+def test_to_yf_maps_bse_exchange():
+    from application.holdings_reader import _to_yf
+
+    assert _to_yf("RELIANCE", "BSE") == "RELIANCE.BO"
+
+
+def test_to_yf_unmapped_exchange_falls_through_unchanged():
+    """An exchange string not in any known set (typo, or a market this repo
+    doesn't support yet) should return the bare symbol, not silently guess
+    a suffix — matches the existing US fallback behavior."""
+    from application.holdings_reader import _to_yf
+
+    assert _to_yf("FOO", "NYSE") == "FOO"
