@@ -486,6 +486,7 @@ def scan_opportunities(
         attention_provider=combined_attention,
         cmin=cmin,
         dmin=dmin,
+        benchmark_ticker=config.get("macro_symbols", {}).get("spy", "SPY"),
     )
 
     click.echo(

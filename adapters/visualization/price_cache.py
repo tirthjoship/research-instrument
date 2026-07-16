@@ -309,7 +309,7 @@ def _index_tickers_for_market(market: str) -> tuple[str, ...]:
     """
     if market == "us":
         return _INDEX_TICKERS
-    benchmark = load_market_config(market)["macro_symbols"]["spy"]
+    benchmark = load_market_config(market).get("macro_symbols", {}).get("spy", "SPY")
     return (benchmark,)
 
 
