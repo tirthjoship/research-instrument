@@ -37,6 +37,31 @@ def test_scan_show_all_prints_distribution(monkeypatch: object) -> None:
     assert result.exit_code == 0, result.output
 
 
+def test_scan_opportunities_wires_market_benchmark_ticker(monkeypatch: object) -> None:
+    """scan-opportunities --market ca must pass the CA benchmark (XIC.TO) through
+    to OpportunityScanUseCase, not silently default to US SPY (final-review
+    Finding 1, site A)."""
+    captured: dict[str, object] = {}
+
+    class _UC:
+        def __init__(self, *a: object, **k: object) -> None:
+            captured.update(k)
+
+        def execute(
+            self, now: object, *, allow_abstention: bool = True
+        ) -> list[object]:
+            return []
+
+    import application.opportunity_scan_use_case as _opp_mod
+
+    monkeypatch.setattr(_opp_mod, "OpportunityScanUseCase", _UC)  # type: ignore[attr-defined]
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["scan-opportunities", "--market", "ca"])
+    assert result.exit_code == 0, result.output
+    assert captured["benchmark_ticker"] == "XIC.TO"
+
+
 def test_daily_cycle_invokes_scan_then_resolve(monkeypatch: object) -> None:
     class _ScanUC:
         def __init__(self, *a: object, **k: object) -> None:
