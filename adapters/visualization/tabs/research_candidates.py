@@ -216,30 +216,6 @@ def _corroboration_badge_html(row_dict: dict[str, object]) -> str:
     )
 
 
-def _row_summary(candidate: dict[str, Any]) -> str:
-    """Plain-language one-liner next to the ticker (mockup: 'Quality, value &
-    analyst signal strong; momentum flat') — derived from bands, never the raw why."""
-    bands = candidate_bands(candidate)
-    strong = [
-        _FRIENDLY[k]
-        for k in ("quality", "value", "revision", "lowvol")
-        if bands.get(k) in (Band.EXCEPTIONAL, Band.STRONG)
-    ]
-    m = bands.get("momentum")
-    mom = (
-        "momentum strong"
-        if m in (Band.EXCEPTIONAL, Band.STRONG)
-        else ("momentum weak" if m == Band.WEAK else "momentum flat")
-    )
-    if not strong:
-        return f"No standout factor; {mom}"
-    head = (
-        strong[0] if len(strong) == 1 else ", ".join(strong[:-1]) + " & " + strong[-1]
-    )
-    head = head[0].upper() + head[1:]
-    return f"{head} strong; {mom}"
-
-
 def _standout_chip_html(candidate: dict[str, Any]) -> str:
     """Colour-coded GRADE pill next to the score (mockup row chip, e.g. 'STRONG').
 
@@ -697,16 +673,40 @@ def _company_name(candidate: dict[str, Any]) -> str:
     return str(candidate.get("ticker", "?") or "?")
 
 
-def _summary_why_html(candidate: dict[str, Any]) -> str:
-    """Company-name-prefixed one-liner for the always-visible <summary> row —
-    a collapsed <details> hides its body, so the name must live here too, not
-    only in the sub-line inside the expanded body."""
-    name = _company_name(candidate)
-    ticker = str(candidate.get("ticker", "?"))
-    why = _row_summary(candidate)
-    if name and name != ticker:
-        return _html.escape(f"{name} — {why}")
-    return _html.escape(why)
+# Factors eligible to be surfaced as "the reason" in a collapsed row.
+# Momentum is excluded — the evidence registry carries no proof it has any
+# forward edge on returns (see _FACTOR_META/factor_caveat), so it's never
+# highlighted as the standout number the way quality/value/revision/lowvol can be.
+_STRONGEST_FACTOR_KEYS: tuple[str, ...] = ("quality", "value", "revision", "lowvol")
+
+
+def _strongest_factor_html(factor_scores: list[dict[str, Any]]) -> str:
+    """Return a 'p95 Quality'-style label for the highest-percentile live
+    factor — a real, already-computed number for the collapsed row, instead
+    of a prose reason. Never fetches anything; only reads what's already in
+    factor_scores. Returns "" if every eligible factor is DATA-GAP."""
+    best_key: str | None = None
+    best_pct = -1.0
+    for fd in factor_scores:
+        if not isinstance(fd, dict):
+            continue
+        name = str(fd.get("name", ""))
+        if name not in _STRONGEST_FACTOR_KEYS:
+            continue
+        rv, rp = fd.get("value"), fd.get("percentile")
+        if rv is None or rp is None:
+            continue
+        fv, fp = float(rv), float(rp)
+        if fv == 0.0 and fp == 0.0:  # DATA-GAP / no coverage shape
+            continue
+        if fp > best_pct:
+            best_pct = fp
+            best_key = name
+    if best_key is None:
+        return ""
+    label = _FRIENDLY.get(best_key, factor_display_label(best_key)).capitalize()
+    pct_int = round(best_pct * 100)
+    return _html.escape(f"p{pct_int} {label}")
 
 
 def _build_candidate_row_html(
@@ -953,7 +953,7 @@ def build_reason_view_html(
 
             # Row wrapper using HTML details/summary for collapsible behaviour
             safe_ticker = _html.escape(ticker)
-            why_text = _summary_why_html(c)
+            why_text = _strongest_factor_html(c.get("factor_scores", []))
             summary_html = (
                 f'<summary style="display:grid;'
                 f"grid-template-columns:22px 56px 1fr auto auto 16px;"
@@ -1012,7 +1012,7 @@ def build_rank_view_html(
     for rank_i, c in enumerate(sorted_candidates, start=1):
         ticker = c.get("ticker", "?")
         composite = float(c.get("composite", 0.0))
-        why_text = _summary_why_html(c)
+        why_text = _strongest_factor_html(c.get("factor_scores", []))
         safe_ticker = _html.escape(ticker)
 
         is_hero = rank_i == 1
@@ -1289,16 +1289,18 @@ def _build_zone2_row_html(row: Any) -> str:
         + fit_line
     )
 
-    # Collapsible row (same pattern as shortlist) — surfaces the same "why"
-    # (plain-read) text the shortlist rows show collapsed, so an unfamiliar
-    # ticker doesn't require expanding the card just to see the reason.
+    # Collapsible row (same pattern as shortlist) — surfaces the same
+    # strongest-factor-percentile number the shortlist rows show collapsed
+    # (a real, already-computed figure, never a live fetch), so an
+    # unfamiliar ticker doesn't require expanding the card just to see it.
+    strongest = _strongest_factor_html(factor_scores)
     summary_html = (
         f'<summary style="display:grid;'
         f"grid-template-columns:56px 1fr auto 16px;"
         f"gap:10px;align-items:center;font-size:12px;"
         f'padding:9px 13px;cursor:pointer;list-style:none;">'
         f"<b style=\"font-family:'DM Sans',sans-serif;\">{ticker}</b>"
-        f'<span style="color:var(--text-secondary);">{plain} '
+        f'<span style="color:var(--text-secondary);">{strongest} '
         f'<i style="color:var(--text-muted);font-size:10px;font-style:normal;">'
         f"({source_note})</i></span>"
         f'<span style="font-weight:600;font-size:10px;padding:2px 8px;'

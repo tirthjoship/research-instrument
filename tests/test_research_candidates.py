@@ -533,12 +533,19 @@ def test_sub_line_shows_sector_when_present() -> None:
     assert "Real Estate" in html
 
 
-def test_summary_row_shows_company_name_not_just_ticker() -> None:
+def test_summary_row_shows_strongest_factor_percentile_not_just_ticker() -> None:
     """The always-visible <summary> row (no expand needed — a collapsed
     <details> still hides its body from the visitor, even though the body
-    text remains in the raw HTML) must itself show the company name, not
-    just the bare ticker — this is the row a visitor sees first without
-    clicking anything."""
+    text remains in the raw HTML) must show a real, already-computed number
+    (the strongest live factor's percentile), not just the bare ticker —
+    this is the row a visitor sees first without clicking anything.
+
+    Superseded requirement (was: company name must be visible collapsed) —
+    changed by explicit user decision: prose/company-name in the collapsed
+    row wasn't useful; a scannable number was chosen instead, specifically
+    ruling out live price/% change since that would reintroduce a live
+    yfinance fetch per row. The company name still shows in the expanded
+    body (see test_sub_line_shows_sector_when_present)."""
     from adapters.visualization.tabs import research_candidates as rc
 
     candidates = [
@@ -558,9 +565,10 @@ def test_summary_row_shows_company_name_not_just_ticker() -> None:
     for html in (reason_html, rank_html):
         summary_start = html.index("<summary")
         summary_end = html.index("</summary>")
-        assert "Simon Property Group" in html[summary_start:summary_end], (
-            "company name must be in the always-visible <summary>, not only "
-            "the collapsed body"
+        collapsed = html[summary_start:summary_end]
+        assert "p95 Quality" in collapsed, (
+            "strongest-factor percentile must be in the always-visible "
+            "<summary>, not only the collapsed body"
         )
 
 
@@ -1160,19 +1168,42 @@ def test_no_misleading_stock_analysis_cited_case_pointer() -> None:
     assert "full cited case" not in zone2_html
 
 
-def test_zone2_collapsed_summary_shows_plain_read_why() -> None:
+def test_zone2_collapsed_summary_shows_strongest_factor_percentile() -> None:
     """An unfamiliar ticker in 'check your own list' shouldn't require
     expanding the card to see why it scored the way it did — the collapsed
-    <summary> must carry the same plain-read reason the shortlist rows show
-    collapsed (source_note alone, e.g. 'your list · live-computed', doesn't
-    explain anything to a first-time visitor)."""
+    <summary> must carry a real, already-computed number (the strongest
+    live factor's percentile), not just a bare source annotation like
+    'your list · live-computed', which explains nothing to a first-time
+    visitor. Live price/% change was explicitly ruled out (would reintroduce
+    a live yfinance fetch per row) in favor of this zero-fetch alternative."""
     from adapters.visualization.tabs import research_candidates as rc
 
     html = rc.build_check_your_own_html(_make_fake_batch_rows())
     summary_end = html.index("</summary>")
     collapsed = html[:summary_end]
-    assert "Strong on quality" in collapsed
+    # row_in_screen (NVDA): quality percentile 0.95 is the highest among
+    # quality/value/revision/lowvol (momentum is excluded on purpose).
+    assert "p95 Quality" in collapsed
     assert "your list" in collapsed.lower() or "in this week" in collapsed.lower()
+
+
+def test_strongest_factor_html_excludes_momentum() -> None:
+    """Momentum must never be surfaced as 'the reason' — the evidence
+    registry carries no proof it predicts returns."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    factor_scores = [
+        {"name": "momentum", "value": 2.0, "percentile": 0.99},  # highest, excluded
+        {"name": "value", "value": 0.5, "percentile": 0.70},
+    ]
+    assert rc._strongest_factor_html(factor_scores) == "p70 Value"
+
+
+def test_strongest_factor_html_all_data_gap_returns_empty() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    factor_scores = [{"name": "quality", "value": 0.0, "percentile": 0.0}]
+    assert rc._strongest_factor_html(factor_scores) == ""
 
 
 def test_candidate_cards_carry_rc_card_class_for_tooltip_escape() -> None:
