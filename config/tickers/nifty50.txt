@@ -11,21 +11,17 @@
 #   snapshot is dated 2025-12-08; a March 2026 rebalance may not be
 #   reflected. Re-verify against a live source before relying on this for
 #   anything beyond development/testing.
-# - Symbols WITHOUT the .NS suffix (to be added at runtime, mirroring how
-#   tsx60.txt's bare symbols get .TO added by _get_backtest_universe) —
-#   suffix-handling code for India does not exist yet as of this file's
-#   creation (see docs/superpowers/plans/2026-07-15-multi-market-screener-canada.md).
-# - "M&M" (Mahindra & Mahindra) and "BAJAJ-AUTO" (Bajaj Auto) contain
-#   non-alphanumeric characters. NOT YET VERIFIED against a live yfinance
-#   query whether "M&M.NS" / "BAJAJ-AUTO.NS" are the correct literal
-#   yfinance tickers, or whether they need conversion (the way TSX class
-#   shares like GIB.A need dot-to-dash conversion to GIB-A.TO). Verify with
-#   a real yfinance call before trusting these two specific tickers in
-#   production.
-# - "TMPV" (Tata Motors Passenger Vehicles) reflects a 2025 demerger of Tata
-#   Motors into separate passenger-vehicle and commercial-vehicle listings.
-#   Newer/less battle-tested ticker than the rest of this list — verify it
-#   resolves correctly via yfinance before trusting it.
+# - Symbols WITHOUT the .NS suffix (added at runtime by
+#   _get_backtest_universe, mirroring how tsx60.txt's bare symbols get .TO
+#   added — see application/cli/_deps.py).
+# - "M&M" (Mahindra & Mahindra), "BAJAJ-AUTO" (Bajaj Auto), and "TMPV"
+#   (Tata Motors Passenger Vehicles, a 2025 demerger of Tata Motors into
+#   separate passenger/commercial listings) — VERIFIED 2026-07-16 via a
+#   real yfinance query (yf.Ticker("M&M.NS").info, etc.): "M&M.NS" ->
+#   "Mahindra & Mahindra Limited", "BAJAJ-AUTO.NS" -> "Bajaj Auto Limited",
+#   "TMPV.NS" -> "Tata Motors Passenger Vehicles Limited". No conversion
+#   needed for any of the three (unlike TSX class shares, e.g. GIB.A ->
+#   GIB-A.TO) — the bare symbol plus .NS resolves correctly as-is.
 
 # Financial Services
 AXISBANK

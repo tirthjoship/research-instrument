@@ -179,12 +179,26 @@ def _load_spine_tickers(market: str) -> list[str]:
 
 
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
-    """Load ticker universe from config files, with hardcoded fallback."""
-    config_dir = Path(__file__).parent.parent.parent / "config" / "tickers"
-    files = [
-        config_dir / "sp500.txt",
-        config_dir / "nasdaq100.txt",
-    ]
+    """Load ticker universe from the market config's declared ticker files.
+
+    Reads config["universe"]["ticker_files"] (paths relative to repo root).
+    Falls back to the US sp500+nasdaq100 files if the config has no
+    "universe" section (defends against a malformed/partial config), and to
+    a small hardcoded list if even those files are missing (dev/testing).
+    """
+    repo_root = Path(__file__).parent.parent.parent
+    universe_cfg = config.get("universe", {})
+    configured_files = universe_cfg.get("ticker_files")
+
+    if configured_files:
+        files = [repo_root / p for p in configured_files]
+    else:
+        config_dir = repo_root / "config" / "tickers"
+        files = [
+            config_dir / "sp500.txt",
+            config_dir / "nasdaq100.txt",
+        ]
+
     existing = [f for f in files if f.exists()]
     if not existing:
         # Fallback to small list for dev/testing when config files missing
@@ -264,59 +278,71 @@ def _buzz_scan_tickers(universe: list[str], limit: int = 50) -> list[str]:
 
 
 def _get_backtest_universe(market: str) -> list[str]:
-    """US S&P 500 + NASDAQ-100 (existing) plus TSX 60 with .TO suffix for the backtest.
+    """US S&P 500 + NASDAQ-100 for market="us", TSX 60 (.TO suffixed) for
+    market="ca", or NIFTY 50 (.NS suffixed) for market="in", for the
+    backtest. Markets are NOT combined — a "us" backtest must not silently
+    include Canadian or Indian names and vice versa.
 
     Reads ticker files directly (offline-safe — no network, no config object needed).
     """
     config_dir = Path(__file__).parent.parent.parent / "config" / "tickers"
+
+    if market == "ca":
+        tsx_path = config_dir / "tsx60.txt"
+        tickers: list[str] = []
+        if tsx_path.exists():
+            for line in tsx_path.read_text().splitlines():
+                s = line.strip()
+                if s and not s.startswith("#"):
+                    # Class shares use dotted notation in the file (GIB.A);
+                    # yfinance wants dash + .TO (GIB-A.TO). Mirrors
+                    # holdings_reader._to_yf.
+                    tickers.append(f"{s.replace('.', '-')}.TO")
+        return tickers
+
+    if market == "in":
+        nifty_path = config_dir / "nifty50.txt"
+        tickers = []
+        if nifty_path.exists():
+            for line in nifty_path.read_text().splitlines():
+                s = line.strip()
+                if s and not s.startswith("#"):
+                    # See nifty50.txt's own header: M&M, BAJAJ-AUTO, and
+                    # TMPV have NOT been verified against a live yfinance
+                    # query — Task 5 below adds that verification step
+                    # before this is trusted in a live screen.
+                    tickers.append(f"{s}.NS")
+        return tickers
+
     us_files = [
         config_dir / "sp500.txt",
         config_dir / "nasdaq100.txt",
     ]
     us_existing = [f for f in us_files if f.exists()]
 
-    us: list[str]
     if us_existing:
         from application.ticker_universe import load_ticker_universe
 
-        us = load_ticker_universe(us_existing)
-    else:
-        # Minimal fallback identical to _get_ticker_universe's hardcoded list
-        us = [
-            "AAPL",
-            "MSFT",
-            "GOOG",
-            "AMZN",
-            "META",
-            "TSLA",
-            "NVDA",
-            "JPM",
-            "JNJ",
-            "V",
-            "UNH",
-            "HD",
-            "PG",
-            "MA",
-            "XOM",
-        ]
+        return load_ticker_universe(us_existing)
 
-    tsx_path = config_dir / "tsx60.txt"
-    tsx: list[str] = []
-    if tsx_path.exists():
-        for line in tsx_path.read_text().splitlines():
-            s = line.strip()
-            if s and not s.startswith("#"):
-                # Class shares use dotted notation in the file (GIB.A); yfinance
-                # wants dash + .TO (GIB-A.TO). Mirrors holdings_reader._to_yf.
-                tsx.append(f"{s.replace('.', '-')}.TO")
-
-    seen: set[str] = set()
-    out: list[str] = []
-    for t in [*us, *tsx]:
-        if t not in seen:
-            seen.add(t)
-            out.append(t)
-    return out
+    # Minimal fallback identical to _get_ticker_universe's hardcoded list
+    return [
+        "AAPL",
+        "MSFT",
+        "GOOG",
+        "AMZN",
+        "META",
+        "TSLA",
+        "NVDA",
+        "JPM",
+        "JNJ",
+        "V",
+        "UNH",
+        "HD",
+        "PG",
+        "MA",
+        "XOM",
+    ]
 
 
 def _cfg_cmin(market: str) -> float:

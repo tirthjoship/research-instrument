@@ -410,12 +410,14 @@ def test_resolve_wiki_articles_skips_throttled(
     assert "AAPL" in result.output  # throttled ticker named in summary
 
 
-def test_backtest_universe_includes_tsx(monkeypatch: object) -> None:
+def test_backtest_universe_us_excludes_tsx(monkeypatch: object) -> None:
     import application.cli as climod
 
     uni = climod._get_backtest_universe("us")
     assert "AAPL" in uni
-    assert any(t.endswith(".TO") for t in uni)  # TSX names carry .TO suffix
+    # Markets must not mix: a "us" backtest carries no TSX (.TO) names —
+    # those belong only to market="ca" (see _get_backtest_universe).
+    assert not any(t.endswith(".TO") for t in uni)
 
 
 def test_portfolio_verdict_cli(monkeypatch: object, tmp_path: object) -> None:
