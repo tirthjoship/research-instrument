@@ -32,6 +32,13 @@ logger = logging.getLogger(__name__)
 _SCREEN_REPORT_RE = re.compile(r"^screen_\d{4}-\d{2}-\d{2}\.json$")
 
 
+def is_screen_report_filename(name: str) -> bool:
+    """True if `name` is a real screen_<date>.json report, not a sidecar file
+    (screen_cited_cases.json, screen_ic_<date>.json) that happens to share the
+    screen_ prefix."""
+    return bool(_SCREEN_REPORT_RE.match(name))
+
+
 @dataclass(frozen=True)
 class CorroborationTabView:
     """Visualization-layer DTO for corroboration data. Not a domain type."""
