@@ -5,6 +5,15 @@ name: Scheduled screen snapshot
 # runs the ~512-ticker full-universe screen from a clean GH-hosted runner
 # (not Cloud's shared/rate-limited IP) and commits the snapshot the public
 # dashboard reads, so a visitor's own click never triggers a live scan.
+#
+# Also runs Canada (TSX 60, ~52 tickers) and India (NIFTY 50, ~50 tickers)
+# into their own data/sample/ca/ and data/sample/in/ subdirectories, so their
+# daily screen_<date>.json files never collide with the US run's filename in
+# data/sample/. Nothing reads these yet -- the dashboard has no market-picker
+# UI wired up -- this just makes the snapshots exist and stay fresh for when
+# that UI lands. --use-cache on all three runs dedupes _PriceAdapter's 4
+# independent get_signals() calls per ticker into 1 (data/cache/ is
+# gitignored and starts empty on every checkout, so this never crosses days).
 on:
   schedule:
     # 21:30 UTC, weekdays only — shortly after US market close, well before
@@ -24,7 +33,7 @@ jobs:
   scheduled-screen:
     name: Screen candidates + commit snapshot
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,7 +45,7 @@ jobs:
           version: "latest"
       - name: Install dependencies
         run: uv sync --extra dev --extra dashboard
-      - name: Run full-universe screen
+      - name: Run full-universe screen (US)
         env:
           # GEMINI_API_KEY_2 (etc.) is picked up automatically by
           # adapters/ml/gemini_models.py::load_gemini_api_keys() once the
@@ -47,19 +56,40 @@ jobs:
           GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
         run: |
           uv run python -m application.cli screen-candidates \
-            --report-dir data/sample --cite-cases
+            --report-dir data/sample --cite-cases --use-cache
+      - name: Run Canada screen (TSX 60)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+        run: |
+          uv run python -m application.cli screen-candidates \
+            --market ca --report-dir data/sample/ca --cite-cases --use-cache
+      - name: Run India screen (NIFTY 50)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+        run: |
+          uv run python -m application.cli screen-candidates \
+            --market in --report-dir data/sample/in --cite-cases --use-cache
       - name: Prune to last 14 daily snapshots
         run: |
-          cd data/sample
-          ls -1 screen_20*.json 2>/dev/null \
-            | grep -v '^screen_ic_' \
-            | sort \
-            | head -n -14 \
-            | xargs -r rm -f
+          for dir in data/sample data/sample/ca data/sample/in; do
+            [ -d "$dir" ] || continue
+            (
+              cd "$dir"
+              ls -1 screen_20*.json 2>/dev/null \
+                | grep -v '^screen_ic_' \
+                | sort \
+                | head -n -14 \
+                | xargs -r rm -f
+            )
+          done
       - name: Commit snapshot
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/sample/screen_20*.json data/sample/screen_cited_cases.json
+          git add data/sample/ca/screen_20*.json data/sample/ca/screen_cited_cases.json
+          git add data/sample/in/screen_20*.json data/sample/in/screen_cited_cases.json
           git diff --cached --quiet || git commit -m "chore(data): scheduled screen snapshot $(date -u +%F)"
           git push

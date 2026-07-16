@@ -111,7 +111,24 @@ def _prefetch_screener_cited_cases(
     show_default=True,
     help="Also prefetch Gemini green/red-flag reads for the top-N shown candidates.",
 )
-def screen_candidates(market: str, top: int, report_dir: str, cite_cases: bool) -> None:
+@click.option(
+    "--use-cache/--no-use-cache",
+    default=False,
+    show_default=True,
+    help=(
+        "Reuse the price adapter's within-run cache across the 4 independent "
+        "get_signals() calls _PriceAdapter makes per ticker (monthly_closes, "
+        "daily_closes, trend_health, has_min_history all fetch the same window). "
+        "Cuts live yfinance calls ~4x with no look-ahead-bias risk, since "
+        "data/cache/ is gitignored and starts empty on every fresh scheduled-run "
+        "checkout -- never reused across days. Off by default for local/manual "
+        "runs, where a stale data/cache/ from a prior day could otherwise leak "
+        "in; the scheduled workflow passes this explicitly."
+    ),
+)
+def screen_candidates(
+    market: str, top: int, report_dir: str, cite_cases: bool, use_cache: bool
+) -> None:
     """Screen universe for disciplined, evidence-bounded candidates.
 
     Writes the FULL ranked candidate distribution to <report-dir>/screen_<date>.json
@@ -123,7 +140,7 @@ def screen_candidates(market: str, top: int, report_dir: str, cite_cases: bool) 
 
     from application.evidence_screen_use_case import label_from_verdict_file
 
-    deps = _build_dependencies(market)
+    deps = _build_dependencies(market, use_cache=use_cache)
     config = deps["config"]
     tickers = _get_ticker_universe(config)
 
