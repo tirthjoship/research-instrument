@@ -95,6 +95,7 @@ def _prefetch_screener_cited_cases(
 
 
 @cli.command("screen-candidates")
+@click.option("--market", default="us", show_default=True, help="Market config (us|ca)")
 @click.option("--top", default=10, show_default=True, type=int, help="Top N rank limit")
 @click.option(
     "--report-dir",
@@ -108,7 +109,7 @@ def _prefetch_screener_cited_cases(
     show_default=True,
     help="Also prefetch Gemini green/red-flag reads for the top-N shown candidates.",
 )
-def screen_candidates(top: int, report_dir: str, cite_cases: bool) -> None:
+def screen_candidates(market: str, top: int, report_dir: str, cite_cases: bool) -> None:
     """Screen universe for disciplined, evidence-bounded candidates.
 
     Writes the FULL ranked candidate distribution to <report-dir>/screen_<date>.json
@@ -120,7 +121,7 @@ def screen_candidates(top: int, report_dir: str, cite_cases: bool) -> None:
 
     from application.evidence_screen_use_case import label_from_verdict_file
 
-    deps = _build_dependencies("us")
+    deps = _build_dependencies(market)
     config = deps["config"]
     tickers = _get_ticker_universe(config)
 
@@ -175,6 +176,7 @@ def screen_candidates(top: int, report_dir: str, cite_cases: bool) -> None:
 
     payload: dict[str, object] = {
         "as_of": as_of,
+        "market": market,
         "universe_size": result.universe_size,
         "top_n": top,
         "regime": result.regime,
