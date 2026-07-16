@@ -23,6 +23,8 @@ class Holding:
 
 _TSX = {"TSX", "TSE", "XTSE"}
 _TSXV = {"TSXV", "XTSX", "CVE"}
+_NSE = {"NSE"}
+_BSE = {"BSE"}
 
 
 def _get(row: dict[str, str], name: str) -> str:
@@ -39,6 +41,10 @@ def _to_yf(symbol: str, exchange: str) -> str:
         return f"{base}.TO"
     if ex in _TSXV:
         return f"{base}.V"
+    if ex in _NSE:
+        return f"{base}.NS"
+    if ex in _BSE:
+        return f"{base}.BO"
     return base
 
 
