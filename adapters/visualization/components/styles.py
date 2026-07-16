@@ -1822,6 +1822,12 @@ section[data-testid="stFileUploaderDropzone"][aria-label="Upload your holdings"]
 .sa-stage,.sa-group,.sa-pnl,.sa-strip,.sa-grid6,.sa-gtiles,.sa-pnl-two,.sa-twocol-fit,.sa-vt,.sa-tile,.sa-gt{overflow:visible}
 [data-testid="stMarkdown"],[data-testid="stMarkdownContainer"]{overflow:visible!important}
 /* ===== end ⓘ tooltip escape ===== */
+/* ===== Screener card — ⓘ tooltip escape ===== */
+/* rc-card sets inline overflow:hidden so the collapsed card's rounded corners
+   clip cleanly; that same overflow:hidden clips the absolutely-positioned
+   factor-row (i) tooltip once expanded. Override only while open. */
+.rc-card[open]{overflow:visible!important}
+/* ===== end Screener ⓘ tooltip escape ===== */
 </style>
 """
 
