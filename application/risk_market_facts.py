@@ -43,12 +43,14 @@ def dominant_sector(sector_weights: dict[str, float]) -> str | None:
     return max(sector_weights, key=lambda k: sector_weights[k])
 
 
-def risk_market_news(dominant_sector: str | None) -> list[NewsItem]:
-    """Real headlines for SPY + ^VIX (always), plus the dominant sector's ETF
-    proxy when it maps to a known ticker. Omits sector news (never fabricates)
-    when dominant_sector is None or unrecognized.
+def risk_market_news(
+    dominant_sector: str | None, *, benchmark_ticker: str = "SPY"
+) -> list[NewsItem]:
+    """Real headlines for the benchmark (SPY by default) + ^VIX (always), plus
+    the dominant sector's ETF proxy when it maps to a known ticker. Omits
+    sector news (never fabricates) when dominant_sector is None or unrecognized.
     """
-    tickers = ["SPY", "^VIX"]
+    tickers = [benchmark_ticker, "^VIX"]
     etf = _SECTOR_ETF.get(dominant_sector) if dominant_sector else None
     if etf is not None:
         tickers.append(etf)

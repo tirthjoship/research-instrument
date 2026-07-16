@@ -75,6 +75,24 @@ def test_risk_market_news_adds_sector_proxy_when_known(
     assert items[-1] == NewsItem(source="AP", title="XLK headline", date="", url="")
 
 
+def test_risk_market_news_uses_configured_benchmark_ticker(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """risk_market_news(benchmark_ticker=...) fetches that ticker instead of the
+    hardcoded "SPY" — needed so a CA/India Risk-tab read shows real benchmark
+    news, not a US-only proxy."""
+    from application import risk_market_facts as rmf
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        rmf, "_fetch_recent_news_impl", lambda ticker, **kw: calls.append(ticker) or []
+    )
+
+    rmf.risk_market_news(None, benchmark_ticker="NIFTYBEES.NS")
+
+    assert calls == ["NIFTYBEES.NS", "^VIX"]
+
+
 def test_risk_market_news_omits_sector_when_unrecognized(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
