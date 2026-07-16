@@ -244,6 +244,29 @@ def test_universe_scope_no_screen_omits_count() -> None:
     assert "names scanned" not in html
 
 
+def test_universe_scope_html_describes_ca_market() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    screen = {
+        "market": "ca",
+        "universe_size": 52,
+        "diagnostics": {"scanned": 52},
+    }
+    html = rc.build_universe_scope_html(screen)
+    assert "TSX" in html or "Canada" in html
+    assert "Large-cap US" not in html
+
+
+def test_universe_scope_html_defaults_to_us_when_market_key_absent() -> None:
+    """Old, already-committed screen_<date>.json snapshots (written before
+    this feature) have no "market" key — must not crash, must read as US."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    screen = {"universe_size": 512, "diagnostics": {"scanned": 512}}
+    html = rc.build_universe_scope_html(screen)
+    assert "Large-cap US" in html
+
+
 def test_factor_honesty_dispersion_and_snapshot() -> None:
     from adapters.visualization.tabs import research_candidates as rc
 

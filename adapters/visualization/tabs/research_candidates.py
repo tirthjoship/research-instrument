@@ -485,13 +485,18 @@ def build_disclosure_html() -> str:
 def build_universe_scope_html(screen: dict[str, Any] | None = None) -> str:
     """Return the universe-scope disclosure box.
 
-    The screen does NOT scan the whole market: the universe is large-cap US
-    (S&P 500 ∪ Nasdaq-100, ~570 names) and survivor-biased — today's index
-    membership applied to every date. The live scanned count is appended when
-    the screen carries it (from diagnostics.scanned / universe_size).
+    The screen does NOT scan the whole market: for market="us" the universe
+    is large-cap US (S&P 500 ∪ Nasdaq-100, ~570 names); for market="ca" it's
+    the TSX 60 (~60 names). Both are survivor-biased — today's index
+    membership applied to every date. The live scanned count is appended
+    when the screen carries it (from diagnostics.scanned / universe_size).
+    Absent "market" key (older committed snapshots, pre this feature)
+    defaults to "us".
     """
+    market = "us"
     scanned = 0
     if screen is not None:
+        market = str(screen.get("market") or "us")
         raw_diag = screen.get("diagnostics")
         if isinstance(raw_diag, dict):
             try:
@@ -507,12 +512,17 @@ def build_universe_scope_html(screen: dict[str, Any] | None = None) -> str:
     # Pull the screen-scope caveat from the registry (single source of truth).
     entry = get_evidence("screen_cleared")
     registry_caveat = f" {_html.escape(entry.caveat)}" if entry is not None else ""
+
+    if market == "ca":
+        scope_label = "TSX 60 (Canada), ~60 names"
+    else:
+        scope_label = "Large-cap US (S&amp;P&nbsp;500 + Nasdaq-100, ~570 names)"
+
     return (
         '<div style="background:var(--bg-secondary);border:1px solid var(--border);'
         "border-radius:10px;padding:9px 12px;font-size:11px;"
         'color:var(--text-secondary);margin-bottom:12px;line-height:1.6;">'
-        "&#9888;&#65038; <b>Universe scope:</b> Large-cap US "
-        "(S&amp;P&nbsp;500 + Nasdaq-100, ~570 names), survivor-biased "
+        f"&#9888;&#65038; <b>Universe scope:</b> {scope_label}, survivor-biased "
         "&mdash; not the whole market." + scanned_note + registry_caveat + "</div>"
     )
 
