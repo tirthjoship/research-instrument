@@ -5,6 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.portfolio_view import PortfolioRow
 
@@ -63,6 +67,7 @@ def _pill(verdict: str) -> str:
 def _row_html(r: PortfolioRow, show_more: bool) -> str:
     pnl_c = "#16A34A" if r.pnl >= 0 else "#DC2626"
     today_c = "#16A34A" if r.today >= 0 else "#DC2626"
+    sym = currency_symbol(currency_for_ticker(r.ticker))
     cells = [
         f"<td style=\"font-family:'Fraunces',serif;font-weight:700;\">"
         f'<a href="?inspect={r.ticker}" target="_self" '
@@ -71,7 +76,7 @@ def _row_html(r: PortfolioRow, show_more: bool) -> str:
         f"<td style=\"text-align:right;font-family:'IBM Plex Mono',monospace;\">"
         f'<span style="display:inline-block;height:7px;border-radius:3px;background:#CBD5E1;'
         f'width:{r.weight*4.5:.0f}px;margin-right:6px;vertical-align:middle;"></span>{r.weight:.1f}%</td>',
-        f"<td style=\"text-align:right;font-family:'IBM Plex Mono',monospace;\">${r.value:,.0f}</td>",
+        f"<td style=\"text-align:right;font-family:'IBM Plex Mono',monospace;\">{sym}{r.value:,.0f}</td>",
         f"<td style=\"text-align:right;font-family:'IBM Plex Mono',monospace;color:{pnl_c};\">"
         f'{"+" if r.pnl>=0 else ""}{r.pnl:.1f}%</td>',
         f"<td style=\"text-align:right;font-family:'IBM Plex Mono',monospace;color:{today_c};\">"
@@ -87,7 +92,7 @@ def _row_html(r: PortfolioRow, show_more: bool) -> str:
             f"<td style=\"text-align:right;font-family:'IBM Plex Mono',monospace;\">{beta}</td>"
         )
         cells.append(
-            f"<td style=\"text-align:right;font-family:'IBM Plex Mono',monospace;\">${r.cost:,.0f}</td>"
+            f"<td style=\"text-align:right;font-family:'IBM Plex Mono',monospace;\">{sym}{r.cost:,.0f}</td>"
         )
     cells.append(f"<td>{_pill(r.verdict)}</td>")
     return '<tr style="cursor:pointer;">' + "".join(cells) + "</tr>"

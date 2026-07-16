@@ -33,3 +33,13 @@ def test_missing_yield_is_dash():
         [_r("AAA", 9.4, 19.1, None, 1.1)], TableState(show_more=True)
     )
     assert "—" in html
+
+
+def test_canadian_ticker_shows_cad_symbol_for_value_and_cost():
+    """A TSX-suffixed ticker's Value/Cost cells must show C$, not a bare $."""
+    html = build_table_html(
+        [_r("RY.TO", 9.4, 19.1, 0.7, 1.1)], TableState(show_more=True)
+    )
+    assert "C$94" in html  # value = w * 10
+    assert "C$100" in html  # cost, hardcoded 100 in _r
+    assert "$94" not in html.replace("C$94", "")

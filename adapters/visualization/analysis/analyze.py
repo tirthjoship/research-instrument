@@ -174,10 +174,10 @@ def analyze_ticker(
     )
 
     # Compute sections
-    result.valuation = score_valuation(info, peers)
+    result.valuation = score_valuation(info, peers, ticker=ticker)
     result.growth = score_growth(info)
     result.performance = score_performance(info)
-    result.health = score_health(info)
+    result.health = score_health(info, ticker=ticker)
     result.ownership = score_ownership(info, insider_txns)
     result.sentiment = score_sentiment(sentiment_signals or buzz)
     result.supply_chain = score_supply_chain(sc_group)
