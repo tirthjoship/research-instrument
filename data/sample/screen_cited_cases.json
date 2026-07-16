@@ -1,0 +1,55 @@
+{
+  "as_of": "2026-07-15",
+  "cases": {
+    "SPG": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "SYY": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "AMP": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "TRGP": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "CINF": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "AIZ": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "MAS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "MO": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "ITW": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "CL": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    }
+  }
+}
