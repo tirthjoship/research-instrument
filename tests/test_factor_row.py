@@ -112,3 +112,16 @@ def test_momentum_data_gap_no_sparkline() -> None:
     html = render_factor_row("momentum", value=None, percentile=None)
     # DATA-GAP path has no band badge — sparkline is not prepended there.
     assert "DATA-GAP" in html
+
+
+def test_glossary_tooltip_uses_left_anchored_variant() -> None:
+    """The glossary tooltip trigger sits in the leftmost grid column of each
+    factor row -- a centered tooltip there overflows past the card's left
+    edge and gets clipped (regression: was reported on a live CA/India
+    screen mockup where the leftmost factor row's tooltip text was cut off).
+    Must use the left-anchored .ri-tip-left variant, not the default centered
+    .ri-tip alone."""
+    from adapters.visualization.components.factor_row import render_factor_row
+
+    html = render_factor_row("quality", value=2.83, percentile=0.95)
+    assert "ri-tip-left" in html
