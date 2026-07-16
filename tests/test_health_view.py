@@ -8,7 +8,7 @@ from adapters.visualization.tabs.stock_analysis import health_view
 from domain.fit import FORBIDDEN_WORDS
 
 
-def _result(qbs=None, **info_over):
+def _result(qbs=None, ticker="NVDA", **info_over):
     info = {
         "debtToEquity": 12.0,
         "totalCash": 43e9,
@@ -19,7 +19,7 @@ def _result(qbs=None, **info_over):
         "quickRatio": 3.5,
     }
     info.update(info_over)
-    return SimpleNamespace(info=info, ticker="NVDA", quarterly_balance_sheet=qbs)
+    return SimpleNamespace(info=info, ticker=ticker, quarterly_balance_sheet=qbs)
 
 
 def _qbs(cash_newest_first, debt_newest_first):
@@ -91,6 +91,15 @@ def test_fortress_chip_when_net_cash():
 
 def test_panel_renders():
     assert "Health" in health_view.build_health_panel(_result())
+
+
+def test_canadian_ticker_net_cash_shows_cad_symbol():
+    """A TSX-suffixed ticker's Net cash tile must show C$, not bare $ — showing
+    bare $ would misrepresent CAD amounts as USD."""
+    v = health_view.build_health_view(_result(ticker="RY.TO"))
+    net_cash = next(m for m in v["metrics"] if "Net cash" in m.label)
+    assert "C$" in net_cash.value
+    assert "$" not in net_cash.value.replace("C$", "")
 
 
 def test_no_streamlit_and_clean():

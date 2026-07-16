@@ -103,6 +103,23 @@ def test_valuation_ranges_datagap_when_no_data():
     assert "data gap — no range available" in html
 
 
+def test_valuation_ranges_show_cad_symbol_for_tsx_ticker():
+    """A TSX-suffixed ticker's fair-value range markers/labels must show C$,
+    not bare $ — bare $ would misrepresent CAD price targets as USD."""
+    result = _result(
+        ticker="RY.TO",
+        current_price=172.0,
+        info={"fiftyTwoWeekLow": 86.6, "fiftyTwoWeekHigh": 189.5},
+        analyst_panel=SimpleNamespace(
+            target_low=150.0, target_mean=200.0, target_high=260.0
+        ),
+    )
+    html = valuation_view.build_valuation_panel(result)
+    assert "bear C$150" in html and "bull C$260" in html
+    assert "now C$172" in html and "base C$200" in html
+    assert "bear $" not in html and "bull $" not in html
+
+
 def test_no_streamlit_and_clean():
     src = inspect.getsource(valuation_view)
     assert "import streamlit" not in src
