@@ -2,13 +2,16 @@
 #
 # This is intentionally a MINIMAL config. Only the `universe` section is
 # populated with verified data (config/tickers/tsx60.txt, a real, dated TSX
-# 60 snapshot). Sections present in us.yaml but absent here (macro_symbols,
-# sector_etfs, macro_beta, sentiment feeds, etc.) are deliberately NOT
-# fabricated — every consumer of this config already defaults missing
-# sections safely (e.g. `config.get("macro_symbols", {})`), so leaving them
-# out means those subsystems will show an honest DATA-GAP for CA tickers
-# rather than silently using wrong US-market values. See the plan this
-# file was added under (docs/superpowers/plans/2026-07-15-multi-market-screener-canada.md)
+# 60 snapshot), plus a single verified benchmark ticker under
+# `macro_symbols.spy` (Phase 4 Task 2 — see p4-task2-brief.md). Sections
+# present in us.yaml but still absent here (vix/treasury_10y/dxy/irx under
+# macro_symbols, sector_etfs, macro_beta, sentiment feeds, etc.) are
+# deliberately NOT fabricated — every consumer of this config already
+# defaults missing sections/keys safely (e.g. `config.get("macro_symbols",
+# {})`), so leaving them out means those subsystems will show an honest
+# DATA-GAP for CA tickers rather than silently using wrong US-market values.
+# See the plan this file was added under
+# (docs/superpowers/plans/2026-07-15-multi-market-screener-canada.md)
 # for what's explicitly out of scope.
 market: ca
 timezone: America/Toronto
@@ -21,3 +24,10 @@ universe:
   min_avg_volume: 100_000
   exclude_penny_stocks: true
   penny_stock_threshold: 5.0
+
+# Verified via live yfinance query (Phase 4 Task 1): XIC.TO resolves with a
+# real name (iShares Core S&P/TSX Capped Composite Index ETF) and non-empty
+# 1y history. Reuses the `spy` key name from us.yaml's schema — it's the
+# config field name (the SPY-equivalent benchmark slot), not literally SPY.
+macro_symbols:
+  spy: "XIC.TO"

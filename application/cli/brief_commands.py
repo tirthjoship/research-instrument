@@ -435,10 +435,16 @@ def weekly_brief(
             risk_regime_fact,
         )
         from application.risk_second_opinion import build_risk_second_opinion
+        from config.loader import load_market_config
 
         risk_facts = _risk_macro_facts(brief.macro)
         risk_facts.append(risk_regime_fact(brief.regime))
-        risk_news = risk_market_news(dominant_sector(brief.macro.sector_weights))
+        risk_news = risk_market_news(
+            dominant_sector(brief.macro.sector_weights),
+            benchmark_ticker=load_market_config(market)
+            .get("macro_symbols", {})
+            .get("spy", "SPY"),
+        )
         build_risk_second_opinion(risk_facts, summarizer=None, news=risk_news)
 
     click.echo(to_stdout_masked(brief))

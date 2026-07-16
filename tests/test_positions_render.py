@@ -1,6 +1,7 @@
 """Task 12 — positions.render() TDD bootstrap tests."""
 
 import adapters.visualization.tabs.positions as positions
+from domain.outcome import TradeOutcome
 
 
 def test_render_is_callable():
@@ -73,3 +74,40 @@ def test_resolve_book_falls_back_to_sample_when_still_flagged_sample(monkeypatch
 
     assert source == "sample book"
     assert len(holdings) == 10
+
+
+def test_canadian_holding_shows_cad_symbol(monkeypatch):
+    """A TSX-suffixed ticker's dollar values in the closed-positions table
+    must show C$, not bare $ — showing bare $ would misrepresent CAD
+    amounts as USD."""
+    outcome = TradeOutcome(
+        ticker="RY.TO",
+        buy_trade_id="b1",
+        sell_trade_id="s1",
+        buy_price=120.0,
+        sell_price=130.0,
+        quantity=10,
+        buy_date="2026-01-01",
+        sell_date="2026-01-10",
+        holding_days=9,
+        return_pct=8.3,
+        return_dollar=100.0,
+        signals_at_entry=[],
+        conviction_at_entry=0.5,
+    )
+
+    captured: list[str] = []
+    monkeypatch.setattr(positions.st, "write", lambda html, **kw: captured.append(html))
+
+    positions._render_closed_positions_table([outcome])
+
+    import re
+
+    assert len(captured) == 1
+    html = captured[0]
+    assert "C$120.00" in html
+    assert "C$130.00" in html
+    assert "+C$100.00" in html
+    # No bare (non-CAD-prefixed) "$" immediately before a number — that would
+    # misrepresent a CAD amount as USD.
+    assert re.search(r"(?<!C)\$\d", html) is None
