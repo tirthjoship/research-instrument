@@ -36,6 +36,7 @@ from adapters.visualization.components.gemini_read import (
 from adapters.visualization.components.proof_tile import render_tile
 from adapters.visualization.components.tooltip import tooltip
 from adapters.visualization.data_loader import (
+    load_combined_screen,
     load_latest_screen,
     load_latest_screened,
     load_screen_history,
@@ -634,6 +635,11 @@ def resolve_view_mode(session: dict[str, Any]) -> str:
     Default is 'reason' (Group by reason). 'rank' = flat ranked list.
     """
     return str(session.get("screener_view", "reason"))
+
+
+def resolve_market_mode(session: dict[str, Any]) -> str:
+    """Return 'us_ca' (default) or 'india' from session state."""
+    return str(session.get("screener_market", "us_ca"))
 
 
 # ---------------------------------------------------------------------------
@@ -1597,7 +1603,18 @@ def render(reports_dir: str | None = None) -> None:
     ctx = resolve_ui_book_context()
     reports_dir = reports_dir if reports_dir is not None else ctx.reports_dir
 
-    screen = load_latest_screened(reports_dir)
+    market = resolve_market_mode({str(k): v for k, v in st.session_state.items()})
+    show_india = st.toggle(
+        "Show India instead of US + Canada",
+        value=(market == "india"),
+    )
+    market = "india" if show_india else "us_ca"
+    st.session_state["screener_market"] = market
+
+    if market == "india":
+        screen = load_latest_screened("data/sample/in")
+    else:
+        screen = load_combined_screen([reports_dir, "data/sample/ca"])
     if screen is None:
         st.warning(
             "No screen report found. Run "

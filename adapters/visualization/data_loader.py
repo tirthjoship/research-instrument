@@ -511,6 +511,51 @@ def load_latest_screened(reports_dir: str = "data/reports") -> dict[str, Any] | 
     return screen
 
 
+def load_combined_screen(reports_dirs: list[str]) -> dict[str, Any] | None:
+    """Load and merge the latest screen/screened data from multiple report
+    directories, for the Screener tab's US+Canada combined market view.
+
+    Calls load_latest_screened() per directory (not load_latest_screen) so
+    this correctly handles whichever format each directory's latest snapshot
+    is in -- the raw {candidates, universe_size, diagnostics} format, or the
+    SP3-blended {rows, ...} sidecar format -- matching the same _source
+    dispatch already used by research_candidates.py::render().
+
+    Degrades honestly if one directory has no snapshot: returns whatever the
+    other directory has, rather than erroring the whole tab (DATA-GAP
+    pattern already used throughout this codebase). Returns None only if
+    NONE of the given directories have a snapshot.
+    """
+    loaded = [d for d in (load_latest_screened(rd) for rd in reports_dirs) if d]
+    if not loaded:
+        return None
+    if len(loaded) == 1:
+        return loaded[0]
+
+    as_of = max(d["as_of"] for d in loaded)
+    if all(d.get("_source") == "screened" for d in loaded):
+        rows = [row for d in loaded for row in d.get("rows", [])]
+        rows.sort(key=lambda r: r.get("composite", 0), reverse=True)
+        return {"as_of": as_of, "_source": "screened", "rows": rows}
+
+    candidates = [c for d in loaded for c in d.get("candidates", [])]
+    candidates.sort(key=lambda c: c.get("composite", 0), reverse=True)
+    merged: dict[str, Any] = {
+        "as_of": as_of,
+        "_source": "screen",
+        "candidates": candidates,
+        "universe_size": sum(d.get("universe_size", 0) or 0 for d in loaded),
+    }
+    diags = [d["diagnostics"] for d in loaded if d.get("diagnostics")]
+    if diags:
+        merged["diagnostics"] = {
+            key: sum(diag[key] for diag in diags if key in diag)
+            for key in ("cleared", "scanned")
+            if any(key in diag for diag in diags)
+        }
+    return merged
+
+
 def staleness_days(iso_date: str) -> int | None:
     """Days since iso_date (YYYY-MM-DD prefix tolerated). None if unparseable."""
     try:
