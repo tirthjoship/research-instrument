@@ -3,6 +3,7 @@ from datetime import date, timedelta
 
 from adapters.visualization.data_loader import (
     load_brief_summary,
+    load_combined_screen,
     load_latest_screen,
     load_latest_screened,
     staleness_days,
@@ -95,6 +96,139 @@ def test_load_latest_screened_no_underlying_screen_stays_none(tmp_path):
     got = load_latest_screened(str(tmp_path))
     assert got.get("universe_size") is None
     assert got.get("diagnostics") is None
+
+
+def test_load_combined_screen_merges_rows_format(tmp_path):
+    us_dir = tmp_path / "us"
+    ca_dir = tmp_path / "ca"
+    us_dir.mkdir()
+    ca_dir.mkdir()
+    (us_dir / "screen_2026-07-16.json").write_text(
+        json.dumps({"as_of": "2026-07-16", "universe_size": 500, "candidates": []})
+    )
+    (us_dir / "screened_2026-07-16.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-16",
+                "rows": [{"ticker": "AAPL", "composite": 0.9}],
+            }
+        )
+    )
+    (ca_dir / "screen_2026-07-15.json").write_text(
+        json.dumps({"as_of": "2026-07-15", "universe_size": 52, "candidates": []})
+    )
+    (ca_dir / "screened_2026-07-15.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-15",
+                "rows": [{"ticker": "RY.TO", "composite": 0.95}],
+            }
+        )
+    )
+    got = load_combined_screen([str(us_dir), str(ca_dir)])
+    assert got is not None
+    assert [r["ticker"] for r in got["rows"]] == ["RY.TO", "AAPL"]
+    assert got["as_of"] == "2026-07-16"
+
+
+def test_load_combined_screen_merges_candidates_format(tmp_path):
+    us_dir = tmp_path / "us"
+    ca_dir = tmp_path / "ca"
+    us_dir.mkdir()
+    ca_dir.mkdir()
+    (us_dir / "screen_2026-07-16.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-16",
+                "universe_size": 500,
+                "diagnostics": {"cleared": 300, "scanned": 500},
+                "candidates": [{"ticker": "AAPL", "composite": 0.8}],
+            }
+        )
+    )
+    (ca_dir / "screen_2026-07-15.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-15",
+                "universe_size": 52,
+                "diagnostics": {"cleared": 30, "scanned": 52},
+                "candidates": [{"ticker": "RY.TO", "composite": 0.85}],
+            }
+        )
+    )
+    got = load_combined_screen([str(us_dir), str(ca_dir)])
+    assert got is not None
+    assert [c["ticker"] for c in got["candidates"]] == ["RY.TO", "AAPL"]
+    assert got["as_of"] == "2026-07-16"
+    assert got["universe_size"] == 552
+    assert got["diagnostics"] == {"cleared": 330, "scanned": 552}
+
+
+def test_load_combined_screen_mixed_format_merges_via_candidates(tmp_path):
+    us_dir = tmp_path / "us"
+    ca_dir = tmp_path / "ca"
+    us_dir.mkdir()
+    ca_dir.mkdir()
+    (us_dir / "screen_2026-07-16.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-16",
+                "universe_size": 500,
+                "candidates": [{"ticker": "AAPL", "composite": 0.8}],
+            }
+        )
+    )
+    (us_dir / "screened_2026-07-16.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-16",
+                "rows": [{"ticker": "AAPL", "composite": 0.8}],
+            }
+        )
+    )
+    (ca_dir / "screen_2026-07-15.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-15",
+                "universe_size": 52,
+                "candidates": [{"ticker": "RY.TO", "composite": 0.95}],
+            }
+        )
+    )
+    got = load_combined_screen([str(us_dir), str(ca_dir)])
+    assert got is not None
+    assert got["_source"] != "screened" or "candidates" in got
+    assert [c["ticker"] for c in got["candidates"]] == ["RY.TO", "AAPL"]
+    assert got["as_of"] == "2026-07-16"
+    assert got["universe_size"] == 552
+
+
+def test_load_combined_screen_one_missing_degrades_to_other(tmp_path):
+    us_dir = tmp_path / "us"
+    ca_dir = tmp_path / "ca"
+    us_dir.mkdir()
+    ca_dir.mkdir()
+    (us_dir / "screen_2026-07-16.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-16",
+                "universe_size": 500,
+                "candidates": [{"ticker": "AAPL", "composite": 0.8}],
+            }
+        )
+    )
+    got = load_combined_screen([str(us_dir), str(ca_dir)])
+    assert got is not None
+    assert [c["ticker"] for c in got["candidates"]] == ["AAPL"]
+    assert got["universe_size"] == 500
+
+
+def test_load_combined_screen_both_missing_returns_none(tmp_path):
+    us_dir = tmp_path / "us"
+    ca_dir = tmp_path / "ca"
+    us_dir.mkdir()
+    ca_dir.mkdir()
+    assert load_combined_screen([str(us_dir), str(ca_dir)]) is None
 
 
 def test_staleness_days():

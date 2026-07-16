@@ -369,6 +369,24 @@ def test_view_mode_reason_explicit() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Screener market-picker: resolve_market_mode
+# ---------------------------------------------------------------------------
+
+
+def test_market_mode_default_is_us_ca() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    assert rc.resolve_market_mode(session={}) == "us_ca"
+    assert rc.resolve_market_mode(session={"screener_market": "india"}) == "india"
+
+
+def test_market_mode_us_ca_explicit() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    assert rc.resolve_market_mode(session={"screener_market": "us_ca"}) == "us_ca"
+
+
+# ---------------------------------------------------------------------------
 # Task 6: build_reason_view_html — buckets + collapsible cards
 # ---------------------------------------------------------------------------
 
