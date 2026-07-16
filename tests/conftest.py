@@ -34,6 +34,7 @@ _TAB_MARKERS: dict[str, str] = {
     "test_research_candidates_tab.py": "tab_research",
     "test_tab1_redesign.py": "tab_screener",
     "test_positions_tab.py": "tab_positions",
+    "test_positions_render.py": "tab_positions",
     "test_trust_tab.py": "tab_trust",
 }
 

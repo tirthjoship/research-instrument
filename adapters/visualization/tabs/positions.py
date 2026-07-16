@@ -8,6 +8,11 @@ from typing import Any
 import streamlit as st
 
 from adapters.visualization.action_runner import run_record_buy, run_record_sell
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+    format_money,
+)
 from adapters.visualization.components.verdicts import outcome_tracker_verdict
 from adapters.visualization.data_loader import load_watchlist
 from adapters.visualization.price_cache import batch_fetch_prices, fetch_ticker_info
@@ -285,20 +290,21 @@ def _render_closed_positions_table(outcomes: list[Any]) -> None:
         sign = "+" if val >= 0 else ""
         return f'<span style="color:{color};font-weight:600;">{sign}{val:.1f}%</span>'
 
-    def _dollar_cell(val: float) -> str:
+    def _dollar_cell(val: float, ticker: str) -> str:
         color = "#16A34A" if val > 0 else ("#DC2626" if val < 0 else "#374151")
         sign = "+" if val >= 0 else ""
-        return f'<span style="color:{color};font-weight:600;">{sign}${val:,.2f}</span>'
+        money_str = format_money(val, ticker, thousands=True)
+        return f'<span style="color:{color};font-weight:600;">{sign}{money_str}</span>'
 
     outcome_rows = [
         {
             "Ticker": o.ticker,
             "Buy Date (EST)": o.buy_date,
             "Sell Date (EST)": o.sell_date,
-            "Buy Price": f"${o.buy_price:.2f}",
-            "Sell Price": f"${o.sell_price:.2f}",
+            "Buy Price": format_money(o.buy_price, o.ticker),
+            "Sell Price": format_money(o.sell_price, o.ticker),
             "Return %": _pct_cell(o.return_pct),
-            "Return $": _dollar_cell(o.return_dollar),
+            "Return $": _dollar_cell(o.return_dollar, o.ticker),
             "Holding Days": o.holding_days,
         }
         for o in outcomes
@@ -331,7 +337,8 @@ def _render_trade_form(db_path: str) -> None:
                     db_path=db_path,
                 )
                 st.success(
-                    f"BUY recorded: {ticker.upper()} x{quantity} @ ${price:.2f} on {date_str} EST"
+                    f"BUY recorded: {ticker.upper()} x{quantity} @ "
+                    f"{format_money(price, ticker.upper())} on {date_str} EST"
                 )
             else:
                 run_record_sell(
@@ -342,7 +349,8 @@ def _render_trade_form(db_path: str) -> None:
                     db_path=db_path,
                 )
                 st.success(
-                    f"SELL recorded: {ticker.upper()} x{quantity} @ ${price:.2f} on {date_str} EST"
+                    f"SELL recorded: {ticker.upper()} x{quantity} @ "
+                    f"{format_money(price, ticker.upper())} on {date_str} EST"
                 )
             st.rerun()
 
@@ -392,9 +400,9 @@ def _render_trade_history(trades: list[Any], outcomes: list[Any]) -> None:
             {
                 "Ticker": t.ticker,
                 "Buy Date (EST)": t.trade_date,
-                "Buy Price": f"${t.price:.2f}",
+                "Buy Price": format_money(t.price, t.ticker),
                 "Quantity": t.quantity,
-                "Value": f"${t.total_value:,.2f}",
+                "Value": format_money(t.total_value, t.ticker, thousands=True),
             }
             for t in open_trades
         ]
@@ -411,9 +419,9 @@ def _render_trade_history(trades: list[Any], outcomes: list[Any]) -> None:
                 "Date (EST)": t.trade_date,
                 "Ticker": t.ticker,
                 "Action": t.action.value,
-                "Price": f"${t.price:.2f}",
+                "Price": format_money(t.price, t.ticker),
                 "Quantity": t.quantity,
-                "Value": f"${t.total_value:,.2f}",
+                "Value": format_money(t.total_value, t.ticker, thousands=True),
                 "Conviction": (
                     f"{t.conviction_at_trade:.2f}" if t.conviction_at_trade else "—"
                 ),
@@ -489,15 +497,16 @@ def _render_watchlist_card(
     peg: float | None = float(peg_raw) if peg_raw is not None else None  # type: ignore[arg-type]
     mcap: float = float(mcap_raw)  # type: ignore[arg-type]
 
-    price_str = f"${price:,.2f}" if price else "—"
+    price_str = format_money(price, symbol, thousands=True) if price else "—"
     change_color = "#16A34A" if change >= 0 else "#DC2626"
     change_str = f"{change:+.2f}%" if price else ""
     pe_str = f"{pe:.1f}x" if pe is not None else "—"
     peg_str = f"{peg:.2f}" if peg is not None else "—"
+    mcap_symbol = currency_symbol(currency_for_ticker(symbol))
     if mcap > 1e9:
-        mcap_str = f"${mcap / 1e9:.0f}B"
+        mcap_str = f"{mcap_symbol}{mcap / 1e9:.0f}B"
     elif mcap > 1e6:
-        mcap_str = f"${mcap / 1e6:.0f}M"
+        mcap_str = f"{mcap_symbol}{mcap / 1e6:.0f}M"
     else:
         mcap_str = "—"
 
