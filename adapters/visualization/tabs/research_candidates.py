@@ -1289,14 +1289,18 @@ def _build_zone2_row_html(row: Any) -> str:
         + fit_line
     )
 
-    # Collapsible row (same pattern as shortlist)
+    # Collapsible row (same pattern as shortlist) — surfaces the same "why"
+    # (plain-read) text the shortlist rows show collapsed, so an unfamiliar
+    # ticker doesn't require expanding the card just to see the reason.
     summary_html = (
         f'<summary style="display:grid;'
         f"grid-template-columns:56px 1fr auto 16px;"
         f"gap:10px;align-items:center;font-size:12px;"
         f'padding:9px 13px;cursor:pointer;list-style:none;">'
         f"<b style=\"font-family:'DM Sans',sans-serif;\">{ticker}</b>"
-        f'<span style="color:var(--text-secondary);">{source_note}</span>'
+        f'<span style="color:var(--text-secondary);">{plain} '
+        f'<i style="color:var(--text-muted);font-size:10px;font-style:normal;">'
+        f"({source_note})</i></span>"
         f'<span style="font-weight:600;font-size:10px;padding:2px 8px;'
         f"border-radius:11px;display:inline-block;"
         f'{grade_style};">{safe_grade}</span>'
