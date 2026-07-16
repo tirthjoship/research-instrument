@@ -187,12 +187,11 @@ _FRIENDLY: dict[str, str] = {
 
 
 def _corroboration_badge_html(row_dict: dict[str, object]) -> str:
-    """Return HTML pill showing corroboration tier, or empty string if factor-only."""
+    """Return HTML pill showing corroboration tier, or empty string if
+    factor-only (no corroboration badge is shown in that case -- absence of
+    the badge already communicates factor-only, no need to say so)."""
     if row_dict.get("factor_only", True):
-        return (
-            '<span style="color:#888;font-size:0.78rem;margin-left:8px">'
-            "(factor only)</span>"
-        )
+        return ""
     tier = str(row_dict.get("convergence_tier", "")).upper()
     n_raw = row_dict.get("n_sources", 0)
     n = int(n_raw) if isinstance(n_raw, (int, float, str)) else 0
@@ -968,11 +967,12 @@ def build_reason_view_html(
             why_text = _strongest_factor_html(c.get("factor_scores", []))
             summary_html = (
                 f'<summary style="display:grid;'
-                f"grid-template-columns:22px 56px 1fr auto auto 16px;"
+                f"grid-template-columns:22px 112px 1fr auto auto 16px;"
                 f"gap:10px;align-items:center;font-size:12px;"
-                f'padding:9px 13px;cursor:pointer;list-style:none;">'
+                f'padding:9px 20px 9px 13px;cursor:pointer;list-style:none;">'
                 f'<b style="color:var(--text-muted);">{rank_i}</b>'
-                f"<b style=\"font-family:'DM Sans',sans-serif;\">{safe_ticker}</b>"
+                f"<b style=\"font-family:'DM Sans',sans-serif;white-space:nowrap;"
+                f'overflow:hidden;text-overflow:ellipsis;">{safe_ticker}</b>'
                 f"{_corroboration_badge_html(c)}"
                 f'<span style="color:var(--text-secondary);">{why_text}</span>'
                 f"{_standout_chip_html(c)}"

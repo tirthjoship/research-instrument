@@ -453,6 +453,44 @@ def test_reason_view_factor_rows_present() -> None:
     assert "DATA-GAP" in html
 
 
+def test_reason_view_omits_factor_only_label() -> None:
+    """'(factor only)' used to render on every row whenever corroboration
+    hadn't run -- pure clutter, since the absence of a corroboration badge
+    already communicates that. Must not appear anywhere in the reason view."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_reason_view_html(_make_full_candidates_for_reason())
+    assert "factor only" not in html
+
+
+def test_reason_view_ticker_column_wide_enough_for_suffixed_tickers() -> None:
+    """A 56px ticker column wrapped longer CA/India tickers (e.g. AXISBANK.NS,
+    ULTRACEMCO.NS) onto two lines despite ample horizontal space elsewhere in
+    the row. Must be wide enough (112px) with a nowrap/ellipsis safety net,
+    not the old fixed 56px."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    html = rc.build_reason_view_html(
+        [
+            {
+                "ticker": "AXISBANK.NS",
+                "composite": 0.71,
+                "why": "Strong on value and revision",
+                "label": "RESEARCH_ONLY",
+                "factor_scores": [
+                    # Both >= top-quartile (0.75) to clear VALUE_CATALYST
+                    # ("top-quartile value AND analyst dispersion").
+                    {"name": "revision", "value": 1.5, "percentile": 0.91},
+                    {"name": "value", "value": 1.2, "percentile": 0.82},
+                ],
+            }
+        ]
+    )
+    assert "grid-template-columns:22px 56px" not in html
+    assert "AXISBANK.NS" in html
+    assert "white-space:nowrap" in html and "text-overflow:ellipsis" in html
+
+
 def test_reason_view_do_next_present() -> None:
     from adapters.visualization.tabs import research_candidates as rc
 
