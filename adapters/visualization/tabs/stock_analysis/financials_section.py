@@ -125,6 +125,7 @@ def _render_valuation(result: AnalysisResult) -> None:
                     float(low52),
                     float(high52),
                     float(target) if target else None,
+                    ticker=result.ticker,
                 ),
                 unsafe_allow_html=True,
             )

@@ -9,6 +9,10 @@ from __future__ import annotations
 import html as _html
 from typing import Any
 
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 from application.evidence_card import EvidenceCard
 from domain.discipline import Verdict, verdict_rubric_lines
 from domain.evidence_rag import RagColor, RagSignal  # noqa: F401
@@ -188,6 +192,7 @@ def render_expanded_card(
     reliability: str,
 ) -> str:
     pct = "—" if unrealized_pct is None else f"{unrealized_pct:+.1f}%"
+    sym = currency_symbol(currency_for_ticker(name))
     # Build the returns display: first 4 windows (7/30/90/180d) then 1y separated
     if returns:
         core = " · ".join(f"{r:+.1f}" for r in returns[:4])
@@ -203,8 +208,8 @@ def render_expanded_card(
         f'<div style="background:#e6f1f3;border:1px solid #cfe6ec;border-radius:8px;padding:11px 13px;'
         f'font-size:13.5px;line-height:1.55;margin-bottom:13px"><b style="color:#0a5260">What this means:</b> {_html.escape(means)}</div>'
         f'<div style="display:flex;gap:8px;margin-bottom:13px;font-size:12px">'
-        f'<div style="flex:1;background:#f4f8f9;border-radius:7px;padding:7px 9px">Price<br><b>{"—" if price is None else f"${price:,.2f}"}</b></div>'
-        f'<div style="flex:1;background:#f4f8f9;border-radius:7px;padding:7px 9px">Your cost<br><b>{"—" if cost is None else f"${cost:,.2f}"}</b></div>'
+        f'<div style="flex:1;background:#f4f8f9;border-radius:7px;padding:7px 9px">Price<br><b>{"—" if price is None else f"{sym}{price:,.2f}"}</b></div>'
+        f'<div style="flex:1;background:#f4f8f9;border-radius:7px;padding:7px 9px">Your cost<br><b>{"—" if cost is None else f"{sym}{cost:,.2f}"}</b></div>'
         f'<div style="flex:1;background:#eafaf3;border-radius:7px;padding:7px 9px">Unrealized<br><b>{pct}</b></div>'
         f'<div style="flex:2;background:#f4f8f9;border-radius:7px;padding:7px 9px">7/30/90/180d · 1y<br><b>{ret}</b></div></div>'
         f"{_case_html(case)}"
