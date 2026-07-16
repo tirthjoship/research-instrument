@@ -95,6 +95,9 @@ def _prefetch_screener_cited_cases(
 
 
 @cli.command("screen-candidates")
+@click.option(
+    "--market", default="us", show_default=True, help="Market config (us|ca|in)"
+)
 @click.option("--top", default=10, show_default=True, type=int, help="Top N rank limit")
 @click.option(
     "--report-dir",
@@ -108,7 +111,7 @@ def _prefetch_screener_cited_cases(
     show_default=True,
     help="Also prefetch Gemini green/red-flag reads for the top-N shown candidates.",
 )
-def screen_candidates(top: int, report_dir: str, cite_cases: bool) -> None:
+def screen_candidates(market: str, top: int, report_dir: str, cite_cases: bool) -> None:
     """Screen universe for disciplined, evidence-bounded candidates.
 
     Writes the FULL ranked candidate distribution to <report-dir>/screen_<date>.json
@@ -120,7 +123,7 @@ def screen_candidates(top: int, report_dir: str, cite_cases: bool) -> None:
 
     from application.evidence_screen_use_case import label_from_verdict_file
 
-    deps = _build_dependencies("us")
+    deps = _build_dependencies(market)
     config = deps["config"]
     tickers = _get_ticker_universe(config)
 
@@ -175,6 +178,7 @@ def screen_candidates(top: int, report_dir: str, cite_cases: bool) -> None:
 
     payload: dict[str, object] = {
         "as_of": as_of,
+        "market": market,
         "universe_size": result.universe_size,
         "top_n": top,
         "regime": result.regime,
@@ -321,7 +325,9 @@ def _write_screened_json(
 
 
 @cli.command("backtest-screen")
-@click.option("--market", default="us", show_default=True, help="Market config (us|ca)")
+@click.option(
+    "--market", default="us", show_default=True, help="Market config (us|ca|in)"
+)
 @click.option(
     "--start", default="2018-01-01", show_default=True, help="Backtest start date"
 )
@@ -382,7 +388,9 @@ def backtest_screen(
     )
 
     # ------------------------------------------------------------------
-    # Build universe: SP500 + NASDAQ100 + TSX60 (reuse _get_backtest_universe)
+    # Build universe for the selected market only (us|ca|in) — markets are
+    # no longer combined; each `market` selects its own single-country
+    # ticker list via _get_backtest_universe.
     # ------------------------------------------------------------------
     tickers = _get_backtest_universe(market)
     universe_size = len(tickers)
@@ -390,7 +398,9 @@ def backtest_screen(
         tickers = tickers[:limit]
         universe_size = len(tickers)
 
-    click.echo(f"Universe: {universe_size} tickers (sp500+nasdaq100+tsx60, deduped)")
+    _UNIVERSE_LABELS = {"us": "sp500+nasdaq100", "ca": "tsx60", "in": "nifty50"}
+    universe_label = _UNIVERSE_LABELS.get(market, market)
+    click.echo(f"Universe: {universe_size} tickers ({universe_label}, deduped)")
 
     # ------------------------------------------------------------------
     # Date range: monthly cadence (first-of-month / 28-day steps)
