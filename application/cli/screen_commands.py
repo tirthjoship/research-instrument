@@ -95,7 +95,9 @@ def _prefetch_screener_cited_cases(
 
 
 @cli.command("screen-candidates")
-@click.option("--market", default="us", show_default=True, help="Market config (us|ca)")
+@click.option(
+    "--market", default="us", show_default=True, help="Market config (us|ca|in)"
+)
 @click.option("--top", default=10, show_default=True, type=int, help="Top N rank limit")
 @click.option(
     "--report-dir",
@@ -384,7 +386,9 @@ def backtest_screen(
     )
 
     # ------------------------------------------------------------------
-    # Build universe: SP500 + NASDAQ100 + TSX60 (reuse _get_backtest_universe)
+    # Build universe for the selected market only (us|ca|in) — markets are
+    # no longer combined; each `market` selects its own single-country
+    # ticker list via _get_backtest_universe.
     # ------------------------------------------------------------------
     tickers = _get_backtest_universe(market)
     universe_size = len(tickers)

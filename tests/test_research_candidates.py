@@ -257,6 +257,19 @@ def test_universe_scope_html_describes_ca_market() -> None:
     assert "Large-cap US" not in html
 
 
+def test_universe_scope_html_describes_in_market() -> None:
+    from adapters.visualization.tabs import research_candidates as rc
+
+    screen = {
+        "market": "in",
+        "universe_size": 50,
+        "diagnostics": {"scanned": 50},
+    }
+    html = rc.build_universe_scope_html(screen)
+    assert "NIFTY" in html or "India" in html
+    assert "Large-cap US" not in html
+
+
 def test_universe_scope_html_defaults_to_us_when_market_key_absent() -> None:
     """Old, already-committed screen_<date>.json snapshots (written before
     this feature) have no "market" key — must not crash, must read as US."""

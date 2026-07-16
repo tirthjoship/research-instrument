@@ -487,11 +487,11 @@ def build_universe_scope_html(screen: dict[str, Any] | None = None) -> str:
 
     The screen does NOT scan the whole market: for market="us" the universe
     is large-cap US (S&P 500 ∪ Nasdaq-100, ~570 names); for market="ca" it's
-    the TSX 60 (~60 names). Both are survivor-biased — today's index
-    membership applied to every date. The live scanned count is appended
-    when the screen carries it (from diagnostics.scanned / universe_size).
-    Absent "market" key (older committed snapshots, pre this feature)
-    defaults to "us".
+    the TSX 60 (52 names); for market="in" it's the NIFTY 50 (~50 names). All
+    are survivor-biased — today's index membership applied to every date.
+    The live scanned count is appended when the screen carries it (from
+    diagnostics.scanned / universe_size). Absent "market" key (older
+    committed snapshots, pre this feature) defaults to "us".
     """
     market = "us"
     scanned = 0
@@ -514,7 +514,9 @@ def build_universe_scope_html(screen: dict[str, Any] | None = None) -> str:
     registry_caveat = f" {_html.escape(entry.caveat)}" if entry is not None else ""
 
     if market == "ca":
-        scope_label = "TSX 60 (Canada), ~60 names"
+        scope_label = "TSX 60 (Canada), 52 names"
+    elif market == "in":
+        scope_label = "NIFTY 50 (India), ~50 names"
     else:
         scope_label = "Large-cap US (S&amp;P&nbsp;500 + Nasdaq-100, ~570 names)"
 
