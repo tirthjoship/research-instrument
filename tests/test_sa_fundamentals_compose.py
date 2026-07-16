@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-from adapters.visualization.tabs.stock_analysis import compose
+from adapters.visualization.tabs.stock_analysis import compose, financials_section
 
 
 def _result() -> object:
@@ -85,6 +85,16 @@ def test_fundamentals_tile_values_sparse_result_falls_back() -> None:
 
     sparse = SimpleNamespace(peer_percentiles=None, info=None)
     assert compose._fundamentals_tile_values(sparse) == ("—", "—", "—")
+
+
+def test_canadian_ticker_health_dollar_amounts_show_cad_symbol() -> None:
+    """financials_section._fmt_b (used by _render_health's cash/debt/FCF tiles)
+    must show C$ for a TSX-suffixed ticker, not bare $ — bare $ would
+    misrepresent CAD amounts as USD."""
+    assert financials_section._fmt_b(43e9, "RY.TO") == "C$43.0B"
+    assert "$" not in financials_section._fmt_b(43e9, "RY.TO").replace("C$", "")
+    assert financials_section._fmt_b(None, "RY.TO") == "N/A"
+    assert financials_section._fmt_b(43e9, "NVDA") == "$43.0B"
 
 
 def test_fundamentals_tile_values_net_debt() -> None:

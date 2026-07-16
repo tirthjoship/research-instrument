@@ -6,6 +6,11 @@ import html as _html
 from dataclasses import dataclass
 from typing import Any
 
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
+
 
 @dataclass(frozen=True)
 class HeroView:
@@ -25,15 +30,17 @@ class HeroView:
     grade_label: str
 
 
-def _money(value: float) -> str:
-    return f"${value:,.2f}"
+def _money(value: float, ticker: str) -> str:
+    sym = currency_symbol(currency_for_ticker(ticker))
+    return f"{sym}{value:,.2f}"
 
 
-def _market_cap(value: float) -> str:
+def _market_cap(value: float, ticker: str) -> str:
+    sym = currency_symbol(currency_for_ticker(ticker))
     for cutoff, suffix in ((1e12, "T"), (1e9, "B"), (1e6, "M")):
         if abs(value) >= cutoff:
-            return f"${value / cutoff:.2f}{suffix}"
-    return f"${value:,.0f}"
+            return f"{sym}{value / cutoff:.2f}{suffix}"
+    return f"{sym}{value:,.0f}"
 
 
 def _range_label(pct: int) -> str:
@@ -68,13 +75,14 @@ def build_hero_view(
     result: Any, *, grade: str | None = None, as_of: str = ""
 ) -> HeroView:
     info = getattr(result, "info", {}) or {}
+    ticker = str(getattr(result, "ticker", "") or "")
     low = info.get("fiftyTwoWeekLow")
     high = info.get("fiftyTwoWeekHigh")
     price = float(getattr(result, "current_price", 0.0) or 0.0)
     if low is not None and high is not None and float(high) > float(low):
         pct = int(round((price - float(low)) / (float(high) - float(low)) * 100))
         pct = max(0, min(100, pct))
-        low_s, high_s = _money(float(low)), _money(float(high))
+        low_s, high_s = _money(float(low), ticker), _money(float(high), ticker)
     else:
         pct, low_s, high_s = 0, "—", "—"
     chg = float(getattr(result, "change_pct", 0.0) or 0.0)
@@ -82,15 +90,17 @@ def build_hero_view(
     grade_label = f"EVIDENCE GRADE {grade} · DESCRIPTIVE" if grade else "DESCRIPTIVE"
     return HeroView(
         company_name=str(getattr(result, "company_name", "") or ""),
-        ticker=str(getattr(result, "ticker", "") or ""),
+        ticker=ticker,
         exchange=_decode_exchange(info.get("exchange")),
         # prefer the more specific industry (e.g. "Semiconductors") over the broad sector
         sector=str(info.get("industry") or getattr(result, "sector", "") or "—"),
         as_of=as_of,
-        price=_money(price),
+        price=_money(price, ticker),
         change_label=f"{arrow} {chg:+.2f}% today",
         change_down=chg < 0,
-        market_cap=_market_cap(float(getattr(result, "market_cap", 0.0) or 0.0)),
+        market_cap=_market_cap(
+            float(getattr(result, "market_cap", 0.0) or 0.0), ticker
+        ),
         low=low_s,
         high=high_s,
         range_pct=pct,

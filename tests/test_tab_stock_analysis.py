@@ -245,3 +245,29 @@ def test_ownership_delta_net_buyers_and_qoq() -> None:
     html = _ownership_delta_html(delta)
     assert "net buyers" in html
     assert "Q2 2026" in html
+
+
+def test_ownership_delta_html_indian_ticker_shows_rupee_symbol() -> None:
+    """An NSE-suffixed ticker's insider net-value figures must show the rupee
+    symbol, not bare $ — bare $ would misrepresent INR amounts as USD."""
+    quarters = [
+        {
+            "quarter": "Q1 2026",
+            "buys": 1,
+            "sells": 2,
+            "buy_value": 1e6,
+            "sell_value": 3e6,
+        },
+        {
+            "quarter": "Q2 2026",
+            "buys": 4,
+            "sells": 1,
+            "buy_value": 5e6,
+            "sell_value": 1e6,
+        },
+    ]
+    delta = _build_ownership_delta(quarters)
+    assert delta is not None
+    html = _ownership_delta_html(delta, "RELIANCE.NS")
+    assert "₹" in html
+    assert "$" not in html

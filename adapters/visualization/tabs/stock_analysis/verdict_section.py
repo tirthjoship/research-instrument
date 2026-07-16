@@ -7,6 +7,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from adapters.visualization.data_loader import CorroborationTabView
 
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+    format_money,
+)
 from adapters.visualization.components.tooltip import tooltip as glossary_tooltip
 from adapters.visualization.stock_analyzer import AnalysisResult
 from domain.corroboration_models import ConvergenceTier
@@ -39,15 +44,17 @@ def _convergence_badge_html(tier: ConvergenceTier) -> str:
     )
 
 
-def _fmt_market_cap(mc: float) -> str:
-    """Format market cap as human-readable string."""
+def _fmt_market_cap(mc: float, ticker: str = "") -> str:
+    """Format market cap as human-readable string, using the ticker's market
+    currency symbol (C$/₹) instead of always assuming USD."""
+    sym = currency_symbol(currency_for_ticker(ticker))
     if mc >= 1e12:
-        return f"${mc / 1e12:.1f}T"
+        return f"{sym}{mc / 1e12:.1f}T"
     if mc >= 1e9:
-        return f"${mc / 1e9:.1f}B"
+        return f"{sym}{mc / 1e9:.1f}B"
     if mc >= 1e6:
-        return f"${mc / 1e6:.1f}M"
-    return f"${mc:,.0f}"
+        return f"{sym}{mc / 1e6:.1f}M"
+    return f"{sym}{mc:,.0f}"
 
 
 def _render_verdict(
@@ -60,7 +67,7 @@ def _render_verdict(
     # Company header
     change_color = "#16A34A" if result.change_pct >= 0 else "#DC2626"
     change_sign = "+" if result.change_pct >= 0 else ""
-    market_cap_str = _fmt_market_cap(result.market_cap)
+    market_cap_str = _fmt_market_cap(result.market_cap, result.ticker)
 
     # Convergence badge from corroboration snapshot
     convergence_badge = ""
@@ -75,7 +82,7 @@ def _render_verdict(
         f"{result.ticker} · {result.sector}</span>"
         f"{convergence_badge}<br/>"
         f"<span style=\"font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:600;color:#1A202C;\">"
-        f"${result.current_price:,.2f}</span>"
+        f"{format_money(result.current_price, result.ticker, thousands=True)}</span>"
         f"<span style=\"font-family:'Inter',sans-serif;font-size:14px;color:{change_color};margin-left:8px;\">"
         f"{change_sign}{result.change_pct:.2f}%</span>"
         f"<span style=\"font-family:'Inter',sans-serif;font-size:13px;color:#94A3B8;margin-left:12px;\">"
@@ -110,7 +117,7 @@ def _render_verdict(
         f'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
         f'<span style="font-size:13px;color:#64748B;">Price Target</span>'
         f'<span style="font-size:13px;font-weight:600;color:#1A202C;">'
-        f"{'${:.2f}'.format(target) if target else 'N/A'}</span></div>"
+        f"{format_money(target, result.ticker) if target else 'N/A'}</span></div>"
         f'<div style="display:flex;justify-content:space-between;">'
         f'<span style="font-size:13px;color:#64748B;">Analysts</span>'
         f'<span style="font-size:13px;font-weight:600;color:#1A202C;">{analyst_count}</span></div>'
@@ -237,14 +244,18 @@ def _render_analyst_panel(result: AnalysisResult) -> None:
 
     c3.metric(
         "Mean target",
-        f"${panel.target_mean:.2f}" if panel.target_mean else "N/A",
+        (
+            format_money(panel.target_mean, result.ticker)
+            if panel.target_mean
+            else "N/A"
+        ),
     )
     # E2 Dispersion: high/low spread
     if panel.target_high and panel.target_low:
         dispersion = panel.target_high - panel.target_low
         c4.metric(
             glossary_tooltip("Dispersion", "Target spread (high − low)"),
-            f"${dispersion:.2f}",
+            format_money(dispersion, result.ticker),
         )
     else:
         c4.metric("Dispersion", "N/A")

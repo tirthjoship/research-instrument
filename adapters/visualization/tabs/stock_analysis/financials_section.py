@@ -17,6 +17,10 @@ from adapters.visualization.components.charts import (
     financials_line,
     gauge_chart,
 )
+from adapters.visualization.components.currency import (
+    currency_for_ticker,
+    currency_symbol,
+)
 from adapters.visualization.stock_analyzer import AnalysisResult
 from adapters.visualization.tabs.stock_analysis.verdict_section import (
     _render_peer_percentiles,
@@ -36,6 +40,16 @@ def _build_pe_items(
         if pt is not None:
             items.append({"name": p["ticker"], "value": round(float(pt), 1)})
     return items
+
+
+def _fmt_b(val: float | None, ticker: str) -> str:
+    """Format a balance-sheet dollar value in billions, using the ticker's
+    market currency symbol (C$/₹) instead of always assuming USD. Returns
+    "N/A" for falsy/None input."""
+    if not val:
+        return "N/A"
+    sym = currency_symbol(currency_for_ticker(ticker))
+    return f"{sym}{val / 1e9:.1f}B"
 
 
 def _build_margin_items(info: dict[str, Any]) -> list[dict[str, Any]]:
@@ -220,9 +234,9 @@ def _render_health(result: AnalysisResult) -> None:
         debt = info.get("totalDebt")
         fcf = info.get("freeCashflow")
         cr = info.get("currentRatio")
-        cash_str = f"${cash / 1e9:.1f}B" if cash else "N/A"
-        debt_str = f"${debt / 1e9:.1f}B" if debt else "N/A"
-        fcf_str = f"${fcf / 1e9:.1f}B" if fcf else "N/A"
+        cash_str = _fmt_b(cash, result.ticker)
+        debt_str = _fmt_b(debt, result.ticker)
+        fcf_str = _fmt_b(fcf, result.ticker)
         cr_str = f"{cr:.2f}x" if cr else "N/A"
         fcf_color = "#16A34A" if (fcf or 0) > 0 else "#DC2626"
         st.markdown(
