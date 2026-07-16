@@ -84,6 +84,9 @@ class _FakeSt:
     def segmented_control(self, *a: object, **k: object) -> str:
         return "By reason"
 
+    def toggle(self, *a: object, **k: object) -> bool:
+        return bool(k.get("value", False))
+
     def spinner(self, *a: object, **k: object) -> "_FakeCol":
         return _FakeCol()
 
@@ -454,6 +457,9 @@ def test_upload_section_renders_on_abstention_week(tmp_path, monkeypatch):  # ty
 
         def segmented_control(self, *a: object, **k: object) -> str:
             return "By reason"
+
+        def toggle(self, *a: object, **k: object) -> bool:
+            return bool(k.get("value", False))
 
         def spinner(self, *a: object, **k: object) -> "_FakeCol":
             return _FakeCol()
@@ -994,18 +1000,74 @@ def test_render_default_reports_dir_resolves_to_sample_on_cold_start(monkeypatch
 
     monkeypatch.setattr(st, "session_state", {}, raising=False)
 
-    captured: dict[str, str] = {}
+    captured: dict[str, list[str]] = {}
 
-    def fake_load_latest_screened(reports_dir: str) -> None:
-        captured["reports_dir"] = reports_dir
+    def fake_load_combined_screen(reports_dirs: list[str]) -> None:
+        captured["reports_dirs"] = reports_dirs
         return None
 
-    monkeypatch.setattr(rc, "load_latest_screened", fake_load_latest_screened)
+    monkeypatch.setattr(rc, "load_combined_screen", fake_load_combined_screen)
     monkeypatch.setattr(st, "warning", lambda *a, **k: None)  # noqa: ARG005
 
     rc.render()
 
-    assert captured["reports_dir"] == "data/sample"
+    assert captured["reports_dirs"] == ["data/sample", "data/sample/ca"]
+
+
+def test_market_toggle_off_calls_load_combined_screen(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    import streamlit as st
+
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(st, "toggle", lambda *a, **k: False)
+    monkeypatch.setattr(st, "warning", lambda *a, **k: None)  # noqa: ARG005
+
+    captured: dict[str, object] = {}
+
+    def fake_load_combined_screen(reports_dirs: list[str]) -> None:
+        captured["combined_dirs"] = reports_dirs
+        return None
+
+    def fake_load_latest_screened(reports_dir: str) -> None:
+        captured["screened_dir"] = reports_dir
+        return None
+
+    monkeypatch.setattr(rc, "load_combined_screen", fake_load_combined_screen)
+    monkeypatch.setattr(rc, "load_latest_screened", fake_load_latest_screened)
+
+    rc.render(reports_dir="data/sample")
+
+    assert captured.get("combined_dirs") == ["data/sample", "data/sample/ca"]
+    assert "screened_dir" not in captured
+
+
+def test_market_toggle_on_calls_load_latest_screened_india(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    import streamlit as st
+
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(st, "toggle", lambda *a, **k: True)
+    monkeypatch.setattr(st, "warning", lambda *a, **k: None)  # noqa: ARG005
+
+    captured: dict[str, object] = {}
+
+    def fake_load_combined_screen(reports_dirs: list[str]) -> None:
+        captured["combined_dirs"] = reports_dirs
+        return None
+
+    def fake_load_latest_screened(reports_dir: str) -> None:
+        captured["screened_dir"] = reports_dir
+        return None
+
+    monkeypatch.setattr(rc, "load_combined_screen", fake_load_combined_screen)
+    monkeypatch.setattr(rc, "load_latest_screened", fake_load_latest_screened)
+
+    rc.render(reports_dir="data/sample")
+
+    assert captured.get("screened_dir") == "data/sample/in"
+    assert "combined_dirs" not in captured
 
 
 def test_run_screener_gate_is_passive_display_for_visitors(monkeypatch) -> None:  # type: ignore[no-untyped-def]
