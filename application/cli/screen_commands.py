@@ -325,7 +325,9 @@ def _write_screened_json(
 
 
 @cli.command("backtest-screen")
-@click.option("--market", default="us", show_default=True, help="Market config (us|ca)")
+@click.option(
+    "--market", default="us", show_default=True, help="Market config (us|ca|in)"
+)
 @click.option(
     "--start", default="2018-01-01", show_default=True, help="Backtest start date"
 )
