@@ -33,9 +33,15 @@ def test_ca_market_config_loads_and_uses_tsx60():
     assert config["market"] == "ca"
 
     tickers = _get_ticker_universe(config)
-    # tsx60.txt has 52 real, dated tickers (no .TO suffix stored on disk —
-    # the .TO suffix is added at runtime by _get_backtest_universe, not here).
-    assert "RY" in tickers  # Royal Bank of Canada, first real entry in the file
+    # tsx60.txt has 52 real, dated tickers stored bare on disk -- .TO is
+    # applied here (_apply_yf_market_suffix) so the LIVE screen-candidates
+    # path resolves the same real yfinance symbols as the offline backtest
+    # path (_get_backtest_universe) does. A bare "RY" would previously
+    # silently mis-resolve or fail against yfinance (RY.TO is Royal Bank
+    # of Canada; bare RY happens to also exist as an NYSE cross-listing for
+    # a few names, which is exactly what made this bug easy to miss).
+    assert "RY.TO" in tickers
+    assert "RY" not in tickers
     assert len(tickers) == 52
 
 
@@ -46,10 +52,12 @@ def test_in_market_config_loads_and_uses_nifty50():
     assert config["market"] == "in"
 
     tickers = _get_ticker_universe(config)
-    # nifty50.txt has 50 real, dated (2025-12-08) tickers — see the file's
-    # own header for sourcing and open caveats before trusting it further.
-    assert "RELIANCE" in tickers
-    assert "TCS" in tickers
+    # nifty50.txt has 50 real, dated (2025-12-08) tickers stored bare on
+    # disk -- .NS is applied here so these resolve against yfinance at all
+    # (a bare "RELIANCE" is not a valid yfinance symbol and fails outright).
+    assert "RELIANCE.NS" in tickers
+    assert "TCS.NS" in tickers
+    assert "RELIANCE" not in tickers
     assert len(tickers) == 50
 
 
@@ -82,3 +90,32 @@ def test_get_backtest_universe_in_returns_nifty50_with_ns_suffix():
     assert "TCS.NS" in in_tickers
     assert len(in_tickers) == 50
     assert "AAPL" not in in_tickers
+
+
+def test_ca_class_shares_use_dash_before_to_suffix():
+    """tsx60.txt stores class shares with dotted notation (GIB.A) -- yfinance
+    wants dash + suffix (GIB-A.TO), mirroring holdings_reader._to_yf. Must
+    hold for BOTH universe-loading paths, not just the offline backtest one."""
+    from application.cli._deps import _get_backtest_universe
+
+    ca_tickers = _get_backtest_universe("ca")
+    assert "GIB-A.TO" in ca_tickers
+    assert "GIB.A" not in ca_tickers
+    assert "GIB.A.TO" not in ca_tickers
+
+
+def test_live_and_backtest_universes_match_for_ca_and_in():
+    """The live screen-candidates path (_get_ticker_universe) and the offline
+    backtest path (_get_backtest_universe) must resolve to the EXACT same
+    yfinance-suffixed ticker set for a given market -- this is the invariant
+    that broke silently before (_get_ticker_universe returned bare tickers
+    while _get_backtest_universe correctly suffixed them), producing wrong/
+    missing live-scan data for CA and India while backtests looked fine."""
+    from application.cli._deps import _get_backtest_universe
+    from config.loader import load_market_config
+
+    for market in ("ca", "in"):
+        config = load_market_config(market)
+        live = sorted(_get_ticker_universe(config))
+        backtest = sorted(_get_backtest_universe(market))
+        assert live == backtest, f"{market}: live/backtest universe mismatch"
