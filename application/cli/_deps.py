@@ -179,12 +179,26 @@ def _load_spine_tickers(market: str) -> list[str]:
 
 
 def _get_ticker_universe(config: dict[str, Any]) -> list[str]:
-    """Load ticker universe from config files, with hardcoded fallback."""
-    config_dir = Path(__file__).parent.parent.parent / "config" / "tickers"
-    files = [
-        config_dir / "sp500.txt",
-        config_dir / "nasdaq100.txt",
-    ]
+    """Load ticker universe from the market config's declared ticker files.
+
+    Reads config["universe"]["ticker_files"] (paths relative to repo root).
+    Falls back to the US sp500+nasdaq100 files if the config has no
+    "universe" section (defends against a malformed/partial config), and to
+    a small hardcoded list if even those files are missing (dev/testing).
+    """
+    repo_root = Path(__file__).parent.parent.parent
+    universe_cfg = config.get("universe", {})
+    configured_files = universe_cfg.get("ticker_files")
+
+    if configured_files:
+        files = [repo_root / p for p in configured_files]
+    else:
+        config_dir = repo_root / "config" / "tickers"
+        files = [
+            config_dir / "sp500.txt",
+            config_dir / "nasdaq100.txt",
+        ]
+
     existing = [f for f in files if f.exists()]
     if not existing:
         # Fallback to small list for dev/testing when config files missing
