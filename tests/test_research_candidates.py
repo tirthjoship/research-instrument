@@ -1131,3 +1131,19 @@ def test_no_misleading_stock_analysis_cited_case_pointer() -> None:
 
     zone2_html = rc.build_check_your_own_html(_make_fake_batch_rows())
     assert "full cited case" not in zone2_html
+
+
+def test_candidate_cards_carry_rc_card_class_for_tooltip_escape() -> None:
+    """The collapsible <details> card sets inline overflow:hidden for rounded
+    corners, which also clips the factor-row (i) tooltip once expanded. The
+    rc-card class is how styles.py's `.rc-card[open]{overflow:visible}` rule
+    finds these cards to override that clipping — losing the class silently
+    re-breaks the tooltip."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    candidates = _FAKE_SCREEN["candidates"]
+    assert 'class="rc-card"' in rc.build_reason_view_html(candidates)
+    assert 'class="rc-card"' in rc.build_rank_view_html(candidates)
+
+    zone2_html = rc.build_check_your_own_html(_make_fake_batch_rows())
+    assert 'class="rc-card"' in zone2_html
