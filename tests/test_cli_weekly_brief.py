@@ -402,7 +402,9 @@ def test_risk_second_opinion_fed_real_regime_and_market_news(
         _rso_mod, "build_risk_second_opinion", _fake_build_risk_second_opinion
     )
     monkeypatch.setattr(
-        _rmf_mod, "risk_market_news", lambda sector: [f"news-for-{sector}"]
+        _rmf_mod,
+        "risk_market_news",
+        lambda sector, **kwargs: [f"news-for-{sector}"],
     )
 
     runner = CliRunner()

@@ -35,3 +35,32 @@ def test_snapshot_reader_scoped_to_the_brief_report_dir() -> None:
     uploaded books, and any future per-book reports_dir, stay isolated)."""
     src = inspect.getsource(brief_commands._build_weekly_brief)
     assert "SnapshotScreenReader(report_dir)" in src
+
+
+def test_risk_market_news_uses_market_aware_benchmark_ticker() -> None:
+    """The weekly_brief command's risk_market_news() call must pass the
+    market's own configured benchmark (load_market_config(market)
+    ["macro_symbols"]["spy"] — XIC.TO for CA, NIFTYBEES.NS for India) instead
+    of silently defaulting to US SPY for every market (final-review Finding 1,
+    site B).
+
+    weekly_brief wires ~10 unrelated subsystems that would need heavy fakes
+    just to exercise this one call at runtime (see module docstring for the
+    accepted source-inspection pattern used elsewhere in this file), so this
+    is a regression guard on the exact wiring rather than a full end-to-end
+    invocation.
+    """
+    src = inspect.getsource(brief_commands.weekly_brief.callback)
+    assert "benchmark_ticker=" in src, (
+        "weekly_brief must pass benchmark_ticker= to risk_market_news() so "
+        "CA/India runs benchmark against their own market ETF, not US SPY."
+    )
+    normalized = " ".join(src.split())
+    assert (
+        'load_market_config(market) .get("macro_symbols", {}) .get("spy", "SPY")'
+        in normalized
+    ), (
+        "benchmark_ticker must resolve via load_market_config(market) + "
+        ".get() chains defaulting to SPY, consistent with the safe-config-"
+        "access pattern documented in config/markets/ca.yaml and in.yaml."
+    )

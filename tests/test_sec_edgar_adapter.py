@@ -191,3 +191,16 @@ class TestSECEdgarAdapter:
             signals = adapter.get_13d_filings("NVDA", "2026-05-01")
 
         assert signals == []
+
+    def test_get_all_signals_empty_hits_for_non_us_ticker_no_crash(self) -> None:
+        """SEC EDGAR is US-only; a CA/India ticker should return an empty
+        signal list, not raise -- this is what makes the insider-cluster
+        signal DATA-GAP gracefully for non-US tickers instead of crashing the
+        whole Stock Analysis tab render."""
+        adapter = SECEdgarAdapter(rate_limit_seconds=0.0)
+        # Fake the EFTS API response as HTTP 200 with zero hits (the realistic
+        # response for an unknown/non-US ticker)
+        with patch("requests.get", return_value=_mock_response(_EMPTY_RESPONSE)):
+            result = adapter.get_all_signals(ticker="RY.TO")
+
+        assert result == []
