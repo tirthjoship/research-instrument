@@ -8,6 +8,7 @@ module is safely importable in non-Streamlit contexts (CI, tests, CLI).
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from datetime import datetime, time
 from time import sleep as _time_sleep
 from typing import Any, cast
@@ -200,35 +201,55 @@ def _fetch_ticker_info_impl(ticker: str) -> dict[str, Any]:
         return {}
 
 
+def _retry_attr_fetch(fn: Any, ticker: str, label: str) -> Any:
+    """Retry a single yfinance attribute/property fetch with backoff.
+
+    A transient hiccup (rate-limit, timeout) on one attribute must not
+    silently degrade to a permanent-looking DATA-GAP — mirrors
+    `_fetch_ticker_info_impl`'s retry, but keyed per-attribute so one flaky
+    field doesn't wipe out siblings fetched from the same Ticker object.
+    Returns None once retries are exhausted.
+    """
+    try:
+        return retry_with_backoff(fn, sleep=_SLEEP)
+    except Exception as exc:
+        logger.warning("{} fetch failed for {}: {}", label, ticker, exc)
+        return None
+
+
 def _fetch_quarterly_financials_impl(
     ticker: str,
 ) -> tuple[DataFrame | None, DataFrame | None, DataFrame | None]:
     """Return (income_stmt, balance_sheet, cashflow) quarterly DataFrames.
 
-    Each can be None if unavailable.
+    Each can be None if unavailable. Each attribute retries independently so
+    a transient hiccup on one doesn't discard the other two.
     """
-    try:
-        t = yf.Ticker(ticker)
-        income = t.quarterly_income_stmt
-        balance = t.quarterly_balance_sheet
-        cashflow = t.quarterly_cashflow
-        return (
-            income if income is not None and not income.empty else None,
-            balance if balance is not None and not balance.empty else None,
-            cashflow if cashflow is not None and not cashflow.empty else None,
-        )
-    except Exception as exc:
-        logger.warning("Quarterly financials fetch failed for {}: {}", ticker, exc)
-        return None, None, None
+    t = yf.Ticker(ticker)
+    income = _retry_attr_fetch(
+        lambda: t.quarterly_income_stmt, ticker, "Quarterly income stmt"
+    )
+    balance = _retry_attr_fetch(
+        lambda: t.quarterly_balance_sheet, ticker, "Quarterly balance sheet"
+    )
+    cashflow = _retry_attr_fetch(
+        lambda: t.quarterly_cashflow, ticker, "Quarterly cashflow"
+    )
+    return (
+        income if income is not None and not income.empty else None,
+        balance if balance is not None and not balance.empty else None,
+        cashflow if cashflow is not None and not cashflow.empty else None,
+    )
 
 
 def _fetch_insider_transactions_impl(ticker: str) -> list[dict[str, Any]]:
     """Fetch insider transactions for *ticker*. Returns [] on any error or no data."""
+    df = _retry_attr_fetch(
+        lambda: yf.Ticker(ticker).insider_transactions, ticker, "Insider transactions"
+    )
+    if df is None or (hasattr(df, "empty") and df.empty):
+        return []
     try:
-        t = yf.Ticker(ticker)
-        df = t.insider_transactions
-        if df is None or (hasattr(df, "empty") and df.empty):
-            return []
         records = cast(list[dict[str, Any]], df.to_dict(orient="records"))
         # yfinance 'Value' is unsigned and the consumers read lowercase 'value'.
         # Expose a signed 'value': disposals (Sale) reduce; awards/grants/
@@ -251,10 +272,14 @@ def _fetch_rating_distribution_impl(ticker: str) -> dict[str, int] | None:
     forbidden-word-free keys r1..r5 so downstream view code stays slop-clean.
     Returns None on any error or empty data.
     """
+    df = _retry_attr_fetch(
+        lambda: yf.Ticker(ticker).recommendations_summary,
+        ticker,
+        "Rating distribution",
+    )
+    if df is None or (hasattr(df, "empty") and df.empty):
+        return None
     try:
-        df = yf.Ticker(ticker).recommendations_summary
-        if df is None or (hasattr(df, "empty") and df.empty):
-            return None
         row = df.iloc[0]  # latest period (0m)
         cols = {
             "r1": "strongBuy",
@@ -272,10 +297,12 @@ def _fetch_rating_distribution_impl(ticker: str) -> dict[str, int] | None:
 
 def _fetch_annual_revenue_impl(ticker: str) -> list[float]:
     """Chronological annual Total Revenue (from yfinance income_stmt). [] on error."""
+    df = _retry_attr_fetch(
+        lambda: yf.Ticker(ticker).income_stmt, ticker, "Annual revenue"
+    )
+    if df is None or df.empty or "Total Revenue" not in df.index:
+        return []
     try:
-        df = yf.Ticker(ticker).income_stmt
-        if df is None or df.empty or "Total Revenue" not in df.index:
-            return []
         return list(
             reversed([float(v) for v in df.loc["Total Revenue"].values if v == v])
         )
@@ -286,10 +313,12 @@ def _fetch_annual_revenue_impl(ticker: str) -> list[float]:
 
 def _fetch_revenue_estimate_impl(ticker: str) -> float | None:
     """Forward (+1y) revenue growth estimate from yfinance revenue_estimate. None on error."""
+    df = _retry_attr_fetch(
+        lambda: yf.Ticker(ticker).revenue_estimate, ticker, "Revenue estimate"
+    )
+    if df is None or df.empty or "growth" not in df.columns:
+        return None
     try:
-        df = yf.Ticker(ticker).revenue_estimate
-        if df is None or df.empty or "growth" not in df.columns:
-            return None
         if "+1y" in df.index:
             g = df.loc["+1y", "growth"]
             return float(g) if g == g else None
@@ -324,6 +353,29 @@ def _fetch_index_prices_impl(market: str = "us") -> dict[str, dict[str, float]]:
 # ---------------------------------------------------------------------------
 
 
+def _no_stale_empty(
+    cached_fn: Any,
+    args: tuple[Any, ...],
+    is_empty: Callable[[Any], bool] = lambda r: not r,
+) -> Any:
+    """Call an @st.cache_data-wrapped fetch; never trust a stale *empty*
+    cache entry.
+
+    st.cache_data's cache is process-wide and shared across every visitor.
+    A sustained outage (Cloud's shared outbound IP gets rate-limited) can
+    exhaust an _impl function's own retries and return an empty/None
+    result — naively caching that for the full TTL would serve a false
+    DATA-GAP to every subsequent visitor and ticker for up to an hour,
+    long after Yahoo recovers. If the cached value is empty, clear that
+    entry and let the caller's live retry populate a fresh one.
+    """
+    result = cached_fn(*args)
+    if is_empty(result):
+        cached_fn.clear(*args)
+        result = cached_fn(*args)
+    return result
+
+
 def fetch_prices(tickers: tuple[str, ...]) -> dict[str, dict[str, float]]:
     """Streamlit-cached wrapper around _batch_fetch_prices_impl."""
     import streamlit as st
@@ -334,7 +386,7 @@ def fetch_prices(tickers: tuple[str, ...]) -> dict[str, dict[str, float]]:
     def _cached(t: tuple[str, ...]) -> dict[str, dict[str, float]]:
         return _batch_fetch_prices_impl(t)
 
-    return _cached(tickers)
+    return cast(dict[str, dict[str, float]], _no_stale_empty(_cached, (tickers,)))
 
 
 def fetch_ticker_info(ticker: str) -> dict[str, Any]:
@@ -345,7 +397,7 @@ def fetch_ticker_info(ticker: str) -> dict[str, Any]:
     def _cached(t: str) -> dict[str, Any]:
         return _fetch_ticker_info_impl(t)
 
-    return _cached(ticker)
+    return cast(dict[str, Any], _no_stale_empty(_cached, (ticker,)))
 
 
 def fetch_quarterly_financials(
@@ -360,7 +412,12 @@ def fetch_quarterly_financials(
     ) -> tuple[DataFrame | None, DataFrame | None, DataFrame | None]:
         return _fetch_quarterly_financials_impl(t)
 
-    return _cached(ticker)
+    return cast(
+        "tuple[DataFrame | None, DataFrame | None, DataFrame | None]",
+        _no_stale_empty(
+            _cached, (ticker,), is_empty=lambda r: all(x is None for x in r)
+        ),
+    )
 
 
 def fetch_insider_transactions(ticker: str) -> list[dict[str, Any]]:
@@ -371,7 +428,7 @@ def fetch_insider_transactions(ticker: str) -> list[dict[str, Any]]:
     def _cached(t: str) -> list[dict[str, Any]]:
         return _fetch_insider_transactions_impl(t)
 
-    return _cached(ticker)
+    return cast(list[dict[str, Any]], _no_stale_empty(_cached, (ticker,)))
 
 
 def batch_fetch_prices(tickers: tuple[str, ...]) -> dict[str, dict[str, float]]:
@@ -438,11 +495,17 @@ def parse_price_history(df: DataFrame | None) -> dict[str, Any] | None:
 
 
 def _fetch_price_history_impl(ticker: str) -> dict[str, Any] | None:
-    """Fetch 1-year daily history for *ticker* and parse it. Returns None on error."""
+    """Fetch 1-year daily history for *ticker* and parse it. Returns None on error.
+
+    Retries transient failures (rate-limit, timeout) with backoff — mirrors
+    _fetch_ticker_info_impl so a single hiccup doesn't read as a DATA-GAP.
+    """
     import yfinance as yf  # lazy import for CI safety
 
     try:
-        df: DataFrame = yf.Ticker(ticker).history(period="2y")
+        df: DataFrame = retry_with_backoff(
+            lambda: yf.Ticker(ticker).history(period="2y"), sleep=_SLEEP
+        )
     except Exception as exc:  # noqa: BLE001 — network/parse failures → None
         logger.warning("Price history fetch failed for {}: {}", ticker, exc)
         return None
@@ -457,7 +520,7 @@ def fetch_price_history(ticker: str) -> dict[str, Any] | None:
     def _cached(t: str) -> dict[str, Any] | None:
         return _fetch_price_history_impl(t)
 
-    return _cached(ticker)
+    return cast(dict[str, Any] | None, _no_stale_empty(_cached, (ticker,)))
 
 
 def fetch_index_prices() -> dict[str, dict[str, float]]:
@@ -470,7 +533,7 @@ def fetch_index_prices() -> dict[str, dict[str, float]]:
     def _cached() -> dict[str, dict[str, float]]:
         return _fetch_index_prices_impl()
 
-    return _cached()
+    return cast(dict[str, dict[str, float]], _no_stale_empty(_cached, ()))
 
 
 def _extract_yfinance_news_url(

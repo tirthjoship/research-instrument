@@ -35,6 +35,15 @@ class BuzzSignalsMixin:
         )
         conn.commit()
 
+    def prune_buzz_signals(self, before: datetime) -> int:
+        """Delete buzz_signals rows older than *before*. Returns rows deleted."""
+        conn = self._conn()
+        cur = conn.execute(
+            "DELETE FROM buzz_signals WHERE fetched_at < ?", (before.isoformat(),)
+        )
+        conn.commit()
+        return cur.rowcount
+
     def get_buzz_signals(
         self,
         ticker: str | None = None,

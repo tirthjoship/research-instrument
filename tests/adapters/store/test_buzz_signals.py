@@ -89,3 +89,57 @@ def test_get_buzz_signals_date_filter(tmp_path: pytest.TempPathFactory) -> None:
     results = store.get_buzz_signals(ticker="AAPL", start_date=datetime(2026, 5, 29))
     assert len(results) == 1
     assert results[0].article_hash == "h2"
+
+
+def test_prune_buzz_signals_deletes_rows_older_than_cutoff(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    store = SQLiteStore(str(tmp_path / "test.db"))  # type: ignore[arg-type]
+    old = BuzzSignal(
+        ticker="AAPL",
+        source="reuters_rss",
+        mention_count=5,
+        sentiment_raw=0.3,
+        scorer="keyword",
+        fetched_at=datetime(2026, 1, 1, 9, 0),
+        article_hash="old_hash",
+    )
+    recent = BuzzSignal(
+        ticker="AAPL",
+        source="reuters_rss",
+        mention_count=8,
+        sentiment_raw=0.5,
+        scorer="keyword",
+        fetched_at=datetime(2026, 6, 1, 9, 0),
+        article_hash="recent_hash",
+    )
+    store.save_buzz_signal(old)
+    store.save_buzz_signal(recent)
+
+    deleted = store.prune_buzz_signals(datetime(2026, 3, 1))
+
+    assert deleted == 1
+    remaining = store.get_buzz_signals(ticker="AAPL")
+    assert len(remaining) == 1
+    assert remaining[0].article_hash == "recent_hash"
+
+
+def test_prune_buzz_signals_returns_zero_when_nothing_old(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    store = SQLiteStore(str(tmp_path / "test.db"))  # type: ignore[arg-type]
+    bs = BuzzSignal(
+        ticker="MSFT",
+        source="reuters_rss",
+        mention_count=3,
+        sentiment_raw=0.1,
+        scorer="keyword",
+        fetched_at=datetime(2026, 6, 1, 9, 0),
+        article_hash="h1",
+    )
+    store.save_buzz_signal(bs)
+
+    deleted = store.prune_buzz_signals(datetime(2026, 1, 1))
+
+    assert deleted == 0
+    assert len(store.get_buzz_signals(ticker="MSFT")) == 1

@@ -50,6 +50,7 @@ data/cache/
 
 # SQLite database (contains recommendation history)
 *.db
+!data/recommendations.db
 
 # Hypothesis
 
