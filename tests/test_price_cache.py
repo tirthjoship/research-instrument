@@ -10,8 +10,12 @@ import pytest
 from adapters.visualization.price_cache import (
     _batch_fetch_closes_impl,
     _batch_fetch_prices_impl,
+    _fetch_annual_revenue_impl,
     _fetch_index_prices_impl,
     _fetch_insider_transactions_impl,
+    _fetch_quarterly_financials_impl,
+    _fetch_rating_distribution_impl,
+    _fetch_revenue_estimate_impl,
     _fetch_ticker_info_impl,
     _index_tickers_for_market,
     _is_market_hours,
@@ -256,6 +260,155 @@ class TestFetchInsiderTransactions:
             result = _fetch_insider_transactions_impl("AAPL")
 
         assert result == []
+
+    def test_retries_transient_failure_then_succeeds(self):
+        """A single transient Yahoo hiccup must not surface as a permanent
+        DATA-GAP — retry_with_backoff should recover within the call."""
+        calls = {"n": 0}
+
+        def flaky_ticker(_symbol: str) -> MagicMock:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise Exception("transient 429")
+            mock_ticker = MagicMock()
+            mock_ticker.insider_transactions = pd.DataFrame(
+                {"Shares": [1000], "Value": [150000.0], "Transaction": ["Buy"]}
+            )
+            return mock_ticker
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                side_effect=flaky_ticker,
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
+        ):
+            result = _fetch_insider_transactions_impl("AAPL")
+
+        assert len(result) == 1
+        assert calls["n"] == 2
+
+
+class _FlakyIncomeStmtTicker:
+    """Real (non-Mock) ticker double: quarterly_income_stmt raises once then
+    succeeds, so the retry loop can re-access the same instance's property
+    without leaking state onto a shared MagicMock class."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self.quarterly_balance_sheet = pd.DataFrame(
+            {"Q1": [50.0]}, index=["Total Debt"]
+        )
+        self.quarterly_cashflow = pd.DataFrame({"Q1": [10.0]}, index=["Free Cash Flow"])
+
+    @property
+    def quarterly_income_stmt(self) -> pd.DataFrame:
+        self.calls += 1
+        if self.calls == 1:
+            raise Exception("transient 429")
+        return pd.DataFrame({"Q1": [100.0]}, index=["Total Revenue"])
+
+
+class TestFetchQuarterlyFinancials:
+    def test_retries_transient_failure_then_succeeds(self):
+        """One attribute (income stmt) hiccups transiently and must recover
+        instead of the whole triple silently degrading to DATA-GAP."""
+        flaky = _FlakyIncomeStmtTicker()
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                return_value=flaky,
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
+        ):
+            income, balance, cashflow = _fetch_quarterly_financials_impl("AAPL")
+
+        assert income is not None
+        assert balance is not None
+        assert cashflow is not None
+        assert flaky.calls == 2
+
+
+class TestFetchRatingDistribution:
+    def test_retries_transient_failure_then_succeeds(self):
+        calls = {"n": 0}
+
+        def flaky_ticker(_symbol: str) -> MagicMock:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise Exception("transient 429")
+            mock_ticker = MagicMock()
+            mock_ticker.recommendations_summary = pd.DataFrame(
+                [{"strongBuy": 5, "buy": 3, "hold": 1, "sell": 0, "strongSell": 0}]
+            )
+            return mock_ticker
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                side_effect=flaky_ticker,
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
+        ):
+            result = _fetch_rating_distribution_impl("AAPL")
+
+        assert result == {"r1": 5, "r2": 3, "r3": 1, "r4": 0, "r5": 0}
+        assert calls["n"] == 2
+
+
+class TestFetchAnnualRevenue:
+    def test_retries_transient_failure_then_succeeds(self):
+        calls = {"n": 0}
+
+        def flaky_ticker(_symbol: str) -> MagicMock:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise Exception("transient 429")
+            mock_ticker = MagicMock()
+            mock_ticker.income_stmt = pd.DataFrame(
+                {"2024": [250.0]}, index=["Total Revenue"]
+            )
+            return mock_ticker
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                side_effect=flaky_ticker,
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
+        ):
+            result = _fetch_annual_revenue_impl("AAPL")
+
+        assert result == [250.0]
+        assert calls["n"] == 2
+
+
+class TestFetchRevenueEstimate:
+    def test_retries_transient_failure_then_succeeds(self):
+        calls = {"n": 0}
+
+        def flaky_ticker(_symbol: str) -> MagicMock:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise Exception("transient 429")
+            mock_ticker = MagicMock()
+            mock_ticker.revenue_estimate = pd.DataFrame(
+                {"growth": [0.15]}, index=["+1y"]
+            )
+            return mock_ticker
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                side_effect=flaky_ticker,
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
+        ):
+            result = _fetch_revenue_estimate_impl("AAPL")
+
+        assert result == 0.15
+        assert calls["n"] == 2
 
 
 class TestParsePriceHistory:

@@ -200,35 +200,55 @@ def _fetch_ticker_info_impl(ticker: str) -> dict[str, Any]:
         return {}
 
 
+def _retry_attr_fetch(fn: Any, ticker: str, label: str) -> Any:
+    """Retry a single yfinance attribute/property fetch with backoff.
+
+    A transient hiccup (rate-limit, timeout) on one attribute must not
+    silently degrade to a permanent-looking DATA-GAP — mirrors
+    `_fetch_ticker_info_impl`'s retry, but keyed per-attribute so one flaky
+    field doesn't wipe out siblings fetched from the same Ticker object.
+    Returns None once retries are exhausted.
+    """
+    try:
+        return retry_with_backoff(fn, sleep=_SLEEP)
+    except Exception as exc:
+        logger.warning("{} fetch failed for {}: {}", label, ticker, exc)
+        return None
+
+
 def _fetch_quarterly_financials_impl(
     ticker: str,
 ) -> tuple[DataFrame | None, DataFrame | None, DataFrame | None]:
     """Return (income_stmt, balance_sheet, cashflow) quarterly DataFrames.
 
-    Each can be None if unavailable.
+    Each can be None if unavailable. Each attribute retries independently so
+    a transient hiccup on one doesn't discard the other two.
     """
-    try:
-        t = yf.Ticker(ticker)
-        income = t.quarterly_income_stmt
-        balance = t.quarterly_balance_sheet
-        cashflow = t.quarterly_cashflow
-        return (
-            income if income is not None and not income.empty else None,
-            balance if balance is not None and not balance.empty else None,
-            cashflow if cashflow is not None and not cashflow.empty else None,
-        )
-    except Exception as exc:
-        logger.warning("Quarterly financials fetch failed for {}: {}", ticker, exc)
-        return None, None, None
+    t = yf.Ticker(ticker)
+    income = _retry_attr_fetch(
+        lambda: t.quarterly_income_stmt, ticker, "Quarterly income stmt"
+    )
+    balance = _retry_attr_fetch(
+        lambda: t.quarterly_balance_sheet, ticker, "Quarterly balance sheet"
+    )
+    cashflow = _retry_attr_fetch(
+        lambda: t.quarterly_cashflow, ticker, "Quarterly cashflow"
+    )
+    return (
+        income if income is not None and not income.empty else None,
+        balance if balance is not None and not balance.empty else None,
+        cashflow if cashflow is not None and not cashflow.empty else None,
+    )
 
 
 def _fetch_insider_transactions_impl(ticker: str) -> list[dict[str, Any]]:
     """Fetch insider transactions for *ticker*. Returns [] on any error or no data."""
+    df = _retry_attr_fetch(
+        lambda: yf.Ticker(ticker).insider_transactions, ticker, "Insider transactions"
+    )
+    if df is None or (hasattr(df, "empty") and df.empty):
+        return []
     try:
-        t = yf.Ticker(ticker)
-        df = t.insider_transactions
-        if df is None or (hasattr(df, "empty") and df.empty):
-            return []
         records = cast(list[dict[str, Any]], df.to_dict(orient="records"))
         # yfinance 'Value' is unsigned and the consumers read lowercase 'value'.
         # Expose a signed 'value': disposals (Sale) reduce; awards/grants/
@@ -251,10 +271,14 @@ def _fetch_rating_distribution_impl(ticker: str) -> dict[str, int] | None:
     forbidden-word-free keys r1..r5 so downstream view code stays slop-clean.
     Returns None on any error or empty data.
     """
+    df = _retry_attr_fetch(
+        lambda: yf.Ticker(ticker).recommendations_summary,
+        ticker,
+        "Rating distribution",
+    )
+    if df is None or (hasattr(df, "empty") and df.empty):
+        return None
     try:
-        df = yf.Ticker(ticker).recommendations_summary
-        if df is None or (hasattr(df, "empty") and df.empty):
-            return None
         row = df.iloc[0]  # latest period (0m)
         cols = {
             "r1": "strongBuy",
@@ -272,10 +296,12 @@ def _fetch_rating_distribution_impl(ticker: str) -> dict[str, int] | None:
 
 def _fetch_annual_revenue_impl(ticker: str) -> list[float]:
     """Chronological annual Total Revenue (from yfinance income_stmt). [] on error."""
+    df = _retry_attr_fetch(
+        lambda: yf.Ticker(ticker).income_stmt, ticker, "Annual revenue"
+    )
+    if df is None or df.empty or "Total Revenue" not in df.index:
+        return []
     try:
-        df = yf.Ticker(ticker).income_stmt
-        if df is None or df.empty or "Total Revenue" not in df.index:
-            return []
         return list(
             reversed([float(v) for v in df.loc["Total Revenue"].values if v == v])
         )
@@ -286,10 +312,12 @@ def _fetch_annual_revenue_impl(ticker: str) -> list[float]:
 
 def _fetch_revenue_estimate_impl(ticker: str) -> float | None:
     """Forward (+1y) revenue growth estimate from yfinance revenue_estimate. None on error."""
+    df = _retry_attr_fetch(
+        lambda: yf.Ticker(ticker).revenue_estimate, ticker, "Revenue estimate"
+    )
+    if df is None or df.empty or "growth" not in df.columns:
+        return None
     try:
-        df = yf.Ticker(ticker).revenue_estimate
-        if df is None or df.empty or "growth" not in df.columns:
-            return None
         if "+1y" in df.index:
             g = df.loc["+1y", "growth"]
             return float(g) if g == g else None
