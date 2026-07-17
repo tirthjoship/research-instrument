@@ -161,3 +161,66 @@ def test_result_has_group_display_and_resolution_score() -> None:
     assert result is not None
     assert result["group_display"]
     assert result["resolution_score"] == pytest.approx(result["co_movement"])
+
+
+def test_fmp_peers_used_as_candidate_when_yaml_and_sector_absent() -> None:
+    """FORCEMOT.NS has no YAML entry and no industry/sector pool match (both
+    are US-only) — FMP peers are the only candidate source available."""
+    closes = {
+        "FORCEMOT.NS": _compound(2500.0),
+        "ASAHIINDIA.NS": _compound(880.0),
+        "EIHOTEL.NS": _compound(340.0),
+        "MOTHERSON.NS": _compound(120.0),
+    }
+    result = resolve_supply_chain_group(
+        "FORCEMOT.NS",
+        {},
+        closes_by_ticker=closes,
+        market_caps={},
+        fmp_peers=["ASAHIINDIA.NS", "EIHOTEL.NS", "MOTHERSON.NS"],
+    )
+    assert result is not None
+    assert result["group"] == "forcemot.ns_fmp_peers"
+    assert result["provenance"] == "correlation_only"
+
+
+def test_fmp_peers_absent_falls_back_to_none_when_no_other_candidates() -> None:
+    result = resolve_supply_chain_group(
+        "FORCEMOT.NS",
+        {},
+        closes_by_ticker={"FORCEMOT.NS": _compound(2500.0)},
+        market_caps={},
+        fmp_peers=[],
+    )
+    assert result is None
+
+
+def test_fmp_peers_below_comovement_threshold_returns_none() -> None:
+    closes = {
+        "FORCEMOT.NS": _compound(2500.0, [0.02, -0.03, 0.01, -0.02, 0.015]),
+        "ASAHIINDIA.NS": _compound(880.0, [-0.01, 0.02, -0.015, 0.03, -0.005]),
+        "EIHOTEL.NS": _compound(340.0, [0.015, -0.01, 0.02, -0.03, 0.01]),
+        "MOTHERSON.NS": _compound(120.0, [-0.02, 0.01, -0.03, 0.02, -0.015]),
+    }
+    result = resolve_supply_chain_group(
+        "FORCEMOT.NS",
+        {},
+        closes_by_ticker=closes,
+        market_caps={},
+        fmp_peers=["ASAHIINDIA.NS", "EIHOTEL.NS", "MOTHERSON.NS"],
+    )
+    assert result is None
+
+
+def test_fmp_peers_truncated_to_max_members() -> None:
+    from adapters.visualization.analysis.supply_chain_resolver import MAX_MEMBERS
+
+    many_peers = [f"PEER{i}.NS" for i in range(MAX_MEMBERS + 5)]
+    closes = {"FORCEMOT.NS": _compound(2500.0)}
+    for i, p in enumerate(many_peers):
+        closes[p] = _compound(100.0 + i)
+    result = resolve_supply_chain_group(
+        "FORCEMOT.NS", {}, closes_by_ticker=closes, market_caps={}, fmp_peers=many_peers
+    )
+    assert result is not None
+    assert len(result["followers"]) + len(result["leaders"]) - 1 <= MAX_MEMBERS

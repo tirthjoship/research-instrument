@@ -125,6 +125,7 @@ def select_best_group(
     info: dict[str, Any],
     closes_by_ticker: dict[str, list[float]],
     yaml_relationships: list[dict[str, Any]],
+    fmp_peers: list[str] | None = None,
 ) -> dict[str, Any] | None:
     """Pure scoring core: pick the best candidate group from pre-fetched closes.
 
@@ -160,6 +161,22 @@ def select_best_group(
                 "source": "correlation",
                 "group_id": f"{label.lower().replace(' ', '_').replace('-', '_')}_corr_cluster",
                 "display": f"{label} corr-cluster",
+                "peers": peers,
+                "is_leader_hint": False,
+                "lag": None,
+                "notes": "",
+                "yaml_leaders": [],
+                "yaml_followers": [],
+            }
+        )
+
+    if fmp_peers:
+        peers = [t for t in fmp_peers if t != ticker][:MAX_MEMBERS]
+        candidates.append(
+            {
+                "source": "fmp_peers",
+                "group_id": f"{ticker.lower()}_fmp_peers",
+                "display": f"{ticker} FMP Peers",
                 "peers": peers,
                 "is_leader_hint": False,
                 "lag": None,
@@ -211,6 +228,7 @@ def resolve_supply_chain_group(
     yaml_path: str = "config/relationships/supply_chain.yaml",
     closes_by_ticker: dict[str, list[float]] | None = None,
     market_caps: dict[str, float] | None = None,
+    fmp_peers: list[str] | None = None,
 ) -> dict[str, Any] | None:
     """Resolve the best-fit supply-chain group for ``ticker``.
 
@@ -230,11 +248,26 @@ def resolve_supply_chain_group(
         if pool:
             candidate_tickers.update(pool[1])
 
+        if fmp_peers is None:
+            from datetime import datetime, timezone
+
+            from adapters.data.fmp_adapter import get_cached_stock_peers
+            from adapters.data.sqlite_store import SQLiteStore
+
+            try:
+                fmp_peers = get_cached_stock_peers(
+                    SQLiteStore(), ticker, datetime.now(timezone.utc)
+                )
+            except Exception as exc:
+                logger.debug("Could not fetch FMP peers for {}: {}", ticker, exc)
+                fmp_peers = []
+        candidate_tickers.update(fmp_peers)
+
         from adapters.visualization.price_cache import _batch_fetch_closes_impl
 
         closes_by_ticker = _batch_fetch_closes_impl(tuple(sorted(candidate_tickers)))
 
-    picked = select_best_group(ticker, info, closes_by_ticker, relationships)
+    picked = select_best_group(ticker, info, closes_by_ticker, relationships, fmp_peers)
     if picked is None:
         return None
 
