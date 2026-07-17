@@ -535,13 +535,62 @@ def _headline_is_about_other_ticker(title: str, ticker: str) -> bool:
     return not re.search(rf"\b{re.escape(ticker)}\b", title, re.IGNORECASE)
 
 
-def _fetch_recent_news_impl(ticker: str, limit: int = 8) -> list[dict[str, str]]:
-    """Fetch recent attributed headlines for *ticker* via yfinance. Returns [] on error."""
+def _fetch_google_news_fallback(
+    ticker: str, company_name: str, limit: int
+) -> list[dict[str, str]]:
+    """Google News RSS fallback for tickers yfinance's own .news index misses.
+
+    yfinance's per-ticker news feed is unreliable for smaller/less-followed
+    companies (confirmed: yfinance had zero news items for a real,
+    currently-newsworthy NSE small-cap, while Google News RSS searched by
+    company name found real, current coverage of the exact same story).
+    Searching by the raw ticker symbol doesn't work well here either --
+    short tickers like "CORONA" collide with unrelated common-word matches
+    -- so this requires the company's actual name, not just its ticker.
+    """
+    from datetime import datetime, timezone
+
+    from adapters.data.google_news_adapter import GoogleNewsAdapter
+
+    try:
+        adapter = GoogleNewsAdapter(alias_map={ticker: company_name})
+        entries = adapter.scan_headline_sources(
+            datetime.now(timezone.utc), tickers=[ticker]
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Google News fallback failed for {}: {}", ticker, exc)
+        return []
+    out: list[dict[str, str]] = []
+    for entry in entries[:limit]:
+        title = str(getattr(entry, "article_text", "") or "")
+        if not title.strip():
+            continue
+        fetched_at = getattr(entry, "fetched_at", None)
+        date_str = fetched_at.isoformat() if fetched_at is not None else ""
+        out.append(
+            {
+                "source": str(getattr(entry, "source", "") or "news"),
+                "title": title,
+                "date": date_str,
+                "url": "",
+            }
+        )
+    return out
+
+
+def _fetch_recent_news_impl(
+    ticker: str, limit: int = 8, company_name: str | None = None
+) -> list[dict[str, str]]:
+    """Fetch recent attributed headlines for *ticker* via yfinance.
+
+    Falls back to Google News RSS (searched by company_name, when given) if
+    yfinance's own news index has nothing for this ticker -- see
+    _fetch_google_news_fallback for why this matters."""
     try:
         raw = yf.Ticker(ticker).news or []
     except Exception as exc:  # noqa: BLE001
         logger.warning("yfinance news failed for {}: {}", ticker, exc)
-        return []
+        raw = []
     out: list[dict[str, str]] = []
     for item in raw:
         if not isinstance(item, dict):
@@ -554,4 +603,6 @@ def _fetch_recent_news_impl(ticker: str, limit: int = 8) -> list[dict[str, str]]
         out.append(parsed)
         if len(out) >= limit:
             break
+    if not out and company_name:
+        out = _fetch_google_news_fallback(ticker, company_name, limit)
     return out

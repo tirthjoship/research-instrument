@@ -463,6 +463,54 @@ class TestAnalyzeTicker:
         assert isinstance(result, AnalysisResult)
         assert result.ticker == "NVDA"
 
+    def test_passes_company_name_to_news_fetch_for_google_fallback(self) -> None:
+        """analyze_ticker must pass the company's longName through to
+        _fetch_recent_news_impl so it can fall back to a Google News search
+        by name when yfinance's own news index has nothing for this ticker
+        (regression: yfinance had zero news for a real, currently-newsworthy
+        NSE small-cap; searching Google News by company name found it)."""
+        from adapters.visualization.stock_analyzer import analyze_ticker
+
+        captured: dict[str, object] = {}
+
+        def fake_fetch_news(ticker: str, limit: int = 8, company_name=None):  # type: ignore[no-untyped-def]
+            captured["ticker"] = ticker
+            captured["company_name"] = company_name
+            return []
+
+        with (
+            patch(f"{_PC}._fetch_ticker_info_impl", return_value=MOCK_INFO),
+            patch(
+                f"{_PC}._batch_fetch_prices_impl",
+                return_value={"NVDA": {"price": 850.0, "change_pct": 1.5}},
+            ),
+            patch(
+                f"{_PC}._fetch_quarterly_financials_impl",
+                return_value=(None, None, None),
+            ),
+            patch(f"{_PC}._fetch_insider_transactions_impl", return_value=[]),
+            patch(f"{_PC}._fetch_recent_news_impl", side_effect=fake_fetch_news),
+            patch(
+                "adapters.visualization.analysis.analyze.load_buzz_signals",
+                return_value=[],
+            ),
+            patch(
+                "adapters.visualization.analysis.analyze.load_recommendation",
+                return_value=None,
+            ),
+            patch(
+                "adapters.visualization.analysis.analyze.resolve_supply_chain_group",
+                return_value=None,
+            ),
+            patch(
+                "adapters.visualization.analysis.analyze.get_sector_peers",
+                return_value=[],
+            ),
+        ):
+            analyze_ticker("NVDA")
+
+        assert captured["company_name"] == "NVIDIA Corporation"
+
     def _run_analyze(
         self, info: dict = MOCK_INFO, rec: object = None, prices: dict | None = None
     ) -> object:
