@@ -362,6 +362,15 @@ def test_fmt_market_cap_canadian_ticker_shows_cad_symbol() -> None:
     assert verdict_section._fmt_market_cap(2.1e12, "NVDA") == "$2.1T"
 
 
+def test_fmt_market_cap_missing_shows_dash_not_zero() -> None:
+    """A real company can never have $0 market cap -- 0/missing must degrade
+    to '—', not a fabricated-looking '$0' (yfinance returns marketCap=None
+    for some thinly-covered tickers, e.g. small NSE-listed companies)."""
+    from adapters.visualization.tabs.stock_analysis import verdict_section
+
+    assert verdict_section._fmt_market_cap(0.0, "CORONA.NS") == "—"
+
+
 def test_render_verdict_canadian_ticker_shows_cad_symbol(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     """_render_verdict's price and market-cap figures for a TSX-suffixed ticker
     must show C$, not bare $ — bare $ would misrepresent CAD amounts as USD."""

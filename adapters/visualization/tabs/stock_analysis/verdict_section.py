@@ -47,6 +47,8 @@ def _convergence_badge_html(tier: ConvergenceTier) -> str:
 def _fmt_market_cap(mc: float, ticker: str = "") -> str:
     """Format market cap as human-readable string, using the ticker's market
     currency symbol (C$/₹) instead of always assuming USD."""
+    if mc <= 0:
+        return "—"
     sym = currency_symbol(currency_for_ticker(ticker))
     if mc >= 1e12:
         return f"{sym}{mc / 1e12:.1f}T"

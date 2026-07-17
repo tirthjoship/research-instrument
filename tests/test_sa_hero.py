@@ -49,6 +49,17 @@ def test_missing_range_data_degrades_gracefully():
     assert v.exchange == "—"
 
 
+def test_missing_market_cap_shows_dash_not_zero():
+    """yfinance can return marketCap=None for thinly-covered tickers (e.g. small
+    NSE-listed companies) -- a real company can never have $0 market cap, so
+    this must degrade to the same honest '—' placeholder as missing range
+    data, not a fabricated-looking '$0'."""
+    r = _result()
+    r.market_cap = 0.0
+    v = hero.build_hero_view(r)
+    assert v.market_cap == "—"
+
+
 def test_html_contains_identity_price_range_and_grade():
     html = hero.build_hero_html(
         hero.build_hero_view(_result(), grade="B", as_of="Jun 27 2026")
