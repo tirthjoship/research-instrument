@@ -1,0 +1,52 @@
+name: Scheduled buzz scan
+
+# Populates data/recommendations.db's buzz_signals table on a schedule and
+# commits it, mirroring scheduled-screen.yml's pattern: runs on a clean
+# GH-hosted runner (not Cloud's shared/rate-limited outbound IP) so the
+# public dashboard's Buzz panel reads real data instead of a permanent
+# zero (data/recommendations.db is .gitignored and starts empty on every
+# Cloud deploy, and nothing else ever wrote to it there).
+#
+# US only for now — daily-scan's ticker universe and RSS/Trends/News/Reddit
+# discovery are built out for US mega-caps/semis. CA/India buzz coverage is
+# a deliberate fast-follow, not part of this workflow.
+on:
+  schedule:
+    # 22:00 UTC, weekdays only — 30 minutes after scheduled-screen.yml's
+    # 21:30 UTC run so the two bot commits never race on the same push.
+    - cron: "0 22 * * 1-5"
+  workflow_dispatch: {}
+
+concurrency:
+  group: scheduled-buzz-scan
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scheduled-buzz-scan:
+    name: Daily buzz scan + commit DB
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+      - name: Install dependencies
+        run: uv sync --extra dev --extra dashboard
+      - name: Run daily buzz scan (US)
+        run: |
+          uv run python -m application.cli daily-scan --prune-days 35
+      - name: Commit buzz DB
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/recommendations.db
+          git diff --cached --quiet || git commit -m "chore(data): scheduled buzz scan $(date -u +%F)"
+          git push
