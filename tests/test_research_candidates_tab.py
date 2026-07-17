@@ -198,6 +198,9 @@ def test_under_powered_verdict_shows_under_powered(
 
     fake = _FakeSt()
     monkeypatch.setattr(rc, "st", fake)
+    monkeypatch.setattr(
+        rc, "load_combined_screen", lambda dirs: rc.load_latest_screened(dirs[0])
+    )
     rc.render(reports_dir=str(tmp_path))
 
     assert (
@@ -238,6 +241,9 @@ def test_earned_abstention_verdict_shows_correct_copy(
 
     fake = _FakeSt()
     monkeypatch.setattr(rc, "st", fake)
+    monkeypatch.setattr(
+        rc, "load_combined_screen", lambda dirs: rc.load_latest_screened(dirs[0])
+    )
     rc.render(reports_dir=str(tmp_path))
 
     assert (
@@ -273,6 +279,9 @@ def test_no_diagnostics_fallback_no_crash_no_false_copy(
 
     fake = _FakeSt()
     monkeypatch.setattr(rc, "st", fake)
+    monkeypatch.setattr(
+        rc, "load_combined_screen", lambda dirs: rc.load_latest_screened(dirs[0])
+    )
     rc.render(reports_dir=str(tmp_path))  # must not raise
 
     assert (
@@ -662,6 +671,9 @@ def test_candidate_card_has_no_buy_sell_words(tmp_path: Any, monkeypatch: Any) -
 
     fake = _FakeSt()
     monkeypatch.setattr(rc, "st", fake)
+    monkeypatch.setattr(
+        rc, "load_combined_screen", lambda dirs: rc.load_latest_screened(dirs[0])
+    )
     rc.render(reports_dir=str(tmp_path))
 
     joined = fake.joined.lower()
