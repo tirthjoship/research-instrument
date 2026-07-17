@@ -480,6 +480,86 @@ class TestYfinanceNews:
         )
         assert "NVIDIA (NVDA) and Astera Labs (ALAB) partner on rack-scale AI" in titles
 
+    def test_fetch_recent_news_falls_back_to_google_news_when_yfinance_empty(self):
+        """yfinance's per-ticker news index is unreliable for smaller/less-followed
+        companies -- confirmed for a real NSE small-cap that yfinance had zero
+        news items for, while Google News (searched by company name) had real,
+        current coverage of the exact same story. Must fall back, not just
+        report an empty result, when a company_name is available."""
+        from adapters.visualization.price_cache import _fetch_recent_news_impl
+
+        mock_ticker = MagicMock()
+        mock_ticker.news = []
+
+        mock_signal = MagicMock()
+        mock_signal.article_text = "Corona Remedies adds Hormone manufacturing facility"
+        mock_signal.source = "ETPharma.com"
+        mock_signal.fetched_at = None
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                return_value=mock_ticker,
+            ),
+            patch(
+                "adapters.data.google_news_adapter.GoogleNewsAdapter.scan_headline_sources",
+                return_value=[mock_signal],
+            ),
+        ):
+            out = _fetch_recent_news_impl(
+                "CORONA.NS", limit=5, company_name="Corona Remedies Limited"
+            )
+        assert len(out) == 1
+        assert out[0]["title"] == "Corona Remedies adds Hormone manufacturing facility"
+        assert out[0]["source"] == "ETPharma.com"
+
+    def test_fetch_recent_news_no_fallback_without_company_name(self):
+        """No company_name given (existing call sites that don't pass one) means
+        no fallback attempt -- ticker-only search doesn't work well for short
+        tickers that collide with unrelated common-word matches."""
+        from adapters.visualization.price_cache import _fetch_recent_news_impl
+
+        mock_ticker = MagicMock()
+        mock_ticker.news = []
+
+        with patch(
+            "adapters.visualization.price_cache.yf.Ticker", return_value=mock_ticker
+        ):
+            out = _fetch_recent_news_impl("CORONA.NS", limit=5)
+        assert out == []
+
+    def test_fetch_recent_news_no_fallback_when_yfinance_has_results(self):
+        """Google News fallback must only fire when yfinance genuinely has
+        nothing -- yfinance results (already filtered/trusted) take priority."""
+        from adapters.visualization.price_cache import _fetch_recent_news_impl
+
+        mock_ticker = MagicMock()
+        mock_ticker.news = [
+            {
+                "content": {
+                    "title": "Real yfinance headline",
+                    "pubDate": "2026-07-16",
+                    "provider": {"displayName": "Reuters"},
+                }
+            }
+        ]
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                return_value=mock_ticker,
+            ),
+            patch(
+                "adapters.data.google_news_adapter.GoogleNewsAdapter.scan_headline_sources"
+            ) as mock_google,
+        ):
+            out = _fetch_recent_news_impl(
+                "NESTLEIND.NS", limit=5, company_name="Nestle India Limited"
+            )
+        assert len(out) == 1
+        assert out[0]["title"] == "Real yfinance headline"
+        mock_google.assert_not_called()
+
     def test_headline_is_about_other_ticker_helper(self):
         from adapters.visualization.price_cache import _headline_is_about_other_ticker
 
