@@ -81,7 +81,9 @@ evidence-screen one-liner, and the discipline/gate status.
 **Screener** — the weekly evidence screen (which clears the bar, or abstains when none
 do), a history strip of past screens, and a *check-your-own-list* tool: paste tickers
 or upload a CSV (capped at 25 names) and each name gets an evidence grade and a fit
-check against your book.
+check against your book. A market-picker toggle switches between a merged US+Canada
+ranked list (default) and India's own list — each candidate's evidence grade is
+always computed within its own market's universe, never renormalized across markets.
 
 **Risk** — the macro-beta scrubber: fits a simple statistical model to expose how much
 of a portfolio's movement is really just one big bet on the overall market — surfacing
@@ -245,9 +247,12 @@ application/
   discipline_use_case.py         # Discipline / adherence tracking
 
 config/
-  markets/us.yaml                # US market configuration + locked gate thresholds
+  markets/us.yaml                # US market config + locked gate thresholds
+  markets/ca.yaml, in.yaml       # Canada (TSX 60), India (NIFTY 50) market configs
   tickers/sp500.txt              # ~503 S&P 500 constituents
   tickers/nasdaq100.txt          # ~101 NASDAQ-100 constituents
+  tickers/tsx60.txt              # ~52 TSX 60 constituents (Canada)
+  tickers/nifty50.txt            # ~50 NIFTY 50 constituents (India)
 ```
 
 **Dependency rule:** All arrows point inward. `domain/` imports nothing from
@@ -298,7 +303,7 @@ honestly, whatever it is.
 
 For a recruiter: this project demonstrates pre-registered hypothesis testing, rigorous
 negative-result reporting, point-in-time enforcement as a code invariant, hexagonal
-architecture applied to a real data pipeline, and 3,025 tests covering domain logic,
+architecture applied to a real data pipeline, and 3,130 tests covering domain logic,
 adapters, use cases, and integration paths. The negative findings are the portfolio
 piece — a system that falsified its own thesis honestly is more credible than one that
 never tested it.
@@ -328,7 +333,7 @@ pre-commit install
 ### Verify
 
 ```bash
-# Full suite (3,025 tests, ~25 s)
+# Full suite (3,130 tests, ~23 s)
 pytest tests/ -q
 
 # With coverage gate (90% required)
