@@ -13,12 +13,16 @@ from adapters.visualization.price_cache import (
     _fetch_annual_revenue_impl,
     _fetch_index_prices_impl,
     _fetch_insider_transactions_impl,
+    _fetch_price_history_impl,
     _fetch_quarterly_financials_impl,
     _fetch_rating_distribution_impl,
     _fetch_revenue_estimate_impl,
     _fetch_ticker_info_impl,
     _index_tickers_for_market,
     _is_market_hours,
+    fetch_price_history,
+    fetch_quarterly_financials,
+    fetch_ticker_info,
     parse_price_history,
 )
 
@@ -218,6 +222,152 @@ class TestFetchTickerInfo:
             result = _fetch_ticker_info_impl("AAPL")
 
         assert result["trailingPE"] == 32.4
+        assert calls["n"] == 2
+
+
+class TestCachedWrapperDoesNotPoisonOnEmptyResult:
+    """Streamlit's @st.cache_data cache is process-wide and shared across all
+    visitors. If a sustained outage exhausts an _impl function's retries and
+    returns an empty result, naively caching that empty result for the full
+    TTL would serve a false DATA-GAP to every visitor/ticker for up to an
+    hour, even after Yahoo recovers seconds later. The cached wrapper must
+    not trust a stale empty entry on the next call."""
+
+    def test_fetch_ticker_info_recovers_after_outage_ends(self):
+        ticker = "STALE_EMPTY_TEST_INFO"
+        outage_over = {"flag": False}
+
+        def flaky_ticker(_symbol: str) -> MagicMock:
+            if not outage_over["flag"]:
+                raise Exception("sustained outage")
+            mock_ticker = MagicMock()
+            mock_ticker.info = {"symbol": "AAPL", "trailingPE": 23.6}
+            return mock_ticker
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                side_effect=flaky_ticker,
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
+        ):
+            first = fetch_ticker_info(ticker)
+            assert first == {}
+
+            outage_over["flag"] = True
+            second = fetch_ticker_info(ticker)
+
+        assert second == {"symbol": "AAPL", "trailingPE": 23.6}
+
+    def test_fetch_quarterly_financials_recovers_after_outage_ends(self):
+        class _OutageTicker:
+            """yf.Ticker() construction never fails (it's lazy/no network) —
+            only the quarterly-statement properties raise during the outage,
+            matching real yfinance behavior."""
+
+            def __init__(self, outage_over: dict[str, bool]) -> None:
+                self._outage_over = outage_over
+
+            @property
+            def quarterly_income_stmt(self) -> pd.DataFrame:
+                if not self._outage_over["flag"]:
+                    raise Exception("sustained outage")
+                return pd.DataFrame({"Q1": [100.0]}, index=["Total Revenue"])
+
+            @property
+            def quarterly_balance_sheet(self) -> pd.DataFrame:
+                if not self._outage_over["flag"]:
+                    raise Exception("sustained outage")
+                return pd.DataFrame({"Q1": [50.0]}, index=["Total Debt"])
+
+            @property
+            def quarterly_cashflow(self) -> pd.DataFrame:
+                if not self._outage_over["flag"]:
+                    raise Exception("sustained outage")
+                return pd.DataFrame({"Q1": [10.0]}, index=["Free Cash Flow"])
+
+        ticker = "STALE_EMPTY_TEST_QF"
+        outage_over = {"flag": False}
+        outage_ticker = _OutageTicker(outage_over)
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                return_value=outage_ticker,
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
+        ):
+            first = fetch_quarterly_financials(ticker)
+            assert first == (None, None, None)
+
+            outage_over["flag"] = True
+            second = fetch_quarterly_financials(ticker)
+
+        assert second[0] is not None
+        assert second[1] is not None
+        assert second[2] is not None
+
+    def test_fetch_price_history_recovers_after_outage_ends(self):
+        ticker = "STALE_EMPTY_TEST_HIST"
+        outage_over = {"flag": False}
+
+        def flaky_ticker(_symbol: str) -> MagicMock:
+            mock_ticker = MagicMock()
+            if not outage_over["flag"]:
+                mock_ticker.history.side_effect = Exception("sustained outage")
+            else:
+                mock_ticker.history.return_value = pd.DataFrame(
+                    {"Close": [100.0, 101.0, 102.0]},
+                    index=pd.date_range("2026-01-01", periods=3),
+                )
+            return mock_ticker
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                side_effect=flaky_ticker,
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
+        ):
+            first = fetch_price_history(ticker)
+            assert first is None
+
+            outage_over["flag"] = True
+            second = fetch_price_history(ticker)
+
+        assert second is not None
+        assert second["closes"] == pytest.approx([100.0, 101.0, 102.0])
+
+
+class TestFetchPriceHistory:
+    def test_retries_transient_failure_then_succeeds(self):
+        """A single transient Yahoo hiccup must not surface as a permanent
+        DATA-GAP — retry_with_backoff should recover within the call."""
+        calls = {"n": 0}
+
+        def flaky_ticker(_symbol: str) -> MagicMock:
+            calls["n"] += 1
+            mock_ticker = MagicMock()
+            if calls["n"] == 1:
+                mock_ticker.history.side_effect = Exception("transient 429")
+            else:
+                mock_ticker.history.return_value = pd.DataFrame(
+                    {"Close": [100.0, 101.0]},
+                    index=pd.date_range("2026-01-01", periods=2),
+                )
+            return mock_ticker
+
+        with (
+            patch(
+                "adapters.visualization.price_cache.yf.Ticker",
+                side_effect=flaky_ticker,
+            ),
+            patch("adapters.visualization.price_cache._SLEEP"),
+        ):
+            result = _fetch_price_history_impl("AAPL")
+
+        assert result is not None
+        assert result["closes"] == pytest.approx([100.0, 101.0])
         assert calls["n"] == 2
 
 
