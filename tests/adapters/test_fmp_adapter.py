@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
 
-from adapters.data.fmp_adapter import FMPAdapter
+from adapters.data.fmp_adapter import FMPAdapter, get_cached_stock_peers
+from adapters.data.sqlite_store import SQLiteStore
 
 
 def test_get_stock_peers_returns_symbols_on_success() -> None:
@@ -93,3 +95,53 @@ def test_get_stock_peers_returns_empty_list_after_retries_exhausted() -> None:
         patch("adapters.data.fmp_adapter._SLEEP"),
     ):
         assert adapter.get_stock_peers("AAPL") == []
+
+
+def test_get_cached_stock_peers_fetches_live_on_cache_miss(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    store = SQLiteStore(str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    now = datetime(2026, 7, 17, 8, 0, 0)
+    mock_adapter = MagicMock(spec=FMPAdapter)
+    mock_adapter.get_stock_peers.return_value = ["BMO.TO", "BNS.TO"]
+
+    result = get_cached_stock_peers(store, "RY.TO", now, adapter=mock_adapter)
+
+    assert result == ["BMO.TO", "BNS.TO"]
+    mock_adapter.get_stock_peers.assert_called_once_with("RY.TO")
+
+
+def test_get_cached_stock_peers_writes_to_cache_and_hits_next_call(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    store = SQLiteStore(str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    now = datetime(2026, 7, 17, 8, 0, 0)
+    mock_adapter = MagicMock(spec=FMPAdapter)
+    mock_adapter.get_stock_peers.return_value = ["ASAHIINDIA.NS"]
+
+    get_cached_stock_peers(store, "FORCEMOT.NS", now, adapter=mock_adapter)
+    result = get_cached_stock_peers(
+        store, "FORCEMOT.NS", now + timedelta(hours=1), adapter=mock_adapter
+    )
+
+    assert result == ["ASAHIINDIA.NS"]
+    mock_adapter.get_stock_peers.assert_called_once()  # second call was a cache hit
+
+
+def test_get_cached_stock_peers_does_not_cache_empty_result(
+    tmp_path: pytest.TempPathFactory,
+) -> None:
+    """A live-fetch failure and a genuine zero-peers result both look like []
+    — neither is persisted, so the next call retries live (see plan's Global
+    Constraints: never persist an empty peers result)."""
+    store = SQLiteStore(str(tmp_path / "t.db"))  # type: ignore[arg-type]
+    now = datetime(2026, 7, 17, 8, 0, 0)
+    mock_adapter = MagicMock(spec=FMPAdapter)
+    mock_adapter.get_stock_peers.return_value = []
+
+    get_cached_stock_peers(store, "ZZZZ", now, adapter=mock_adapter)
+    get_cached_stock_peers(
+        store, "ZZZZ", now + timedelta(minutes=1), adapter=mock_adapter
+    )
+
+    assert mock_adapter.get_stock_peers.call_count == 2  # no cache write happened
