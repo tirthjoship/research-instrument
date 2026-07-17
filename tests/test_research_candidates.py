@@ -1201,6 +1201,62 @@ def test_cache_only_ignores_local_runtime_miss(monkeypatch, tmp_path) -> None:  
     assert "not cached yet" in html.lower()
 
 
+def test_cache_only_ca_ticker_reads_ca_cache_dir_not_reports_dir(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    """In the Screener's merged US+Canada view, a .TO ticker's cache lives at
+    the fixed data/sample/ca path, never the (US) reports_dir the tab is
+    otherwise pointed at -- regression guard for the market-picker feature."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    captured: dict[str, str] = {}
+
+    def fake_load_cached_case(cache_path: str, ticker: str):  # type: ignore[no-untyped-def]
+        captured["cache_path"] = cache_path
+        return None
+
+    monkeypatch.setattr(rc, "load_cached_case", fake_load_cached_case)
+    rc.maybe_render_gemini_cache_only("RY.TO", str(tmp_path / "us_reports_dir"))
+    assert captured["cache_path"] == "data/sample/ca/screen_cited_cases.json"
+
+
+def test_cache_only_india_ticker_reads_india_cache_dir_not_reports_dir(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    captured: dict[str, str] = {}
+
+    def fake_load_cached_case(cache_path: str, ticker: str):  # type: ignore[no-untyped-def]
+        captured["cache_path"] = cache_path
+        return None
+
+    monkeypatch.setattr(rc, "load_cached_case", fake_load_cached_case)
+    rc.maybe_render_gemini_cache_only("NESTLEIND.NS", str(tmp_path / "us_reports_dir"))
+    assert captured["cache_path"] == "data/sample/in/screen_cited_cases.json"
+
+
+def test_cache_only_us_ticker_still_uses_passed_reports_dir(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    """A bare (no market suffix) ticker keeps using whatever reports_dir the
+    tab was actually pointed at -- no change for the US-only case."""
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(rc, "is_local_runtime", lambda: True)
+    captured: dict[str, str] = {}
+
+    def fake_load_cached_case(cache_path: str, ticker: str):  # type: ignore[no-untyped-def]
+        captured["cache_path"] = cache_path
+        return None
+
+    monkeypatch.setattr(rc, "load_cached_case", fake_load_cached_case)
+    rc.maybe_render_gemini_cache_only("AAPL", str(tmp_path))
+    assert captured["cache_path"] == f"{tmp_path}/screen_cited_cases.json"
+
+
 def test_hero_row_calls_live_non_hero_calls_cache_only(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
     """Only the row rendered open_by_default fires a live call; other rows are
     cache-only — this is the practical resolution of 'lazy on expand' given
