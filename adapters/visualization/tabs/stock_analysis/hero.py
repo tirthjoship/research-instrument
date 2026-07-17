@@ -36,6 +36,8 @@ def _money(value: float, ticker: str) -> str:
 
 
 def _market_cap(value: float, ticker: str) -> str:
+    if value <= 0:
+        return "—"
     sym = currency_symbol(currency_for_ticker(ticker))
     for cutoff, suffix in ((1e12, "T"), (1e9, "B"), (1e6, "M")):
         if abs(value) >= cutoff:
