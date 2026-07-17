@@ -1,0 +1,435 @@
+{
+  "as_of": "2026-07-17",
+  "cases": {
+    "NESTLEIND.NS": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin): Exceptional",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol: Exceptional",
+          "source": "FACTS"
+        },
+        {
+          "text": "Nestle India profit jumps 26% on strong demand, shares rise",
+          "source": "[Reuters] Nestle India profit jumps 26% on strong demand, shares rise"
+        },
+        {
+          "text": "Nestle India profit jumps 46% as tax cuts boost packaged food demand",
+          "source": "[Reuters] Nestle India profit jumps 46% as tax cuts boost packaged food demand"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Analyst dispersion: Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE): Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "Nestle India names insider Edouard Mac Nab new CFO",
+          "source": "[Reuters] Nestle India names insider Edouard Mac Nab new CFO"
+        },
+        {
+          "text": "Nestle India's finance chief to step down",
+          "source": "[Reuters] Nestle India's finance chief to step down"
+        }
+      ],
+      "data_gap": false
+    },
+    "SBIN.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1): Strong",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE): Exceptional",
+          "source": "FACTS"
+        },
+        {
+          "text": "India's SBI Funds Management draws $31 billion in country's fourth-most-bid IPO",
+          "source": "[Reuters] India's SBI Funds Management draws $31 billion in country's fourth-most-bid IPO"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion: Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Quality (ROE/margin): Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol: Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Ondo Finance partners with SBI Group to bring Japanese stocks onchain",
+          "source": "[TheStreet] Ondo Finance partners with SBI Group to bring Japanese stocks onchain"
+        },
+        {
+          "text": "SBI hires former LIC finance head Sunil Agrawal as CFO",
+          "source": "[Reuters] SBI hires former LIC finance head Sunil Agrawal as CFO"
+        }
+      ],
+      "data_gap": false
+    },
+    "COALINDIA.NS": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin): Strong",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE): Exceptional",
+          "source": "FACTS"
+        },
+        {
+          "text": "Coal India asks units to ramp up supplies as heatwave fuels record power demand",
+          "source": "[Reuters] Coal India asks units to ramp up supplies as heatwave fuels record power demand"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Analyst dispersion: Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol: Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Coal India to invest $201 million in research and development by fiscal 2030",
+          "source": "[Reuters] Coal India to invest $201 million in research and development by fiscal 2030"
+        },
+        {
+          "text": "India to sell up to 2% stake in Coal India via offer for sale",
+          "source": "[Reuters] India to sell up to 2% stake in Coal India via offer for sale"
+        }
+      ],
+      "data_gap": false
+    },
+    "TITAN.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1): Strong",
+          "source": "FACTS"
+        },
+        {
+          "text": "Quality (ROE/margin): Exceptional",
+          "source": "FACTS"
+        },
+        {
+          "text": "Titan Co Ltd (BOM:500114) Q3 2026 Earnings Call Highlights: Strategic Acquisitions and Market ...",
+          "source": "[GuruFocus.com] Titan Co Ltd (BOM:500114) Q3 2026 Earnings Call Highlights: Strategic Acquisitions and Market ..."
+        },
+        {
+          "text": "India's Titan hits record high on strong fourth-quarter sales",
+          "source": "[Reuters] India's Titan hits record high on strong fourth-quarter sales"
+        },
+        {
+          "text": "Indian jewellers' stocks shine on strong festive-quarter sales; Titan hits record high",
+          "source": "[Reuters] Indian jewellers' stocks shine on strong festive-quarter sales; Titan hits record high"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion: Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE): Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol: Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "India Jewelry Stocks Lose 12% as Modi Targets $72 Billion In Gold Imports",
+          "source": "[BeInCrypto] India Jewelry Stocks Lose 12% as Modi Targets $72 Billion In Gold Imports"
+        },
+        {
+          "text": "India's Titan logs quarterly sales surge on gold price rally, festive demand",
+          "source": "[Reuters] India's Titan logs quarterly sales surge on gold price rally, festive demand"
+        }
+      ],
+      "data_gap": false
+    },
+    "AXISBANK.NS": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion: Exceptional",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE): Strong",
+          "source": "FACTS"
+        },
+        {
+          "text": "Indian shares likely to open higher on strong business updates from lenders",
+          "source": "[Reuters] Indian shares likely to open higher on strong business updates from lenders"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Quality (ROE/margin): Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol: Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "India's Axis Bank CFO resigns",
+          "source": "[Reuters] India's Axis Bank CFO resigns"
+        },
+        {
+          "text": "India's Kotak Mahindra Bank has 'high ambitions' to deploy capital for growth, CEO says",
+          "source": "[Reuters] India's Kotak Mahindra Bank has 'high ambitions' to deploy capital for growth, CEO says"
+        }
+      ],
+      "data_gap": false
+    },
+    "ICICIBANK.NS": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion: Exceptional",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE): Strong",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol: Exceptional",
+          "source": "FACTS"
+        },
+        {
+          "text": "India's ICICI Prudential Life reports quarterly profit jump on strong premium growth",
+          "source": "[Reuters] India's ICICI Prudential Life reports quarterly profit jump on strong premium growth"
+        },
+        {
+          "text": "Asian Equities Traded in the US as American Depositary Receipts Soar in Monday Trading",
+          "source": "[MT Newswires] Asian Equities Traded in the US as American Depositary Receipts Soar in Monday Trading"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1): Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "Quality (ROE/margin): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "India's ICICI Lombard's quarterly profit falls",
+          "source": "[Reuters] India's ICICI Lombard's quarterly profit falls"
+        },
+        {
+          "text": "Quadria-backed India's Maxivision hires IPO bankers, sources say",
+          "source": "[Reuters] Quadria-backed India's Maxivision hires IPO bankers, sources say"
+        },
+        {
+          "text": "InsuranceDekho parent selects banks for possible IPO",
+          "source": "[Life Insurance International] InsuranceDekho parent selects banks for possible IPO"
+        }
+      ],
+      "data_gap": false
+    },
+    "ADANIPORTS.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1): Exceptional",
+          "source": "FACTS"
+        },
+        {
+          "text": "Analyst dispersion: Strong",
+          "source": "FACTS"
+        },
+        {
+          "text": "India's Adani Ports to invest $1.36 billion in Europe expansion",
+          "source": "[Reuters] India's Adani Ports to invest $1.36 billion in Europe expansion"
+        },
+        {
+          "text": "India's Adani Group to streamline internal structure to speed decisions",
+          "source": "[Reuters] India's Adani Group to streamline internal structure to speed decisions"
+        },
+        {
+          "text": "India's Adani Group outlines restructuring to accelerate growth, Bloomberg News reports",
+          "source": "[Reuters] India's Adani Group outlines restructuring to accelerate growth, Bloomberg News reports"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality (ROE/margin): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol: Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "India's Kerala state not consulted on MSC's $1.4 billion port investment, chief minister says",
+          "source": "[Reuters] India's Kerala state not consulted on MSC's $1.4 billion port investment, chief minister says"
+        },
+        {
+          "text": "Adani Ports to Sell India Port Stake to Swiss Shipping Group MSC for $1.40B",
+          "source": "[The Wall Street Journal] Adani Ports to Sell India Port Stake to Swiss Shipping Group MSC for $1.40B"
+        }
+      ],
+      "data_gap": false
+    },
+    "SHRIRAMFIN.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1): Exceptional",
+          "source": "FACTS"
+        },
+        {
+          "text": "Analyst dispersion: Strong",
+          "source": "FACTS"
+        },
+        {
+          "text": "Shriram Finance beats profit forecasts, crosses 3 trillion rupees in AUM",
+          "source": "[Reuters] India's Shriram Finance beats profit forecasts, crosses 3 trillion rupees in AUM"
+        },
+        {
+          "text": "Shriram Finance Ltd (BOM:511218) Q4 2026 Earnings Call Highlights: Robust Profit Growth and ...",
+          "source": "[GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q4 2026 Earnings Call Highlights: Robust Profit Growth and ..."
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality (ROE/margin): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol: Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "Mitsubishi UFJ Financial Group Q4 Earnings Call Highlights",
+          "source": "[MarketBeat] Mitsubishi UFJ Financial Group Q4 Earnings Call Highlights"
+        },
+        {
+          "text": "MUFG lending head signals further Asia dealmaking",
+          "source": "[Retail Banker International] MUFG lending head signals further Asia dealmaking"
+        }
+      ],
+      "data_gap": false
+    },
+    "BAJFINANCE.NS": {
+      "in_favor": [
+        {
+          "text": "India's Bajaj Finance jumps as easing credit costs, asset quality gains boost outlook",
+          "source": "[Reuters] India's Bajaj Finance jumps as easing credit costs, asset quality gains boost outlook"
+        },
+        {
+          "text": "Indian non-bank lender Bajaj Finance posts 22% profit growth, pushes AI adoption",
+          "source": "[Reuters] Indian non-bank lender Bajaj Finance posts 22% profit growth, pushes AI adoption"
+        },
+        {
+          "text": "India's Bajaj Finance posts higher profit on loan growth, lower provisions",
+          "source": "[Reuters] India's Bajaj Finance posts higher profit on loan growth, lower provisions"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Analyst dispersion: Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "Quality (ROE/margin): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE): Flat",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol: Weak",
+          "source": "FACTS"
+        }
+      ],
+      "data_gap": false
+    },
+    "ASIANPAINT.NS": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin): Strong",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol: Strong",
+          "source": "FACTS"
+        },
+        {
+          "text": "India's Asian Paints hikes prices by 12% as West Asia conflict drives up costs",
+          "source": "[Reuters] India's Asian Paints hikes prices by 12% as West Asia conflict drives up costs"
+        },
+        {
+          "text": "Asian Paints Ltd (BOM:500820) (Q4 FY26) Earnings Call Highlights: Strong Volume Growth and ...",
+          "source": "[GuruFocus.com] Asian Paints Ltd (BOM:500820) (Q4 FY26) Earnings Call Highlights: Strong Volume Growth and ..."
+        },
+        {
+          "text": "India's Asian Paints beats quarterly profit view on decorative business boost",
+          "source": "[Reuters] India's Asian Paints beats quarterly profit view on decorative business boost"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1): Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "Analyst dispersion: Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE): Weak",
+          "source": "FACTS"
+        },
+        {
+          "text": "Berger Paints India's quarterly profit surges on strong volume growth",
+          "source": "[Reuters] Berger Paints India's quarterly profit surges on strong volume growth"
+        },
+        {
+          "text": "Indian plastic maker Alternicq says Iran war has pushed up costs",
+          "source": "[Reuters] Indian plastic maker Alternicq says Iran war has pushed up costs"
+        }
+      ],
+      "data_gap": false
+    }
+  }
+}
