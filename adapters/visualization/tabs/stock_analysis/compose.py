@@ -505,8 +505,14 @@ def render() -> None:
 
     st.markdown("### Stock Analysis")
     st.markdown(
-        '<div style="color:#64748B;font-size:14px;margin-bottom:16px;">'
+        '<div style="color:#64748B;font-size:14px;margin-bottom:4px;">'
         "Deep-dive analysis for any ticker — valuation, growth, health, sentiment, and supply chain."
+        "</div>"
+        '<div style="color:#94A3B8;font-size:12px;margin-bottom:16px;">'
+        "Use the market's own suffix for non-US tickers — "
+        "<code>.TO</code> for Canada (e.g. RY.TO), "
+        "<code>.NS</code> or <code>.BO</code> for India (e.g. ICICIBANK.NS). "
+        "US tickers need no suffix (e.g. NVDA)."
         "</div>",
         unsafe_allow_html=True,
     )
@@ -515,7 +521,10 @@ def render() -> None:
 
     cols = st.columns([4, 1])
     ticker_input = cols[0].text_input(
-        "Ticker", value=pending or "", placeholder="NVDA", label_visibility="collapsed"
+        "Ticker",
+        value=pending or "",
+        placeholder="NVDA, RY.TO, ICICIBANK.NS",
+        label_visibility="collapsed",
     )
     analyze = cols[1].button("Run Analysis", type="primary") or pending is not None
 
