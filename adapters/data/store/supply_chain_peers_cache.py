@@ -25,8 +25,13 @@ class SupplyChainPeersCacheMixin:
     def put_cached_peers(
         self, ticker: str, peers: list[str], fetched_at: datetime
     ) -> None:
-        """Persist *peers* for *ticker*. Caller must not pass an empty list —
-        see the cache-through wrapper in fmp_adapter.py, which enforces this."""
+        """Persist *peers* for *ticker*. A no-op on an empty list — an empty
+        peers result is indistinguishable from a live-fetch failure (see
+        adapters/data/fmp_adapter.py's get_cached_stock_peers), so it must
+        never be written here either, even if a future caller bypasses that
+        wrapper's own guard."""
+        if not peers:
+            return
         conn = self._conn()
         conn.execute(
             "INSERT OR REPLACE INTO supply_chain_peers_cache "

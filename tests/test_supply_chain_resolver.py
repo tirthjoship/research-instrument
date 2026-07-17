@@ -1,9 +1,15 @@
 """Tests for dynamic supply-chain group resolution (replaces first-match YAML lookup).
 
-All tests inject ``closes_by_ticker`` / ``market_caps`` directly — no network calls.
+All tests inject ``closes_by_ticker`` / ``market_caps`` directly — no network calls,
+except the two ``test_live_fetch_*`` tests below, which patch the live-fetch seam
+itself (``get_cached_stock_peers`` and ``_batch_fetch_closes_impl``) to exercise the
+``if closes_by_ticker is None: ... if fmp_peers is None:`` branch that every other
+test bypasses by injecting ``closes_by_ticker`` directly.
 """
 
 from __future__ import annotations
+
+from unittest.mock import patch
 
 import pytest
 
@@ -224,3 +230,53 @@ def test_fmp_peers_truncated_to_max_members() -> None:
     )
     assert result is not None
     assert len(result["followers"]) + len(result["leaders"]) - 1 <= MAX_MEMBERS
+
+
+def test_live_fetch_forwards_fmp_peers_into_candidate_pool() -> None:
+    """When closes_by_ticker is None (the real dashboard code path) and
+    fmp_peers isn't explicitly passed, resolve_supply_chain_group must fetch
+    it live via get_cached_stock_peers and use it as a candidate — this is
+    the seam every other test in this file bypasses by injecting
+    closes_by_ticker directly."""
+    closes = {
+        "FORCEMOT.NS": _compound(2500.0),
+        "ASAHIINDIA.NS": _compound(880.0),
+        "EIHOTEL.NS": _compound(340.0),
+        "MOTHERSON.NS": _compound(120.0),
+    }
+    with (
+        patch(
+            "adapters.data.fmp_adapter.get_cached_stock_peers",
+            return_value=["ASAHIINDIA.NS", "EIHOTEL.NS", "MOTHERSON.NS"],
+        ) as mock_get_peers,
+        patch("adapters.data.sqlite_store.SQLiteStore"),
+        patch(
+            "adapters.visualization.price_cache._batch_fetch_closes_impl",
+            return_value=closes,
+        ),
+    ):
+        result = resolve_supply_chain_group("FORCEMOT.NS", {})
+
+    assert result is not None
+    assert result["group"] == "forcemot.ns_fmp_peers"
+    mock_get_peers.assert_called_once()
+
+
+def test_live_fetch_degrades_to_empty_peers_on_exception() -> None:
+    """A live FMP fetch failure (network error, DB error, anything) must
+    degrade to an empty peers list — never propagate and crash the resolver."""
+    closes = {"FORCEMOT.NS": _compound(2500.0)}
+    with (
+        patch(
+            "adapters.data.fmp_adapter.get_cached_stock_peers",
+            side_effect=RuntimeError("boom"),
+        ),
+        patch("adapters.data.sqlite_store.SQLiteStore"),
+        patch(
+            "adapters.visualization.price_cache._batch_fetch_closes_impl",
+            return_value=closes,
+        ),
+    ):
+        result = resolve_supply_chain_group("FORCEMOT.NS", {})
+
+    assert result is None  # no candidates clear the bar — an honest gap, not a crash
