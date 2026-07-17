@@ -89,7 +89,10 @@ def analyze_ticker(
         db_path,
         ref=datetime.now(timezone.utc),
     )
-    live_headlines = _fetch_recent_news_impl(ticker, limit=10)
+    company_name = str(info.get("longName") or info.get("shortName") or "").strip()
+    live_headlines = _fetch_recent_news_impl(
+        ticker, limit=10, company_name=company_name or None
+    )
     sentiment_signals, sentiment_live, _sentiment_stale = resolve_sentiment_signals(
         buzz, buzz_stale, ticker, live_headlines
     )
