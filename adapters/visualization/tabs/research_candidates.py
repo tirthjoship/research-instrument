@@ -139,8 +139,21 @@ def maybe_render_gemini_cache_only(ticker: str, reports_dir: str) -> str:
     no visibility into raw-HTML <details>/<summary> toggle state (no rerun
     fires on a client-side-only disclosure open), so true per-click fetching
     isn't reachable without converting rows to real st.expander widgets.
+
+    The cache directory is derived from the ticker's own market suffix, not
+    the passed-in reports_dir: in the Screener's merged US+Canada view (and
+    the India-only view), candidates can come from a different market's
+    fixed snapshot directory than whatever reports_dir the tab is otherwise
+    pointed at (see research_candidates.py::render()'s market-picker
+    toggle) -- each market's cited_cases cache only ever lives at its own
+    fixed path, written by that market's scheduled-screen.yml step.
     """
-    cache_path = f"{reports_dir}/screen_cited_cases.json"
+    cache_dir = reports_dir
+    if ticker.endswith(".TO"):
+        cache_dir = "data/sample/ca"
+    elif ticker.endswith((".NS", ".BO")):
+        cache_dir = "data/sample/in"
+    cache_path = f"{cache_dir}/screen_cited_cases.json"
     cached = load_cached_case(cache_path, ticker)
     if cached is None:
         return (
@@ -1612,7 +1625,8 @@ def render(reports_dir: str | None = None) -> None:
     st.session_state["screener_market"] = market
 
     if market == "india":
-        screen = load_latest_screened("data/sample/in")
+        reports_dir = "data/sample/in"
+        screen = load_latest_screened(reports_dir)
     else:
         screen = load_combined_screen([reports_dir, "data/sample/ca"])
     if screen is None:

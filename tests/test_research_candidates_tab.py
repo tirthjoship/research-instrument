@@ -1070,6 +1070,47 @@ def test_market_toggle_on_calls_load_latest_screened_india(monkeypatch) -> None:
     assert "combined_dirs" not in captured
 
 
+def test_market_toggle_on_india_propagates_reports_dir_downstream(
+    monkeypatch,
+) -> None:  # type: ignore[no-untyped-def]
+    """India toggle must swap reports_dir itself (not just the screen load) so
+    screen-history/IC-verdict reads also point at data/sample/in, not
+    whatever reports_dir the tab was originally pointed at -- regression
+    guard for a real bug found via manual verification: the Google-AI-read
+    cache and screen history silently kept reading the US directory while
+    India candidates were shown."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import research_candidates as rc
+
+    monkeypatch.setattr(st, "session_state", {}, raising=False)
+    monkeypatch.setattr(st, "toggle", lambda *a, **k: True)
+    monkeypatch.setattr(st, "warning", lambda *a, **k: None)  # noqa: ARG005
+
+    monkeypatch.setattr(
+        rc,
+        "load_latest_screened",
+        lambda reports_dir: {
+            "as_of": "2026-07-17",
+            "_source": "screen",
+            "universe_size": 50,
+            "candidates": [],
+        },
+    )
+
+    captured: dict[str, str] = {}
+
+    def fake_load_screen_history(reports_dir: str):  # type: ignore[no-untyped-def]
+        captured["history_dir"] = reports_dir
+        return []
+
+    monkeypatch.setattr(rc, "load_screen_history", fake_load_screen_history)
+
+    rc.render(reports_dir="data/sample")
+
+    assert captured["history_dir"] == "data/sample/in"
+
+
 def test_run_screener_gate_is_passive_display_for_visitors(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     """Item 5 of the Cloud deploy scaling design: visitors (not local runtime)
     get a passive "last updated" caption only — never a live-triggering
