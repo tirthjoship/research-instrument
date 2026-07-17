@@ -51,6 +51,19 @@ def _store_keyword_scores(
     return scored
 
 
+def _prune_buzz_data(
+    store: Any, prune_days: int | None, *, now: datetime | None = None
+) -> None:
+    """Delete buzz_signals rows older than prune_days. No-op when None
+    (default for manual/local runs) — the scheduled workflow passes a value
+    to bound the committed DB's growth."""
+    if prune_days is None:
+        return
+    cutoff = (now or datetime.now()) - timedelta(days=prune_days)
+    deleted = store.prune_buzz_signals(cutoff)
+    click.echo(f"Pruned {deleted} buzz signal(s) older than {prune_days} days")
+
+
 @cli.command("daily-scan")
 @click.option("--market", default="us", help="Market config to use")
 @click.option(
@@ -59,7 +72,14 @@ def _store_keyword_scores(
     default=True,
     help="Skip Flan-T5 scorer (avoids torch/XGBoost segfault)",
 )
-def daily_scan(market: str, no_flan: bool) -> None:
+@click.option(
+    "--prune-days",
+    type=int,
+    default=None,
+    help="Delete buzz_signals rows older than N days after the scan "
+    "(used by the scheduled workflow to bound committed DB growth)",
+)
+def daily_scan(market: str, no_flan: bool, prune_days: int | None) -> None:
     """Run daily buzz discovery scan (RSS feeds -> keyword + Flan-T5 -> SQLite)."""
     from adapters.data.rss_adapter import RSSAdapter
     from adapters.ml.keyword_scorer import KeywordScorer
@@ -141,6 +161,8 @@ def daily_scan(market: str, no_flan: bool) -> None:
     click.echo(
         "Skipping StockTwits scan (public API locked; see stocktwits_adapter.py)"
     )
+
+    _prune_buzz_data(store, prune_days)
 
 
 @cli.command("validate-3b")
