@@ -15,6 +15,7 @@ from adapters.data.store.holdings import HoldingsMixin
 from adapters.data.store.recommendations import RecommendationsMixin
 from adapters.data.store.signal_cache import SignalCacheMixin
 from adapters.data.store.source_reliability import SourceReliabilityMixin
+from adapters.data.store.supply_chain_peers_cache import SupplyChainPeersCacheMixin
 from adapters.data.store.trades import TradesMixin
 from adapters.data.store.weekly_reports import WeeklyReportsMixin
 from adapters.data.store.weights import WeightsMixin
@@ -39,6 +40,7 @@ class SQLiteStore(
     AttentionMixin,
     CandidatesMixin,
     SignalCacheMixin,
+    SupplyChainPeersCacheMixin,
 ):
     """RecommendationStorePort backed by SQLite.
 
