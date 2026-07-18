@@ -243,6 +243,7 @@ def _build_weekly_brief(
     from application.evidence_screen_use_case import label_from_verdict_file
 
     _corr_store = CorroborationStore(sqlite3.connect("data/recommendations.db"))
+    _corr_store.init_schema()
 
     uc = WeeklyBriefUseCase(
         screen=screen,
