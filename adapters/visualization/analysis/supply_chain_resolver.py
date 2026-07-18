@@ -68,8 +68,25 @@ def _yaml_candidate_groups(
     return out
 
 
-def _industry_sector_pool(info: dict[str, Any]) -> tuple[str, list[str]] | None:
-    """Curated peer pool for the ticker's industry (preferred) or sector."""
+_NON_US_SUFFIXES = (".TO", ".NE", ".NS", ".BO")
+
+
+def _industry_sector_pool(
+    ticker: str, info: dict[str, Any]
+) -> tuple[str, list[str]] | None:
+    """Curated peer pool for the ticker's industry (preferred) or sector.
+
+    US-only pool (loaders.INDUSTRY_PEERS/SECTOR_PEERS) — gated to US tickers.
+    yfinance's generic sector/industry labels (e.g. "Consumer Cyclical") are
+    shared across markets, so without this gate a non-US ticker could get
+    American mega-caps as its "supply chain peers" purely because the label
+    matches, with no relation to the actual company. FMP peers (this
+    resolver's other live candidate source) already cover non-US markets
+    correctly, so this pool simply doesn't apply outside the US.
+    """
+    if ticker.endswith(_NON_US_SUFFIXES):
+        return None
+
     from adapters.visualization.analysis.loaders import INDUSTRY_PEERS, SECTOR_PEERS
 
     industry = info.get("industry", "") or ""
@@ -152,7 +169,7 @@ def select_best_group(
             }
         )
 
-    pool = _industry_sector_pool(info)
+    pool = _industry_sector_pool(ticker, info)
     if pool:
         label, members = pool
         peers = [t for t in members if t != ticker][:MAX_MEMBERS]
@@ -244,7 +261,7 @@ def resolve_supply_chain_group(
         for g in _yaml_candidate_groups(ticker, relationships):
             candidate_tickers.update(g.get("leaders", []) or [])
             candidate_tickers.update(g.get("followers", []) or [])
-        pool = _industry_sector_pool(info)
+        pool = _industry_sector_pool(ticker, info)
         if pool:
             candidate_tickers.update(pool[1])
 
