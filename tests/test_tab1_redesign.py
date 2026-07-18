@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 
 from adapters.visualization.components.compact_card import (
     _hold_duration_text,
@@ -151,14 +152,57 @@ def test_compact_card_importable() -> None:
     assert callable(render_compact_card_html)
 
 
-def test_load_recommendations_latest_returns_sorted_list() -> None:
-    """load_recommendations_latest returns recs sorted by composite_score desc."""
-    from adapters.visualization.data_loader import load_recommendations_latest
+def test_load_recommendations_latest_returns_sorted_list(tmp_path: Path) -> None:
+    """load_recommendations_latest returns recs sorted by composite_score desc.
 
-    recs = load_recommendations_latest("data/recommendations.db")
-    if len(recs) > 1:
-        scores = [r.composite_score for r in recs]
-        assert scores == sorted(scores, reverse=True)
+    Uses an isolated tmp DB, not the real committed data/recommendations.db —
+    SQLiteStore's constructor always runs the full schema script on connect,
+    which mutates that tracked file on every test run (bytes-on-disk change
+    even with no data written), tripping the pre-push hook's "hook modified
+    files" check for every contributor on every push.
+    """
+    from adapters.data.sqlite_store import SQLiteStore
+    from adapters.visualization.data_loader import load_recommendations_latest
+    from domain.models import (
+        MultiHorizonPrediction,
+        RecommendationGrade,
+        StockRecommendation,
+    )
+
+    db_path = str(tmp_path / "recommendations.db")
+    store = SQLiteStore(db_path)
+    prediction = MultiHorizonPrediction(
+        predicted_return_2d=0.01,
+        predicted_return_5d=0.03,
+        predicted_return_10d=0.05,
+        confidence_2d=0.7,
+        confidence_5d=0.8,
+        confidence_10d=0.75,
+    )
+    for symbol, score in [("NVDA", 0.85), ("AAPL", 0.6), ("MSFT", 0.72)]:
+        store.save_recommendation(
+            StockRecommendation(
+                symbol=symbol,
+                week_start="2026-06-01",
+                grade=RecommendationGrade.STRONG_BUY,
+                composite_score=score,
+                prediction=prediction,
+                horizon_signals={"2d": "bullish", "5d": "bullish", "10d": "bullish"},
+                reasoning="test",
+                sources=["yfinance"],
+                sentiment_score=0.6,
+                divergence_score=0.3,
+                divergence_type="bullish_divergence",
+                technical_signal=0.5,
+                rsi_14=45.0,
+                macd=0.5,
+            )
+        )
+
+    recs = load_recommendations_latest(db_path)
+    assert len(recs) == 3
+    scores = [r.composite_score for r in recs]
+    assert scores == sorted(scores, reverse=True)
 
 
 def test_load_recommendations_latest_missing_db_returns_empty() -> None:

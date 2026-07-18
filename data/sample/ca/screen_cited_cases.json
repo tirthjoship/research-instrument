@@ -4,38 +4,22 @@
     "CM.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1): Strong",
-          "source": "FACTS"
+          "text": "The stock exhibits strong momentum (12-1).",
+          "source": "p80"
         },
         {
-          "text": "Value (1/PE): Strong",
-          "source": "FACTS"
+          "text": "It demonstrates strong value (1/PE).",
+          "source": "p83"
         },
         {
-          "text": "ITUB vs. CM: Which Stock Is the Better Value Option?",
-          "source": "[Zacks] ITUB vs. CM: Which Stock Is the Better Value Option?"
+          "text": "The company is a subject in discussions comparing it as a better value option against peers.",
+          "source": "Zacks | ITUB vs. CM: Which Stock Is the Better Value Option?"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion: Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Quality (ROE/margin): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Lowvol: Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Interfor (TSX:IFP) Stock Sees Fair Value Cut After Analysts Weigh Fresh Production Results",
-          "source": "[Simply Wall St.] Interfor (TSX:IFP) Stock Sees Fair Value Cut After Analysts Weigh Fresh Production Results"
-        },
-        {
-          "text": "News of the day: Bay Street legend, CIBC settles class action, retirement portfolio advice, Wafr secures data centre funding, Toronto home sales and more",
-          "source": "[Financial Post] News of the day: Bay Street legend, CIBC settles class action, retirement portfolio advice, Wafr secures data centre funding, Toronto home sales and more"
+          "text": "The company settled a class action for $10 million.",
+          "source": "Financial Post | CIBC agrees to pay $10 million to settle NSF class action"
         }
       ],
       "data_gap": false
@@ -43,85 +27,48 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1): Strong",
-          "source": "FACTS"
+          "text": "The stock has strong momentum (12-1).",
+          "source": "p83"
         },
         {
-          "text": "Lowvol: Exceptional",
-          "source": "FACTS"
-        },
-        {
-          "text": "RBC Expands Credit Derivatives Trading as AI Debt Fuels Hedging",
-          "source": "[Bloomberg] RBC Expands Credit Derivatives Trading as AI Debt Fuels Hedging"
+          "text": "It shows exceptional low volatility.",
+          "source": "p90"
         }
       ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion: Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Quality (ROE/margin): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "SpaceX Post-Listing Collapse Threatens IPO Market\u2019s AI Euphoria",
-          "source": "[Bloomberg] SpaceX Post-Listing Collapse Threatens IPO Market\u2019s AI Euphoria"
-        },
-        {
-          "text": "ASML Mulls Price Hike for Chipmaking Tools, Information Says",
-          "source": "[Bloomberg] ASML Mulls Price Hike for Chipmaking Tools, Information Says"
-        }
-      ],
+      "to_watch": [],
       "data_gap": false
     },
     "BNS.TO": {
       "in_favor": [
         {
-          "text": "Analyst dispersion: Exceptional",
-          "source": "FACTS"
+          "text": "The company shows exceptional analyst dispersion.",
+          "source": "p90"
         },
         {
-          "text": "Value (1/PE): Strong",
-          "source": "FACTS"
+          "text": "It has strong value (1/PE).",
+          "source": "p80"
         },
         {
-          "text": "Lowvol: Strong",
-          "source": "FACTS"
+          "text": "The stock exhibits strong low volatility.",
+          "source": "p87"
         },
         {
-          "text": "Bank of Nova Scotia discloses 7.7% TeraWulf stake and 5.62% CleanSpark position",
-          "source": "[Blockspace] Bank of Nova Scotia discloses 7.7% TeraWulf stake and 5.62% CleanSpark position"
+          "text": "Bank of Nova Scotia disclosed a 7.7% stake in TeraWulf and a 5.62% position in CleanSpark.",
+          "source": "Blockspace | Bank of Nova Scotia discloses 7.7% TeraWulf stake and 5.62% CleanSpark position"
         },
         {
-          "text": "Scotiabank teams up with other Canadian companies to meet their AI needs faster, cheaper",
-          "source": "[Financial Post] Scotiabank teams up with other Canadian companies to meet their AI needs faster, cheaper"
+          "text": "Scotiabank is teaming up with other Canadian companies to address their AI needs efficiently.",
+          "source": "Financial Post | Scotiabank teams up with other Canadian companies to meet their AI needs faster, cheaper"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1): Flat",
-          "source": "FACTS"
+          "text": "The company's quality (ROE/margin) is weak.",
+          "source": "p30"
         },
         {
-          "text": "Quality (ROE/margin): Weak",
-          "source": "FACTS"
-        },
-        {
-          "text": "Scotiabank Expects Bank of Canada to Begin Gradual Rate Hikes Late in 2026 as Economy Rebounds",
-          "source": "[MT Newswires] Scotiabank Expects Bank of Canada to Begin Gradual Rate Hikes Late in 2026 as Economy Rebounds"
-        },
-        {
-          "text": "Scotiabank Forecasts Canadian Light Vehicle Sales to Fall 1.6% in 2026 Before Recovering in 2027",
-          "source": "[MT Newswires] Scotiabank Forecasts Canadian Light Vehicle Sales to Fall 1.6% in 2026 Before Recovering in 2027"
-        },
-        {
-          "text": "TSX Closer: Index Drops as Financial, Mining Losses Outweigh Energy Surge; US-Iran Fighting Hikes Inflation Fears",
-          "source": "[MT Newswires] TSX Closer: Index Drops as Financial, Mining Losses Outweigh Energy Surge; US-Iran Fighting Hikes Inflation Fears"
+          "text": "The TSX index experienced a drop, with financial losses contributing to the decline.",
+          "source": "MT Newswires | TSX Closer: Index Drops as Financial, Mining Losses Outweigh Energy Surge; US-Iran Fighting Hikes Inflation Fears"
         }
       ],
       "data_gap": false
@@ -129,46 +76,26 @@
     "TD.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1): Exceptional",
-          "source": "FACTS"
+          "text": "The stock displays exceptional momentum (12-1).",
+          "source": "p93"
         },
         {
-          "text": "Lowvol: Strong",
-          "source": "FACTS"
+          "text": "It has strong low volatility.",
+          "source": "p80"
         },
         {
-          "text": "UBS vs. TD: Which Stock Is the Better Value Option?",
-          "source": "[Zacks] UBS vs. TD: Which Stock Is the Better Value Option?"
+          "text": "QCAD added TD as a reserve custodian in an effort to expand Canadian adoption.",
+          "source": "CryptoProwl | QCAD Adds TD as Reserve Custodian in Push for Wider Canadian Adoption"
         },
         {
-          "text": "QCAD Adds TD as Reserve Custodian in Push for Wider Canadian Adoption",
-          "source": "[CryptoProwl] QCAD Adds TD as Reserve Custodian in Push for Wider Canadian Adoption"
-        },
-        {
-          "text": "Toronto Dominion Bank (TSX:TD) Launches Clover In Canada With Fiserv",
-          "source": "[Simply Wall St.] Toronto Dominion Bank (TSX:TD) Launches Clover In Canada With Fiserv"
+          "text": "Toronto Dominion Bank launched Clover in Canada in collaboration with Fiserv.",
+          "source": "Simply Wall St. | Toronto Dominion Bank (TSX:TD) Launches Clover In Canada With Fiserv"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion: Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Quality (ROE/margin): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Data Center Firm Csquare Is Said to Price IPO at $21 Per Share",
-          "source": "[Bloomberg] Data Center Firm Csquare Is Said to Price IPO at $21 Per Share"
-        },
-        {
-          "text": "TSX Closer: The Index Falls as Middle East Tensions Lift Oil, Investors Eye Bank of Canada Decision",
-          "source": "[MT Newswires] TSX Closer: The Index Falls as Middle East Tensions Lift Oil, Investors Eye Bank of Canada Decision"
+          "text": "The TSX index experienced a decline, influenced by Middle East tensions and anticipation of the Bank of Canada decision.",
+          "source": "MT Newswires | TSX Closer: The Index Falls as Middle East Tensions Lift Oil, Investors Eye Bank of Canada Decision"
         }
       ],
       "data_gap": false
@@ -176,81 +103,22 @@
     "BMO.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1): Strong",
-          "source": "FACTS"
+          "text": "The stock shows strong momentum (12-1).",
+          "source": "p77"
         },
         {
-          "text": "Bank of Montreal (TSX:BMO) Stock Looks Fully Priced On Its 156% Run",
-          "source": "[Simply Wall St.] Bank of Montreal (TSX:BMO) Stock Looks Fully Priced On Its 156% Run"
+          "text": "Canada's manufacturing sales rose as anticipated in May, reaching a record high.",
+          "source": "MT Newswires | Canada's Manufacturing Sales Rise as Expected in May, Reaching Record High"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion: Flat",
-          "source": "FACTS"
+          "text": "The company's quality (ROE/margin) is weak.",
+          "source": "p37"
         },
         {
-          "text": "Quality (ROE/margin): Weak",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Lowvol: Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Data Center Firm Csquare Is Said to Price IPO at $21 Per Share",
-          "source": "[Bloomberg] Data Center Firm Csquare Is Said to Price IPO at $21 Per Share"
-        }
-      ],
-      "data_gap": false
-    },
-    "CVE.TO": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1): Exceptional",
-          "source": "FACTS"
-        },
-        {
-          "text": "Analyst dispersion: Strong",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE): Exceptional",
-          "source": "FACTS"
-        },
-        {
-          "text": "Will Cenovus' Key Growth Projects Support Its Long-Term Outlook?",
-          "source": "[Zacks] Will Cenovus' Key Growth Projects Support Its Long-Term Outlook?"
-        },
-        {
-          "text": "Cenovus Energy (TSX:CVE) Expands Output As Higher Oil Prices Come Back Into Focus",
-          "source": "[Simply Wall St.] Cenovus Energy (TSX:CVE) Expands Output As Higher Oil Prices Come Back Into Focus"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Lowvol: Weak",
-          "source": "FACTS"
-        },
-        {
-          "text": "Eni Expands Low-Carbon Mobility Through BMW Biofuel Alliance",
-          "source": "[Zacks] Eni Expands Low-Carbon Mobility Through BMW Biofuel Alliance"
-        },
-        {
-          "text": "Canada Ties New West Coast Pipeline to Oil Sands Expansion",
-          "source": "[Oilprice.com] Canada Ties New West Coast Pipeline to Oil Sands Expansion"
-        },
-        {
-          "text": "Noble Lands New Offshore Drilling Contract Worth $136.2M in Brunei",
-          "source": "[Zacks] Noble Lands New Offshore Drilling Contract Worth $136.2M in Brunei"
+          "text": "Bank of Montreal stock appears to be fully priced following a significant 156% increase.",
+          "source": "Simply Wall St. | Bank of Montreal (TSX:BMO) Stock Looks Fully Priced On Its 156% Run"
         }
       ],
       "data_gap": false
@@ -258,89 +126,30 @@
     "GWO.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1): Exceptional",
-          "source": "FACTS"
+          "text": "The stock exhibits exceptional momentum (12-1).",
+          "source": "p93"
         },
         {
-          "text": "3 TSX Dividend Stocks Yielding Up To 6.9%",
-          "source": "[Simply Wall St.] 3 TSX Dividend Stocks Yielding Up To 6.9%"
+          "text": "GWO is in a category of TSX dividend stocks noted for yielding up to 6.9%.",
+          "source": "Simply Wall St. | 3 TSX Dividend Stocks Yielding Up To 6.9%"
         },
         {
-          "text": "Top TSX Dividend Stocks To Consider In May 2026",
-          "source": "[Simply Wall St.] Top TSX Dividend Stocks To Consider In May 2026"
+          "text": "GWO is in a category of TSX dividend stocks noted for yielding up to 6.8%.",
+          "source": "Simply Wall St. | 3 TSX Dividend Stocks Yielding Up To 6.8%"
         },
         {
-          "text": "3 TSX Dividend Stocks Yielding Up To 6.8%",
-          "source": "[Simply Wall St.] 3 TSX Dividend Stocks Yielding Up To 6.8%"
+          "text": "The stock is considered among top TSX dividend stocks for consideration.",
+          "source": "Simply Wall St. | Top TSX Dividend Stocks To Consider In May 2026"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion: Weak",
-          "source": "FACTS"
+          "text": "The stock shows weak analyst dispersion.",
+          "source": "p20"
         },
         {
-          "text": "Quality (ROE/margin): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Lowvol: Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "CIBC Reviews Canadian Lifecos' Q1, Says Results \"a Little Disappointing\", Updates Price Targets on Group",
-          "source": "[MT Newswires] CIBC Reviews Canadian Lifecos' Q1, Says Results \"a Little Disappointing\", Updates Price Targets on Group"
-        }
-      ],
-      "data_gap": false
-    },
-    "CNR.TO": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin): Strong",
-          "source": "FACTS"
-        },
-        {
-          "text": "CNI's Record June Grain Volumes Signal Strong Export Demand",
-          "source": "[Zacks] CNI's Record June Grain Volumes Signal Strong Export Demand"
-        },
-        {
-          "text": "CNI Strengthens Energy Logistics With Record Propane Shipments",
-          "source": "[Zacks] CNI Strengthens Energy Logistics With Record Propane Shipments"
-        },
-        {
-          "text": "Canadian National Secures Long-Term Growth Through PlasCred Project",
-          "source": "[Zacks] Canadian National Secures Long-Term Growth Through PlasCred Project"
-        },
-        {
-          "text": "Could CN\u2019s Plastics Recycling Facility Deal Quietly Reshape Its Long-Term Infrastructure Strategy (TSX:CNR)?",
-          "source": "[Simply Wall St.] Could CN\u2019s Plastics Recycling Facility Deal Quietly Reshape Its Long-Term Infrastructure Strategy (TSX:CNR)?"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Analyst dispersion: Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Lowvol: Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Canadian National Railway (TSX:CNR) Stock After Strong 2024 Gains Is There Still Value?",
-          "source": "[Simply Wall St.] Canadian National Railway (TSX:CNR) Stock After Strong 2024 Gains Is There Still Value?"
+          "text": "Q1 results for Canadian lifecos were described as \"a little disappointing\", with price targets updated for the group.",
+          "source": "MT Newswires | CIBC Reviews Canadian Lifecos' Q1, Says Results \"a Little Disappointing\", Updates Price Targets on Group"
         }
       ],
       "data_gap": false
@@ -348,93 +157,110 @@
     "QSR.TO": {
       "in_favor": [
         {
-          "text": "Analyst dispersion: Exceptional",
-          "source": "FACTS"
+          "text": "The company exhibits exceptional analyst dispersion.",
+          "source": "p93"
         },
         {
-          "text": "Quality (ROE/margin): Exceptional",
-          "source": "FACTS"
+          "text": "It demonstrates exceptional quality (ROE/margin).",
+          "source": "p93"
         },
         {
-          "text": "Can Wendy's Margin Pressure Ease as Turnaround Efforts Progress?",
-          "source": "[Zacks] Can Wendy's Margin Pressure Ease as Turnaround Efforts Progress?"
-        },
-        {
-          "text": "Can Wendy's Digital Sales Momentum Offset Weak Traffic?",
-          "source": "[Zacks] Can Wendy's Digital Sales Momentum Offset Weak Traffic?"
-        },
-        {
-          "text": "Is Starbucks' Loyalty Strategy Fueling More Store Traffic?",
-          "source": "[Zacks] Is Starbucks' Loyalty Strategy Fueling More Store Traffic?"
+          "text": "QSR is noted among billionaire investor Bill Ackman\u2019s top bets.",
+          "source": "24/7 Wall St. | Billionaire Investor Bill Ackman\u2019s Top 5 Bets: Buy, Hold, or Steer Clear?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1): Weak",
-          "source": "FACTS"
+          "text": "The stock has weak momentum (12-1).",
+          "source": "p20"
         },
         {
-          "text": "Value (1/PE): Weak",
-          "source": "FACTS"
+          "text": "An article provides reasons to consider reducing holdings in QSR.",
+          "source": "StockStory | 3 Reasons to Sell QSR and 1 Stock to Buy Instead"
         },
         {
-          "text": "Lowvol: Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "3 Reasons to Sell QSR and 1 Stock to Buy Instead",
-          "source": "[StockStory] 3 Reasons to Sell QSR and 1 Stock to Buy Instead"
-        },
-        {
-          "text": "Restaurant Brands International Price Target Lowered to $85 at RBC",
-          "source": "[MT Newswires] Restaurant Brands International Price Target Lowered to $85 at RBC"
+          "text": "RBC lowered the price target for Restaurant Brands International to $85.",
+          "source": "MT Newswires | Restaurant Brands International Price Target Lowered to $85 at RBC"
         }
       ],
+      "data_gap": false
+    },
+    "CVE.TO": {
+      "in_favor": [
+        {
+          "text": "The stock has exceptional momentum (12-1).",
+          "source": "p90"
+        },
+        {
+          "text": "It exhibits strong analyst dispersion.",
+          "source": "p83"
+        },
+        {
+          "text": "The company demonstrates exceptional value (1/PE).",
+          "source": "p93"
+        },
+        {
+          "text": "Cenovus has key growth projects which could support its long-term outlook.",
+          "source": "Zacks | Will Cenovus' Key Growth Projects Support Its Long-Term Outlook?"
+        },
+        {
+          "text": "Cenovus Energy is expanding its output as higher oil prices become a focus.",
+          "source": "Simply Wall St. | Cenovus Energy (TSX:CVE) Expands Output As Higher Oil Prices Come Back Into Focus"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock shows weak low volatility.",
+          "source": "p7"
+        }
+      ],
+      "data_gap": false
+    },
+    "CNR.TO": {
+      "in_favor": [
+        {
+          "text": "The company's quality (ROE/margin) is strong.",
+          "source": "p83"
+        },
+        {
+          "text": "CNI's record June grain volumes suggest strong export demand.",
+          "source": "Zacks | CNI's Record June Grain Volumes Signal Strong Export Demand"
+        },
+        {
+          "text": "CNI strengthened its energy logistics through record propane shipments.",
+          "source": "Zacks | CNI Strengthens Energy Logistics With Record Propane Shipments"
+        },
+        {
+          "text": "Canadian National secured long-term growth by initiating the PlasCred Project.",
+          "source": "Zacks | Canadian National Secures Long-Term Growth Through PlasCred Project"
+        },
+        {
+          "text": "A plastics recycling facility deal by CN could reshape its long-term infrastructure strategy.",
+          "source": "Simply Wall St. | Could CN\u2019s Plastics Recycling Facility Deal Quietly Reshape Its Long-Term Infrastructure Strategy (TSX:CNR)?"
+        }
+      ],
+      "to_watch": [],
       "data_gap": false
     },
     "ATD.TO": {
       "in_favor": [
         {
-          "text": "Analyst dispersion: Strong",
-          "source": "FACTS"
+          "text": "The company exhibits strong analyst dispersion.",
+          "source": "p87"
         },
         {
-          "text": "Quality (ROE/margin): Strong",
-          "source": "FACTS"
+          "text": "It demonstrates strong quality (ROE/margin).",
+          "source": "p80"
         },
         {
-          "text": "Alimentation Couche Tard (TSX:ATD) Stock May Be 38% Undervalued After Dividend Growth Focus",
-          "source": "[Simply Wall St.] Alimentation Couche Tard (TSX:ATD) Stock May Be 38% Undervalued After Dividend Growth Focus"
-        },
-        {
-          "text": "7-Eleven Owner Drops Go-It-Alone Strategy for SoftBank Embrace",
-          "source": "[Bloomberg] 7-Eleven Owner Drops Go-It-Alone Strategy for SoftBank Embrace"
-        },
-        {
-          "text": "SoftBank, PayPay in talks to invest in Seven & i, Bloomberg reports",
-          "source": "[Reuters] SoftBank, PayPay in talks to invest in Seven & i, Bloomberg reports"
+          "text": "Alimentation Couche Tard stock may be 38% undervalued, with a focus on dividend growth.",
+          "source": "Simply Wall St. | Alimentation Couche Tard (TSX:ATD) Stock May Be 38% Undervalued After Dividend Growth Focus"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE): Flat",
-          "source": "FACTS"
-        },
-        {
-          "text": "Lowvol: Weak",
-          "source": "FACTS"
-        },
-        {
-          "text": "Seven & i Eyes Zabka Stake as Shares Surge 16% to Record High",
-          "source": "[GuruFocus.com] Seven & i Eyes Zabka Stake as Shares Surge 16% to Record High"
-        },
-        {
-          "text": "Bain-Backed York Weighs M&A Ahead of Planned 2028 IPO",
-          "source": "[GuruFocus.com] Bain-Backed York Weighs M&A Ahead of Planned 2028 IPO"
+          "text": "The stock has weak low volatility.",
+          "source": "p30"
         }
       ],
       "data_gap": false

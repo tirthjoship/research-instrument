@@ -5,7 +5,9 @@ PYTEST := uv run pytest
 # ── Iteration targets (fast, no coverage) ────────────────────────────────────
 
 test-fast:
-	$(PYTEST) tests/ -q -n auto --tb=short
+	$(PYTEST) tests/ -q -n auto --tb=short; status=$$?; \
+	git checkout -- data/recommendations.db 2>/dev/null || true; \
+	exit $$status
 
 # Usage: make test-tab tab=risk  |  make test-tab tab=weekly_brief
 test-tab:
@@ -24,14 +26,18 @@ test-smoke:
 # ── Full suite, no coverage ───────────────────────────────────────────────────
 
 test:
-	$(PYTEST) tests/ -q -n auto --tb=short
+	$(PYTEST) tests/ -q -n auto --tb=short; status=$$?; \
+	git checkout -- data/recommendations.db 2>/dev/null || true; \
+	exit $$status
 
 # ── Coverage gate (CI + pre-PR only) ─────────────────────────────────────────
 
 test-cov:
 	$(PYTEST) tests/ -n auto \
 	    --cov=domain --cov=adapters --cov=application \
-	    --cov-fail-under=90 --tb=short
+	    --cov-fail-under=90 --tb=short; status=$$?; \
+	git checkout -- data/recommendations.db 2>/dev/null || true; \
+	exit $$status
 
 # ── Quality checks ────────────────────────────────────────────────────────────
 
