@@ -122,6 +122,7 @@ def load_corroboration_snapshot(
 
         with sqlite3.connect(db_path) as conn:
             store = CorroborationStore(conn)
+            store.init_schema()
             return _build_corroboration_view(ticker=ticker, store=store)
     except Exception as e:
         logger.warning("corroboration snapshot load failed for %s: %s", ticker, e)
