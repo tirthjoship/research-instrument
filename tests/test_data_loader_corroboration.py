@@ -77,6 +77,33 @@ def test_load_corroboration_snapshot_returns_none_for_missing_db(tmp_path):
     assert result is None
 
 
+def test_load_corroboration_snapshot_handles_db_with_no_corroboration_tables(
+    tmp_path, caplog
+):
+    """Reproduces the live-Cloud bug: a real, existing recommendations.db
+    that has never had a corroboration harvest run against it (so the
+    corroboration_runs table was never created — CorroborationStore.__init__
+    doesn't create it; only init_schema() does, and every writer call site
+    calls it, but load_corroboration_snapshot() didn't). Before the fix this
+    raised sqlite3.OperationalError: no such table: corroboration_runs,
+    swallowed into a logged warning on every single ticker load."""
+    import sqlite3
+
+    from adapters.visualization.data_loader import load_corroboration_snapshot
+
+    db_path = tmp_path / "recommendations.db"
+    conn = sqlite3.connect(str(db_path))
+    conn.execute("CREATE TABLE recommendations (ticker TEXT)")  # unrelated table
+    conn.commit()
+    conn.close()
+
+    with caplog.at_level("WARNING"):
+        result = load_corroboration_snapshot("AAPL", db_path=str(db_path))
+
+    assert result is None  # legitimately no run yet, not an error
+    assert "corroboration snapshot load failed" not in caplog.text
+
+
 def test_default_db_path_matches_where_corroborate_cli_writes():
     """The dashboard must read the same DB the `corroborate` CLI writes to.
 
