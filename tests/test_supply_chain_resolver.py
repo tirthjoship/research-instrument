@@ -280,3 +280,48 @@ def test_live_fetch_degrades_to_empty_peers_on_exception() -> None:
         result = resolve_supply_chain_group("FORCEMOT.NS", {})
 
     assert result is None  # no candidates clear the bar — an honest gap, not a crash
+
+
+def test_us_sector_pool_never_used_for_indian_ticker_even_with_high_comovement() -> (
+    None
+):
+    """FORCEMOT.NS's yfinance sector ("Consumer Cyclical") matches
+    loaders.SECTOR_PEERS — whose members (AMZN, TSLA, HD, NKE) are all US
+    mega-caps. That pool must never be offered as a candidate for a non-US
+    ticker just because the sector label happens to match: a real Indian
+    auto-parts maker showing "Amazon/Tesla/Home Depot/Nike" as its supply-chain
+    peers would be actively misleading, not an honest gap. Construct closes
+    where this US pool would otherwise clear MIN_COMOVEMENT easily (perfectly
+    correlated, contrived) to prove the gate — not coincidental low
+    correlation — is what excludes it."""
+    closes = {
+        "FORCEMOT.NS": _compound(2500.0),
+        "AMZN": _compound(180.0),
+        "TSLA": _compound(300.0),
+        "HD": _compound(400.0),
+        "NKE": _compound(90.0),
+    }
+    info = {"sector": "Consumer Cyclical"}
+    result = resolve_supply_chain_group(
+        "FORCEMOT.NS", info, closes_by_ticker=closes, market_caps={}, fmp_peers=[]
+    )
+    assert result is None
+
+
+def test_us_sector_pool_still_used_for_us_ticker_with_high_comovement() -> None:
+    """Sanity check: the same US sector pool must still work normally for an
+    actual US ticker with no market suffix — the gate is market-scoped, not
+    a removal of the sector-pool source."""
+    closes = {
+        "WIDGETCO": _compound(80.0),
+        "AMZN": _compound(180.0),
+        "TSLA": _compound(300.0),
+        "HD": _compound(400.0),
+        "NKE": _compound(90.0),
+    }
+    info = {"sector": "Consumer Cyclical"}
+    result = resolve_supply_chain_group(
+        "WIDGETCO", info, closes_by_ticker=closes, market_caps={}, fmp_peers=[]
+    )
+    assert result is not None
+    assert result["provenance"] == "correlation_only"
