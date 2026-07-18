@@ -237,6 +237,12 @@ CREATE TABLE IF NOT EXISTS signal_cache (
     computed_at TIMESTAMP NOT NULL,
     PRIMARY KEY (ticker, dim)
 );
+
+CREATE TABLE IF NOT EXISTS supply_chain_peers_cache (
+    ticker TEXT PRIMARY KEY,
+    peers_json TEXT NOT NULL,
+    fetched_at TIMESTAMP NOT NULL
+);
 """
 
 
