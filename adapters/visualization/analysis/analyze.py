@@ -224,12 +224,14 @@ def analyze_ticker(
     # E2: Attributed analyst panel — normalise yfinance key names before calling
     as_of = _dt.date.today().isoformat()
     try:
-        from application.analyst_panel import build_analyst_panel
+        from application.analyst_panel import get_analyst_panel_with_fallback
 
         panel_info: dict[str, object] = dict(info)
         panel_info["analyst_count"] = info.get("numberOfAnalystOpinions", 0)
         panel_info["analyst_recommendation_mean"] = info.get("recommendationMean")
-        result.analyst_panel = build_analyst_panel(panel_info, as_of)
+        result.analyst_panel = get_analyst_panel_with_fallback(
+            ticker, panel_info, as_of
+        )
     except Exception as exc:
         logger.warning("Could not build analyst panel for {}: {}", ticker, exc)
         result.analyst_panel = None

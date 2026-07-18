@@ -110,7 +110,7 @@ def fetch_card(ticker: str) -> EvidenceCard:
             fetch_prices,
             fetch_ticker_info,
         )
-        from application.analyst_panel import build_analyst_panel
+        from application.analyst_panel import get_analyst_panel_with_fallback
         from application.evidence_card import build_evidence_card
 
         raw = fetch_ticker_info(ticker)
@@ -128,7 +128,7 @@ def fetch_card(ticker: str) -> EvidenceCard:
         panel_info["analyst_recommendation_mean"] = raw.get("recommendationMean")
         # target keys are already camelCase and match build_analyst_panel directly:
         # targetMeanPrice, targetHighPrice, targetLowPrice — no remap needed
-        panel = build_analyst_panel(panel_info, "")
+        panel = get_analyst_panel_with_fallback(ticker, panel_info, "")
         # Fetch 1-year price history for closes/ATR/MA200 (lights Technicals + sparkline)
         hist = fetch_price_history(ticker) or {}
         prices: dict[str, Any] = {

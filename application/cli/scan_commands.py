@@ -13,6 +13,7 @@ from ._deps import (
     _build_dependencies,
     _buzz_scan_tickers,
     _CombinedAttention,
+    _get_company_name,
     _get_ticker_universe,
     _load_wiki_map,
 )
@@ -49,6 +50,35 @@ def _store_keyword_scores(
             )
             scored += 1
     return scored
+
+
+def _run_marketaux_scan(
+    store: Any,
+    keyword: Any,
+    deps: dict[str, Any],
+    tickers: list[str],
+    scan_time: datetime,
+    adapter: Any | None = None,
+) -> tuple[int, int]:
+    """Run the Marketaux headline scan (non-US markets) and keyword-score the
+    results. Company-name search is far more relevant than raw-symbol search
+    for non-US tickers (confirmed live 2026-07-17, see docs/STATUS.md) — each
+    ticker's alias is looked up via the market_data adapter.
+
+    Returns:
+        (headlines_found, keyword_scores_stored).
+    """
+    from adapters.data.marketaux_adapter import MarketauxAdapter
+
+    mx_adapter = adapter if adapter is not None else MarketauxAdapter()
+    alias_map = {t: name for t in tickers if (name := _get_company_name(deps, t))}
+    mx_signals = mx_adapter.scan_headline_sources(
+        scan_time, tickers=tickers, alias_map=alias_map
+    )
+    for sig in mx_signals:
+        store.save_buzz_signal(sig)
+    mx_scored = _store_keyword_scores(store, keyword, mx_signals, prefix="mx_kw")
+    return len(mx_signals), mx_scored
 
 
 def _prune_buzz_data(
@@ -161,6 +191,17 @@ def daily_scan(market: str, no_flan: bool, prune_days: int | None) -> None:
     click.echo(
         "Skipping StockTwits scan (public API locked; see stocktwits_adapter.py)"
     )
+
+    # Marketaux — non-US markets only (India confirmed live 2026-07-17). Skipped
+    # for US: Google News/Reddit already cover it and Marketaux's free tier
+    # gives no US-specific benefit.
+    if market != "us":
+        mx_tickers = _buzz_scan_tickers(tickers, limit=15)
+        click.echo(f"Running Marketaux scan ({len(mx_tickers)} tickers)...")
+        mx_found, mx_scored = _run_marketaux_scan(
+            store, keyword, deps, mx_tickers, scan_time
+        )
+        click.echo(f"  Marketaux: {mx_found} headlines, {mx_scored} keyword scores")
 
     _prune_buzz_data(store, prune_days)
 
@@ -469,9 +510,10 @@ def scan_opportunities(
 
         def _compute_event(_t: str, _now: datetime) -> float:
             # Gemini event path requires a news source adapter (not wired in bulk
-            # scan — no free keyless headline API is available here). Returns neutral
-            # so the cache stores 5.0, preserving honesty. To enable real event
-            # scoring wire an AlphaVantageNewsAdapter + GeminiEventClassifier here.
+            # scan — no free keyless headline API is available here; AlphaVantage
+            # confirmed zero verified value for this project's markets, see
+            # docs/STATUS.md — don't wire it). Returns neutral so the cache
+            # stores 5.0, preserving honesty.
             return 5.0
 
         analyst_score = signal_cache.get_or_compute(
