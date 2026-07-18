@@ -200,6 +200,7 @@ flowchart LR
         S["Sentiment<br/>GDELT, RSS"]
         A["Attention<br/>Google Trends, StockTwits"]
         F["Filings<br/>SEC EDGAR"]
+        PE["Peers<br/>Financial Modeling Prep"]
     end
     subgraph ml["adapters/ml"]
         FE["Feature engineering<br/>101 features across 5 layers"]
@@ -228,7 +229,8 @@ domain/                          # Pure business logic (stdlib only)
 
 adapters/
   data/                          # yfinance, RSS, Google Trends, StockTwits, GDELT,
-                                 #   SEC EDGAR, SQLite store
+                                 #   SEC EDGAR, Financial Modeling Prep (cross-market
+                                 #   supply-chain peers), SQLite store
   ml/                            # Feature engineers (101 features across 5 layers),
                                  #   XGBoost/LightGBM/Ridge/ensemble predictors,
                                  #   macro-beta Ridge estimator
@@ -303,7 +305,7 @@ honestly, whatever it is.
 
 For a recruiter: this project demonstrates pre-registered hypothesis testing, rigorous
 negative-result reporting, point-in-time enforcement as a code invariant, hexagonal
-architecture applied to a real data pipeline, and 3,130 tests covering domain logic,
+architecture applied to a real data pipeline, and 3,160+ tests covering domain logic,
 adapters, use cases, and integration paths. The negative findings are the portfolio
 piece — a system that falsified its own thesis honestly is more credible than one that
 never tested it.
@@ -333,7 +335,7 @@ pre-commit install
 ### Verify
 
 ```bash
-# Full suite (3,130 tests, ~23 s)
+# Full suite (3,160+ tests, ~25 s)
 pytest tests/ -q
 
 # With coverage gate (90% required)
