@@ -1,0 +1,61 @@
+name: Scheduled buzz scan (India)
+
+# India half of the buzz scan — split from scheduled-buzz-scan.yml into its
+# own workflow so it gets a fresh runner/IP rather than sharing one with the
+# US scan. Google Trends' per-IP rate limiting is cumulative: confirmed live
+# 2026-07-18 that running US then India sequentially in one job left India's
+# Google Trends step 429ing almost immediately (US alone had run 50/50
+# tickers clean moments earlier on the same IP). This isn't an India-specific
+# coverage gap — it's ordering/cumulative throttling from sharing a runner.
+# See docs/STATUS.md for the full investigation.
+#
+# India source: Marketaux (company-name search — confirmed live 2026-07-18).
+# Marketaux free tier is 100 requests/day; this run uses 15 (one per ticker,
+# bounded by _buzz_scan_tickers limit), well within quota even with manual
+# testing on top. Requires the MARKETAUX_API_KEY repo secret — separate from
+# Streamlit Cloud's own secrets store, must be added here too (`gh secret
+# set MARKETAUX_API_KEY`) or this step silently no-ops (adapter logs a
+# warning and returns [] when the key is missing, never raises).
+on:
+  schedule:
+    # 22:30 UTC, weekdays only — 30 minutes after scheduled-buzz-scan.yml's
+    # (US) 22:00 UTC run, itself 30 minutes after scheduled-screen.yml's
+    # 21:30 UTC run, so none of the three bot commits race on the same push.
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch: {}
+
+concurrency:
+  group: scheduled-buzz-scan-in
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scheduled-buzz-scan-in:
+    name: Daily buzz scan (India) + commit DB
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+      - name: Install dependencies
+        run: uv sync --extra dev --extra dashboard
+      - name: Run daily buzz scan (India)
+        env:
+          MARKETAUX_API_KEY: ${{ secrets.MARKETAUX_API_KEY }}
+        run: |
+          uv run python -m application.cli daily-scan --market in --no-flan
+      - name: Commit buzz DB
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/recommendations.db
+          git diff --cached --quiet || git commit -m "chore(data): scheduled buzz scan (India) $(date -u +%F)"
+          git push

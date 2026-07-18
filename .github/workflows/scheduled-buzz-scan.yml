@@ -7,14 +7,15 @@ name: Scheduled buzz scan
 # zero (data/recommendations.db is .gitignored and starts empty on every
 # Cloud deploy, and nothing else ever wrote to it there).
 #
-# US via RSS/Trends/News/Reddit (keyless), India via Marketaux (company-name
-# search — confirmed live 2026-07-18, see docs/STATUS.md). Marketaux free
-# tier is 100 requests/day; this run uses 15 (one per ticker, bounded by
-# _buzz_scan_tickers limit), well within quota even with manual testing on
-# top. Requires the MARKETAUX_API_KEY repo secret — separate from Streamlit
-# Cloud's own secrets store, must be added here too (`gh secret set
-# MARKETAUX_API_KEY`) or the India step silently no-ops (adapter logs a
-# warning and returns [] when the key is missing, never raises).
+# US only — RSS/Trends/News/Reddit (all keyless). India buzz (Marketaux)
+# lives in its own scheduled-buzz-scan-in.yml, deliberately split into a
+# separate workflow rather than a second step here: running both markets
+# sequentially in one job shares a single runner IP/session, and Google
+# Trends' per-IP rate limiting is cumulative — confirmed live 2026-07-18
+# that the US step (first in line) ran 50/50 tickers clean, then India
+# (second, same IP, ~3 min later) immediately started 429ing and lost most
+# of its Trends coverage. Splitting into separate workflows gives each a
+# fresh runner/IP. See docs/STATUS.md for the full investigation.
 on:
   schedule:
     # 22:00 UTC, weekdays only — 30 minutes after scheduled-screen.yml's
@@ -48,15 +49,10 @@ jobs:
       - name: Run daily buzz scan (US)
         run: |
           uv run python -m application.cli daily-scan --prune-days 35
-      - name: Run daily buzz scan (India)
-        env:
-          MARKETAUX_API_KEY: ${{ secrets.MARKETAUX_API_KEY }}
-        run: |
-          uv run python -m application.cli daily-scan --market in --no-flan
       - name: Commit buzz DB
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/recommendations.db
-          git diff --cached --quiet || git commit -m "chore(data): scheduled buzz scan $(date -u +%F)"
+          git diff --cached --quiet || git commit -m "chore(data): scheduled buzz scan (US) $(date -u +%F)"
           git push
