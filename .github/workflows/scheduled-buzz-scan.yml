@@ -7,9 +7,14 @@ name: Scheduled buzz scan
 # zero (data/recommendations.db is .gitignored and starts empty on every
 # Cloud deploy, and nothing else ever wrote to it there).
 #
-# US only for now — daily-scan's ticker universe and RSS/Trends/News/Reddit
-# discovery are built out for US mega-caps/semis. CA/India buzz coverage is
-# a deliberate fast-follow, not part of this workflow.
+# US via RSS/Trends/News/Reddit (keyless), India via Marketaux (company-name
+# search — confirmed live 2026-07-18, see docs/STATUS.md). Marketaux free
+# tier is 100 requests/day; this run uses 15 (one per ticker, bounded by
+# _buzz_scan_tickers limit), well within quota even with manual testing on
+# top. Requires the MARKETAUX_API_KEY repo secret — separate from Streamlit
+# Cloud's own secrets store, must be added here too (`gh secret set
+# MARKETAUX_API_KEY`) or the India step silently no-ops (adapter logs a
+# warning and returns [] when the key is missing, never raises).
 on:
   schedule:
     # 22:00 UTC, weekdays only — 30 minutes after scheduled-screen.yml's
@@ -43,6 +48,11 @@ jobs:
       - name: Run daily buzz scan (US)
         run: |
           uv run python -m application.cli daily-scan --prune-days 35
+      - name: Run daily buzz scan (India)
+        env:
+          MARKETAUX_API_KEY: ${{ secrets.MARKETAUX_API_KEY }}
+        run: |
+          uv run python -m application.cli daily-scan --market in --no-flan
       - name: Commit buzz DB
         run: |
           git config user.name "github-actions[bot]"
