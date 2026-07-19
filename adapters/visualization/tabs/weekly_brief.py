@@ -8,6 +8,7 @@ import shutil
 import tempfile
 import threading
 from collections.abc import Callable, Sequence
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from time import sleep as _time_sleep
@@ -59,13 +60,18 @@ from adapters.visualization.run_gate import is_processing as _gate_is_processing
 from adapters.visualization.run_gate import set_last_run_ts as _gate_set_last_run_ts
 from adapters.visualization.run_gate import set_processing as _gate_set_processing
 from application.card_loading import select_case_summarizer
+from application.case_batch import run_cases_in_batches
+from application.case_builder import build_case_context
+from application.case_cache import load_cached_case
 from application.holdings_reader import read_holdings
 from application.personal_case_facts import (
     personal_case_extra_facts,
     personal_case_news,
 )
 from application.runtime_guard import holdings_upload_enabled
+from domain.case_models import CaseContext
 from domain.discipline import Verdict
+from domain.evidence_rag import RagColor
 from domain.evidence_registry import EvidenceEntry
 from domain.evidence_registry import Verdict as EvidenceVerdict
 from domain.evidence_registry import entries_by_verdict
@@ -346,30 +352,49 @@ def _launch_case_fetcher(
     cache_path = f"{reports_dir}/home_cited_cases.json"
 
     def _worker() -> None:
+        pending_contexts: list[CaseContext] = []
+        pending_tickers: list[str] = []
+
         for ticker, h in cards:
             if ticker in cases:
                 continue
             try:
                 card = fetch_card(ticker)
-                news = personal_case_news(ticker)
-                extra_facts = personal_case_extra_facts(
-                    ticker,
-                    verdict=str(h.get("verdict", "")),
-                    why=str(h.get("why", "")),
-                )
-                result = get_case_on_expand(
-                    ticker,
-                    card,
-                    news=news,
-                    expanded=True,
-                    summarizer=summarizer,
-                    extra_facts=extra_facts,
-                    cache_path=cache_path,
-                )
-                cases[ticker] = result
+                cached = load_cached_case(cache_path, ticker)
+                if cached is not None:
+                    cases[ticker] = cached
+                else:
+                    news = personal_case_news(ticker)
+                    extra_facts = personal_case_extra_facts(
+                        ticker,
+                        verdict=str(h.get("verdict", "")),
+                        why=str(h.get("why", "")),
+                    )
+                    sigs = tuple(
+                        s
+                        for s in getattr(card, "signals", ())
+                        if s.color is not RagColor.GAP
+                    )
+                    ctx = build_case_context(ticker, sigs, news)
+                    if extra_facts:
+                        ctx = replace(ctx, facts=ctx.facts + extra_facts)
+                    pending_contexts.append(ctx)
+                    pending_tickers.append(ticker)
             except Exception:  # noqa: BLE001
                 cases[ticker] = None  # mark attempted; expander shows honest "—"
+            # yfinance pacing (fetch_card above) — unrelated to the Gemini
+            # batching below, kept as-is: this protects against a separate,
+            # already-diagnosed Yahoo burst rate-limit.
             _SLEEP(_CASE_FETCH_PACE_S)
+
+        if pending_contexts:
+            try:
+                results = run_cases_in_batches(pending_contexts, summarizer)  # type: ignore[arg-type]
+                for ticker, result in zip(pending_tickers, results, strict=True):
+                    cases[ticker] = result
+            except Exception:  # noqa: BLE001
+                for ticker in pending_tickers:
+                    cases[ticker] = None
 
     threading.Thread(target=_worker, daemon=True).start()
 

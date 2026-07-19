@@ -1973,28 +1973,72 @@ def _needs_review_holdings() -> list[dict[str, object]]:
     ]
 
 
-def test_launch_case_fetcher_threads_real_news_and_extra_facts(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    """The background worker must fetch real news + verdict/why/buzz facts,
-    not the old news=[] gap — mirrors the fix already landed for Screener and
-    Stock Analysis this session."""
+def test_launch_case_fetcher_batches_gemini_calls_not_one_per_ticker(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    """Regression test for the sequential-Gemini-calls perf bug: with N
+    cache-miss tickers, the fetcher must call summarizer.summarize_cases()
+    ONCE (or ceil(N/15) times for a large N), never summarizer.summarize_case()
+    per ticker."""
     from adapters.visualization.tabs import weekly_brief as wb
 
     monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
+    monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [])
+    monkeypatch.setattr(
+        wb, "personal_case_extra_facts", lambda ticker, *, verdict, why: ()
+    )
 
-    calls: list[dict[str, object]] = []
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
 
-    def _fake_get_case_on_expand(ticker, card, news, *, expanded, summarizer, extra_facts=(), cache_path=None):  # type: ignore[no-untyped-def]
-        calls.append(
-            {
-                "ticker": ticker,
-                "news": news,
-                "extra_facts": extra_facts,
-            }
-        )
-        return object()
+        def start(self) -> None:
+            self._target()
 
-    monkeypatch.setattr(wb, "get_case_on_expand", _fake_get_case_on_expand)
-    monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [f"news-for-{ticker}"])
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+    monkeypatch.setattr(wb, "_SLEEP", lambda s: None)
+
+    from domain.case_models import CaseResult
+
+    batch_calls: list[int] = []
+
+    class _FakeSummarizer:
+        def summarize_case(self, ctx):  # type: ignore[no-untyped-def]
+            raise AssertionError("must not call summarize_case per-ticker anymore")
+
+        def summarize_cases(self, contexts):  # type: ignore[no-untyped-def]
+            batch_calls.append(len(contexts))
+            return {ctx.ticker: CaseResult((), (), True) for ctx in contexts}
+
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+    cases: dict[str, object] = {}
+    wb._launch_case_fetcher(
+        cards, summarizer=_FakeSummarizer(), cases=cases, reports_dir=str(tmp_path)
+    )
+
+    assert batch_calls, "expected summarize_cases() to be called at least once"
+    assert set(cases) == {t for t, _ in cards}
+
+
+def test_launch_case_fetcher_threads_real_news_and_extra_facts(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    """The background worker must fetch real news + verdict/why/buzz facts,
+    not the old news=[] gap — mirrors the fix already landed for Screener and
+    Stock Analysis this session. Post-batching, this is verified via the
+    CaseContext objects passed into summarize_cases()."""
+    from adapters.visualization.tabs import weekly_brief as wb
+    from application.news_context import NewsItem
+    from domain.case_models import CaseResult
+
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
+    monkeypatch.setattr(
+        wb,
+        "personal_case_news",
+        lambda ticker: [
+            NewsItem(source="t", title=f"news-for-{ticker}", date="2026-01-01")
+        ],
+    )
     monkeypatch.setattr(
         wb,
         "personal_case_extra_facts",
@@ -2009,42 +2053,49 @@ def test_launch_case_fetcher_threads_real_news_and_extra_facts(monkeypatch) -> N
             self._target()
 
     monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+    monkeypatch.setattr(wb, "_SLEEP", lambda s: None)
+
+    batched_contexts: list[object] = []
+
+    class _FakeSummarizer:
+        def summarize_case(self, ctx):  # type: ignore[no-untyped-def]
+            raise AssertionError("must not call summarize_case per-ticker anymore")
+
+        def summarize_cases(self, contexts):  # type: ignore[no-untyped-def]
+            batched_contexts.extend(contexts)
+            return {ctx.ticker: CaseResult((), (), True) for ctx in contexts}
 
     cards = [(h["ticker"], h) for h in _needs_review_holdings()]
     cases: dict[str, object] = {}
     wb._launch_case_fetcher(
-        cards, summarizer=object(), cases=cases, reports_dir="data/reports/sample"
+        cards,
+        summarizer=_FakeSummarizer(),
+        cases=cases,
+        reports_dir=str(tmp_path),
     )
 
-    assert {c["ticker"] for c in calls} == {"AAA", "BBB"}
-    aaa = next(c for c in calls if c["ticker"] == "AAA")
-    assert aaa["news"] == ["news-for-AAA"]
-    assert aaa["extra_facts"] == ("Verdict: TRIM. x",)
+    assert {ctx.ticker for ctx in batched_contexts} == {"AAA", "BBB"}
+    aaa = next(ctx for ctx in batched_contexts if ctx.ticker == "AAA")
+    assert aaa.news == (("t", "news-for-AAA"),)
+    assert "Verdict: TRIM. x" in aaa.facts
     assert set(cases) == {"AAA", "BBB"}
 
 
-def test_launch_case_fetcher_threads_reports_dir_into_cache_path(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    """The background worker must pass a {reports_dir}-scoped cache_path to
-    get_case_on_expand, not the hardcoded data/personal/cited_cases.json —
-    that path is gitignored and never exists on a fresh Cloud clone, so every
+def test_launch_case_fetcher_threads_reports_dir_into_cache_path(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    """The background worker must check a {reports_dir}-scoped cache path via
+    load_cached_case, not the hardcoded data/personal/cited_cases.json — that
+    path is gitignored and never exists on a fresh Cloud clone, so every
     visitor was silently firing live, uncached Gemini calls on Home tab load."""
     from adapters.visualization.tabs import weekly_brief as wb
+    from domain.case_models import CaseResult
 
     monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
     monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [])
     monkeypatch.setattr(
         wb, "personal_case_extra_facts", lambda ticker, *, verdict, why: ()
     )
-
-    calls: list[dict[str, object]] = []
-
-    def _fake_get_case_on_expand(
-        ticker, card, news, *, expanded, summarizer, extra_facts=(), cache_path=None
-    ):  # type: ignore[no-untyped-def]
-        calls.append({"ticker": ticker, "cache_path": cache_path})
-        return object()
-
-    monkeypatch.setattr(wb, "get_case_on_expand", _fake_get_case_on_expand)
 
     class _SyncThread:
         def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
@@ -2054,16 +2105,34 @@ def test_launch_case_fetcher_threads_reports_dir_into_cache_path(monkeypatch) ->
             self._target()
 
     monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+    monkeypatch.setattr(wb, "_SLEEP", lambda s: None)
+
+    load_calls: list[str] = []
+    real_load_cached_case = wb.load_cached_case
+
+    def _spy_load_cached_case(path, ticker):  # type: ignore[no-untyped-def]
+        load_calls.append(path)
+        return real_load_cached_case(path, ticker)
+
+    monkeypatch.setattr(wb, "load_cached_case", _spy_load_cached_case)
+
+    class _FakeSummarizer:
+        def summarize_case(self, ctx):  # type: ignore[no-untyped-def]
+            raise AssertionError("must not call summarize_case per-ticker anymore")
+
+        def summarize_cases(self, contexts):  # type: ignore[no-untyped-def]
+            return {ctx.ticker: CaseResult((), (), True) for ctx in contexts}
 
     cards = [(h["ticker"], h) for h in _needs_review_holdings()]
     wb._launch_case_fetcher(
-        cards, summarizer=object(), cases={}, reports_dir="data/reports/sample"
+        cards,
+        summarizer=_FakeSummarizer(),
+        cases={},
+        reports_dir=str(tmp_path),
     )
 
-    assert calls
-    assert all(
-        c["cache_path"] == "data/reports/sample/home_cited_cases.json" for c in calls
-    )
+    assert load_calls
+    assert all(c == f"{tmp_path}/home_cited_cases.json" for c in load_calls)
 
 
 def test_launch_case_fetcher_paces_yfinance_calls(monkeypatch) -> None:  # type: ignore[no-untyped-def]
