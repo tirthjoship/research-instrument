@@ -15,7 +15,11 @@ from adapters.visualization.components.currency import (
 )
 from adapters.visualization.components.verdicts import outcome_tracker_verdict
 from adapters.visualization.data_loader import load_watchlist
-from adapters.visualization.price_cache import batch_fetch_prices, fetch_ticker_info
+from adapters.visualization.price_cache import (
+    batch_fetch_prices,
+    fetch_price_history,
+    fetch_ticker_info,
+)
 
 DB_PATH = "data/recommendations.db"
 
@@ -253,11 +257,19 @@ def render(db_path: str = DB_PATH) -> None:
         key="pf_window",
         label_visibility="collapsed",
     )
-    port_series, spy_series, labels = _perf_series(rows, win, spy_end, pnl_pct)
-    st.plotly_chart(
-        build_perf_figure(port_pct=port_series, spy_pct=spy_series, labels=labels),
-        use_container_width=True,
-    )
+    port_series, spy_series, labels = _perf_series(rows, win)
+    if port_series and spy_series:
+        st.caption(
+            "Constant-weight backtest: today's holdings and weights, priced "
+            "historically — not your literal trade-by-trade timeline (purchase "
+            "dates aren't in the uploaded holdings file)."
+        )
+        st.plotly_chart(
+            build_perf_figure(port_pct=port_series, spy_pct=spy_series, labels=labels),
+            use_container_width=True,
+        )
+    else:
+        st.info("Not enough price history to show a portfolio-vs-SPY chart yet.")
 
     st.markdown('<div class="ri-sec">Manage</div>', unsafe_allow_html=True)
     with st.expander("Watchlist", expanded=False):
@@ -269,21 +281,65 @@ def render(db_path: str = DB_PATH) -> None:
 def _perf_series(
     rows: list[Any],
     window: str,
-    spy_end: float | None,
-    pnl_pct: float,
 ) -> tuple[list[float], list[float], list[str]]:
-    """Simple attributed cumulative-return series per window (v1 linear ramp)."""
-    labels_map: dict[str, list[str]] = {
-        "ytd": ["Jan", "Mar", "Jun"],
-        "all": ["Mar", "Apr", "Jun"],
-        "1y": ["Jun '25", "Dec", "Jun '26"],
-    }
-    labels = labels_map.get(window, ["Mar", "Apr", "Jun"])
-    n = len(labels)
-    port = [round(pnl_pct * i / (n - 1), 2) for i in range(n)]
-    end = spy_end if spy_end is not None else 0.0
-    spy = [round(end * i / (n - 1), 2) for i in range(n)]
-    return port, spy, labels
+    """Constant-weight backtest: real historical closes for each currently-held
+    ticker, weighted by TODAY's portfolio weight, held flat over the window, vs
+    real SPY closes over the same dates.
+
+    This is NOT your literal trade-by-trade history — the uploaded holdings CSV
+    carries no per-lot purchase date (confirmed: no date column exists in the
+    broker export format this project reads), so there's no way to know when
+    each position was actually entered. Rather than fabricate one (the previous
+    "v1 linear ramp" this replaces did exactly that), this uses real prices at
+    today's actual allocation, which is real data honestly simplified — the UI
+    caller must caption this distinction, not just this function.
+
+    Degrades to ([], [], []) if no held ticker has price history (never crashes,
+    never shows a chart built on zero real data points).
+    """
+    _WINDOW_DAYS = {"ytd": 180, "all": 365, "1y": 252}
+    max_days = _WINDOW_DAYS.get(window, 365)
+
+    spy_hist = fetch_price_history("SPY")
+    spy_closes: list[float] = (spy_hist or {}).get("closes") or []
+    spy_dates: list[str] = (spy_hist or {}).get("dates") or []
+    if not spy_closes:
+        return [], [], []
+
+    per_ticker: list[tuple[float, list[float]]] = []  # (weight, closes)
+    total_weight = 0.0
+    for r in rows:
+        hist = fetch_price_history(r.ticker)
+        closes = (hist or {}).get("closes") or []
+        if not closes:
+            continue
+        per_ticker.append((r.weight, closes))
+        total_weight += r.weight
+
+    if not per_ticker or total_weight <= 0:
+        return [], [], []
+
+    n = min([len(spy_closes)] + [len(c) for _, c in per_ticker] + [max_days])
+    if n < 2:
+        return [], [], []
+
+    spy_window = spy_closes[-n:]
+    labels = spy_dates[-n:] if len(spy_dates) >= n else [str(i) for i in range(n)]
+    spy_base = spy_window[0]
+    spy_series = [round((c - spy_base) / spy_base * 100.0, 2) for c in spy_window]
+
+    port_series: list[float] = [0.0] * n
+    for weight, closes in per_ticker:
+        w = weight / total_weight
+        window_closes = closes[-n:]
+        base = window_closes[0]
+        if base == 0:
+            continue
+        for i, c in enumerate(window_closes):
+            port_series[i] += w * (c - base) / base * 100.0
+    port_series = [round(v, 2) for v in port_series]
+
+    return port_series, spy_series, labels
 
 
 def _render_empty_state() -> None:
