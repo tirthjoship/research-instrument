@@ -47,7 +47,16 @@ def _resolve_book() -> tuple[list[Any], str, str]:
 
 def render(db_path: str = DB_PATH) -> None:
     """Render the My Portfolio tab (redesigned: hero / review / treemap / table / spy)."""
-    from adapters.visualization.components.portfolio_detail import render_inspect_detail
+    from adapters.visualization.components.decision_card import (
+        render_verdict_rubric_block,
+    )
+    from adapters.visualization.components.expandable_row import render_toggle_row
+    from adapters.visualization.components.portfolio_detail import (
+        PORTFOLIO_INSPECT_PICKER_KEY,
+        PORTFOLIO_INSPECT_STATE_KEY,
+        render_inspect_body,
+        render_inspect_detail,
+    )
     from adapters.visualization.components.portfolio_metrics import build_hero_html
     from adapters.visualization.components.portfolio_performance import (
         alpha_vs_spy,
@@ -133,7 +142,15 @@ def render(db_path: str = DB_PATH) -> None:
     )
     if flagged:
         for r in flagged:
-            st.markdown(build_review_card_html(r), unsafe_allow_html=True)
+            row_html = build_review_card_html(r)
+
+            def _detail(r: Any = r) -> None:
+                render_inspect_body(r, reports_dir)
+
+            render_toggle_row(
+                row_html=row_html, session_key=f"pf_nr_open_{r.ticker}", detail=_detail
+            )
+        st.markdown(render_verdict_rubric_block(), unsafe_allow_html=True)
     else:
         st.markdown(build_calm_html(), unsafe_allow_html=True)
 
@@ -154,7 +171,19 @@ def render(db_path: str = DB_PATH) -> None:
         unsafe_allow_html=True,
     )
 
-    inspect = st.query_params.get("inspect")
+    ticker_options = ["— none —"] + sorted(r.ticker for r in rows)
+    current = st.session_state.get(PORTFOLIO_INSPECT_STATE_KEY)
+    picked = st.selectbox(
+        "Inspect a holding",
+        ticker_options,
+        index=ticker_options.index(current) if current in ticker_options else 0,
+        key=PORTFOLIO_INSPECT_PICKER_KEY,
+    )
+    st.session_state[PORTFOLIO_INSPECT_STATE_KEY] = (
+        picked if picked != "— none —" else None
+    )
+
+    inspect = st.session_state.get(PORTFOLIO_INSPECT_STATE_KEY)
     if inspect:
         match = next((r for r in rows if r.ticker == inspect), None)
         if match:
