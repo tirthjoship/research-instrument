@@ -38,6 +38,7 @@ from adapters.visualization.components.evidence_chip import (
     render_evidence_chip,
     render_evidence_chip_by_key,
 )
+from adapters.visualization.components.expandable_row import render_toggle_row
 from adapters.visualization.components.formatters import status_pill_html
 from adapters.visualization.components.onboarding import render_sample_banner_html
 from adapters.visualization.components.proof_tile import render_tile
@@ -376,7 +377,7 @@ def _render_one_holding(
     summarizer: object,
     cached_case: object = _CASE_PENDING,
 ) -> None:
-    """Render one holding row: collapsed row + expander with expanded card.
+    """Render one holding as a merged row + chevron toggle with expanded card.
 
     This is the inner implementation.  Production callers must use
     ``_render_one_holding_fragment`` (the ``st.fragment``-wrapped version) so
@@ -406,17 +407,15 @@ def _render_one_holding(
     cost = implied_cost(live_price, unrealized_f)
     rets = window_returns(closes)
 
-    st.markdown(
-        render_collapsed_row(
-            card,
-            verdict=verdict,
-            name=ticker,
-            unrealized_pct=unrealized_f,
-            oneliner=oneliner,
-        ),
-        unsafe_allow_html=True,
+    row_html = render_collapsed_row(
+        card,
+        verdict=verdict,
+        name=ticker,
+        unrealized_pct=unrealized_f,
+        oneliner=oneliner,
     )
-    with st.expander(f"{ticker} — {verdict.value} (expand for full evidence)"):
+
+    def _detail() -> None:
         if cached_case is _CASE_PENDING:
             # Background thread not yet done for this ticker — show placeholder
             st.caption(
@@ -441,6 +440,10 @@ def _render_one_holding(
                 ),
                 unsafe_allow_html=True,
             )
+
+    render_toggle_row(
+        row_html=row_html, session_key=f"nr_open_{ticker}", detail=_detail
+    )
 
 
 # Fragment-wrapped version for production use (each row independent render cycle).

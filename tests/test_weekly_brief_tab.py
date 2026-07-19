@@ -979,6 +979,10 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
     # (case=None → data_gap placeholder, but price/returns still wired from fetched data)
     st.session_state[wb._HOME_CASES_KEY] = {"YUMC": None}
     st.session_state[wb._HOME_FETCH_STARTED_KEY] = True
+    # The row is now a merged row + chevron toggle (render_toggle_row) instead
+    # of a separate st.expander — open it via its session_state key so the
+    # detail callback (which contains the price/returns HTML) actually runs.
+    st.session_state["nr_open_YUMC"] = True
 
     with (
         patch.object(
@@ -986,7 +990,6 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
         ),
         patch.object(st, "download_button"),
         patch.object(st, "caption"),
-        patch.object(st, "expander"),
         patch.object(st, "divider"),
         # _handle_onboarding now uses 2-column layout (_render_book_actions)
         patch.object(
@@ -1051,12 +1054,17 @@ def test_one_holding_data_gap_case_shows_honest_no_evidence_not_pending() -> Non
         "why": "pulled back below trend",
     }
 
+    # The row is now a merged row + chevron toggle (render_toggle_row) instead
+    # of a separate st.expander — open it via its session_state key so the
+    # detail callback (which contains the "no evidence" HTML) actually runs.
+    st.session_state.clear()
+    st.session_state["nr_open_YUMC"] = True
+
     captured: list[str] = []
     with (
         patch.object(
             st, "markdown", side_effect=lambda c, **k: captured.append(str(c))
         ),
-        patch.object(st, "expander") as mock_expander,
         patch.object(st, "caption"),
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch(
@@ -1068,8 +1076,6 @@ def test_one_holding_data_gap_case_shows_honest_no_evidence_not_pending() -> Non
             return_value={"closes": [], "atr": None, "ma200": None},
         ),
     ):
-        mock_expander.return_value.__enter__ = MagicMock(return_value=MagicMock())
-        mock_expander.return_value.__exit__ = MagicMock(return_value=False)
         wb._render_one_holding("YUMC", holding, MagicMock(), CaseResult((), (), True))
 
     html = "\n".join(captured)
@@ -2227,3 +2233,72 @@ def test_needs_review_never_renders_fetch_or_refresh_button(monkeypatch) -> None
     wb._render_needs_review(holdings, "data/reports/sample")
 
     assert button_calls == []
+
+
+def _fake_evidence_card(ticker: str):  # type: ignore[no-untyped-def]
+    from application.evidence_card import EvidenceCard
+    from domain.evidence_rag import RagColor, RagSignal
+
+    return EvidenceCard(
+        ticker=ticker,
+        signals=(RagSignal("Technicals", RagColor.GREEN, "ok"),),
+        sparkline=(),
+    )
+
+
+def test_needs_review_row_has_no_separate_expander_label(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """The old 'TICKER — VERDICT (expand for full evidence)' st.expander label
+    must be gone — the row itself is now the only click target."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: _fake_evidence_card(ticker))
+    monkeypatch.setattr(
+        wb, "fetch_price_history", lambda ticker: {"closes": []}, raising=False
+    )
+
+    # Render captures markdown calls to inspect emitted HTML.
+    seen: list[str] = []
+    orig_markdown = st.markdown
+
+    def _capture(body, *a, **k):  # type: ignore[no-untyped-def]
+        if isinstance(body, str):
+            seen.append(body)
+        return orig_markdown(body, *a, **k)
+
+    monkeypatch.setattr(st, "markdown", _capture)
+    h = {"ticker": "AAPL", "verdict": "TRIM", "unrealized_pct": 18.4, "why": "test"}
+    wb._render_one_holding("AAPL", h, summarizer=object(), cached_case=None)
+
+    assert not any("expand for full evidence" in s for s in seen)
+
+
+def test_needs_review_row_expands_in_place_when_toggled(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Setting the row's session_state toggle True must render its evidence
+    detail on the same pass, without a second click."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    st.session_state["nr_open_AAPL"] = True
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: _fake_evidence_card(ticker))
+    monkeypatch.setattr(
+        wb, "fetch_price_history", lambda ticker: {"closes": []}, raising=False
+    )
+
+    seen: list[str] = []
+    orig_markdown = st.markdown
+
+    def _capture(body, *a, **k):  # type: ignore[no-untyped-def]
+        if isinstance(body, str):
+            seen.append(body)
+        return orig_markdown(body, *a, **k)
+
+    monkeypatch.setattr(st, "markdown", _capture)
+    h = {"ticker": "AAPL", "verdict": "TRIM", "unrealized_pct": 18.4, "why": "test"}
+    wb._render_one_holding("AAPL", h, summarizer=object(), cached_case=None)
+
+    assert any("dc-case" in s or "Evidence detail" in s for s in seen)
