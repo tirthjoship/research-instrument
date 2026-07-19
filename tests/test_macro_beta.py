@@ -273,7 +273,7 @@ def test_brief_renders_macro_section():
         macro=macro,
     )
     md = to_markdown(brief)
-    assert "MACRO EXPOSURE" in md
+    assert "## Macro Exposure" in md
     assert "72%" in md
     assert "NVDA" in md
 
@@ -332,7 +332,7 @@ def test_brief_macro_none_renders_safely():
         screen_label=ScreenLabel.RESEARCH_ONLY,
     )
     md = to_markdown(brief)
-    assert "MACRO EXPOSURE" in md
+    assert "## Macro Exposure" in md
     assert "not computed" in md
 
 

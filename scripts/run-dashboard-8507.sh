@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VENV="/Users/tirthjoshi/My Data Science Projects/.venv"
+VENV="${ROOT}/.venv"
 PORT=8507
 LOG="/tmp/stockrec-${PORT}.log"
 

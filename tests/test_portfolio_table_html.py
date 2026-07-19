@@ -13,11 +13,20 @@ def _r(tk, w, pnl, yld, beta):
     )
 
 
-def test_lean_has_core_columns_and_anchor():
+def test_lean_has_core_columns_and_ticker():
     html = build_table_html([_r("AAA", 9.4, 19.1, 0.7, 1.1)], TableState())
-    assert 'href="?inspect=AAA"' in html
+    assert "AAA" in html
     assert "Weight" in html and "Value" in html and "Verdict" in html
     assert "Beta" not in html  # hidden by default
+
+
+def test_table_rows_are_display_only_no_navigation():
+    """Regression: ticker cells used to be <a href="?inspect=..."> anchors —
+    a real browser-navigation click on Streamlit Cloud wiped session state
+    (see portfolio_detail.py module docstring). Rows must never link."""
+    html = build_table_html([_r("AAA", 9.4, 19.1, 0.7, 1.1)], TableState())
+    assert "<a " not in html
+    assert "href=" not in html
 
 
 def test_more_columns_reveals_yield_beta_cost():

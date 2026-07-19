@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 from domain.corroboration_models import ConvergenceTier, DirectionalView, Stance
-from domain.discipline import Verdict
+from domain.discipline import Verdict, verdict_rubric_lines
 from domain.models import BookMacroExposure, PortfolioRisk, PositionRisk
 from domain.regime import Regime
 from domain.screen_models import ScreenCandidate, ScreenLabel, ScreenResult
@@ -106,6 +106,8 @@ _VERDICT_ORDER: dict[Verdict, int] = {
     Verdict.HOLD: 3,
     Verdict.ADD_OK: 4,
 }
+
+_NEEDS_REVIEW_VERDICTS = {Verdict.REDUCE, Verdict.TRIM, Verdict.REVIEW}
 
 
 def _factor_summary(cand: ScreenCandidate) -> str:
@@ -273,22 +275,48 @@ def to_markdown(brief: WeeklyBrief) -> str:
         held = "  ⚠ already held" if c.already_held else ""
         lines.append(f"- **{c.ticker}**  {c.factor_summary}  — {c.why}{held}")
     lines.append("")
-    lines.append("## HOLDINGS VERDICTS")
-    for h in brief.holdings:
-        base = (
-            f"- **{h.ticker}**  {h.unrealized_pct:+.0%}  {h.trend_state}  "
-            f"**{h.verdict.value}** — {h.why}"
+
+    def _holding_table(rows: tuple[HoldingVerdictLine, ...], header_note: str) -> None:
+        lines.append(f"_{header_note}_")
+        lines.append("")
+        lines.append("| Ticker | Verdict | P&L | Why |")
+        lines.append("|---|---|---|---|")
+        for h in rows:
+            why = h.why
+            if (
+                h.convergence_tier is not None
+                and h.n_sources is not None
+                and h.source_stance is not None
+            ):
+                src = f" (sources: {h.source_stance.value.upper()} ×{h.n_sources} [{h.convergence_tier.value.upper()}]"
+                src += " ⚠ CONFLICT)" if _is_corroboration_conflict(h) else ")"
+                why = why + src
+            lines.append(
+                f"| {h.ticker} | {h.verdict.value} | {h.unrealized_pct:+.0%} | {why} |"
+            )
+        lines.append("")
+
+    needs_review = tuple(
+        h for h in brief.holdings if h.verdict in _NEEDS_REVIEW_VERDICTS
+    )
+    holding_steady = tuple(
+        h for h in brief.holdings if h.verdict not in _NEEDS_REVIEW_VERDICTS
+    )
+    lines.append("## Needs Review")
+    if needs_review:
+        _holding_table(
+            needs_review,
+            "A rule fired on these — a prompt to look, not an instruction to sell.",
         )
-        if (
-            h.convergence_tier is not None
-            and h.n_sources is not None
-            and h.source_stance is not None
-        ):
-            src_line = f"│ sources: {h.source_stance.value.upper()} ×{h.n_sources} [{h.convergence_tier.value.upper()}]"
-            if _is_corroboration_conflict(h):
-                src_line += " ⚠ CONFLICT"
-            base = base + "  " + src_line
-        lines.append(base)
+    else:
+        lines.append("_(nothing flagged this week)_")
+        lines.append("")
+    lines.append("## Holding Steady")
+    if holding_steady:
+        _holding_table(holding_steady, "No rule fired — within discipline.")
+    else:
+        lines.append("_(no unflagged holdings)_")
+        lines.append("")
     if brief.directional_views:
         lines.append("")
         lines.append("## Directional Tilts (RESEARCH_ONLY)")
@@ -315,61 +343,89 @@ def to_markdown(brief: WeeklyBrief) -> str:
     for f in brief.concentration:
         lines.append(f"- {f.descriptor}")
     lines.append("")
-    lines.append("## MACRO EXPOSURE")
+    lines.append("## Macro Exposure")
+    lines.append(
+        "_How much of your book's movement is explained by broad market "
+        "factors vs. stock-specific bets._"
+    )
+    lines.append("")
     m = brief.macro
     if m is None:
         lines.append("_(macro-beta not computed)_")
     else:
+        lines.append("| Metric | Value |")
+        lines.append("|---|---|")
         lines.append(
-            f"- systematic share: **{m.systematic_share:.0%}** of book variance is "
-            f"macro-explained (idiosyncratic {m.idiosyncratic_share:.0%})"
+            f"| Systematic share (macro-explained) | **{m.systematic_share:.0%}** "
+            f"(idiosyncratic {m.idiosyncratic_share:.0%}) |"
         )
         if m.dominant_factor is not None:
-            lines.append(f"- dominant factor: **{m.dominant_factor}**")
+            lines.append(f"| Dominant factor | {m.dominant_factor} |")
         nb = " · ".join(f"{f} {m.net_beta_by_factor[f]:+.2f}" for f in m.factors)
-        lines.append(f"- net book beta: {nb}")
+        lines.append(f"| Net book beta | {nb} |")
         lines.append(
-            f"- coverage: {m.coverage_holdings}/{m.total_holdings} holdings "
-            f"= {m.coverage_value_frac:.0%} of book value"
+            f"| Coverage | {m.coverage_holdings}/{m.total_holdings} holdings "
+            f"= {m.coverage_value_frac:.0%} of book value |"
         )
+        lines.append("")
         for fl in m.flags:
             lines.append(f"- ⚠ {fl.message}")
         for mh in m.holdings:
             hb = " · ".join(f"{b.factor} {b.beta_headline:+.2f}" for b in mh.betas)
             lines.append(
-                f"  - {mh.ticker} (w {mh.weight:.0%}): {hb}  R²={mh.r_squared:.2f}"
+                f"- {mh.ticker} (w {mh.weight:.0%}): {hb}  R²={mh.r_squared:.2f}"
             )
         lines.append(
             "_(thresholds are heuristic surfacing dials, not validated edges)_"
         )
     lines.append("")
-    lines.append("## SCORECARD")
+    lines.append("## Scorecard")
+    lines.append(
+        "_How the discipline rules have performed historically, measured "
+        "forward — not backfit._"
+    )
+    lines.append("")
     sc = brief.scorecard
-    # Distinguish "no calls yet" from "calls tracked but returns not yet resolved"
-    # (records can exist before any forward window closes — top_ret/spy_ret float|None).
+    lines.append("| Rule | Window | Result |")
+    lines.append("|---|---|---|")
     if sc.screen_n == 0:
-        lines.append(
-            f"- screen ({sc.screen_window}): n=0 — abstaining, no calls tracked yet"
-        )
+        screen_result = "n=0 — abstaining, no calls tracked yet"
     elif sc.screen_top_ret is None or sc.screen_spy_ret is None:
-        lines.append(
-            f"- screen ({sc.screen_window}): n={sc.screen_n} calls tracked — "
-            f"returns not yet resolved"
-        )
+        screen_result = f"n={sc.screen_n} calls tracked — returns not yet resolved"
     else:
         sig = "significant" if sc.screen_significant else "not significant"
-        lines.append(
-            f"- screen ({sc.screen_window}): top-10 {sc.screen_top_ret:+.2%} vs "
-            f"SPY {sc.screen_spy_ret:+.2%} (n={sc.screen_n}, {sig})"
+        screen_result = (
+            f"top-10 {sc.screen_top_ret:+.2%} vs SPY {sc.screen_spy_ret:+.2%} "
+            f"(n={sc.screen_n}, {sig})"
         )
+    lines.append(f"| Screen | {sc.screen_window} | {screen_result} |")
     dr = (
         "n/a"
         if sc.discipline_reduce_down_rate is None
         else f"{sc.discipline_reduce_down_rate:.0%}"
     )
     lines.append(
-        f"- discipline ({sc.discipline_window}): REDUCE down-rate {dr} "
-        f"(n={sc.discipline_n}) — forward gate {sc.discipline_gate_status}"
+        f"| Discipline (REDUCE down-rate) | {sc.discipline_window} | {dr} "
+        f"(n={sc.discipline_n}) — forward gate {sc.discipline_gate_status} |"
+    )
+    lines.append("")
+    lines.append("## How Verdicts Are Decided")
+    lines.append(
+        "_This system runs one rule today (trend-break, v1). It's a review "
+        'prompt, not a forecast — a rule firing means "look at this," never '
+        '"do this." The rule improves only by measured experiment, and a new '
+        "version is adopted only when it beats v1 on real forward outcomes._"
+    )
+    lines.append("")
+    for label, text in verdict_rubric_lines():
+        lines.append(f"**{label}** — {text}")
+        lines.append("")
+    lines.append(
+        "_Considers: trend (ATR vs. 200-day) · trailing stop · disposition · "
+        "volatility · relative strength · market context. Reliability is "
+        "measured forward against real outcomes — see the Trust tab in the "
+        "dashboard, never taken from the AI-generated case text. Research "
+        "only, not a trade signal._"
     )
     return "\n".join(lines)
 

@@ -177,3 +177,47 @@ def test_case_gap_message_does_not_claim_still_pending() -> None:
     )
     assert "loads when you open this card" not in html.lower()
     assert "informs you, not the verdict" in html  # case badge still present
+
+
+# ---------------------------------------------------------------------------
+# Rubric extraction: full 5-row rubric moves out of every per-ticker card into
+# a once-per-tab block (render_verdict_rubric_block), leaving only a pointer.
+# ---------------------------------------------------------------------------
+
+
+def test_render_verdict_rubric_block_lists_all_five_verdicts() -> None:
+    from adapters.visualization.components.decision_card import (
+        render_verdict_rubric_block,
+    )
+
+    html = render_verdict_rubric_block()
+    for label in ("REVIEW", "TRIM", "REDUCE", "ADD_OK", "HOLD"):
+        assert label in html
+    assert (
+        "How Verdicts Are Decided" in html or "how verdicts are decided" in html.lower()
+    )
+
+
+def test_expanded_card_no_longer_repeats_full_rubric() -> None:
+    """render_expanded_card must NOT embed the 5-row rubric table anymore —
+    that content moved to render_verdict_rubric_block(), shown once per tab,
+    not once per ticker."""
+    html = render_expanded_card(
+        _card(),
+        case=None,
+        **_base_kwargs(),
+    )
+    assert "How this verdict was decided" not in html
+    assert "considers: trend (atr vs 200-day)" not in html.lower()
+
+
+def test_expanded_card_has_one_line_rubric_pointer() -> None:
+    """In place of the full rubric, the card shows a short pointer naming the
+    fired verdict and directing the reader to the once-shown rubric block."""
+    html = render_expanded_card(
+        _card(),
+        case=None,
+        **_base_kwargs(),
+    )
+    assert "TRIM" in html
+    assert "how verdicts are decided" in html.lower()

@@ -1,7 +1,10 @@
 """Needs-review collapsed cards for the portfolio tab.
 
-Each card is an inspect-anchor; clicking sets ?inspect=TICKER and the tab
-renders the shared detail panel (reusing decision_card.render_expanded_card).
+Each card is a display-only summary; positions.py renders a real st.button
+right after it to open the shared detail panel via
+portfolio_detail.PORTFOLIO_INSPECT_STATE_KEY. (A raw HTML anchor's
+?inspect=TICKER click used to drive this directly, but caused real browser
+navigations on Streamlit Cloud, wiping session state.)
 """
 
 from __future__ import annotations
@@ -22,17 +25,8 @@ def build_review_card_html(row: PortfolioRow) -> str:
     pnl_color = "#16A34A" if row.pnl >= 0 else "#DC2626"
     sign = "+" if row.pnl >= 0 else ""
     why = row.why or "Discipline rule fired — review."
-    # The outer element must be a block-level tag (div) — CommonMark only
-    # recognizes a fixed set of block-starting tags for raw-HTML passthrough,
-    # and <a> isn't one of them. Opening the string with <a> made Streamlit's
-    # markdown renderer fragment the card into a stray empty anchor plus one
-    # duplicated <a> per inner <div> (each independently picking up the
-    # .pf-review border). Nesting the <a> inside a <div> keeps the whole card
-    # as a single raw-HTML block.
     return (
         f'<div class="pf-review {cls}">'
-        f'<a href="?inspect={row.ticker}" target="_self" '
-        f'style="text-decoration:none;color:inherit;display:block;">'
         '<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">'
         f"<span style=\"font-family:'Fraunces',serif;font-weight:700;font-size:1.1rem;\">{row.ticker}</span>"
         f'<span style="color:var(--ri-muted);font-size:.76rem;">{row.weight:.1f}% · {row.sector}</span>'
@@ -42,9 +36,6 @@ def build_review_card_html(row: PortfolioRow) -> str:
         f'font-weight:700;color:{pnl_color};">{sign}{row.pnl:.1f}%</span>'
         "</div>"
         f'<div style="margin-top:5px;font-size:.8rem;color:#334155;">{why}</div>'
-        '<div style="margin-top:5px;font-size:.72rem;color:var(--ri-teal);">'
-        "▾ click for full detail (RAG · rubric · case)</div>"
-        "</a>"
         "</div>"
     )
 

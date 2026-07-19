@@ -1,6 +1,9 @@
 """Shared detail panel for the portfolio tab.
 
-Opened via ?inspect=TICKER from review cards, treemap tiles, or table rows.
+Opened via st.session_state["pf_inspect_ticker"] — set by a real st.button
+(review cards) or the "Inspect a holding" selectbox, never by a raw HTML
+anchor/query-param (that pattern caused real browser navigations on
+Streamlit Cloud, wiping session state — see PORTFOLIO_INSPECT_STATE_KEY).
 Reuses decision_card.render_expanded_card with live RAG/case fetched lazily.
 """
 
@@ -23,6 +26,18 @@ from application.personal_case_facts import (
     personal_case_news,
 )
 from domain.discipline import Verdict
+
+#: st.session_state key holding the ticker to show in the inspect panel, or
+#: absent/None when closed. Native Streamlit state only — never a URL query
+#: param (see module docstring for why).
+PORTFOLIO_INSPECT_STATE_KEY = "pf_inspect_ticker"
+
+#: Widget key of positions.py's "Inspect a holding" selectbox. Closing the
+#: panel must also reset this — a Streamlit widget's own persisted state
+#: overrides its `index=` default on rerun, so clearing only
+#: PORTFOLIO_INSPECT_STATE_KEY would leave the selectbox still showing the
+#: old ticker, which would immediately re-derive and reopen the panel.
+PORTFOLIO_INSPECT_PICKER_KEY = "pf_inspect_picker"
 
 
 def resolve_case(
@@ -94,16 +109,12 @@ def build_detail_header_html(row: PortfolioRow) -> str:
     )
 
 
-def render_inspect_detail(row: PortfolioRow, reports_dir: str | None = None) -> None:
-    """Render the shared detail panel for an inspected holding (live fetch)."""
-    st.markdown(
-        f'<div style="border:1px solid var(--ri-teal);border-radius:12px;'
-        f'overflow:hidden;margin-top:6px;">{build_detail_header_html(row)}</div>',
-        unsafe_allow_html=True,
-    )
-    if st.button("✕ Close", key=f"close_inspect_{row.ticker}"):
-        st.query_params.clear()
-        st.rerun()
+def render_inspect_body(row: PortfolioRow, reports_dir: str | None = None) -> None:
+    """Render just the evidence card content (live fetch) — no header, no
+    close button. Used both by render_inspect_detail() (standalone panel,
+    needs its own header/close) and directly inside an st.expander (the
+    expander's own label/toggle already provides both, matching Home tab's
+    render_collapsed_row + st.expander pattern)."""
     try:
         card = fetch_card(row.ticker)
         price_data = fetch_prices((row.ticker,)).get(row.ticker, {})
@@ -146,3 +157,23 @@ def render_inspect_detail(row: PortfolioRow, reports_dir: str | None = None) -> 
         f"↗ {row.ticker} also appears in the Weekly Brief (Home tab) "
         "when the discipline rule flags it."
     )
+
+
+def render_inspect_detail(row: PortfolioRow, reports_dir: str | None = None) -> None:
+    """Render the shared detail panel for an inspected holding (live fetch).
+
+    Standalone version with its own header + Close button — used by the
+    "Inspect a holding" selectbox panel. For a holding already inside an
+    st.expander (e.g. the Needs Review list), call render_inspect_body()
+    directly instead — the expander already provides both.
+    """
+    st.markdown(
+        f'<div style="border:1px solid var(--ri-teal);border-radius:12px;'
+        f'overflow:hidden;margin-top:6px;">{build_detail_header_html(row)}</div>',
+        unsafe_allow_html=True,
+    )
+    if st.button("✕ Close", key=f"close_inspect_{row.ticker}"):
+        st.session_state.pop(PORTFOLIO_INSPECT_STATE_KEY, None)
+        st.session_state.pop(PORTFOLIO_INSPECT_PICKER_KEY, None)
+        st.rerun()
+    render_inspect_body(row, reports_dir)

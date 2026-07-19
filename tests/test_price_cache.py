@@ -626,6 +626,21 @@ class TestParsePriceHistory:
         df = pd.DataFrame({"High": [100.0], "Low": [99.0]})
         assert parse_price_history(df) is None
 
+    def test_parse_price_history_includes_dates_aligned_with_closes(self) -> None:
+        idx = pd.date_range("2026-01-01", periods=3, freq="D")
+        df = pd.DataFrame(
+            {
+                "Close": [100.0, 101.0, 102.0],
+                "High": [101.0, 102.0, 103.0],
+                "Low": [99.0, 100.0, 101.0],
+            },
+            index=idx,
+        )
+        result = parse_price_history(df)
+        assert result is not None
+        assert result["dates"] == ["2026-01-01", "2026-01-02", "2026-01-03"]
+        assert len(result["dates"]) == len(result["closes"])
+
 
 class TestFetchIndexPrices:
     def test_returns_index_prices(self):

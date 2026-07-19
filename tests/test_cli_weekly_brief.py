@@ -532,3 +532,48 @@ def test_cite_cases_progress_line_in_output(
     assert result.exit_code == 0, result.output
     # At least one "Analysing" line must appear
     assert "Analysing" in result.output
+
+
+def test_weekly_brief_cli_deduplicates_ticker_held_in_two_accounts(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Regression test for the Home-tab StreamlitDuplicateElementKey crash: a
+    ticker held in two accounts (two CSV rows) must reach _build_weekly_brief's
+    holdings argument exactly ONCE, combined, not as two separate rows."""
+    out_file = tmp_path / "weekly_brief.md"
+    holdings_csv = tmp_path / "holdings.csv"
+    holdings_csv.write_text(
+        "symbol,quantity,book value (cad),exchange,account type\n"
+        "SOUN,12,300,NASDAQ,FHSA\n"
+        "SOUN,8,250,NASDAQ,TFSA\n"
+    )
+
+    captured: dict[str, list[Holding]] = {}
+
+    def _fake_build(
+        market: str, holdings: list[Holding], report_dir: str, *args: Any, **kwargs: Any
+    ) -> tuple[WeeklyBriefUseCase, list[str]]:  # noqa: ANN001
+        captured["holdings"] = holdings
+        uc = WeeklyBriefUseCase(
+            screen=_FakeScreen(),
+            holdings_risk=_FakeHoldingsRisk(),
+            regime_reader=RegimeReadUseCase(
+                vix_provider=lambda: 20.0, spy_trend_provider=lambda: 0.1
+            ),
+            screen_label_fn=lambda rd: ScreenLabel.RESEARCH_ONLY,
+            cluster_peers_fn=lambda t: [],
+            screen_scorecard_fn=lambda: (None, None, 0, False),
+            discipline_scorecard_fn=lambda: (0.58, 5462, "PENDING"),
+        )
+        return uc, ["AAPL"]
+
+    monkeypatch.setattr(_brief_cmd, "_build_weekly_brief", _fake_build)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli_mod.cli,
+        ["weekly-brief", "--holdings", str(holdings_csv), "--out", str(out_file)],
+    )
+    assert result.exit_code == 0, result.output
+    soun_rows = [h for h in captured["holdings"] if h.ticker == "SOUN"]
+    assert len(soun_rows) == 1
+    assert soun_rows[0].shares == 20.0
+    assert soun_rows[0].cost_basis == 550.0

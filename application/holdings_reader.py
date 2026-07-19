@@ -115,6 +115,52 @@ def aggregate_to_book(holdings: list[Holding]) -> list["DomainHolding"]:
     return book
 
 
+def aggregate_holdings_by_ticker(holdings: list[Holding]) -> list[Holding]:
+    """Sum shares/cost basis per ticker across accounts, keeping the Holding shape.
+
+    A real book holds the same ticker across several accounts (FHSA, TFSA, a
+    non-registered account, ...). Every consumer downstream of read_holdings()
+    other than the Portfolio tab's own aggregate_to_book() assumed one row per
+    ticker and broke (StreamlitDuplicateElementKey) or double-counted when that
+    wasn't true. This mirrors aggregate_to_book()'s summing logic but returns the
+    same Holding type (ticker/shares/cost_basis/account_type) instead of
+    converting to domain.models.Holding, so it's a drop-in replacement for
+    read_holdings()'s output wherever one row per ticker is required.
+
+    account_type: kept as-is when every lot for a ticker shares the same value;
+    cleared to "" when lots span different account types, so
+    application/narrator.py's capital-gains-tax-friction claim (only emitted for
+    TFSA/RRSP/FHSA) is never asserted for a ticker where part of the position is
+    actually in a different, non-matching account.
+    """
+    from collections import defaultdict
+
+    shares: dict[str, float] = defaultdict(float)
+    cost: dict[str, float] = defaultdict(float)
+    account_types: dict[str, set[str]] = defaultdict(set)
+    order: list[str] = []
+    for h in holdings:
+        if h.ticker not in shares:
+            order.append(h.ticker)
+        shares[h.ticker] += h.shares
+        cost[h.ticker] += h.cost_basis
+        account_types[h.ticker].add(h.account_type)
+
+    out: list[Holding] = []
+    for ticker in order:
+        accounts = account_types[ticker]
+        account_type = next(iter(accounts)) if len(accounts) == 1 else ""
+        out.append(
+            Holding(
+                ticker=ticker,
+                shares=shares[ticker],
+                cost_basis=cost[ticker],
+                account_type=account_type,
+            )
+        )
+    return out
+
+
 def read_holdings(path: str) -> list[Holding]:
     """Parse the CSV; skip blank-symbol / non-numeric-quantity / zero-share rows."""
     if not os.path.exists(path):

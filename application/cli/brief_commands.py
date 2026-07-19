@@ -393,10 +393,10 @@ def weekly_brief(
     """
     from pathlib import Path
 
-    from application.holdings_reader import read_holdings
+    from application.holdings_reader import aggregate_holdings_by_ticker, read_holdings
     from domain.brief import to_markdown, to_stdout_masked
 
-    held = read_holdings(holdings)
+    held = aggregate_holdings_by_ticker(read_holdings(holdings))
     uc, universe = _build_weekly_brief(
         market, held, report_dir, use_cache=use_cache, progress_path=progress_path
     )

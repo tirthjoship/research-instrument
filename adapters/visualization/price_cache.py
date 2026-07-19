@@ -448,6 +448,7 @@ def parse_price_history(df: DataFrame | None) -> dict[str, Any] | None:
 
     Returns a dict with keys:
       closes  - list[float]  : daily close prices (full 1-year window)
+      dates   - list[str]    : ISO YYYY-MM-DD dates, aligned 1:1 with closes
       ma200   - float | None : mean of last 200 closes (or all if < 200)
       atr     - float | None : 14-period average true range proxy
       vs_spy  - None         : computed separately; placeholder here
@@ -464,6 +465,7 @@ def parse_price_history(df: DataFrame | None) -> dict[str, Any] | None:
             return None
         closes_series = close_col.dropna()
         closes = [float(c) for c in closes_series]
+        dates = [d.strftime("%Y-%m-%d") for d in closes_series.index]
 
         ma200: float | None = (
             float(sum(closes[-200:]) / len(closes[-200:])) if closes else None
@@ -488,7 +490,13 @@ def parse_price_history(df: DataFrame | None) -> dict[str, Any] | None:
                 diffs = [abs(tail[i] - tail[i - 1]) for i in range(1, len(tail))]
                 atr = sum(diffs) / len(diffs) if diffs else None
 
-        return {"closes": closes, "ma200": ma200, "atr": atr, "vs_spy": None}
+        return {
+            "closes": closes,
+            "dates": dates,
+            "ma200": ma200,
+            "atr": atr,
+            "vs_spy": None,
+        }
     except Exception as exc:  # noqa: BLE001 — malformed df → None
         logger.warning("parse_price_history failed: {}", exc)
         return None
