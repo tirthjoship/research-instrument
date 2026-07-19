@@ -1,4 +1,10 @@
-"""Treemap colour lenses + HTML builder for the portfolio book view."""
+"""Treemap colour lenses + HTML builder for the portfolio book view.
+
+Tiles are display-only (no click) — a raw HTML anchor's ?inspect=TICKER
+click used to drive the shared inspect panel, but that pattern caused real
+browser navigations on Streamlit Cloud, wiping session state. Use the
+"Inspect a holding" selectbox (positions.py) to open a holding's detail.
+"""
 
 from __future__ import annotations
 
@@ -110,9 +116,9 @@ def _tile_html(
         "</div>"
     )
     return (
-        f'<a href="?inspect={row.ticker}" target="_self" class="pf-tile" '
+        f'<div class="pf-tile" '
         f'style="left:{x:.1f}px;top:{y:.1f}px;width:{max(w - 2, 0):.1f}px;'
-        f'height:{max(h - 2, 0):.1f}px;background:{bg};color:{fg};">{label}{tip}</a>'
+        f'height:{max(h - 2, 0):.1f}px;background:{bg};color:{fg};">{label}{tip}</div>'
     )
 
 

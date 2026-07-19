@@ -69,9 +69,8 @@ def _row_html(r: PortfolioRow, show_more: bool) -> str:
     today_c = "#16A34A" if r.today >= 0 else "#DC2626"
     sym = currency_symbol(currency_for_ticker(r.ticker))
     cells = [
-        f"<td style=\"font-family:'Fraunces',serif;font-weight:700;\">"
-        f'<a href="?inspect={r.ticker}" target="_self" '
-        f'style="color:var(--ri-teal);text-decoration:none;">{r.ticker}</a></td>',
+        f"<td style=\"font-family:'Fraunces',serif;font-weight:700;"
+        f'color:var(--ri-teal);">{r.ticker}</td>',
         f"<td>{r.sector}</td>",
         f"<td style=\"text-align:right;font-family:'IBM Plex Mono',monospace;\">"
         f'<span style="display:inline-block;height:7px;border-radius:3px;background:#CBD5E1;'
@@ -95,7 +94,7 @@ def _row_html(r: PortfolioRow, show_more: bool) -> str:
             f"<td style=\"text-align:right;font-family:'IBM Plex Mono',monospace;\">{sym}{r.cost:,.0f}</td>"
         )
     cells.append(f"<td>{_pill(r.verdict)}</td>")
-    return '<tr style="cursor:pointer;">' + "".join(cells) + "</tr>"
+    return "<tr>" + "".join(cells) + "</tr>"
 
 
 def build_table_html(rows: list[PortfolioRow], state: TableState) -> str:
