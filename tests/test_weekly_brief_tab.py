@@ -2136,7 +2136,14 @@ def test_needs_review_fetch_starts_without_button_click(monkeypatch) -> None:  #
 
     assert len(launch_calls) == 1
     assert [t for t, _h in launch_calls[0]] == ["AAA", "BBB"]
-    assert button_calls == []  # no Fetch/Refresh button rendered
+    # No Fetch/Refresh button rendered — the only buttons are the
+    # All/Reduce/Trim/Review filter chips added in Task 4.
+    fetch_or_refresh = [
+        c
+        for c in button_calls
+        if "fetch" in str(c).lower() or "refresh" in str(c).lower()
+    ]
+    assert fetch_or_refresh == []
 
 
 def test_needs_review_progress_bar_reflects_done_total(monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -2232,7 +2239,14 @@ def test_needs_review_never_renders_fetch_or_refresh_button(monkeypatch) -> None
     st.session_state[wb._HOME_CASES_KEY] = {"AAA": object(), "BBB": object()}  # done
     wb._render_needs_review(holdings, "data/reports/sample")
 
-    assert button_calls == []
+    # No Fetch/Refresh button rendered in any state — the only buttons are the
+    # All/Reduce/Trim/Review filter chips added in Task 4.
+    fetch_or_refresh = [
+        c
+        for c in button_calls
+        if "fetch" in str(c).lower() or "refresh" in str(c).lower()
+    ]
+    assert fetch_or_refresh == []
 
 
 def _fake_evidence_card(ticker: str):  # type: ignore[no-untyped-def]
@@ -2326,3 +2340,158 @@ def test_needs_review_row_closed_by_default_hides_detail(monkeypatch) -> None:  
     wb._render_one_holding("AAPL", h, summarizer=object(), cached_case=None)
 
     assert not any("dc-case" in s or "Evidence detail" in s for s in seen)
+
+
+def test_rubric_block_rendered_once_for_whole_needs_review_section(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    """The rubric ('How Verdicts Are Decided') must appear exactly once on the
+    page, not once per flagged holding."""
+    import json
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    monkeypatch.setattr(wb, "_launch_case_fetcher", lambda *a, **k: None)
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-19",
+                "regime": "neutral",
+                "holdings": [
+                    {
+                        "ticker": "AAA",
+                        "verdict": "TRIM",
+                        "unrealized_pct": 1.0,
+                        "why": "x",
+                    },
+                    {
+                        "ticker": "BBB",
+                        "verdict": "REDUCE",
+                        "unrealized_pct": -1.0,
+                        "why": "y",
+                    },
+                ],
+            }
+        )
+    )
+    seen: list[str] = []
+    orig_markdown = st.markdown
+
+    def _capture(body, *a, **k):  # type: ignore[no-untyped-def]
+        if isinstance(body, str):
+            seen.append(body)
+        return orig_markdown(body, *a, **k)
+
+    monkeypatch.setattr(st, "markdown", _capture)
+    wb.render(path=str(p))
+
+    occurrences = sum(s.count("How Verdicts Are Decided") for s in seen)
+    assert occurrences == 1
+
+
+def test_filter_chips_render_all_reduce_trim_review_counts(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    import json
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    monkeypatch.setattr(wb, "_launch_case_fetcher", lambda *a, **k: None)
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-19",
+                "regime": "neutral",
+                "holdings": [
+                    {
+                        "ticker": "AAA",
+                        "verdict": "TRIM",
+                        "unrealized_pct": 1.0,
+                        "why": "x",
+                    },
+                    {
+                        "ticker": "BBB",
+                        "verdict": "TRIM",
+                        "unrealized_pct": 1.0,
+                        "why": "x",
+                    },
+                    {
+                        "ticker": "CCC",
+                        "verdict": "REDUCE",
+                        "unrealized_pct": -1.0,
+                        "why": "y",
+                    },
+                ],
+            }
+        )
+    )
+    seen: list[str] = []
+    orig_markdown = st.markdown
+    monkeypatch.setattr(
+        st,
+        "markdown",
+        lambda body, *a, **k: (seen.append(body) if isinstance(body, str) else None)
+        or orig_markdown(body, *a, **k),
+    )
+    wb.render(path=str(p))
+    joined = "\n".join(seen)
+    assert "All (3)" in joined
+    assert "Reduce (1)" in joined
+    assert "Trim (2)" in joined
+    assert "Review (0)" in joined
+
+
+def test_doing_well_list_shows_hold_and_add_ok_as_toggle_rows(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    import json
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    monkeypatch.setattr(wb, "_launch_case_fetcher", lambda *a, **k: None)
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-19",
+                "regime": "neutral",
+                "holdings": [
+                    {
+                        "ticker": "TSLA",
+                        "verdict": "HOLD",
+                        "unrealized_pct": 104.0,
+                        "why": "steady",
+                    },
+                    {
+                        "ticker": "AAPL",
+                        "verdict": "ADD_OK",
+                        "unrealized_pct": 75.0,
+                        "why": "strong",
+                    },
+                ],
+            }
+        )
+    )
+    seen: list[str] = []
+    orig_markdown = st.markdown
+    monkeypatch.setattr(
+        st,
+        "markdown",
+        lambda body, *a, **k: (seen.append(body) if isinstance(body, str) else None)
+        or orig_markdown(body, *a, **k),
+    )
+    wb.render(path=str(p))
+    joined = "\n".join(seen)
+    assert "TSLA" in joined
+    assert "AAPL" in joined

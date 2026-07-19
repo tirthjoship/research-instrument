@@ -33,6 +33,7 @@ from adapters.visualization.card_fetch import (
 from adapters.visualization.components.decision_card import (
     render_collapsed_row,
     render_expanded_card,
+    render_verdict_rubric_block,
 )
 from adapters.visualization.components.evidence_chip import (
     render_evidence_chip,
@@ -744,6 +745,59 @@ _render_needs_review_status_fragment: Any = _fragment(run_every=timedelta(second
 )
 
 
+_VERDICT_FILTER_KEY = "nr_verdict_filter"  # "all" | "REDUCE" | "TRIM" | "REVIEW"
+
+
+def _render_verdict_filter_chips(holdings: list[dict[str, Any]]) -> str:
+    """Render All/Reduce/Trim/Review chip buttons above the Needs Review list.
+
+    Returns the currently-selected filter value ("all" or a Verdict string).
+    Uses st.session_state (not a widget's own return) so the selection
+    survives the fragment reruns that redraw individual rows.
+    """
+    counts: dict[str, int] = {"REDUCE": 0, "TRIM": 0, "REVIEW": 0}
+    for h in holdings:
+        v = h.get("verdict")
+        if v in counts:
+            counts[v] += 1
+    total = sum(counts.values())
+    current = st.session_state.get(_VERDICT_FILTER_KEY, "all")
+
+    labels = [
+        ("all", f"All ({total})"),
+        ("REDUCE", f"Reduce ({counts['REDUCE']})"),
+        ("TRIM", f"Trim ({counts['TRIM']})"),
+        ("REVIEW", f"Review ({counts['REVIEW']})"),
+    ]
+    # Static, always-visible chip strip (screen-reader / test-observable summary
+    # of the counts) — the st.button row directly below is the actual clickable
+    # control; native Streamlit buttons don't route their label text through
+    # st.markdown, so this line is the one place the counts are guaranteed
+    # legible without relying on button-internal rendering.
+    st.markdown(
+        '<div class="ri-filter-chips" style="font-family:\'IBM Plex Mono\',monospace;'
+        'font-size:11px;color:#5b7178;margin-bottom:6px">'
+        + " &middot; ".join(
+            f"<b>{label}</b>" if v == current else label for v, label in labels
+        )
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+
+    cols = st.columns(4)
+    for col, (value, label) in zip(cols, labels):
+        with col:
+            if st.button(
+                label,
+                key=f"nr_filter_{value}",
+                type="primary" if current == value else "secondary",
+                use_container_width=True,
+            ):
+                st.session_state[_VERDICT_FILTER_KEY] = value
+                st.rerun()
+    return str(st.session_state.get(_VERDICT_FILTER_KEY, "all"))
+
+
 def _render_needs_review(holdings: list[dict[str, Any]], reports_dir: str) -> None:
     """Render holdings using background-fetched case data (fully automatic)."""
     cards = _needs_review_cards(holdings)
@@ -763,9 +817,91 @@ def _render_needs_review(holdings: list[dict[str, Any]], reports_dir: str) -> No
     _ensure_evidence_fetch_started(cards, summarizer, cases, reports_dir)
     _render_needs_review_status_fragment(cards)
 
-    for ticker, h in cards:
+    selected = _render_verdict_filter_chips([h for _, h in cards])
+    visible = (
+        cards
+        if selected == "all"
+        else [(ticker, h) for ticker, h in cards if h.get("verdict") == selected]
+    )
+
+    for ticker, h in visible:
         cached = cases.get(ticker, _CASE_PENDING)
         _render_one_holding_fragment(ticker, h, summarizer, cached)
+
+
+def _render_doing_well(holdings: list[dict[str, Any]], reports_dir: str) -> None:
+    """HOLD/ADD_OK holdings — same expandable-row treatment as Needs Review,
+    just nothing flagged. Upgrades the old one-line 'Holding steady · N' caption."""
+    from adapters.visualization.price_cache import (  # noqa: PLC0415
+        fetch_price_history,
+        fetch_prices,
+    )
+
+    steady = [h for h in holdings if h.get("verdict") in ("HOLD", "ADD_OK")]
+    if not steady:
+        return
+    st.markdown(
+        f'<div class="ri-sec">HOLDING STEADY — {len(steady)}, NOTHING TO ACTION</div>',
+        unsafe_allow_html=True,
+    )
+    summarizer = select_case_summarizer()
+    for h in steady:
+        ticker = str(h["ticker"])
+        card = fetch_card(ticker)
+        verdict = Verdict(str(h["verdict"]))
+        unrealized = h.get("unrealized_pct")
+        unrealized_f = float(unrealized) if unrealized is not None else None
+        row_html = render_collapsed_row(
+            card,
+            verdict=verdict,
+            name=ticker,
+            unrealized_pct=unrealized_f,
+            oneliner=str(h.get("why", "")),
+        )
+
+        def _detail(
+            ticker: str = ticker,
+            card: Any = card,
+            verdict: Verdict = verdict,
+            unrealized_f: float | None = unrealized_f,
+            h: dict[str, Any] = h,
+        ) -> None:
+            price_data = fetch_prices((ticker,)).get(ticker, {})
+            live_price = price_data.get("price")
+            hist = fetch_price_history(ticker) or {}
+            closes = hist.get("closes") or []
+            cost = implied_cost(live_price, unrealized_f)
+            rets = window_returns(closes)
+            case = get_case_on_expand(
+                ticker,
+                card,
+                news=personal_case_news(ticker),
+                expanded=True,
+                summarizer=summarizer,
+                extra_facts=personal_case_extra_facts(
+                    ticker, verdict=str(h.get("verdict", "")), why=str(h.get("why", ""))
+                ),
+                cache_path=f"{reports_dir}/home_cited_cases.json",
+            )
+            st.markdown(
+                render_expanded_card(
+                    card,
+                    case=case,
+                    verdict=verdict,
+                    name=ticker,
+                    unrealized_pct=unrealized_f,
+                    means=str(h.get("why", "")),
+                    price=live_price,
+                    cost=cost,
+                    returns=rets,
+                    reliability="measured forward; see Trust",
+                ),
+                unsafe_allow_html=True,
+            )
+
+        render_toggle_row(
+            row_html=row_html, session_key=f"steady_open_{ticker}", detail=_detail
+        )
 
 
 def _render_honesty_line_html() -> str:
@@ -1107,8 +1243,12 @@ def render(
     )
     _render_needs_review(holdings, reports_dir)
 
-    steady = sum(1 for h in holdings if h.get("verdict") in ("HOLD", "ADD_OK"))
-    st.caption(f"Holding steady · {steady} — no rule fired, nothing to do")
+    _render_doing_well(holdings, reports_dir)
+
+    if any(h.get("verdict") in _NEEDS_REVIEW for h in holdings) or any(
+        h.get("verdict") in ("HOLD", "ADD_OK") for h in holdings
+    ):
+        st.markdown(render_verdict_rubric_block(), unsafe_allow_html=True)
 
     # ── Credibility panel: what we know / don't know / still testing ─────────
     # Placed at the end of the tab — reference material for after the user has
