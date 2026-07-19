@@ -2248,7 +2248,10 @@ def _fake_evidence_card(ticker: str):  # type: ignore[no-untyped-def]
 
 def test_needs_review_row_has_no_separate_expander_label(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     """The old 'TICKER — VERDICT (expand for full evidence)' st.expander label
-    must be gone — the row itself is now the only click target."""
+    must be gone — the row itself is now the only click target, so
+    st.expander must never be called for the Needs Review row."""
+    from unittest.mock import patch
+
     import streamlit as st
 
     from adapters.visualization.tabs import weekly_brief as wb
@@ -2259,20 +2262,11 @@ def test_needs_review_row_has_no_separate_expander_label(monkeypatch) -> None:  
         wb, "fetch_price_history", lambda ticker: {"closes": []}, raising=False
     )
 
-    # Render captures markdown calls to inspect emitted HTML.
-    seen: list[str] = []
-    orig_markdown = st.markdown
-
-    def _capture(body, *a, **k):  # type: ignore[no-untyped-def]
-        if isinstance(body, str):
-            seen.append(body)
-        return orig_markdown(body, *a, **k)
-
-    monkeypatch.setattr(st, "markdown", _capture)
     h = {"ticker": "AAPL", "verdict": "TRIM", "unrealized_pct": 18.4, "why": "test"}
-    wb._render_one_holding("AAPL", h, summarizer=object(), cached_case=None)
+    with patch.object(st, "expander") as mock_expander:
+        wb._render_one_holding("AAPL", h, summarizer=object(), cached_case=None)
 
-    assert not any("expand for full evidence" in s for s in seen)
+    mock_expander.assert_not_called()
 
 
 def test_needs_review_row_expands_in_place_when_toggled(monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -2302,3 +2296,33 @@ def test_needs_review_row_expands_in_place_when_toggled(monkeypatch) -> None:  #
     wb._render_one_holding("AAPL", h, summarizer=object(), cached_case=None)
 
     assert any("dc-case" in s or "Evidence detail" in s for s in seen)
+
+
+def test_needs_review_row_closed_by_default_hides_detail(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """With no nr_open_<TICKER> toggle set in session_state, the row must
+    render collapsed — the expanded evidence detail must NOT appear on the
+    first render. Negative-case counterpart to
+    test_needs_review_row_expands_in_place_when_toggled."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: _fake_evidence_card(ticker))
+    monkeypatch.setattr(
+        wb, "fetch_price_history", lambda ticker: {"closes": []}, raising=False
+    )
+
+    seen: list[str] = []
+    orig_markdown = st.markdown
+
+    def _capture(body, *a, **k):  # type: ignore[no-untyped-def]
+        if isinstance(body, str):
+            seen.append(body)
+        return orig_markdown(body, *a, **k)
+
+    monkeypatch.setattr(st, "markdown", _capture)
+    h = {"ticker": "AAPL", "verdict": "TRIM", "unrealized_pct": 18.4, "why": "test"}
+    wb._render_one_holding("AAPL", h, summarizer=object(), cached_case=None)
+
+    assert not any("dc-case" in s or "Evidence detail" in s for s in seen)
