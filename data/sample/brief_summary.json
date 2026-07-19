@@ -1,86 +1,86 @@
 {
-  "as_of": "2026-07-11",
-  "regime": "RISK_ON",
+  "as_of": "2026-07-19",
+  "regime": "NEUTRAL",
   "screen_label": "RESEARCH_ONLY",
   "abstained": false,
   "candidates": [
     {
       "ticker": "SPG",
-      "composite": 1.2352742871650837,
-      "factor_summary": "mom p66 \u00b7 rev p83 \u00b7 qua p95 \u00b7 val p87 \u00b7 low p76 \u00b7 trend ok",
-      "why": "SPG: RESEARCH_ONLY. Price is 5.3 ATRs above its 200-day trend.",
-      "already_held": false,
-      "label": "RESEARCH_ONLY"
-    },
-    {
-      "ticker": "RCI-B.TO",
-      "composite": 0.8629590039639528,
-      "factor_summary": "mom p61 \u00b7 rev p62 \u00b7 qua p88 \u00b7 val p95 \u00b7 low p76 \u00b7 trend ok",
-      "why": "RCI-B.TO: RESEARCH_ONLY. Price is 1.2 ATRs above its 200-day trend.",
-      "already_held": false,
-      "label": "RESEARCH_ONLY"
-    },
-    {
-      "ticker": "TRGP",
-      "composite": 0.8455000020988258,
-      "factor_summary": "mom p84 \u00b7 rev p73 \u00b7 qua p95 \u00b7 val p50 \u00b7 low p40 \u00b7 trend ok",
-      "why": "TRGP: RESEARCH_ONLY. Price is 7.7 ATRs above its 200-day trend.",
-      "already_held": false,
-      "label": "RESEARCH_ONLY"
-    },
-    {
-      "ticker": "SYY",
-      "composite": 0.8297956754367352,
-      "factor_summary": "mom p20 \u00b7 rev p88 \u00b7 qua p95 \u00b7 val p64 \u00b7 low p73 \u00b7 trend ok",
-      "why": "SYY: RESEARCH_ONLY. Price is 3.2 ATRs above its 200-day trend.",
+      "composite": 1.1787779380150853,
+      "factor_summary": "mom p70 \u00b7 rev p79 \u00b7 qua p95 \u00b7 val p86 \u00b7 low p82 \u00b7 trend ok",
+      "why": "SPG: RESEARCH_ONLY. Price is 7.6 ATRs above its 200-day trend.",
       "already_held": false,
       "label": "RESEARCH_ONLY"
     },
     {
       "ticker": "AMP",
-      "composite": 0.8167295604749392,
-      "factor_summary": "mom p5 \u00b7 rev p79 \u00b7 qua p93 \u00b7 val p94 \u00b7 low p54 \u00b7 trend ok",
-      "why": "AMP: RESEARCH_ONLY. Price is 2.7 ATRs above its 200-day trend.",
+      "composite": 0.9023950834103601,
+      "factor_summary": "mom p7 \u00b7 rev p87 \u00b7 qua p94 \u00b7 val p93 \u00b7 low p58 \u00b7 trend ok",
+      "why": "AMP: RESEARCH_ONLY. Price is 4.4 ATRs above its 200-day trend.",
       "already_held": false,
       "label": "RESEARCH_ONLY"
     },
     {
-      "ticker": "CVE.TO",
-      "composite": 0.787022819426959,
-      "factor_summary": "mom p94 \u00b7 rev p85 \u00b7 qua p52 \u00b7 val p88 \u00b7 low p29 \u00b7 trend ok",
-      "why": "CVE.TO: RESEARCH_ONLY. Price is 4.1 ATRs above its 200-day trend.",
+      "ticker": "TRGP",
+      "composite": 0.868681252592778,
+      "factor_summary": "mom p85 \u00b7 rev p71 \u00b7 qua p95 \u00b7 val p51 \u00b7 low p43 \u00b7 trend ok",
+      "why": "TRGP: RESEARCH_ONLY. Price is 8.7 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "SYY",
+      "composite": 0.8281283915914048,
+      "factor_summary": "mom p25 \u00b7 rev p87 \u00b7 qua p95 \u00b7 val p68 \u00b7 low p79 \u00b7 trend ok",
+      "why": "SYY: RESEARCH_ONLY. Price is 2.2 ATRs above its 200-day trend.",
       "already_held": false,
       "label": "RESEARCH_ONLY"
     },
     {
       "ticker": "CINF",
-      "composite": 0.7784416581986486,
-      "factor_summary": "mom p53 \u00b7 rev p95 \u00b7 qua p63 \u00b7 val p95 \u00b7 low p79 \u00b7 trend ok",
-      "why": "CINF: RESEARCH_ONLY. Price is 3.5 ATRs above its 200-day trend.",
-      "already_held": false,
-      "label": "RESEARCH_ONLY"
-    },
-    {
-      "ticker": "MAS",
-      "composite": 0.7583518633143028,
-      "factor_summary": "mom p45 \u00b7 rev p61 \u00b7 qua p95 \u00b7 val p76 \u00b7 low p41 \u00b7 trend ok",
-      "why": "MAS: RESEARCH_ONLY. Price is 4.0 ATRs above its 200-day trend.",
+      "composite": 0.8161275923263126,
+      "factor_summary": "mom p58 \u00b7 rev p95 \u00b7 qua p62 \u00b7 val p95 \u00b7 low p83 \u00b7 trend ok",
+      "why": "CINF: RESEARCH_ONLY. Price is 2.6 ATRs above its 200-day trend.",
       "already_held": false,
       "label": "RESEARCH_ONLY"
     },
     {
       "ticker": "AIZ",
-      "composite": 0.7478514515837933,
-      "factor_summary": "mom p73 \u00b7 rev p95 \u00b7 qua p61 \u00b7 val p90 \u00b7 low p70 \u00b7 trend ok",
-      "why": "AIZ: RESEARCH_ONLY. Price is 8.5 ATRs above its 200-day trend.",
+      "composite": 0.8000074712326597,
+      "factor_summary": "mom p77 \u00b7 rev p95 \u00b7 qua p59 \u00b7 val p89 \u00b7 low p76 \u00b7 trend ok",
+      "why": "AIZ: RESEARCH_ONLY. Price is 7.7 ATRs above its 200-day trend.",
       "already_held": false,
       "label": "RESEARCH_ONLY"
     },
     {
-      "ticker": "CM.TO",
-      "composite": 0.7456072242596333,
-      "factor_summary": "mom p82 \u00b7 rev p76 \u00b7 qua p54 \u00b7 val p83 \u00b7 low p95 \u00b7 trend ok",
-      "why": "CM.TO: RESEARCH_ONLY. Price is 9.8 ATRs above its 200-day trend.",
+      "ticker": "MAS",
+      "composite": 0.7307460528458538,
+      "factor_summary": "mom p49 \u00b7 rev p59 \u00b7 qua p95 \u00b7 val p76 \u00b7 low p44 \u00b7 trend ok",
+      "why": "MAS: RESEARCH_ONLY. Price is 4.9 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "USB",
+      "composite": 0.7261284147847686,
+      "factor_summary": "mom p68 \u00b7 rev p93 \u00b7 qua p44 \u00b7 val p94 \u00b7 low p69 \u00b7 trend ok",
+      "why": "USB: RESEARCH_ONLY. Price is 7.9 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "CB",
+      "composite": 0.7234174661737137,
+      "factor_summary": "mom p61 \u00b7 rev p64 \u00b7 qua p54 \u00b7 val p95 \u00b7 low p93 \u00b7 trend ok",
+      "why": "CB: RESEARCH_ONLY. Price is 3.7 ATRs above its 200-day trend.",
+      "already_held": false,
+      "label": "RESEARCH_ONLY"
+    },
+    {
+      "ticker": "MO",
+      "composite": 0.7186684420510806,
+      "factor_summary": "mom p45 \u00b7 rev p66 \u00b7 qua p86 \u00b7 val p87 \u00b7 low p88 \u00b7 trend ok",
+      "why": "MO: RESEARCH_ONLY. Price is 4.5 ATRs above its 200-day trend.",
       "already_held": false,
       "label": "RESEARCH_ONLY"
     }
@@ -89,85 +89,85 @@
     {
       "ticker": "MSFT",
       "verdict": "REDUCE",
-      "unrealized_pct": -0.08309522356305804,
+      "unrealized_pct": -0.06233331589471726,
       "trend_state": "broken",
-      "why": "MSFT: REDUCE. Price is 8.1 ATRs below its 200-day trend. Position is -8% vs cost. This is the hold-a-loser pattern \u2014 broken trend held at a loss. In a TFSA, there is no capital-gains tax friction on selling."
+      "why": "MSFT: REDUCE. Price is 6.2 ATRs below its 200-day trend. Position is -6% vs cost. This is the hold-a-loser pattern \u2014 broken trend held at a loss. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "TSLA",
+      "verdict": "REDUCE",
+      "unrealized_pct": 0.9041999816894531,
+      "trend_state": "broken",
+      "why": "TSLA: REDUCE. Price is 3.5 ATRs below its 200-day trend. Position is +90% vs cost. In a TFSA, there is no capital-gains tax friction on selling."
     },
     {
       "ticker": "NVDA",
       "verdict": "TRIM",
-      "unrealized_pct": -0.47259998321533203,
+      "unrealized_pct": -0.49297500610351563,
       "trend_state": "uptrend",
-      "why": "NVDA: TRIM. Price is 5.1 ATRs above its 200-day trend. Position is -47% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
+      "why": "NVDA: TRIM. Price is 2.6 ATRs above its 200-day trend. Position is -49% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
     },
     {
       "ticker": "GOOGL",
       "verdict": "TRIM",
-      "unrealized_pct": 1.0410285295758928,
+      "unrealized_pct": 0.9815427943638393,
       "trend_state": "uptrend",
-      "why": "GOOGL: TRIM. Price is 7.6 ATRs above its 200-day trend. Position is +104% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
+      "why": "GOOGL: TRIM. Price is 4.1 ATRs above its 200-day trend. Position is +98% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
     },
     {
       "ticker": "AMZN",
       "verdict": "TRIM",
-      "unrealized_pct": 0.6355999755859375,
+      "unrealized_pct": 0.6481999715169271,
       "trend_state": "uptrend",
-      "why": "AMZN: TRIM. Price is 3.0 ATRs above its 200-day trend. Position is +64% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
+      "why": "AMZN: TRIM. Price is 3.5 ATRs above its 200-day trend. Position is +65% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
     },
     {
       "ticker": "META",
       "verdict": "TRIM",
-      "unrealized_pct": 0.3384200439453125,
+      "unrealized_pct": 0.29202001953125,
       "trend_state": "uptrend",
-      "why": "META: TRIM. Price is 1.8 ATRs above its 200-day trend. Position is +34% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
-    },
-    {
-      "ticker": "V",
-      "verdict": "TRIM",
-      "unrealized_pct": 0.3086375045776367,
-      "trend_state": "uptrend",
-      "why": "V: TRIM. Price is 5.3 ATRs above its 200-day trend. Position is +31% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
+      "why": "META: TRIM. Price is 0.4 ATRs above its 200-day trend. Position is +29% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
     },
     {
       "ticker": "BRK-B",
       "verdict": "TRIM",
-      "unrealized_pct": 0.5708954273570668,
+      "unrealized_pct": 0.5619863752885298,
       "trend_state": "uptrend",
-      "why": "BRK-B: TRIM. Price is 0.9 ATRs above its 200-day trend. Position is +57% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
-    },
-    {
-      "ticker": "TSLA",
-      "verdict": "HOLD",
-      "unrealized_pct": 1.038800048828125,
-      "trend_state": "broken",
-      "why": "TSLA: HOLD. Price is 0.9 ATRs below its 200-day trend. Position is +104% vs cost. In a TFSA, there is no capital-gains tax friction on selling."
-    },
-    {
-      "ticker": "JPM",
-      "verdict": "HOLD",
-      "unrealized_pct": 0.8025178636823381,
-      "trend_state": "uptrend",
-      "why": "JPM: HOLD. Price is 7.6 ATRs above its 200-day trend. Position is +80% vs cost. In a TFSA, there is no capital-gains tax friction on selling."
+      "why": "BRK-B: TRIM. Price is 0.2 ATRs above its 200-day trend. Position is +56% vs cost. Winner that breached its trailing stop \u2014 consider trimming. TRIM manages position size / locks gains \u2014 not a prediction the name will fall. In a TFSA, there is no capital-gains tax friction on selling."
     },
     {
       "ticker": "AAPL",
       "verdict": "ADD_OK",
-      "unrealized_pct": 0.7517778184678819,
+      "unrealized_pct": 0.8541110568576389,
       "trend_state": "uptrend",
-      "why": "AAPL: ADD_OK. Price is 8.9 ATRs above its 200-day trend. Position is +75% vs cost. In a TFSA, there is no capital-gains tax friction on selling."
+      "why": "AAPL: ADD_OK. Price is 12.6 ATRs above its 200-day trend. Position is +85% vs cost. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "JPM",
+      "verdict": "ADD_OK",
+      "unrealized_pct": 0.8273214612688337,
+      "trend_state": "uptrend",
+      "why": "JPM: ADD_OK. Price is 8.4 ATRs above its 200-day trend. Position is +83% vs cost. In a TFSA, there is no capital-gains tax friction on selling."
+    },
+    {
+      "ticker": "V",
+      "verdict": "ADD_OK",
+      "unrealized_pct": 0.3445999908447266,
+      "trend_state": "uptrend",
+      "why": "V: ADD_OK. Price is 6.7 ATRs above its 200-day trend. Position is +34% vs cost. In a TFSA, there is no capital-gains tax friction on selling."
     }
   ],
   "concentration": [],
   "scorecard": {
-    "screen_window": "forward since 2026-07-11",
+    "screen_window": "forward since 2026-07-19",
     "screen_n": 0,
     "screen_significant": false,
     "discipline_window": "21d",
-    "discipline_n": 276,
+    "discipline_n": 366,
     "discipline_gate_status": "PROCEED"
   },
   "macro": {
-    "as_of": "2026-07-11",
+    "as_of": "2026-07-19",
     "factors": [
       "SPY",
       "SMB",
@@ -180,18 +180,18 @@
       "XLE"
     ],
     "net_beta_by_factor": {
-      "SPY": 1.1642922619474703,
-      "SMB": -0.08603981903260344,
-      "HML": 0.18700571573683444,
-      "MOM": -0.1160312494065653,
-      "RMW": 0.14747272525853214,
-      "CMA": -0.29992930346564534,
-      "TLT": -0.09700976766962476,
-      "UUP": -0.05147366840769782,
-      "XLE": -0.08441695706480885
+      "SPY": 1.1593473684721816,
+      "SMB": -0.08968334516262648,
+      "HML": 0.19084390824493008,
+      "MOM": -0.117971942773369,
+      "RMW": 0.14552149705594103,
+      "CMA": -0.2892153669707061,
+      "TLT": -0.09719144139665811,
+      "UUP": -0.04886863278104269,
+      "XLE": -0.08557333037257109
     },
-    "systematic_share": 0.8091002089496169,
-    "idiosyncratic_share": 0.19089979105038313,
+    "systematic_share": 0.8079091757526307,
+    "idiosyncratic_share": 0.19209082424736934,
     "dominant_factor": "SPY",
     "flags": [
       "SYSTEMATIC_DOMINANT",
@@ -199,16 +199,16 @@
     ],
     "coverage_holdings": 10,
     "total_holdings": 10,
-    "enb": 5.102540940896297,
+    "enb": 5.17353345888246,
     "pc_labels_data_gap": true,
-    "systematic_share_adj": 0.8020006299436109,
-    "downside_beta": 0.9633466576055573,
-    "sector_hhi": 0.3149182990930183,
-    "diversification_ratio": 1.7735897291406892,
+    "systematic_share_adj": 0.8007653021235963,
+    "downside_beta": 0.9552065016998713,
+    "sector_hhi": 0.3178808154146108,
+    "diversification_ratio": 1.7900250398076463,
     "pc_variance": [
-      0.5376157984563357,
-      0.11622222957513019,
-      0.07975739618290222
+      0.531544314522599,
+      0.11922107350643701,
+      0.07807902072321804
     ],
     "pc_labels": [
       "Bet 1",
@@ -368,6 +368,674 @@
       [
         "2026-07-11",
         0.8091002089496169
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-18",
+        0.7177327840296513
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-18",
+        0.7177328336457758
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-19",
+        0.7177321201846156
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-12",
+        0.71
+      ],
+      [
+        "2026-07-19",
+        0.8079097197872528
+      ],
+      [
+        "2026-07-19",
+        0.8079091757526307
       ]
     ],
     "holdings_meta": [
@@ -375,133 +1043,133 @@
         "ticker": "AAPL",
         "name": "AAPL",
         "sector": "Information Technology",
-        "weight": 0.11379774354869229
+        "weight": 0.12013042900643076
       },
       {
         "ticker": "MSFT",
         "name": "MSFT",
         "sector": "Information Technology",
-        "weight": 0.06949053456368127
+        "weight": 0.07087818034325158
       },
       {
         "ticker": "NVDA",
         "name": "NVDA",
         "sector": "Information Technology",
-        "weight": 0.022840389622061745
+        "weight": 0.0219005687598875
       },
       {
         "ticker": "GOOGL",
         "name": "GOOGL",
         "sector": "Communication Services",
-        "weight": 0.10312387736423964
+        "weight": 0.09985648412709032
       },
       {
         "ticker": "AMZN",
         "name": "AMZN",
         "sector": "Consumer Discretionary",
-        "weight": 0.05312534061333317
+        "weight": 0.053394581984286725
       },
       {
         "ticker": "TSLA",
         "name": "TSLA",
         "sector": "Consumer Discretionary",
-        "weight": 0.05886358993136666
+        "weight": 0.05483367109916821
       },
       {
         "ticker": "META",
         "name": "META",
         "sector": "Communication Services",
-        "weight": 0.1207576250979141
+        "weight": 0.11626634788521029
       },
       {
         "ticker": "JPM",
         "name": "JPM",
         "sector": "Financials",
-        "weight": 0.1821460390461601
+        "weight": 0.18416952387936036
       },
       {
         "ticker": "V",
         "name": "V",
         "sector": "Financials",
-        "weight": 0.1511302719117383
+        "weight": 0.1548773329837128
       },
       {
         "ticker": "BRK-B",
         "name": "BRK-B",
         "sector": "Financials",
-        "weight": 0.1247245883008127
+        "weight": 0.12369287993160144
       }
     ],
     "risk_contribution": {
-      "AAPL": 0.12430442543067159,
-      "MSFT": 0.05525649489902846,
-      "NVDA": 0.030088089059256206,
-      "GOOGL": 0.10089803930824116,
-      "AMZN": 0.06512115889882088,
-      "TSLA": 0.11315127957159132,
-      "META": 0.18072206333770252,
-      "JPM": 0.16486366182909593,
-      "V": 0.11219896963343506,
-      "BRK-B": 0.053395818032156823
+      "AAPL": 0.1348854398773272,
+      "MSFT": 0.057073324062800794,
+      "NVDA": 0.028099421592565774,
+      "GOOGL": 0.10056468719972692,
+      "AMZN": 0.06560303846230559,
+      "TSLA": 0.10376680108603956,
+      "META": 0.1745695341515289,
+      "JPM": 0.1669443802772765,
+      "V": 0.11604168494056104,
+      "BRK-B": 0.05245168834986769
     },
     "sector_weights": {
-      "Information Technology": 0.20612866773443533,
-      "Communication Services": 0.22388150246215374,
-      "Consumer Discretionary": 0.11198893054469983,
-      "Financials": 0.4580008992587111
+      "Information Technology": 0.21290917810956983,
+      "Communication Services": 0.2161228320123006,
+      "Consumer Discretionary": 0.10822825308345493,
+      "Financials": 0.4627397367946746
     },
     "systematic_share_ci": [
-      0.7640400678148577,
-      0.8588485528246166
+      0.763569617722839,
+      0.8579217022062688
     ],
     "beta_ci_by_factor": {
       "SPY": [
-        1.0993628616240878,
-        1.2248802988041199
+        1.0962989378740504,
+        1.2209250852612368
       ],
       "SMB": [
-        -0.20170826928290292,
-        0.01793134850573958
+        -0.20439381962822356,
+        0.014494888866792838
       ],
       "HML": [
-        0.0828203666026415,
-        0.2867473379087387
+        0.08872957410138962,
+        0.28941006943324676
       ],
       "MOM": [
-        -0.1812607975950196,
-        -0.03561579627989031
+        -0.183159780338529,
+        -0.038909282708344844
       ],
       "RMW": [
-        0.04217198226401317,
-        0.2549867309357919
+        0.04063228108298282,
+        0.25194329026259327
       ],
       "CMA": [
-        -0.4240293337481493,
-        -0.15467525774806729
+        -0.4100975411280188,
+        -0.14617642850630896
       ],
       "TLT": [
-        -0.1780373902180608,
-        -0.026602830041404454
+        -0.17885584784189137,
+        -0.027060354081399278
       ],
       "UUP": [
-        -0.15125376089438164,
-        0.047593369555371766
+        -0.14812351388959033,
+        0.04842103323446107
       ],
       "XLE": [
-        -0.1314114629975864,
-        -0.04053954465070823
+        -0.13150325145994354,
+        -0.041040571777851184
       ]
     },
     "vif_by_factor": {
-      "SPY": 1.5404556846654887,
-      "SMB": 1.9131412175858344,
-      "HML": 2.280118798564324,
-      "MOM": 1.6587074953297785,
-      "RMW": 1.7604126804436542,
-      "CMA": 2.3359077369059764,
-      "TLT": 1.1746200929456745,
-      "UUP": 1.174303894704751,
-      "XLE": 1.3013654777910084
+      "SPY": 1.5404566811775093,
+      "SMB": 1.913141627980887,
+      "HML": 2.2801188707239337,
+      "MOM": 1.6587070323315034,
+      "RMW": 1.760412351022022,
+      "CMA": 2.335907986125338,
+      "TLT": 1.17461848551308,
+      "UUP": 1.1743014550869268,
+      "XLE": 1.3013664878153075
     }
   }
 }
