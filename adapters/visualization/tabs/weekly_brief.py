@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import os
 import shutil
 import tempfile
 import threading
@@ -546,9 +548,18 @@ def _start_dashboard_rebuild_background(
         except Exception:  # noqa: BLE001
             st.session_state["home_brief_rebuild_error"] = True
         finally:
+            # Best-effort — a background thread's st.session_state write has
+            # no ScriptRunContext and is not reliably observed by the polling
+            # fragment (this was the stuck-banner bug). The .done marker file
+            # below is the reliable channel: plain filesystem I/O needs no
+            # Streamlit context, mirroring the progress_path pattern already
+            # used for per-ticker fetch progress.
             st.session_state[_HOME_BRIEF_PROCESSING_KEY] = False
             st.session_state["home_brief_rebuild_done"] = True
             _gate_set_processing(_GATE_NAME, False)
+            if progress_path is not None:
+                with contextlib.suppress(OSError):
+                    Path(f"{progress_path}.done").write_text("1")
 
     threading.Thread(target=_worker, daemon=True).start()
 
@@ -686,10 +697,27 @@ _render_brief_processing_status_fragment: Any = _fragment(
 
 @_fragment(run_every=timedelta(seconds=2))
 def _poll_dashboard_rebuild() -> None:
-    """Rerun Home when background brief rebuild finishes."""
-    if st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
+    """Rerun Home when background brief rebuild finishes.
+
+    Checks the {progress_path}.done marker file FIRST — the reliable channel
+    (plain filesystem I/O, no Streamlit context needed) — before falling back
+    to the best-effort session_state flag, which can get stuck True forever
+    if the background thread's write races the polling fragment's read (see
+    _start_dashboard_rebuild_background's _worker for the write side).
+    """
+    progress_path = st.session_state.get(_HOME_BRIEF_PROGRESS_PATH_KEY)
+    done_marker = f"{progress_path}.done" if progress_path else None
+    marker_done = done_marker is not None and os.path.exists(done_marker)
+
+    if not marker_done and st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
         return
-    if st.session_state.pop("home_brief_rebuild_done", None):
+
+    session_done = st.session_state.pop("home_brief_rebuild_done", None)
+    if marker_done or session_done:
+        st.session_state[_HOME_BRIEF_PROCESSING_KEY] = False
+        if done_marker:
+            with contextlib.suppress(OSError):
+                os.remove(done_marker)
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state[_HOME_FETCH_STARTED_KEY] = False
         st.session_state[_HOME_FETCH_LANDED_KEY] = False

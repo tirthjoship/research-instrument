@@ -2493,3 +2493,37 @@ def test_doing_well_list_shows_hold_and_add_ok_as_toggle_rows(
     joined = "\n".join(seen)
     assert "TSLA" in joined
     assert "AAPL" in joined
+
+
+def test_poll_dashboard_rebuild_clears_via_done_marker_even_if_session_state_stuck(
+    tmp_path, monkeypatch
+) -> None:  # type: ignore[no-untyped-def]
+    """Regression test for the stuck-banner bug: even if
+    _HOME_BRIEF_PROCESSING_KEY never gets flipped to False (the original bug —
+    a background thread's session_state write has no ScriptRunContext), the
+    presence of a `{progress_path}.done` marker file must still let
+    _poll_dashboard_rebuild detect completion and rerun."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    progress_path = str(tmp_path / "rebuild_progress.json")
+    st.session_state[wb._HOME_BRIEF_PROGRESS_PATH_KEY] = progress_path
+    st.session_state[wb._HOME_BRIEF_PROCESSING_KEY] = (
+        True  # stuck True, simulating the bug
+    )
+    (tmp_path / "rebuild_progress.json.done").write_text("1")
+
+    reran = []
+    monkeypatch.setattr(st, "rerun", lambda: reran.append(True))
+
+    (
+        wb._poll_dashboard_rebuild.__wrapped__()
+        if hasattr(wb._poll_dashboard_rebuild, "__wrapped__")
+        else wb._poll_dashboard_rebuild()
+    )
+
+    assert reran, "expected st.rerun() once the .done marker is found"
+    assert st.session_state[wb._HOME_BRIEF_PROCESSING_KEY] is False
+    assert not (tmp_path / "rebuild_progress.json.done").exists()
