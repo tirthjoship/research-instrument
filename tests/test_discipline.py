@@ -155,19 +155,30 @@ def test_verdict_rubric_lines_no_forbidden_words() -> None:
 
 
 def test_rubric_html_marks_current_verdict() -> None:
-    """_rubric_html(Verdict.TRIM) must contain all 5 verdict names and mark TRIM."""
-    from adapters.visualization.components.decision_card import _rubric_html
+    """render_verdict_rubric_block() must contain all 5 verdict names.
+
+    Formerly this rubric rendered per-ticker via _rubric_html(current_verdict),
+    highlighting the fired verdict's row. It's now a single once-per-tab block
+    (render_verdict_rubric_block, no per-verdict highlighting) — see
+    decision_card.py and tests/components/test_decision_card.py.
+    """
+    from adapters.visualization.components.decision_card import (
+        render_verdict_rubric_block,
+    )
     from domain.discipline import Verdict
 
-    html = _rubric_html(Verdict.TRIM)
+    html = render_verdict_rubric_block()
     for v in Verdict:
         assert v.value in html, f"verdict {v.value} missing from rubric HTML"
-    # TRIM must be distinguished — bold or highlighted
-    assert "TRIM" in html
 
 
 def test_expanded_card_includes_rubric() -> None:
-    """render_expanded_card must include rubric content in its output."""
+    """render_expanded_card must include a rubric pointer, not the full rubric.
+
+    The full 5-row rubric moved to render_verdict_rubric_block(), rendered
+    once per tab instead of once per ticker — the per-ticker card now shows
+    only a one-line pointer naming the fired verdict.
+    """
     from adapters.visualization.components.decision_card import render_expanded_card
     from application.evidence_card import EvidenceCard
     from domain.discipline import Verdict
@@ -187,11 +198,10 @@ def test_expanded_card_includes_rubric() -> None:
         returns=(1.0, 2.0, 3.0, 4.0, 5.0),
         reliability="n/a",
     )
-    # The card must contain rubric copy — at minimum the rubric header and REDUCE marked
     assert (
-        "How this verdict was decided" in html
-    ), "rubric header missing from expanded card"
-    assert "REDUCE" in html  # marked as current verdict in rubric
+        "how verdicts are decided" in html.lower()
+    )  # pointer to the once-per-tab block
+    assert "REDUCE" in html  # fired verdict named in the pointer
 
 
 def test_expanded_card_shows_cad_symbol_for_tsx_ticker() -> None:
