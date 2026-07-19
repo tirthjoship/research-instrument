@@ -257,13 +257,19 @@ def render(db_path: str = DB_PATH) -> None:
         key="pf_window",
         label_visibility="collapsed",
     )
-    port_series, spy_series, labels = _perf_series(rows, win)
+    port_series, spy_series, labels, covered_weight_pct = _perf_series(rows, win)
     if port_series and spy_series:
-        st.caption(
+        caption = (
             "Constant-weight backtest: today's holdings and weights, priced "
             "historically — not your literal trade-by-trade timeline (purchase "
             "dates aren't in the uploaded holdings file)."
         )
+        if covered_weight_pct < 99.0:
+            caption += (
+                f" (covering {covered_weight_pct:.0f}% of your book by weight "
+                "— the rest has no cached price history yet)"
+            )
+        st.caption(caption)
         st.plotly_chart(
             build_perf_figure(port_pct=port_series, spy_pct=spy_series, labels=labels),
             use_container_width=True,
@@ -281,7 +287,7 @@ def render(db_path: str = DB_PATH) -> None:
 def _perf_series(
     rows: list[Any],
     window: str,
-) -> tuple[list[float], list[float], list[str]]:
+) -> tuple[list[float], list[float], list[str], float]:
     """Constant-weight backtest: real historical closes for each currently-held
     ticker, weighted by TODAY's portfolio weight, held flat over the window, vs
     real SPY closes over the same dates.
@@ -294,17 +300,27 @@ def _perf_series(
     today's actual allocation, which is real data honestly simplified — the UI
     caller must caption this distinction, not just this function.
 
-    Degrades to ([], [], []) if no held ticker has price history (never crashes,
-    never shows a chart built on zero real data points).
+    Returns (port_series, spy_series, labels, covered_weight_pct). Holdings with
+    no cached price history are excluded from both the numerator and the weight
+    base used to build the chart, so the chart can silently represent only a
+    subset of the real portfolio. covered_weight_pct (0-100) is the fraction of
+    the TRUE total weight across all `rows` that made it into the chart — the
+    caller must disclose this to the user when it's materially below 100.
+
+    Degrades to ([], [], [], 0.0) if no held ticker has price history (never
+    crashes, never shows a chart built on zero real data points). 0.0 is the
+    honest value here: literally none of the portfolio's weight is represented.
     """
     _WINDOW_DAYS = {"ytd": 180, "all": 365, "1y": 252}
     max_days = _WINDOW_DAYS.get(window, 365)
+
+    all_rows_weight = sum(r.weight for r in rows)
 
     spy_hist = fetch_price_history("SPY")
     spy_closes: list[float] = (spy_hist or {}).get("closes") or []
     spy_dates: list[str] = (spy_hist or {}).get("dates") or []
     if not spy_closes:
-        return [], [], []
+        return [], [], [], 0.0
 
     per_ticker: list[tuple[float, list[float]]] = []  # (weight, closes)
     total_weight = 0.0
@@ -317,11 +333,15 @@ def _perf_series(
         total_weight += r.weight
 
     if not per_ticker or total_weight <= 0:
-        return [], [], []
+        return [], [], [], 0.0
+
+    covered_weight_pct = (
+        (total_weight / all_rows_weight * 100.0) if all_rows_weight > 0 else 0.0
+    )
 
     n = min([len(spy_closes)] + [len(c) for _, c in per_ticker] + [max_days])
     if n < 2:
-        return [], [], []
+        return [], [], [], 0.0
 
     spy_window = spy_closes[-n:]
     labels = spy_dates[-n:] if len(spy_dates) >= n else [str(i) for i in range(n)]
@@ -339,7 +359,7 @@ def _perf_series(
             port_series[i] += w * (c - base) / base * 100.0
     port_series = [round(v, 2) for v in port_series]
 
-    return port_series, spy_series, labels
+    return port_series, spy_series, labels, round(covered_weight_pct, 2)
 
 
 def _render_empty_state() -> None:
