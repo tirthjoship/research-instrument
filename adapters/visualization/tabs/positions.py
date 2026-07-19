@@ -18,8 +18,13 @@ from adapters.visualization.price_cache import (
     fetch_price_history,
     fetch_ticker_info,
 )
+from application.runtime_guard import is_local_runtime
 
 DB_PATH = "data/recommendations.db"
+
+_CLOUD_WATCHLIST_KEY = (
+    "cloud_watchlist_tickers"  # list[str], session-only (Cloud/public path)
+)
 
 # Small-book threshold: ≤ this many positions → flat treemap layout.
 SMALL_BOOK_MAX = 5
@@ -494,9 +499,46 @@ def _render_trade_history(trades: list[Any], outcomes: list[Any]) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _parse_ticker_list(text: str) -> list[str]:
+    """Split a comma/newline-separated ticker list into uppercase symbols, deduped
+    in order, blank entries dropped."""
+    raw = text.replace(",", "\n").splitlines()
+    seen: list[str] = []
+    for piece in raw:
+        t = piece.strip().upper()
+        if t and t not in seen:
+            seen.append(t)
+    return seen
+
+
+def _load_watchlist_for_ui(db_path: str) -> list[dict[str, str]]:
+    """Local runtime: real SQLite-backed watchlist (single operator, safe to
+    persist). Cloud/public runtime: session-only — data/recommendations.db is a
+    single shared file across every visitor's container, so persisting there
+    would let one visitor's watchlist leak into (and get overwritten by)
+    another's."""
+    if is_local_runtime():
+        return load_watchlist(db_path)
+    import datetime as _dt
+
+    today = _dt.date.today().isoformat()
+    tickers = st.session_state.get(_CLOUD_WATCHLIST_KEY, [])
+    return [{"symbol": t, "added_date": today, "notes": ""} for t in tickers]
+
+
+def _remove_watchlist_for_ui(symbol: str, db_path: str) -> None:
+    if is_local_runtime():
+        from adapters.data.sqlite_store import SQLiteStore
+
+        SQLiteStore(db_path).remove_watchlist(symbol)
+        return
+    tickers = st.session_state.get(_CLOUD_WATCHLIST_KEY, [])
+    st.session_state[_CLOUD_WATCHLIST_KEY] = [t for t in tickers if t != symbol]
+
+
 def _render_watchlist_section(db_path: str = "data/recommendations.db") -> None:
     """Render the watchlist — pinned tickers with live prices + add/remove."""
-    watchlist = load_watchlist(db_path)
+    watchlist = _load_watchlist_for_ui(db_path)
 
     st.markdown(
         f'<div style="color:var(--ri-muted);font-size:.85rem;margin-bottom:1rem;">'
@@ -592,9 +634,7 @@ def _render_watchlist_card(
     with btn_cols[0]:
         if st.button("Remove", key=f"wl_rm_{symbol}"):
             try:
-                from adapters.data.sqlite_store import SQLiteStore
-
-                SQLiteStore(db_path).remove_watchlist(symbol)
+                _remove_watchlist_for_ui(symbol, db_path)
             except Exception as exc:
                 st.warning(f"Watchlist update failed: {exc}")
             st.rerun()
@@ -605,19 +645,35 @@ def _render_watchlist_card(
 
 
 def _render_watchlist_add_form(db_path: str) -> None:
-    st.markdown(
-        '<div class="ri-sec">Add to watchlist</div>',
-        unsafe_allow_html=True,
-    )
-    with st.form("add_watchlist_form", clear_on_submit=True):
-        cols = st.columns([3, 1])
-        ticker = cols[0].text_input("Symbol", placeholder="TSLA")
-        submitted = cols[1].form_submit_button("Add")
-        if submitted and ticker:
-            try:
-                from adapters.visualization.action_runner import run_add_watchlist
+    st.markdown('<div class="ri-sec">Add to watchlist</div>', unsafe_allow_html=True)
+    if is_local_runtime():
+        with st.form("add_watchlist_form", clear_on_submit=True):
+            cols = st.columns([3, 1])
+            ticker = cols[0].text_input("Symbol", placeholder="TSLA")
+            submitted = cols[1].form_submit_button("Add")
+            if submitted and ticker:
+                try:
+                    from adapters.visualization.action_runner import run_add_watchlist
 
-                run_add_watchlist(ticker.upper(), "", db_path=db_path)
-            except Exception as exc:
-                st.warning(f"Watchlist update failed: {exc}")
+                    run_add_watchlist(ticker.upper(), "", db_path=db_path)
+                except Exception as exc:
+                    st.warning(f"Watchlist update failed: {exc}")
+                st.rerun()
+        return
+
+    st.caption(
+        "Session-only — resets when you close this tab. Not shared with other "
+        "visitors (this demo runs on shared infrastructure, so watchlists can't "
+        "be saved per-visitor)."
+    )
+    with st.form("cloud_watchlist_form"):
+        current = ", ".join(st.session_state.get(_CLOUD_WATCHLIST_KEY, []))
+        text = st.text_area(
+            "Tickers (comma or newline separated)",
+            value=current,
+            placeholder="TSLA, NVDA\nAAPL",
+        )
+        submitted = st.form_submit_button("Update watchlist")
+        if submitted:
+            st.session_state[_CLOUD_WATCHLIST_KEY] = _parse_ticker_list(text)
             st.rerun()

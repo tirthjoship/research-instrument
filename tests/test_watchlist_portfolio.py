@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+import streamlit as st
+
 # ── Task 32/33: Watchlist folded into positions tab ──────────────────────────
 
 
@@ -176,3 +178,70 @@ def test_price_change_color_negative() -> None:
     change = -2.3
     color = "#16A34A" if change >= 0 else "#DC2626"
     assert color == "#DC2626"
+
+
+# ── Task 4 (SDD): Watchlist session-scoped on Cloud ──────────────────────────
+
+
+def test_watchlist_uses_sqlite_when_local_runtime(monkeypatch: Any) -> None:
+    from adapters.visualization.tabs import positions as pos_tab
+
+    monkeypatch.setattr(pos_tab, "is_local_runtime", lambda: True)
+    calls = []
+    monkeypatch.setattr(
+        pos_tab, "load_watchlist", lambda db_path: calls.append(db_path) or []
+    )
+    pos_tab._load_watchlist_for_ui("data/recommendations.db")
+    assert calls == ["data/recommendations.db"]
+
+
+def test_watchlist_uses_session_state_when_not_local_runtime(monkeypatch: Any) -> None:
+    from adapters.visualization.tabs import positions as pos_tab
+
+    st.session_state.clear()
+    monkeypatch.setattr(pos_tab, "is_local_runtime", lambda: False)
+    st.session_state[pos_tab._CLOUD_WATCHLIST_KEY] = ["TSLA", "NVDA"]
+
+    result = pos_tab._load_watchlist_for_ui("data/recommendations.db")
+    assert [w["symbol"] for w in result] == ["TSLA", "NVDA"]
+
+
+def test_watchlist_remove_on_cloud_mutates_session_state_only(monkeypatch: Any) -> None:
+    from adapters.visualization.tabs import positions as pos_tab
+
+    st.session_state.clear()
+    monkeypatch.setattr(pos_tab, "is_local_runtime", lambda: False)
+    st.session_state[pos_tab._CLOUD_WATCHLIST_KEY] = ["TSLA", "NVDA"]
+
+    pos_tab._remove_watchlist_for_ui("TSLA", "data/recommendations.db")
+    assert st.session_state[pos_tab._CLOUD_WATCHLIST_KEY] == ["NVDA"]
+
+
+def test_watchlist_remove_on_local_uses_sqlite_store(monkeypatch: Any) -> None:
+    from adapters.visualization.tabs import positions as pos_tab
+
+    monkeypatch.setattr(pos_tab, "is_local_runtime", lambda: True)
+    calls = []
+
+    class _FakeStore:
+        def __init__(self, db_path: str) -> None:
+            calls.append(("init", db_path))
+
+        def remove_watchlist(self, symbol: str) -> None:
+            calls.append(("remove", symbol))
+
+    monkeypatch.setattr("adapters.data.sqlite_store.SQLiteStore", _FakeStore)
+    pos_tab._remove_watchlist_for_ui("TSLA", "data/recommendations.db")
+    assert calls == [("init", "data/recommendations.db"), ("remove", "TSLA")]
+
+
+def test_parse_ticker_list_splits_on_commas_and_newlines() -> None:
+    from adapters.visualization.tabs import positions as pos_tab
+
+    assert pos_tab._parse_ticker_list("TSLA, nvda\naapl") == ["TSLA", "NVDA", "AAPL"]
+
+
+def test_parse_ticker_list_dedupes_and_drops_blanks() -> None:
+    from adapters.visualization.tabs import positions as pos_tab
+
+    assert pos_tab._parse_ticker_list("TSLA,, tsla\n\n  nvda ,NVDA") == ["TSLA", "NVDA"]
