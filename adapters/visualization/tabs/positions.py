@@ -1,13 +1,11 @@
-"""Tab 4: My Portfolio — live P&L, position health cards, trade form."""
+"""Tab 4: My Portfolio — live P&L, position health cards, trade history."""
 
 from __future__ import annotations
 
-import datetime
 from typing import Any
 
 import streamlit as st
 
-from adapters.visualization.action_runner import run_record_buy, run_record_sell
 from adapters.visualization.components.currency import (
     currency_for_ticker,
     currency_symbol,
@@ -15,9 +13,18 @@ from adapters.visualization.components.currency import (
 )
 from adapters.visualization.components.verdicts import outcome_tracker_verdict
 from adapters.visualization.data_loader import load_watchlist
-from adapters.visualization.price_cache import batch_fetch_prices, fetch_ticker_info
+from adapters.visualization.price_cache import (
+    batch_fetch_prices,
+    fetch_price_history,
+    fetch_ticker_info,
+)
+from application.runtime_guard import is_local_runtime
 
 DB_PATH = "data/recommendations.db"
+
+_CLOUD_WATCHLIST_KEY = (
+    "cloud_watchlist_tickers"  # list[str], session-only (Cloud/public path)
+)
 
 # Small-book threshold: ≤ this many positions → flat treemap layout.
 SMALL_BOOK_MAX = 5
@@ -47,7 +54,16 @@ def _resolve_book() -> tuple[list[Any], str, str]:
 
 def render(db_path: str = DB_PATH) -> None:
     """Render the My Portfolio tab (redesigned: hero / review / treemap / table / spy)."""
-    from adapters.visualization.components.portfolio_detail import render_inspect_detail
+    from adapters.visualization.components.decision_card import (
+        render_verdict_rubric_block,
+    )
+    from adapters.visualization.components.expandable_row import render_toggle_row
+    from adapters.visualization.components.portfolio_detail import (
+        PORTFOLIO_INSPECT_PICKER_KEY,
+        PORTFOLIO_INSPECT_STATE_KEY,
+        render_inspect_body,
+        render_inspect_detail,
+    )
     from adapters.visualization.components.portfolio_metrics import build_hero_html
     from adapters.visualization.components.portfolio_performance import (
         alpha_vs_spy,
@@ -78,8 +94,6 @@ def render(db_path: str = DB_PATH) -> None:
 
     if not holdings and not trades:
         _render_empty_state()
-        with st.expander("Record a Trade", expanded=False):
-            _render_trade_form(db_path)
         return
 
     if holdings:
@@ -133,7 +147,15 @@ def render(db_path: str = DB_PATH) -> None:
     )
     if flagged:
         for r in flagged:
-            st.markdown(build_review_card_html(r), unsafe_allow_html=True)
+            row_html = build_review_card_html(r)
+
+            def _detail(r: Any = r) -> None:
+                render_inspect_body(r, reports_dir)
+
+            render_toggle_row(
+                row_html=row_html, session_key=f"pf_nr_open_{r.ticker}", detail=_detail
+            )
+        st.markdown(render_verdict_rubric_block(), unsafe_allow_html=True)
     else:
         st.markdown(build_calm_html(), unsafe_allow_html=True)
 
@@ -154,7 +176,19 @@ def render(db_path: str = DB_PATH) -> None:
         unsafe_allow_html=True,
     )
 
-    inspect = st.query_params.get("inspect")
+    ticker_options = ["— none —"] + sorted(r.ticker for r in rows)
+    current = st.session_state.get(PORTFOLIO_INSPECT_STATE_KEY)
+    picked = st.selectbox(
+        "Inspect a holding",
+        ticker_options,
+        index=ticker_options.index(current) if current in ticker_options else 0,
+        key=PORTFOLIO_INSPECT_PICKER_KEY,
+    )
+    st.session_state[PORTFOLIO_INSPECT_STATE_KEY] = (
+        picked if picked != "— none —" else None
+    )
+
+    inspect = st.session_state.get(PORTFOLIO_INSPECT_STATE_KEY)
     if inspect:
         match = next((r for r in rows if r.ticker == inspect), None)
         if match:
@@ -224,37 +258,107 @@ def render(db_path: str = DB_PATH) -> None:
         key="pf_window",
         label_visibility="collapsed",
     )
-    port_series, spy_series, labels = _perf_series(rows, win, spy_end, pnl_pct)
-    st.plotly_chart(
-        build_perf_figure(port_pct=port_series, spy_pct=spy_series, labels=labels),
-        use_container_width=True,
-    )
+    port_series, spy_series, labels, covered_weight_pct = _perf_series(rows, win)
+    if port_series and spy_series:
+        caption = (
+            "Constant-weight backtest: today's holdings and weights, priced "
+            "historically — not your literal trade-by-trade timeline (purchase "
+            "dates aren't in the uploaded holdings file)."
+        )
+        if covered_weight_pct < 99.0:
+            caption += (
+                f" (covering {covered_weight_pct:.0f}% of your book by weight "
+                "— the rest has no cached price history yet)"
+            )
+        st.caption(caption)
+        st.plotly_chart(
+            build_perf_figure(port_pct=port_series, spy_pct=spy_series, labels=labels),
+            use_container_width=True,
+        )
+    else:
+        st.info("Not enough price history to show a portfolio-vs-SPY chart yet.")
 
     st.markdown('<div class="ri-sec">Manage</div>', unsafe_allow_html=True)
     with st.expander("Watchlist", expanded=False):
         _render_watchlist_section(db_path)
-    with st.expander("Record a Trade", expanded=False):
-        _render_trade_form(db_path)
 
 
 def _perf_series(
     rows: list[Any],
     window: str,
-    spy_end: float | None,
-    pnl_pct: float,
-) -> tuple[list[float], list[float], list[str]]:
-    """Simple attributed cumulative-return series per window (v1 linear ramp)."""
-    labels_map: dict[str, list[str]] = {
-        "ytd": ["Jan", "Mar", "Jun"],
-        "all": ["Mar", "Apr", "Jun"],
-        "1y": ["Jun '25", "Dec", "Jun '26"],
-    }
-    labels = labels_map.get(window, ["Mar", "Apr", "Jun"])
-    n = len(labels)
-    port = [round(pnl_pct * i / (n - 1), 2) for i in range(n)]
-    end = spy_end if spy_end is not None else 0.0
-    spy = [round(end * i / (n - 1), 2) for i in range(n)]
-    return port, spy, labels
+) -> tuple[list[float], list[float], list[str], float]:
+    """Constant-weight backtest: real historical closes for each currently-held
+    ticker, weighted by TODAY's portfolio weight, held flat over the window, vs
+    real SPY closes over the same dates.
+
+    This is NOT your literal trade-by-trade history — the uploaded holdings CSV
+    carries no per-lot purchase date (confirmed: no date column exists in the
+    broker export format this project reads), so there's no way to know when
+    each position was actually entered. Rather than fabricate one (the previous
+    "v1 linear ramp" this replaces did exactly that), this uses real prices at
+    today's actual allocation, which is real data honestly simplified — the UI
+    caller must caption this distinction, not just this function.
+
+    Returns (port_series, spy_series, labels, covered_weight_pct). Holdings with
+    no cached price history are excluded from both the numerator and the weight
+    base used to build the chart, so the chart can silently represent only a
+    subset of the real portfolio. covered_weight_pct (0-100) is the fraction of
+    the TRUE total weight across all `rows` that made it into the chart — the
+    caller must disclose this to the user when it's materially below 100.
+
+    Degrades to ([], [], [], 0.0) if no held ticker has price history (never
+    crashes, never shows a chart built on zero real data points). 0.0 is the
+    honest value here: literally none of the portfolio's weight is represented.
+    """
+    _WINDOW_DAYS = {"ytd": 180, "all": 365, "1y": 252}
+    max_days = _WINDOW_DAYS.get(window, 365)
+
+    all_rows_weight = sum(r.weight for r in rows)
+
+    spy_hist = fetch_price_history("SPY")
+    spy_closes: list[float] = (spy_hist or {}).get("closes") or []
+    spy_dates: list[str] = (spy_hist or {}).get("dates") or []
+    if not spy_closes:
+        return [], [], [], 0.0
+
+    per_ticker: list[tuple[float, list[float]]] = []  # (weight, closes)
+    total_weight = 0.0
+    for r in rows:
+        hist = fetch_price_history(r.ticker)
+        closes = (hist or {}).get("closes") or []
+        if not closes:
+            continue
+        per_ticker.append((r.weight, closes))
+        total_weight += r.weight
+
+    if not per_ticker or total_weight <= 0:
+        return [], [], [], 0.0
+
+    covered_weight_pct = (
+        (total_weight / all_rows_weight * 100.0) if all_rows_weight > 0 else 0.0
+    )
+
+    n = min([len(spy_closes)] + [len(c) for _, c in per_ticker] + [max_days])
+    if n < 2:
+        return [], [], [], 0.0
+
+    spy_window = spy_closes[-n:]
+    labels = spy_dates[-n:] if len(spy_dates) >= n else [str(i) for i in range(n)]
+    spy_base = spy_window[0]
+    spy_series = [round((c - spy_base) / spy_base * 100.0, 2) for c in spy_window]
+
+    port_series: list[float] = [0.0] * n
+    for weight, closes in per_ticker:
+        w = weight / total_weight
+        window_closes = closes[-n:]
+        base = window_closes[0]
+        if base == 0:
+            continue
+        for i, c in enumerate(window_closes):
+            port_series[i] += w * (c - base) / base * 100.0
+    port_series = [round(v, 2) for v in port_series]
+
+    return port_series, spy_series, labels, round(covered_weight_pct, 2)
 
 
 def _render_empty_state() -> None:
@@ -311,48 +415,6 @@ def _render_closed_positions_table(outcomes: list[Any]) -> None:
     ]
     outcome_df = pd.DataFrame(outcome_rows)
     st.write(outcome_df.to_html(escape=False, index=False), unsafe_allow_html=True)
-
-
-def _render_trade_form(db_path: str) -> None:
-    with st.form("record_trade_form"):
-        action = st.radio("Action", ["Buy", "Sell"], horizontal=True)
-        fcols = st.columns(4)
-        ticker = fcols[0].text_input("Ticker", placeholder="NVDA")
-        price = fcols[1].number_input(
-            "Price ($)", min_value=0.01, value=100.0, step=1.0
-        )
-        quantity = fcols[2].number_input("Quantity", min_value=1, value=10, step=1)
-        trade_date = fcols[3].date_input(
-            "Date (EST)", value=datetime.date.today(), help="Enter date in EST timezone"
-        )
-        submitted = st.form_submit_button("Record Trade", type="primary")
-        if submitted and ticker:
-            date_str = trade_date.strftime("%Y-%m-%d")
-            if action == "Buy":
-                run_record_buy(
-                    ticker=ticker.upper(),
-                    price=float(price),
-                    quantity=int(quantity),
-                    trade_date=date_str,
-                    db_path=db_path,
-                )
-                st.success(
-                    f"BUY recorded: {ticker.upper()} x{quantity} @ "
-                    f"{format_money(price, ticker.upper())} on {date_str} EST"
-                )
-            else:
-                run_record_sell(
-                    ticker=ticker.upper(),
-                    price=float(price),
-                    quantity=int(quantity),
-                    trade_date=date_str,
-                    db_path=db_path,
-                )
-                st.success(
-                    f"SELL recorded: {ticker.upper()} x{quantity} @ "
-                    f"{format_money(price, ticker.upper())} on {date_str} EST"
-                )
-            st.rerun()
 
 
 def _render_trade_history(trades: list[Any], outcomes: list[Any]) -> None:
@@ -437,9 +499,46 @@ def _render_trade_history(trades: list[Any], outcomes: list[Any]) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _parse_ticker_list(text: str) -> list[str]:
+    """Split a comma/newline-separated ticker list into uppercase symbols, deduped
+    in order, blank entries dropped."""
+    raw = text.replace(",", "\n").splitlines()
+    seen: list[str] = []
+    for piece in raw:
+        t = piece.strip().upper()
+        if t and t not in seen:
+            seen.append(t)
+    return seen
+
+
+def _load_watchlist_for_ui(db_path: str) -> list[dict[str, str]]:
+    """Local runtime: real SQLite-backed watchlist (single operator, safe to
+    persist). Cloud/public runtime: session-only — data/recommendations.db is a
+    single shared file across every visitor's container, so persisting there
+    would let one visitor's watchlist leak into (and get overwritten by)
+    another's."""
+    if is_local_runtime():
+        return load_watchlist(db_path)
+    import datetime as _dt
+
+    today = _dt.date.today().isoformat()
+    tickers = st.session_state.get(_CLOUD_WATCHLIST_KEY, [])
+    return [{"symbol": t, "added_date": today, "notes": ""} for t in tickers]
+
+
+def _remove_watchlist_for_ui(symbol: str, db_path: str) -> None:
+    if is_local_runtime():
+        from adapters.data.sqlite_store import SQLiteStore
+
+        SQLiteStore(db_path).remove_watchlist(symbol)
+        return
+    tickers = st.session_state.get(_CLOUD_WATCHLIST_KEY, [])
+    st.session_state[_CLOUD_WATCHLIST_KEY] = [t for t in tickers if t != symbol]
+
+
 def _render_watchlist_section(db_path: str = "data/recommendations.db") -> None:
     """Render the watchlist — pinned tickers with live prices + add/remove."""
-    watchlist = load_watchlist(db_path)
+    watchlist = _load_watchlist_for_ui(db_path)
 
     st.markdown(
         f'<div style="color:var(--ri-muted);font-size:.85rem;margin-bottom:1rem;">'
@@ -535,9 +634,7 @@ def _render_watchlist_card(
     with btn_cols[0]:
         if st.button("Remove", key=f"wl_rm_{symbol}"):
             try:
-                from adapters.data.sqlite_store import SQLiteStore
-
-                SQLiteStore(db_path).remove_watchlist(symbol)
+                _remove_watchlist_for_ui(symbol, db_path)
             except Exception as exc:
                 st.warning(f"Watchlist update failed: {exc}")
             st.rerun()
@@ -548,19 +645,35 @@ def _render_watchlist_card(
 
 
 def _render_watchlist_add_form(db_path: str) -> None:
-    st.markdown(
-        '<div class="ri-sec">Add to watchlist</div>',
-        unsafe_allow_html=True,
-    )
-    with st.form("add_watchlist_form", clear_on_submit=True):
-        cols = st.columns([3, 1])
-        ticker = cols[0].text_input("Symbol", placeholder="TSLA")
-        submitted = cols[1].form_submit_button("Add")
-        if submitted and ticker:
-            try:
-                from adapters.visualization.action_runner import run_add_watchlist
+    st.markdown('<div class="ri-sec">Add to watchlist</div>', unsafe_allow_html=True)
+    if is_local_runtime():
+        with st.form("add_watchlist_form", clear_on_submit=True):
+            cols = st.columns([3, 1])
+            ticker = cols[0].text_input("Symbol", placeholder="TSLA")
+            submitted = cols[1].form_submit_button("Add")
+            if submitted and ticker:
+                try:
+                    from adapters.visualization.action_runner import run_add_watchlist
 
-                run_add_watchlist(ticker.upper(), "", db_path=db_path)
-            except Exception as exc:
-                st.warning(f"Watchlist update failed: {exc}")
+                    run_add_watchlist(ticker.upper(), "", db_path=db_path)
+                except Exception as exc:
+                    st.warning(f"Watchlist update failed: {exc}")
+                st.rerun()
+        return
+
+    st.caption(
+        "Session-only — resets when you close this tab. Not shared with other "
+        "visitors (this demo runs on shared infrastructure, so watchlists can't "
+        "be saved per-visitor)."
+    )
+    with st.form("cloud_watchlist_form"):
+        current = ", ".join(st.session_state.get(_CLOUD_WATCHLIST_KEY, []))
+        text = st.text_area(
+            "Tickers (comma or newline separated)",
+            value=current,
+            placeholder="TSLA, NVDA\nAAPL",
+        )
+        submitted = st.form_submit_button("Update watchlist")
+        if submitted:
+            st.session_state[_CLOUD_WATCHLIST_KEY] = _parse_ticker_list(text)
             st.rerun()

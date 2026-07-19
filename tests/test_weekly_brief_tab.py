@@ -979,6 +979,10 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
     # (case=None → data_gap placeholder, but price/returns still wired from fetched data)
     st.session_state[wb._HOME_CASES_KEY] = {"YUMC": None}
     st.session_state[wb._HOME_FETCH_STARTED_KEY] = True
+    # The row is now a merged row + chevron toggle (render_toggle_row) instead
+    # of a separate st.expander — open it via its session_state key so the
+    # detail callback (which contains the price/returns HTML) actually runs.
+    st.session_state["nr_open_YUMC"] = True
 
     with (
         patch.object(
@@ -986,7 +990,6 @@ def test_home_expanded_card_has_real_price(tmp_path: object) -> None:  # type: i
         ),
         patch.object(st, "download_button"),
         patch.object(st, "caption"),
-        patch.object(st, "expander"),
         patch.object(st, "divider"),
         # _handle_onboarding now uses 2-column layout (_render_book_actions)
         patch.object(
@@ -1051,12 +1054,17 @@ def test_one_holding_data_gap_case_shows_honest_no_evidence_not_pending() -> Non
         "why": "pulled back below trend",
     }
 
+    # The row is now a merged row + chevron toggle (render_toggle_row) instead
+    # of a separate st.expander — open it via its session_state key so the
+    # detail callback (which contains the "no evidence" HTML) actually runs.
+    st.session_state.clear()
+    st.session_state["nr_open_YUMC"] = True
+
     captured: list[str] = []
     with (
         patch.object(
             st, "markdown", side_effect=lambda c, **k: captured.append(str(c))
         ),
-        patch.object(st, "expander") as mock_expander,
         patch.object(st, "caption"),
         patch.object(wb, "fetch_card", return_value=EvidenceCard("YUMC", (), ())),
         patch(
@@ -1068,8 +1076,6 @@ def test_one_holding_data_gap_case_shows_honest_no_evidence_not_pending() -> Non
             return_value={"closes": [], "atr": None, "ma200": None},
         ),
     ):
-        mock_expander.return_value.__enter__ = MagicMock(return_value=MagicMock())
-        mock_expander.return_value.__exit__ = MagicMock(return_value=False)
         wb._render_one_holding("YUMC", holding, MagicMock(), CaseResult((), (), True))
 
     html = "\n".join(captured)
@@ -1967,28 +1973,72 @@ def _needs_review_holdings() -> list[dict[str, object]]:
     ]
 
 
-def test_launch_case_fetcher_threads_real_news_and_extra_facts(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    """The background worker must fetch real news + verdict/why/buzz facts,
-    not the old news=[] gap — mirrors the fix already landed for Screener and
-    Stock Analysis this session."""
+def test_launch_case_fetcher_batches_gemini_calls_not_one_per_ticker(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    """Regression test for the sequential-Gemini-calls perf bug: with N
+    cache-miss tickers, the fetcher must call summarizer.summarize_cases()
+    ONCE (or ceil(N/15) times for a large N), never summarizer.summarize_case()
+    per ticker."""
     from adapters.visualization.tabs import weekly_brief as wb
 
     monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
+    monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [])
+    monkeypatch.setattr(
+        wb, "personal_case_extra_facts", lambda ticker, *, verdict, why: ()
+    )
 
-    calls: list[dict[str, object]] = []
+    class _SyncThread:
+        def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
+            self._target = target
 
-    def _fake_get_case_on_expand(ticker, card, news, *, expanded, summarizer, extra_facts=(), cache_path=None):  # type: ignore[no-untyped-def]
-        calls.append(
-            {
-                "ticker": ticker,
-                "news": news,
-                "extra_facts": extra_facts,
-            }
-        )
-        return object()
+        def start(self) -> None:
+            self._target()
 
-    monkeypatch.setattr(wb, "get_case_on_expand", _fake_get_case_on_expand)
-    monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [f"news-for-{ticker}"])
+    monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+    monkeypatch.setattr(wb, "_SLEEP", lambda s: None)
+
+    from domain.case_models import CaseResult
+
+    batch_calls: list[int] = []
+
+    class _FakeSummarizer:
+        def summarize_case(self, ctx):  # type: ignore[no-untyped-def]
+            raise AssertionError("must not call summarize_case per-ticker anymore")
+
+        def summarize_cases(self, contexts):  # type: ignore[no-untyped-def]
+            batch_calls.append(len(contexts))
+            return {ctx.ticker: CaseResult((), (), True) for ctx in contexts}
+
+    cards = [(h["ticker"], h) for h in _needs_review_holdings()]
+    cases: dict[str, object] = {}
+    wb._launch_case_fetcher(
+        cards, summarizer=_FakeSummarizer(), cases=cases, reports_dir=str(tmp_path)
+    )
+
+    assert batch_calls, "expected summarize_cases() to be called at least once"
+    assert set(cases) == {t for t, _ in cards}
+
+
+def test_launch_case_fetcher_threads_real_news_and_extra_facts(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    """The background worker must fetch real news + verdict/why/buzz facts,
+    not the old news=[] gap — mirrors the fix already landed for Screener and
+    Stock Analysis this session. Post-batching, this is verified via the
+    CaseContext objects passed into summarize_cases()."""
+    from adapters.visualization.tabs import weekly_brief as wb
+    from application.news_context import NewsItem
+    from domain.case_models import CaseResult
+
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
+    monkeypatch.setattr(
+        wb,
+        "personal_case_news",
+        lambda ticker: [
+            NewsItem(source="t", title=f"news-for-{ticker}", date="2026-01-01")
+        ],
+    )
     monkeypatch.setattr(
         wb,
         "personal_case_extra_facts",
@@ -2003,42 +2053,49 @@ def test_launch_case_fetcher_threads_real_news_and_extra_facts(monkeypatch) -> N
             self._target()
 
     monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+    monkeypatch.setattr(wb, "_SLEEP", lambda s: None)
+
+    batched_contexts: list[object] = []
+
+    class _FakeSummarizer:
+        def summarize_case(self, ctx):  # type: ignore[no-untyped-def]
+            raise AssertionError("must not call summarize_case per-ticker anymore")
+
+        def summarize_cases(self, contexts):  # type: ignore[no-untyped-def]
+            batched_contexts.extend(contexts)
+            return {ctx.ticker: CaseResult((), (), True) for ctx in contexts}
 
     cards = [(h["ticker"], h) for h in _needs_review_holdings()]
     cases: dict[str, object] = {}
     wb._launch_case_fetcher(
-        cards, summarizer=object(), cases=cases, reports_dir="data/reports/sample"
+        cards,
+        summarizer=_FakeSummarizer(),
+        cases=cases,
+        reports_dir=str(tmp_path),
     )
 
-    assert {c["ticker"] for c in calls} == {"AAA", "BBB"}
-    aaa = next(c for c in calls if c["ticker"] == "AAA")
-    assert aaa["news"] == ["news-for-AAA"]
-    assert aaa["extra_facts"] == ("Verdict: TRIM. x",)
+    assert {ctx.ticker for ctx in batched_contexts} == {"AAA", "BBB"}
+    aaa = next(ctx for ctx in batched_contexts if ctx.ticker == "AAA")
+    assert aaa.news == (("t", "news-for-AAA"),)
+    assert "Verdict: TRIM. x" in aaa.facts
     assert set(cases) == {"AAA", "BBB"}
 
 
-def test_launch_case_fetcher_threads_reports_dir_into_cache_path(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    """The background worker must pass a {reports_dir}-scoped cache_path to
-    get_case_on_expand, not the hardcoded data/personal/cited_cases.json —
-    that path is gitignored and never exists on a fresh Cloud clone, so every
+def test_launch_case_fetcher_threads_reports_dir_into_cache_path(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    """The background worker must check a {reports_dir}-scoped cache path via
+    load_cached_case, not the hardcoded data/personal/cited_cases.json — that
+    path is gitignored and never exists on a fresh Cloud clone, so every
     visitor was silently firing live, uncached Gemini calls on Home tab load."""
     from adapters.visualization.tabs import weekly_brief as wb
+    from domain.case_models import CaseResult
 
     monkeypatch.setattr(wb, "fetch_card", lambda ticker: object())
     monkeypatch.setattr(wb, "personal_case_news", lambda ticker: [])
     monkeypatch.setattr(
         wb, "personal_case_extra_facts", lambda ticker, *, verdict, why: ()
     )
-
-    calls: list[dict[str, object]] = []
-
-    def _fake_get_case_on_expand(
-        ticker, card, news, *, expanded, summarizer, extra_facts=(), cache_path=None
-    ):  # type: ignore[no-untyped-def]
-        calls.append({"ticker": ticker, "cache_path": cache_path})
-        return object()
-
-    monkeypatch.setattr(wb, "get_case_on_expand", _fake_get_case_on_expand)
 
     class _SyncThread:
         def __init__(self, target, daemon=True) -> None:  # type: ignore[no-untyped-def]
@@ -2048,16 +2105,34 @@ def test_launch_case_fetcher_threads_reports_dir_into_cache_path(monkeypatch) ->
             self._target()
 
     monkeypatch.setattr(wb.threading, "Thread", _SyncThread)
+    monkeypatch.setattr(wb, "_SLEEP", lambda s: None)
+
+    load_calls: list[str] = []
+    real_load_cached_case = wb.load_cached_case
+
+    def _spy_load_cached_case(path, ticker):  # type: ignore[no-untyped-def]
+        load_calls.append(path)
+        return real_load_cached_case(path, ticker)
+
+    monkeypatch.setattr(wb, "load_cached_case", _spy_load_cached_case)
+
+    class _FakeSummarizer:
+        def summarize_case(self, ctx):  # type: ignore[no-untyped-def]
+            raise AssertionError("must not call summarize_case per-ticker anymore")
+
+        def summarize_cases(self, contexts):  # type: ignore[no-untyped-def]
+            return {ctx.ticker: CaseResult((), (), True) for ctx in contexts}
 
     cards = [(h["ticker"], h) for h in _needs_review_holdings()]
     wb._launch_case_fetcher(
-        cards, summarizer=object(), cases={}, reports_dir="data/reports/sample"
+        cards,
+        summarizer=_FakeSummarizer(),
+        cases={},
+        reports_dir=str(tmp_path),
     )
 
-    assert calls
-    assert all(
-        c["cache_path"] == "data/reports/sample/home_cited_cases.json" for c in calls
-    )
+    assert load_calls
+    assert all(c == f"{tmp_path}/home_cited_cases.json" for c in load_calls)
 
 
 def test_launch_case_fetcher_paces_yfinance_calls(monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -2130,7 +2205,14 @@ def test_needs_review_fetch_starts_without_button_click(monkeypatch) -> None:  #
 
     assert len(launch_calls) == 1
     assert [t for t, _h in launch_calls[0]] == ["AAA", "BBB"]
-    assert button_calls == []  # no Fetch/Refresh button rendered
+    # No Fetch/Refresh button rendered — the only buttons are the
+    # All/Reduce/Trim/Review filter chips added in Task 4.
+    fetch_or_refresh = [
+        c
+        for c in button_calls
+        if "fetch" in str(c).lower() or "refresh" in str(c).lower()
+    ]
+    assert fetch_or_refresh == []
 
 
 def test_needs_review_progress_bar_reflects_done_total(monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -2226,4 +2308,291 @@ def test_needs_review_never_renders_fetch_or_refresh_button(monkeypatch) -> None
     st.session_state[wb._HOME_CASES_KEY] = {"AAA": object(), "BBB": object()}  # done
     wb._render_needs_review(holdings, "data/reports/sample")
 
-    assert button_calls == []
+    # No Fetch/Refresh button rendered in any state — the only buttons are the
+    # All/Reduce/Trim/Review filter chips added in Task 4.
+    fetch_or_refresh = [
+        c
+        for c in button_calls
+        if "fetch" in str(c).lower() or "refresh" in str(c).lower()
+    ]
+    assert fetch_or_refresh == []
+
+
+def _fake_evidence_card(ticker: str):  # type: ignore[no-untyped-def]
+    from application.evidence_card import EvidenceCard
+    from domain.evidence_rag import RagColor, RagSignal
+
+    return EvidenceCard(
+        ticker=ticker,
+        signals=(RagSignal("Technicals", RagColor.GREEN, "ok"),),
+        sparkline=(),
+    )
+
+
+def test_needs_review_row_has_no_separate_expander_label(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """The old 'TICKER — VERDICT (expand for full evidence)' st.expander label
+    must be gone — the row itself is now the only click target, so
+    st.expander must never be called for the Needs Review row."""
+    from unittest.mock import patch
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: _fake_evidence_card(ticker))
+    monkeypatch.setattr(
+        wb, "fetch_price_history", lambda ticker: {"closes": []}, raising=False
+    )
+
+    h = {"ticker": "AAPL", "verdict": "TRIM", "unrealized_pct": 18.4, "why": "test"}
+    with patch.object(st, "expander") as mock_expander:
+        wb._render_one_holding("AAPL", h, summarizer=object(), cached_case=None)
+
+    mock_expander.assert_not_called()
+
+
+def test_needs_review_row_expands_in_place_when_toggled(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Setting the row's session_state toggle True must render its evidence
+    detail on the same pass, without a second click."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    st.session_state["nr_open_AAPL"] = True
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: _fake_evidence_card(ticker))
+    monkeypatch.setattr(
+        wb, "fetch_price_history", lambda ticker: {"closes": []}, raising=False
+    )
+
+    seen: list[str] = []
+    orig_markdown = st.markdown
+
+    def _capture(body, *a, **k):  # type: ignore[no-untyped-def]
+        if isinstance(body, str):
+            seen.append(body)
+        return orig_markdown(body, *a, **k)
+
+    monkeypatch.setattr(st, "markdown", _capture)
+    h = {"ticker": "AAPL", "verdict": "TRIM", "unrealized_pct": 18.4, "why": "test"}
+    wb._render_one_holding("AAPL", h, summarizer=object(), cached_case=None)
+
+    assert any("dc-case" in s or "Evidence detail" in s for s in seen)
+
+
+def test_needs_review_row_closed_by_default_hides_detail(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """With no nr_open_<TICKER> toggle set in session_state, the row must
+    render collapsed — the expanded evidence detail must NOT appear on the
+    first render. Negative-case counterpart to
+    test_needs_review_row_expands_in_place_when_toggled."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    monkeypatch.setattr(wb, "fetch_card", lambda ticker: _fake_evidence_card(ticker))
+    monkeypatch.setattr(
+        wb, "fetch_price_history", lambda ticker: {"closes": []}, raising=False
+    )
+
+    seen: list[str] = []
+    orig_markdown = st.markdown
+
+    def _capture(body, *a, **k):  # type: ignore[no-untyped-def]
+        if isinstance(body, str):
+            seen.append(body)
+        return orig_markdown(body, *a, **k)
+
+    monkeypatch.setattr(st, "markdown", _capture)
+    h = {"ticker": "AAPL", "verdict": "TRIM", "unrealized_pct": 18.4, "why": "test"}
+    wb._render_one_holding("AAPL", h, summarizer=object(), cached_case=None)
+
+    assert not any("dc-case" in s or "Evidence detail" in s for s in seen)
+
+
+def test_rubric_block_rendered_once_for_whole_needs_review_section(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    """The rubric ('How Verdicts Are Decided') must appear exactly once on the
+    page, not once per flagged holding."""
+    import json
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    monkeypatch.setattr(wb, "_launch_case_fetcher", lambda *a, **k: None)
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-19",
+                "regime": "neutral",
+                "holdings": [
+                    {
+                        "ticker": "AAA",
+                        "verdict": "TRIM",
+                        "unrealized_pct": 1.0,
+                        "why": "x",
+                    },
+                    {
+                        "ticker": "BBB",
+                        "verdict": "REDUCE",
+                        "unrealized_pct": -1.0,
+                        "why": "y",
+                    },
+                ],
+            }
+        )
+    )
+    seen: list[str] = []
+    orig_markdown = st.markdown
+
+    def _capture(body, *a, **k):  # type: ignore[no-untyped-def]
+        if isinstance(body, str):
+            seen.append(body)
+        return orig_markdown(body, *a, **k)
+
+    monkeypatch.setattr(st, "markdown", _capture)
+    wb.render(path=str(p))
+
+    occurrences = sum(s.count("How Verdicts Are Decided") for s in seen)
+    assert occurrences == 1
+
+
+def test_filter_chips_render_all_reduce_trim_review_counts(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    import json
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    monkeypatch.setattr(wb, "_launch_case_fetcher", lambda *a, **k: None)
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-19",
+                "regime": "neutral",
+                "holdings": [
+                    {
+                        "ticker": "AAA",
+                        "verdict": "TRIM",
+                        "unrealized_pct": 1.0,
+                        "why": "x",
+                    },
+                    {
+                        "ticker": "BBB",
+                        "verdict": "TRIM",
+                        "unrealized_pct": 1.0,
+                        "why": "x",
+                    },
+                    {
+                        "ticker": "CCC",
+                        "verdict": "REDUCE",
+                        "unrealized_pct": -1.0,
+                        "why": "y",
+                    },
+                ],
+            }
+        )
+    )
+    button_calls: list[tuple[object, object]] = []
+    monkeypatch.setattr(
+        st,
+        "button",
+        lambda *a, **k: (button_calls.append((a, k)), False)[1],  # noqa: ARG005
+    )
+    wb.render(path=str(p))
+    labels = [a[0] if a else k.get("label") for a, k in button_calls]
+    assert "All (3)" in labels
+    assert "Reduce (1)" in labels
+    assert "Trim (2)" in labels
+    assert "Review (0)" in labels
+
+
+def test_doing_well_list_shows_hold_and_add_ok_as_toggle_rows(
+    monkeypatch, tmp_path
+) -> None:  # type: ignore[no-untyped-def]
+    import json
+
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    monkeypatch.setattr(wb, "_launch_case_fetcher", lambda *a, **k: None)
+    p = tmp_path / "brief_summary.json"
+    p.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-07-19",
+                "regime": "neutral",
+                "holdings": [
+                    {
+                        "ticker": "TSLA",
+                        "verdict": "HOLD",
+                        "unrealized_pct": 104.0,
+                        "why": "steady",
+                    },
+                    {
+                        "ticker": "AAPL",
+                        "verdict": "ADD_OK",
+                        "unrealized_pct": 75.0,
+                        "why": "strong",
+                    },
+                ],
+            }
+        )
+    )
+    seen: list[str] = []
+    orig_markdown = st.markdown
+    monkeypatch.setattr(
+        st,
+        "markdown",
+        lambda body, *a, **k: (seen.append(body) if isinstance(body, str) else None)
+        or orig_markdown(body, *a, **k),
+    )
+    wb.render(path=str(p))
+    joined = "\n".join(seen)
+    assert "TSLA" in joined
+    assert "AAPL" in joined
+
+
+def test_poll_dashboard_rebuild_clears_via_done_marker_even_if_session_state_stuck(
+    tmp_path, monkeypatch
+) -> None:  # type: ignore[no-untyped-def]
+    """Regression test for the stuck-banner bug: even if
+    _HOME_BRIEF_PROCESSING_KEY never gets flipped to False (the original bug —
+    a background thread's session_state write has no ScriptRunContext), the
+    presence of a `{progress_path}.done` marker file must still let
+    _poll_dashboard_rebuild detect completion and rerun."""
+    import streamlit as st
+
+    from adapters.visualization.tabs import weekly_brief as wb
+
+    st.session_state.clear()
+    progress_path = str(tmp_path / "rebuild_progress.json")
+    st.session_state[wb._HOME_BRIEF_PROGRESS_PATH_KEY] = progress_path
+    st.session_state[wb._HOME_BRIEF_PROCESSING_KEY] = (
+        True  # stuck True, simulating the bug
+    )
+    (tmp_path / "rebuild_progress.json.done").write_text("1")
+
+    reran = []
+    monkeypatch.setattr(st, "rerun", lambda: reran.append(True))
+
+    (
+        wb._poll_dashboard_rebuild.__wrapped__()
+        if hasattr(wb._poll_dashboard_rebuild, "__wrapped__")
+        else wb._poll_dashboard_rebuild()
+    )
+
+    assert reran, "expected st.rerun() once the .done marker is found"
+    assert st.session_state[wb._HOME_BRIEF_PROCESSING_KEY] is False
+    assert not (tmp_path / "rebuild_progress.json.done").exists()

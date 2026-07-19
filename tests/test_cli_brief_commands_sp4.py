@@ -94,14 +94,14 @@ def test_to_markdown_shows_inline_sources_for_corroborated_holding() -> None:
     h = _holding(tier=ConvergenceTier.STRONG, n=3, stance=Stance.BULLISH)
     brief = _minimal_brief([h])
     md = to_markdown(brief)
-    assert "│ sources: BULLISH ×3 [STRONG]" in md
+    assert "(sources: BULLISH ×3 [STRONG])" in md
 
 
 def test_to_markdown_no_sources_segment_when_no_snapshot() -> None:
     h = _holding()  # no corroboration
     brief = _minimal_brief([h])
     md = to_markdown(brief)
-    assert "│ sources:" not in md
+    assert "(sources:" not in md
 
 
 def test_to_markdown_shows_conflict_marker() -> None:

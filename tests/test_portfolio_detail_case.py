@@ -69,10 +69,13 @@ def test_resolve_case_threads_reports_dir_into_cache_path(monkeypatch):
 
 
 def test_detail_not_hardcoded_none():
-    # guard against the regression we just fixed
+    # guard against the regression we just fixed. render_inspect_detail
+    # delegates its body (including case resolution) to render_inspect_body
+    # — see that function's docstring — so the guard now targets the
+    # function that actually resolves the case, not the thin wrapper.
     import inspect
 
-    src = inspect.getsource(pd.render_inspect_detail)
+    src = inspect.getsource(pd.render_inspect_body)
     assert "case = None" not in src
     assert "resolve_case" in src
 

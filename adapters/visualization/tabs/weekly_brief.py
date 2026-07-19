@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import contextlib
+import os
 import shutil
 import tempfile
 import threading
 from collections.abc import Callable, Sequence
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from time import sleep as _time_sleep
@@ -33,11 +36,13 @@ from adapters.visualization.card_fetch import (
 from adapters.visualization.components.decision_card import (
     render_collapsed_row,
     render_expanded_card,
+    render_verdict_rubric_block,
 )
 from adapters.visualization.components.evidence_chip import (
     render_evidence_chip,
     render_evidence_chip_by_key,
 )
+from adapters.visualization.components.expandable_row import render_toggle_row
 from adapters.visualization.components.formatters import status_pill_html
 from adapters.visualization.components.onboarding import render_sample_banner_html
 from adapters.visualization.components.proof_tile import render_tile
@@ -55,13 +60,18 @@ from adapters.visualization.run_gate import is_processing as _gate_is_processing
 from adapters.visualization.run_gate import set_last_run_ts as _gate_set_last_run_ts
 from adapters.visualization.run_gate import set_processing as _gate_set_processing
 from application.card_loading import select_case_summarizer
+from application.case_batch import run_cases_in_batches
+from application.case_builder import build_case_context
+from application.case_cache import load_cached_case
 from application.holdings_reader import read_holdings
 from application.personal_case_facts import (
     personal_case_extra_facts,
     personal_case_news,
 )
 from application.runtime_guard import holdings_upload_enabled
+from domain.case_models import CaseContext
 from domain.discipline import Verdict
+from domain.evidence_rag import RagColor
 from domain.evidence_registry import EvidenceEntry
 from domain.evidence_registry import Verdict as EvidenceVerdict
 from domain.evidence_registry import entries_by_verdict
@@ -342,30 +352,49 @@ def _launch_case_fetcher(
     cache_path = f"{reports_dir}/home_cited_cases.json"
 
     def _worker() -> None:
+        pending_contexts: list[CaseContext] = []
+        pending_tickers: list[str] = []
+
         for ticker, h in cards:
             if ticker in cases:
                 continue
             try:
                 card = fetch_card(ticker)
-                news = personal_case_news(ticker)
-                extra_facts = personal_case_extra_facts(
-                    ticker,
-                    verdict=str(h.get("verdict", "")),
-                    why=str(h.get("why", "")),
-                )
-                result = get_case_on_expand(
-                    ticker,
-                    card,
-                    news=news,
-                    expanded=True,
-                    summarizer=summarizer,
-                    extra_facts=extra_facts,
-                    cache_path=cache_path,
-                )
-                cases[ticker] = result
+                cached = load_cached_case(cache_path, ticker)
+                if cached is not None:
+                    cases[ticker] = cached
+                else:
+                    news = personal_case_news(ticker)
+                    extra_facts = personal_case_extra_facts(
+                        ticker,
+                        verdict=str(h.get("verdict", "")),
+                        why=str(h.get("why", "")),
+                    )
+                    sigs = tuple(
+                        s
+                        for s in getattr(card, "signals", ())
+                        if s.color is not RagColor.GAP
+                    )
+                    ctx = build_case_context(ticker, sigs, news)
+                    if extra_facts:
+                        ctx = replace(ctx, facts=ctx.facts + extra_facts)
+                    pending_contexts.append(ctx)
+                    pending_tickers.append(ticker)
             except Exception:  # noqa: BLE001
                 cases[ticker] = None  # mark attempted; expander shows honest "—"
+            # yfinance pacing (fetch_card above) — unrelated to the Gemini
+            # batching below, kept as-is: this protects against a separate,
+            # already-diagnosed Yahoo burst rate-limit.
             _SLEEP(_CASE_FETCH_PACE_S)
+
+        if pending_contexts:
+            try:
+                results = run_cases_in_batches(pending_contexts, summarizer)  # type: ignore[arg-type]
+                for ticker, result in zip(pending_tickers, results, strict=True):
+                    cases[ticker] = result
+            except Exception:  # noqa: BLE001
+                for ticker in pending_tickers:
+                    cases[ticker] = None
 
     threading.Thread(target=_worker, daemon=True).start()
 
@@ -376,7 +405,7 @@ def _render_one_holding(
     summarizer: object,
     cached_case: object = _CASE_PENDING,
 ) -> None:
-    """Render one holding row: collapsed row + expander with expanded card.
+    """Render one holding as a merged row + chevron toggle with expanded card.
 
     This is the inner implementation.  Production callers must use
     ``_render_one_holding_fragment`` (the ``st.fragment``-wrapped version) so
@@ -406,17 +435,15 @@ def _render_one_holding(
     cost = implied_cost(live_price, unrealized_f)
     rets = window_returns(closes)
 
-    st.markdown(
-        render_collapsed_row(
-            card,
-            verdict=verdict,
-            name=ticker,
-            unrealized_pct=unrealized_f,
-            oneliner=oneliner,
-        ),
-        unsafe_allow_html=True,
+    row_html = render_collapsed_row(
+        card,
+        verdict=verdict,
+        name=ticker,
+        unrealized_pct=unrealized_f,
+        oneliner=oneliner,
     )
-    with st.expander(f"{ticker} — {verdict.value} (expand for full evidence)"):
+
+    def _detail() -> None:
         if cached_case is _CASE_PENDING:
             # Background thread not yet done for this ticker — show placeholder
             st.caption(
@@ -441,6 +468,10 @@ def _render_one_holding(
                 ),
                 unsafe_allow_html=True,
             )
+
+    render_toggle_row(
+        row_html=row_html, session_key=f"nr_open_{ticker}", detail=_detail
+    )
 
 
 # Fragment-wrapped version for production use (each row independent render cycle).
@@ -542,9 +573,18 @@ def _start_dashboard_rebuild_background(
         except Exception:  # noqa: BLE001
             st.session_state["home_brief_rebuild_error"] = True
         finally:
+            # Best-effort — a background thread's st.session_state write has
+            # no ScriptRunContext and is not reliably observed by the polling
+            # fragment (this was the stuck-banner bug). The .done marker file
+            # below is the reliable channel: plain filesystem I/O needs no
+            # Streamlit context, mirroring the progress_path pattern already
+            # used for per-ticker fetch progress.
             st.session_state[_HOME_BRIEF_PROCESSING_KEY] = False
             st.session_state["home_brief_rebuild_done"] = True
             _gate_set_processing(_GATE_NAME, False)
+            if progress_path is not None:
+                with contextlib.suppress(OSError):
+                    Path(f"{progress_path}.done").write_text("1")
 
     threading.Thread(target=_worker, daemon=True).start()
 
@@ -682,10 +722,27 @@ _render_brief_processing_status_fragment: Any = _fragment(
 
 @_fragment(run_every=timedelta(seconds=2))
 def _poll_dashboard_rebuild() -> None:
-    """Rerun Home when background brief rebuild finishes."""
-    if st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
+    """Rerun Home when background brief rebuild finishes.
+
+    Checks the {progress_path}.done marker file FIRST — the reliable channel
+    (plain filesystem I/O, no Streamlit context needed) — before falling back
+    to the best-effort session_state flag, which can get stuck True forever
+    if the background thread's write races the polling fragment's read (see
+    _start_dashboard_rebuild_background's _worker for the write side).
+    """
+    progress_path = st.session_state.get(_HOME_BRIEF_PROGRESS_PATH_KEY)
+    done_marker = f"{progress_path}.done" if progress_path else None
+    marker_done = done_marker is not None and os.path.exists(done_marker)
+
+    if not marker_done and st.session_state.get(_HOME_BRIEF_PROCESSING_KEY):
         return
-    if st.session_state.pop("home_brief_rebuild_done", None):
+
+    session_done = st.session_state.pop("home_brief_rebuild_done", None)
+    if marker_done or session_done:
+        st.session_state[_HOME_BRIEF_PROCESSING_KEY] = False
+        if done_marker:
+            with contextlib.suppress(OSError):
+                os.remove(done_marker)
         st.session_state.pop(_HOME_CASES_KEY, None)
         st.session_state[_HOME_FETCH_STARTED_KEY] = False
         st.session_state[_HOME_FETCH_LANDED_KEY] = False
@@ -741,6 +798,44 @@ _render_needs_review_status_fragment: Any = _fragment(run_every=timedelta(second
 )
 
 
+_VERDICT_FILTER_KEY = "nr_verdict_filter"  # "all" | "REDUCE" | "TRIM" | "REVIEW"
+
+
+def _render_verdict_filter_chips(holdings: list[dict[str, Any]]) -> str:
+    """Render All/Reduce/Trim/Review chip buttons above the Needs Review list.
+
+    Returns the currently-selected filter value ("all" or a Verdict string).
+    Uses st.session_state (not a widget's own return) so the selection
+    survives the fragment reruns that redraw individual rows.
+    """
+    counts: dict[str, int] = {"REDUCE": 0, "TRIM": 0, "REVIEW": 0}
+    for h in holdings:
+        v = h.get("verdict")
+        if v in counts:
+            counts[v] += 1
+    total = sum(counts.values())
+    current = st.session_state.get(_VERDICT_FILTER_KEY, "all")
+
+    labels = [
+        ("all", f"All ({total})"),
+        ("REDUCE", f"Reduce ({counts['REDUCE']})"),
+        ("TRIM", f"Trim ({counts['TRIM']})"),
+        ("REVIEW", f"Review ({counts['REVIEW']})"),
+    ]
+    cols = st.columns(4)
+    for col, (value, label) in zip(cols, labels):
+        with col:
+            if st.button(
+                label,
+                key=f"nr_filter_{value}",
+                type="primary" if current == value else "secondary",
+                use_container_width=True,
+            ):
+                st.session_state[_VERDICT_FILTER_KEY] = value
+                st.rerun()
+    return str(st.session_state.get(_VERDICT_FILTER_KEY, "all"))
+
+
 def _render_needs_review(holdings: list[dict[str, Any]], reports_dir: str) -> None:
     """Render holdings using background-fetched case data (fully automatic)."""
     cards = _needs_review_cards(holdings)
@@ -760,9 +855,91 @@ def _render_needs_review(holdings: list[dict[str, Any]], reports_dir: str) -> No
     _ensure_evidence_fetch_started(cards, summarizer, cases, reports_dir)
     _render_needs_review_status_fragment(cards)
 
-    for ticker, h in cards:
+    selected = _render_verdict_filter_chips([h for _, h in cards])
+    visible = (
+        cards
+        if selected == "all"
+        else [(ticker, h) for ticker, h in cards if h.get("verdict") == selected]
+    )
+
+    for ticker, h in visible:
         cached = cases.get(ticker, _CASE_PENDING)
         _render_one_holding_fragment(ticker, h, summarizer, cached)
+
+
+def _render_doing_well(holdings: list[dict[str, Any]], reports_dir: str) -> None:
+    """HOLD/ADD_OK holdings — same expandable-row treatment as Needs Review,
+    just nothing flagged. Upgrades the old one-line 'Holding steady · N' caption."""
+    from adapters.visualization.price_cache import (  # noqa: PLC0415
+        fetch_price_history,
+        fetch_prices,
+    )
+
+    steady = [h for h in holdings if h.get("verdict") in ("HOLD", "ADD_OK")]
+    if not steady:
+        return
+    st.markdown(
+        f'<div class="ri-sec">HOLDING STEADY — {len(steady)}, NOTHING TO ACTION</div>',
+        unsafe_allow_html=True,
+    )
+    summarizer = select_case_summarizer()
+    for h in steady:
+        ticker = str(h["ticker"])
+        card = fetch_card(ticker)
+        verdict = Verdict(str(h["verdict"]))
+        unrealized = h.get("unrealized_pct")
+        unrealized_f = float(unrealized) if unrealized is not None else None
+        row_html = render_collapsed_row(
+            card,
+            verdict=verdict,
+            name=ticker,
+            unrealized_pct=unrealized_f,
+            oneliner=str(h.get("why", "")),
+        )
+
+        def _detail(
+            ticker: str = ticker,
+            card: Any = card,
+            verdict: Verdict = verdict,
+            unrealized_f: float | None = unrealized_f,
+            h: dict[str, Any] = h,
+        ) -> None:
+            price_data = fetch_prices((ticker,)).get(ticker, {})
+            live_price = price_data.get("price")
+            hist = fetch_price_history(ticker) or {}
+            closes = hist.get("closes") or []
+            cost = implied_cost(live_price, unrealized_f)
+            rets = window_returns(closes)
+            case = get_case_on_expand(
+                ticker,
+                card,
+                news=personal_case_news(ticker),
+                expanded=True,
+                summarizer=summarizer,
+                extra_facts=personal_case_extra_facts(
+                    ticker, verdict=str(h.get("verdict", "")), why=str(h.get("why", ""))
+                ),
+                cache_path=f"{reports_dir}/home_cited_cases.json",
+            )
+            st.markdown(
+                render_expanded_card(
+                    card,
+                    case=case,
+                    verdict=verdict,
+                    name=ticker,
+                    unrealized_pct=unrealized_f,
+                    means=str(h.get("why", "")),
+                    price=live_price,
+                    cost=cost,
+                    returns=rets,
+                    reliability="measured forward; see Trust",
+                ),
+                unsafe_allow_html=True,
+            )
+
+        render_toggle_row(
+            row_html=row_html, session_key=f"steady_open_{ticker}", detail=_detail
+        )
 
 
 def _render_honesty_line_html() -> str:
@@ -1104,8 +1281,12 @@ def render(
     )
     _render_needs_review(holdings, reports_dir)
 
-    steady = sum(1 for h in holdings if h.get("verdict") in ("HOLD", "ADD_OK"))
-    st.caption(f"Holding steady · {steady} — no rule fired, nothing to do")
+    _render_doing_well(holdings, reports_dir)
+
+    if any(h.get("verdict") in _NEEDS_REVIEW for h in holdings) or any(
+        h.get("verdict") in ("HOLD", "ADD_OK") for h in holdings
+    ):
+        st.markdown(render_verdict_rubric_block(), unsafe_allow_html=True)
 
     # ── Credibility panel: what we know / don't know / still testing ─────────
     # Placed at the end of the tab — reference material for after the user has

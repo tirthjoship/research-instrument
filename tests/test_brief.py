@@ -16,7 +16,7 @@ from domain.brief import (
     to_stdout_masked,
 )
 from domain.discipline import Verdict
-from domain.models import PortfolioRisk, PositionRisk
+from domain.models import BookMacroExposure, PortfolioRisk, PositionRisk
 from domain.regime import Regime
 from domain.screen_models import FactorScore, ScreenCandidate, ScreenLabel, ScreenResult
 
@@ -222,7 +222,9 @@ def test_assemble_top_n_limits_candidates() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _full_brief(label: ScreenLabel) -> WeeklyBrief:
+def _full_brief(
+    label: ScreenLabel, macro: BookMacroExposure | None = None
+) -> WeeklyBrief:
     return assemble_brief(
         as_of="2026-06-08",
         regime=Regime.RISK_OFF,
@@ -236,6 +238,23 @@ def _full_brief(label: ScreenLabel) -> WeeklyBrief:
         cluster_overlaps={},
         scorecard=_scorecard(),
         concentration_threshold=0.20,
+        macro=macro,
+    )
+
+
+def _macro() -> BookMacroExposure:
+    return BookMacroExposure(
+        as_of="2026-06-08",
+        factors=("SPY",),
+        net_beta_by_factor={"SPY": 1.1},
+        systematic_share=0.71,
+        idiosyncratic_share=0.29,
+        dominant_factor="SPY",
+        flags=(),
+        holdings=(),
+        coverage_holdings=1,
+        total_holdings=2,
+        coverage_value_frac=0.5,
     )
 
 
@@ -243,10 +262,44 @@ def test_markdown_has_all_sections() -> None:
     md = to_markdown(_full_brief(ScreenLabel.RESEARCH_ONLY))
     assert "WEEKLY BRIEF" in md
     assert "REGIME" in md
-    assert "HOLDINGS VERDICTS" in md
+    assert "## Needs Review" in md
+    assert "## Holding Steady" in md
     assert "CONCENTRATION" in md
-    assert "SCORECARD" in md
+    assert "## Scorecard" in md
     assert "RIVN" in md  # full markdown DOES include holding tickers (gitignored file)
+
+
+def test_markdown_splits_holdings_into_needs_review_and_holding_steady_tables() -> None:
+    md = to_markdown(_full_brief(ScreenLabel.RESEARCH_ONLY))
+    assert "## Needs Review" in md
+    assert "## Holding Steady" in md
+    assert "| Ticker | Verdict | P&L | Why |" in md
+
+
+def test_markdown_has_verdict_rules_glossary_once_at_the_end() -> None:
+    md = to_markdown(_full_brief(ScreenLabel.RESEARCH_ONLY))
+    assert md.count("## How Verdicts Are Decided") == 1
+    tail = md.rsplit("## How Verdicts Are Decided", 1)[1]
+    for label in ("REVIEW", "TRIM", "REDUCE", "ADD_OK", "HOLD"):
+        assert label in tail
+    # Glossary must be the LAST section — no other "## " header follows it.
+    assert "## " not in tail
+    # The document's final sentence is the glossary's closing caveat line.
+    assert md.rstrip().endswith("Research only, not a trade signal._")
+
+
+def test_markdown_macro_and_scorecard_are_tables() -> None:
+    md = to_markdown(_full_brief(ScreenLabel.RESEARCH_ONLY, macro=_macro()))
+    assert "## Macro Exposure" in md
+    assert "## Scorecard" in md
+    assert "| Metric | Value |" in md
+    assert "| Rule | Window | Result |" in md
+
+
+def test_markdown_macro_exposure_absent_when_not_computed() -> None:
+    md = to_markdown(_full_brief(ScreenLabel.RESEARCH_ONLY))
+    assert "## Macro Exposure" in md
+    assert "_(macro-beta not computed)_" in md
 
 
 def test_markdown_scorecard_tracked_but_unresolved() -> None:
