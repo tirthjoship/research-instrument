@@ -1,13 +1,11 @@
-"""Tab 4: My Portfolio — live P&L, position health cards, trade form."""
+"""Tab 4: My Portfolio — live P&L, position health cards, trade history."""
 
 from __future__ import annotations
 
-import datetime
 from typing import Any
 
 import streamlit as st
 
-from adapters.visualization.action_runner import run_record_buy, run_record_sell
 from adapters.visualization.components.currency import (
     currency_for_ticker,
     currency_symbol,
@@ -91,8 +89,6 @@ def render(db_path: str = DB_PATH) -> None:
 
     if not holdings and not trades:
         _render_empty_state()
-        with st.expander("Record a Trade", expanded=False):
-            _render_trade_form(db_path)
         return
 
     if holdings:
@@ -280,8 +276,6 @@ def render(db_path: str = DB_PATH) -> None:
     st.markdown('<div class="ri-sec">Manage</div>', unsafe_allow_html=True)
     with st.expander("Watchlist", expanded=False):
         _render_watchlist_section(db_path)
-    with st.expander("Record a Trade", expanded=False):
-        _render_trade_form(db_path)
 
 
 def _perf_series(
@@ -416,48 +410,6 @@ def _render_closed_positions_table(outcomes: list[Any]) -> None:
     ]
     outcome_df = pd.DataFrame(outcome_rows)
     st.write(outcome_df.to_html(escape=False, index=False), unsafe_allow_html=True)
-
-
-def _render_trade_form(db_path: str) -> None:
-    with st.form("record_trade_form"):
-        action = st.radio("Action", ["Buy", "Sell"], horizontal=True)
-        fcols = st.columns(4)
-        ticker = fcols[0].text_input("Ticker", placeholder="NVDA")
-        price = fcols[1].number_input(
-            "Price ($)", min_value=0.01, value=100.0, step=1.0
-        )
-        quantity = fcols[2].number_input("Quantity", min_value=1, value=10, step=1)
-        trade_date = fcols[3].date_input(
-            "Date (EST)", value=datetime.date.today(), help="Enter date in EST timezone"
-        )
-        submitted = st.form_submit_button("Record Trade", type="primary")
-        if submitted and ticker:
-            date_str = trade_date.strftime("%Y-%m-%d")
-            if action == "Buy":
-                run_record_buy(
-                    ticker=ticker.upper(),
-                    price=float(price),
-                    quantity=int(quantity),
-                    trade_date=date_str,
-                    db_path=db_path,
-                )
-                st.success(
-                    f"BUY recorded: {ticker.upper()} x{quantity} @ "
-                    f"{format_money(price, ticker.upper())} on {date_str} EST"
-                )
-            else:
-                run_record_sell(
-                    ticker=ticker.upper(),
-                    price=float(price),
-                    quantity=int(quantity),
-                    trade_date=date_str,
-                    db_path=db_path,
-                )
-                st.success(
-                    f"SELL recorded: {ticker.upper()} x{quantity} @ "
-                    f"{format_money(price, ticker.upper())} on {date_str} EST"
-                )
-            st.rerun()
 
 
 def _render_trade_history(trades: list[Any], outcomes: list[Any]) -> None:
