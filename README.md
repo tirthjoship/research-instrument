@@ -305,7 +305,7 @@ honestly, whatever it is.
 
 For a recruiter: this project demonstrates pre-registered hypothesis testing, rigorous
 negative-result reporting, point-in-time enforcement as a code invariant, hexagonal
-architecture applied to a real data pipeline, and 3,160+ tests covering domain logic,
+architecture applied to a real data pipeline, and 3,226+ tests covering domain logic,
 adapters, use cases, and integration paths. The negative findings are the portfolio
 piece — a system that falsified its own thesis honestly is more credible than one that
 never tested it.
@@ -335,7 +335,7 @@ pre-commit install
 ### Verify
 
 ```bash
-# Full suite (3,160+ tests, ~25 s)
+# Full suite (3,226+ tests, ~25 s)
 pytest tests/ -q
 
 # With coverage gate (90% required)
