@@ -769,21 +769,6 @@ def _render_verdict_filter_chips(holdings: list[dict[str, Any]]) -> str:
         ("TRIM", f"Trim ({counts['TRIM']})"),
         ("REVIEW", f"Review ({counts['REVIEW']})"),
     ]
-    # Static, always-visible chip strip (screen-reader / test-observable summary
-    # of the counts) — the st.button row directly below is the actual clickable
-    # control; native Streamlit buttons don't route their label text through
-    # st.markdown, so this line is the one place the counts are guaranteed
-    # legible without relying on button-internal rendering.
-    st.markdown(
-        '<div class="ri-filter-chips" style="font-family:\'IBM Plex Mono\',monospace;'
-        'font-size:11px;color:#5b7178;margin-bottom:6px">'
-        + " &middot; ".join(
-            f"<b>{label}</b>" if v == current else label for v, label in labels
-        )
-        + "</div>",
-        unsafe_allow_html=True,
-    )
-
     cols = st.columns(4)
     for col, (value, label) in zip(cols, labels):
         with col:

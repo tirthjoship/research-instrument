@@ -2433,20 +2433,18 @@ def test_filter_chips_render_all_reduce_trim_review_counts(
             }
         )
     )
-    seen: list[str] = []
-    orig_markdown = st.markdown
+    button_calls: list[tuple[object, object]] = []
     monkeypatch.setattr(
         st,
-        "markdown",
-        lambda body, *a, **k: (seen.append(body) if isinstance(body, str) else None)
-        or orig_markdown(body, *a, **k),
+        "button",
+        lambda *a, **k: (button_calls.append((a, k)), False)[1],  # noqa: ARG005
     )
     wb.render(path=str(p))
-    joined = "\n".join(seen)
-    assert "All (3)" in joined
-    assert "Reduce (1)" in joined
-    assert "Trim (2)" in joined
-    assert "Review (0)" in joined
+    labels = [a[0] if a else k.get("label") for a, k in button_calls]
+    assert "All (3)" in labels
+    assert "Reduce (1)" in labels
+    assert "Trim (2)" in labels
+    assert "Review (0)" in labels
 
 
 def test_doing_well_list_shows_hold_and_add_ok_as_toggle_rows(
