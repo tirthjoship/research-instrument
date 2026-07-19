@@ -84,3 +84,58 @@ def test_to_yf_unmapped_exchange_falls_through_unchanged():
     from application.holdings_reader import _to_yf
 
     assert _to_yf("FOO", "NYSE") == "FOO"
+
+
+def test_aggregate_holdings_by_ticker_sums_across_accounts():
+    """Same ticker in two accounts -> one Holding, shares + cost summed."""
+    from application.holdings_reader import Holding, aggregate_holdings_by_ticker
+
+    raw = [
+        Holding(ticker="SOUN", shares=12.0, cost_basis=300.0, account_type="FHSA"),
+        Holding(ticker="SOUN", shares=8.0, cost_basis=250.0, account_type="TFSA"),
+        Holding(ticker="WMT", shares=10.0, cost_basis=1000.0, account_type="RRSP"),
+    ]
+    out = aggregate_holdings_by_ticker(raw)
+    by = {h.ticker: h for h in out}
+
+    assert set(by) == {"SOUN", "WMT"}
+    assert by["SOUN"].shares == 20.0
+    assert by["SOUN"].cost_basis == 550.0
+    assert by["WMT"].shares == 10.0
+
+
+def test_aggregate_holdings_by_ticker_same_account_keeps_account_type():
+    from application.holdings_reader import Holding, aggregate_holdings_by_ticker
+
+    raw = [
+        Holding(ticker="AAPL", shares=5.0, cost_basis=900.0, account_type="TFSA"),
+        Holding(ticker="AAPL", shares=3.0, cost_basis=540.0, account_type="TFSA"),
+    ]
+    out = aggregate_holdings_by_ticker(raw)
+    assert out[0].account_type == "TFSA"
+
+
+def test_aggregate_holdings_by_ticker_mixed_accounts_clears_account_type():
+    """A ticker split across a registered (TFSA) and a non-registered account must
+    NOT keep either label — the aggregated row's account_type becomes empty so
+    application/narrator.py's capital-gains-tax-friction claim is correctly
+    suppressed for the whole position, never falsely claimed for the
+    non-registered portion."""
+    from application.holdings_reader import Holding, aggregate_holdings_by_ticker
+
+    raw = [
+        Holding(ticker="MSFT", shares=4.0, cost_basis=800.0, account_type="TFSA"),
+        Holding(
+            ticker="MSFT", shares=6.0, cost_basis=1200.0, account_type="Non-registered"
+        ),
+    ]
+    out = aggregate_holdings_by_ticker(raw)
+    assert out[0].account_type == ""
+
+
+def test_aggregate_holdings_by_ticker_single_lot_passthrough():
+    from application.holdings_reader import Holding, aggregate_holdings_by_ticker
+
+    raw = [Holding(ticker="NVDA", shares=2.0, cost_basis=400.0, account_type="RRSP")]
+    out = aggregate_holdings_by_ticker(raw)
+    assert out == raw
