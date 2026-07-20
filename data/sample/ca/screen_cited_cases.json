@@ -1,25 +1,41 @@
 {
-  "as_of": "2026-07-17",
+  "as_of": "2026-07-20",
   "cases": {
     "CM.TO": {
       "in_favor": [
         {
-          "text": "The stock exhibits strong momentum (12-1).",
-          "source": "p80"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p79"
         },
         {
-          "text": "It demonstrates strong value (1/PE).",
-          "source": "p83"
+          "text": "Value (1/PE) is strong.",
+          "source": "p86"
         },
         {
-          "text": "The company is a subject in discussions comparing it as a better value option against peers.",
-          "source": "Zacks | ITUB vs. CM: Which Stock Is the Better Value Option?"
+          "text": "An article compares ITUB and CM asking which stock is the better value option.",
+          "source": "ITUB vs. CM: Which Stock Is the Better Value Option?"
         }
       ],
       "to_watch": [
         {
-          "text": "The company settled a class action for $10 million.",
-          "source": "Financial Post | CIBC agrees to pay $10 million to settle NSF class action"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p71"
+        },
+        {
+          "text": "Lowvol is flat.",
+          "source": "p71"
+        },
+        {
+          "text": "Analyst dispersion is strong, indicating significant differences in analyst views.",
+          "source": "p75"
+        },
+        {
+          "text": "CIBC agreed to pay $10 million to settle an NSF class action.",
+          "source": "CIBC agrees to pay $10 million to settle NSF class action"
+        },
+        {
+          "text": "News of the day mentions CIBC settling a class action.",
+          "source": "News of the day: Bay Street legend, CIBC settles class action, retirement portfolio advice, Wafr secures data centre funding, Toronto home sales and more"
         }
       ],
       "data_gap": false
@@ -27,48 +43,73 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "The stock has strong momentum (12-1).",
-          "source": "p83"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p82"
         },
         {
-          "text": "It shows exceptional low volatility.",
-          "source": "p90"
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p75"
+        },
+        {
+          "text": "Lowvol is strong.",
+          "source": "p89"
+        },
+        {
+          "text": "Royal Bank Of Canada appointed Tarek A. Robbiati to its Board.",
+          "source": "Royal Bank Of Canada (TSX:RY) Appoints Tarek A. Robbiati To Its Board"
         }
       ],
-      "to_watch": [],
+      "to_watch": [
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p68"
+        },
+        {
+          "text": "Analyst dispersion is strong, indicating significant differences in analyst views.",
+          "source": "p79"
+        }
+      ],
       "data_gap": false
     },
     "BNS.TO": {
       "in_favor": [
         {
-          "text": "The company shows exceptional analyst dispersion.",
-          "source": "p90"
+          "text": "Value (1/PE) is strong.",
+          "source": "p79"
         },
         {
-          "text": "It has strong value (1/PE).",
-          "source": "p80"
+          "text": "Lowvol is strong.",
+          "source": "p86"
         },
         {
-          "text": "The stock exhibits strong low volatility.",
-          "source": "p87"
+          "text": "Bank of Nova Scotia discloses a 7.7% TeraWulf stake and a 5.62% CleanSpark position.",
+          "source": "Bank of Nova Scotia discloses 7.7% TeraWulf stake and 5.62% CleanSpark position"
         },
         {
-          "text": "Bank of Nova Scotia disclosed a 7.7% stake in TeraWulf and a 5.62% position in CleanSpark.",
-          "source": "Blockspace | Bank of Nova Scotia discloses 7.7% TeraWulf stake and 5.62% CleanSpark position"
-        },
-        {
-          "text": "Scotiabank is teaming up with other Canadian companies to address their AI needs efficiently.",
-          "source": "Financial Post | Scotiabank teams up with other Canadian companies to meet their AI needs faster, cheaper"
+          "text": "Scotiabank expects the Bank of Canada to begin gradual rate hikes late in 2026 as the economy rebounds.",
+          "source": "Scotiabank Expects Bank of Canada to Begin Gradual Rate Hikes Late in 2026 as Economy Rebounds"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's quality (ROE/margin) is weak.",
-          "source": "p30"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p71"
         },
         {
-          "text": "The TSX index experienced a drop, with financial losses contributing to the decline.",
-          "source": "MT Newswires | TSX Closer: Index Drops as Financial, Mining Losses Outweigh Energy Surge; US-Iran Fighting Hikes Inflation Fears"
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p29"
+        },
+        {
+          "text": "Analyst dispersion is exceptional, indicating very high disagreement among analysts.",
+          "source": "p93"
+        },
+        {
+          "text": "Scotiabank forecasts Canadian light vehicle sales to fall 1.6% in 2026 before recovering in 2027.",
+          "source": "Scotiabank Forecasts Canadian Light Vehicle Sales to Fall 1.6% in 2026 Before Recovering in 2027"
+        },
+        {
+          "text": "Canada inflation is seen flat at Scotiabank with limited central bank implications.",
+          "source": "Canada Inflation Seen Flat at Scotiabank With Limited Central Bank Implications"
         }
       ],
       "data_gap": false
@@ -76,26 +117,38 @@
     "TD.TO": {
       "in_favor": [
         {
-          "text": "The stock displays exceptional momentum (12-1).",
+          "text": "Momentum (12-1) is exceptional.",
           "source": "p93"
         },
         {
-          "text": "It has strong low volatility.",
-          "source": "p80"
+          "text": "Lowvol is strong.",
+          "source": "p79"
         },
         {
-          "text": "QCAD added TD as a reserve custodian in an effort to expand Canadian adoption.",
-          "source": "CryptoProwl | QCAD Adds TD as Reserve Custodian in Push for Wider Canadian Adoption"
+          "text": "QCAD adds TD as a Reserve Custodian in a push for wider Canadian adoption.",
+          "source": "QCAD Adds TD as Reserve Custodian in Push for Wider Canadian Adoption"
         },
         {
-          "text": "Toronto Dominion Bank launched Clover in Canada in collaboration with Fiserv.",
-          "source": "Simply Wall St. | Toronto Dominion Bank (TSX:TD) Launches Clover In Canada With Fiserv"
+          "text": "Toronto Dominion Bank launches Clover in Canada with Fiserv.",
+          "source": "Toronto Dominion Bank (TSX:TD) Launches Clover In Canada With Fiserv"
         }
       ],
       "to_watch": [
         {
-          "text": "The TSX index experienced a decline, influenced by Middle East tensions and anticipation of the Bank of Canada decision.",
-          "source": "MT Newswires | TSX Closer: The Index Falls as Middle East Tensions Lift Oil, Investors Eye Bank of Canada Decision"
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p39"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p57"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p54"
+        },
+        {
+          "text": "An article poses the question of whether TD is the better value option in comparison to UBS.",
+          "source": "UBS vs. TD: Which Stock Is the Better Value Option?"
         }
       ],
       "data_gap": false
@@ -103,84 +156,34 @@
     "BMO.TO": {
       "in_favor": [
         {
-          "text": "The stock shows strong momentum (12-1).",
-          "source": "p77"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p75"
         },
         {
-          "text": "Canada's manufacturing sales rose as anticipated in May, reaching a record high.",
-          "source": "MT Newswires | Canada's Manufacturing Sales Rise as Expected in May, Reaching Record High"
+          "text": "Canada's manufacturing sales rise as expected in May, reaching a record high.",
+          "source": "Canada's Manufacturing Sales Rise as Expected in May, Reaching Record High"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's quality (ROE/margin) is weak.",
-          "source": "p37"
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p36"
         },
         {
-          "text": "Bank of Montreal stock appears to be fully priced following a significant 156% increase.",
-          "source": "Simply Wall St. | Bank of Montreal (TSX:BMO) Stock Looks Fully Priced On Its 156% Run"
-        }
-      ],
-      "data_gap": false
-    },
-    "GWO.TO": {
-      "in_favor": [
-        {
-          "text": "The stock exhibits exceptional momentum (12-1).",
-          "source": "p93"
+          "text": "Value (1/PE) is flat.",
+          "source": "p64"
         },
         {
-          "text": "GWO is in a category of TSX dividend stocks noted for yielding up to 6.9%.",
-          "source": "Simply Wall St. | 3 TSX Dividend Stocks Yielding Up To 6.9%"
+          "text": "Lowvol is flat.",
+          "source": "p57"
         },
         {
-          "text": "GWO is in a category of TSX dividend stocks noted for yielding up to 6.8%.",
-          "source": "Simply Wall St. | 3 TSX Dividend Stocks Yielding Up To 6.8%"
+          "text": "Bank of Montreal stock looks fully priced on its 156% run.",
+          "source": "Bank of Montreal (TSX:BMO) Stock Looks Fully Priced On Its 156% Run"
         },
         {
-          "text": "The stock is considered among top TSX dividend stocks for consideration.",
-          "source": "Simply Wall St. | Top TSX Dividend Stocks To Consider In May 2026"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The stock shows weak analyst dispersion.",
-          "source": "p20"
-        },
-        {
-          "text": "Q1 results for Canadian lifecos were described as \"a little disappointing\", with price targets updated for the group.",
-          "source": "MT Newswires | CIBC Reviews Canadian Lifecos' Q1, Says Results \"a Little Disappointing\", Updates Price Targets on Group"
-        }
-      ],
-      "data_gap": false
-    },
-    "QSR.TO": {
-      "in_favor": [
-        {
-          "text": "The company exhibits exceptional analyst dispersion.",
-          "source": "p93"
-        },
-        {
-          "text": "It demonstrates exceptional quality (ROE/margin).",
-          "source": "p93"
-        },
-        {
-          "text": "QSR is noted among billionaire investor Bill Ackman\u2019s top bets.",
-          "source": "24/7 Wall St. | Billionaire Investor Bill Ackman\u2019s Top 5 Bets: Buy, Hold, or Steer Clear?"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The stock has weak momentum (12-1).",
-          "source": "p20"
-        },
-        {
-          "text": "An article provides reasons to consider reducing holdings in QSR.",
-          "source": "StockStory | 3 Reasons to Sell QSR and 1 Stock to Buy Instead"
-        },
-        {
-          "text": "RBC lowered the price target for Restaurant Brands International to $85.",
-          "source": "MT Newswires | Restaurant Brands International Price Target Lowered to $85 at RBC"
+          "text": "The Bank of Canada is seen holding steady this year as it signals no urgency to move, according to economists.",
+          "source": "Bank of Canada Seen Holding Steady This Year as It Signals No Urgency to Move, Economists Say"
         }
       ],
       "data_gap": false
@@ -188,30 +191,104 @@
     "CVE.TO": {
       "in_favor": [
         {
-          "text": "The stock has exceptional momentum (12-1).",
-          "source": "p90"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p89"
         },
         {
-          "text": "It exhibits strong analyst dispersion.",
-          "source": "p83"
+          "text": "Value (1/PE) is strong.",
+          "source": "p89"
         },
         {
-          "text": "The company demonstrates exceptional value (1/PE).",
-          "source": "p93"
+          "text": "Cenovus Energy expands output as higher oil prices come back into focus.",
+          "source": "Cenovus Energy (TSX:CVE) Expands Output As Higher Oil Prices Come Back Into Focus"
         },
         {
-          "text": "Cenovus has key growth projects which could support its long-term outlook.",
-          "source": "Zacks | Will Cenovus' Key Growth Projects Support Its Long-Term Outlook?"
-        },
-        {
-          "text": "Cenovus Energy is expanding its output as higher oil prices become a focus.",
-          "source": "Simply Wall St. | Cenovus Energy (TSX:CVE) Expands Output As Higher Oil Prices Come Back Into Focus"
+          "text": "Canada ties a new West Coast pipeline to oil sands expansion.",
+          "source": "Canada Ties New West Coast Pipeline to Oil Sands Expansion"
         }
       ],
       "to_watch": [
         {
-          "text": "The stock shows weak low volatility.",
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p68"
+        },
+        {
+          "text": "Lowvol is weak.",
           "source": "p7"
+        },
+        {
+          "text": "Analyst dispersion is strong, indicating significant differences in analyst views.",
+          "source": "p82"
+        },
+        {
+          "text": "An article raises a question about whether options traders know something unknown about Cenovus stock.",
+          "source": "Do Options Traders Know Something About Cenovus Stock We Don't?"
+        },
+        {
+          "text": "A question is posed regarding whether Cenovus' key growth projects will support its long-term outlook.",
+          "source": "Will Cenovus' Key Growth Projects Support Its Long-Term Outlook?"
+        }
+      ],
+      "data_gap": false
+    },
+    "ATD.TO": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p82"
+        },
+        {
+          "text": "Alimentation Couche Tard stock may be 38% undervalued after a focus on dividend growth.",
+          "source": "Alimentation Couche Tard (TSX:ATD) Stock May Be 38% Undervalued After Dividend Growth Focus"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p39"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p71"
+        },
+        {
+          "text": "Lowvol is weak.",
+          "source": "p25"
+        },
+        {
+          "text": "Analyst dispersion is strong, indicating significant differences in analyst views.",
+          "source": "p89"
+        }
+      ],
+      "data_gap": false
+    },
+    "GWO.TO": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is exceptional.",
+          "source": "p93"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p57"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p61"
+        },
+        {
+          "text": "Lowvol is flat.",
+          "source": "p64"
+        },
+        {
+          "text": "Analyst dispersion is weak, indicating low disagreement but potentially a lack of strong positive divergent views.",
+          "source": "p18"
+        },
+        {
+          "text": "CIBC reviewed Canadian lifecos' Q1, stating results were 'a little disappointing' for the group.",
+          "source": "CIBC Reviews Canadian Lifecos' Q1, Says Results \"a Little Disappointing\", Updates Price Targets on Group"
         }
       ],
       "data_gap": false
@@ -219,48 +296,85 @@
     "CNR.TO": {
       "in_favor": [
         {
-          "text": "The company's quality (ROE/margin) is strong.",
-          "source": "p83"
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p86"
         },
         {
-          "text": "CNI's record June grain volumes suggest strong export demand.",
-          "source": "Zacks | CNI's Record June Grain Volumes Signal Strong Export Demand"
+          "text": "CNI's record June grain volumes signal strong export demand.",
+          "source": "CNI's Record June Grain Volumes Signal Strong Export Demand"
         },
         {
-          "text": "CNI strengthened its energy logistics through record propane shipments.",
-          "source": "Zacks | CNI Strengthens Energy Logistics With Record Propane Shipments"
+          "text": "CNI strengthens energy logistics with record propane shipments.",
+          "source": "CNI Strengthens Energy Logistics With Record Propane Shipments"
         },
         {
-          "text": "Canadian National secured long-term growth by initiating the PlasCred Project.",
-          "source": "Zacks | Canadian National Secures Long-Term Growth Through PlasCred Project"
+          "text": "Canadian National secures long-term growth through the PlasCred Project.",
+          "source": "Canadian National Secures Long-Term Growth Through PlasCred Project"
         },
         {
-          "text": "A plastics recycling facility deal by CN could reshape its long-term infrastructure strategy.",
-          "source": "Simply Wall St. | Could CN\u2019s Plastics Recycling Facility Deal Quietly Reshape Its Long-Term Infrastructure Strategy (TSX:CNR)?"
-        }
-      ],
-      "to_watch": [],
-      "data_gap": false
-    },
-    "ATD.TO": {
-      "in_favor": [
-        {
-          "text": "The company exhibits strong analyst dispersion.",
-          "source": "p87"
-        },
-        {
-          "text": "It demonstrates strong quality (ROE/margin).",
-          "source": "p80"
-        },
-        {
-          "text": "Alimentation Couche Tard stock may be 38% undervalued, with a focus on dividend growth.",
-          "source": "Simply Wall St. | Alimentation Couche Tard (TSX:ATD) Stock May Be 38% Undervalued After Dividend Growth Focus"
+          "text": "An article discusses how CN\u2019s Plastics Recycling Facility Deal could reshape its long-term infrastructure strategy.",
+          "source": "Could CN\u2019s Plastics Recycling Facility Deal Quietly Reshape Its Long-Term Infrastructure Strategy (TSX:CNR)?"
         }
       ],
       "to_watch": [
         {
-          "text": "The stock has weak low volatility.",
-          "source": "p30"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p46"
+        },
+        {
+          "text": "Value (1/PE) is weak.",
+          "source": "p39"
+        },
+        {
+          "text": "Lowvol is flat.",
+          "source": "p43"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p64"
+        }
+      ],
+      "data_gap": false
+    },
+    "IFC.TO": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p79"
+        },
+        {
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p93"
+        },
+        {
+          "text": "AM Best\u2019s A+ Rating is mentioned in relation to Intact Financial\u2019s risk profile.",
+          "source": "Does AM Best\u2019s A+ Rating Keep Intact Financial\u2019s (TSX:IFC) Risk Profile a Competitive Advantage?"
+        },
+        {
+          "text": "An article provides a look at Intact Financial valuation after recent share price momentum.",
+          "source": "A Look At Intact Financial (TSX:IFC) Valuation After Recent Share Price Momentum"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p7"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p57"
+        },
+        {
+          "text": "Intact Financial reports 'elevated' losses driven by weather events.",
+          "source": "Intact Financial reports 'elevated' losses driven by weather events"
+        },
+        {
+          "text": "News of the day mentions catastrophic insurance losses.",
+          "source": "News of the day: Canadian savings deteriorate, charitable estate donations, breaking the credit cycle, catastrophic insurance losses and more"
+        },
+        {
+          "text": "CIBC weighs in on a potential Hiscox acquisition involving Intact Financial.",
+          "source": "CIBC on Intact Financial; Weighs In On A Potential Hiscox Acquisition"
         }
       ],
       "data_gap": false

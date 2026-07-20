@@ -1,88 +1,45 @@
 {
-  "as_of": "2026-07-17",
+  "as_of": "2026-07-20",
   "cases": {
     "SPG": {
       "in_favor": [
         {
           "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACTS"
+          "source": "p95"
         },
         {
-          "text": "The company exhibits strong value based on 1/PE (p86).",
-          "source": "FACTS"
+          "text": "It exhibits strong value characteristics with its 1/PE ratio (p86).",
+          "source": "p86"
         },
         {
-          "text": "It shows a strong low volatility characteristic (p82).",
-          "source": "FACTS"
+          "text": "The ticker shows strong low volatility characteristics (p81).",
+          "source": "p81"
         },
         {
-          "text": "This Mall REIT yields over 4% and has increased by more than 21% this year.",
-          "source": "24/7 Wall St. - This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
+          "text": "The mall REIT has a reported yield over 4% and observed a gain of more than 21% year-to-date.",
+          "source": "[24/7 Wall St.] This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p70).",
-          "source": "FACTS"
+          "text": "Momentum (12-1) for the ticker is flat (p69).",
+          "source": "p69"
         },
         {
-          "text": "Analyst dispersion is strong (p79).",
-          "source": "FACTS"
+          "text": "There is strong analyst dispersion (p79).",
+          "source": "p79"
         },
         {
-          "text": "Wall Street downgraded the REIT despite its year-to-date performance.",
-          "source": "24/7 Wall St. - This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
+          "text": "The upcoming quarterly earnings preview is a relevant event to monitor.",
+          "source": "[Barchart] Simon Property Group's Quarterly Earnings Preview: What You Need to Know"
         },
         {
-          "text": "Simon Property Group (SPG) was downgraded at Wolfe Research.",
-          "source": "Insider Monkey - Simon Property Group (SPG) Downgraded at Wolfe Research. Here is Why"
+          "text": "Wall Street downgraded the ticker despite its recent gains.",
+          "source": "[24/7 Wall St.] This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
         },
         {
-          "text": "A quarterly earnings preview is available for Simon Property Group.",
-          "source": "Barchart - Simon Property Group's Quarterly Earnings Preview: What You Need to Know"
-        }
-      ],
-      "data_gap": false
-    },
-    "AMP": {
-      "in_favor": [
-        {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p94).",
-          "source": "FACTS"
-        },
-        {
-          "text": "The company exhibits exceptional value based on 1/PE (p93).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Earnings for Ameriprise Financial Services (AMP) are expected to grow.",
-          "source": "Zacks - Ameriprise Financial Services (AMP) Earnings Expected to Grow: Should You Buy?"
-        },
-        {
-          "text": "Ameriprise Financial (AMP) was added to three Russell Indices.",
-          "source": "Simply Wall St. - Ameriprise Financial (AMP) Was Dropped From One Russell Index And Added To Three"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p7).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Analyst dispersion is strong (p87).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Low volatility characteristic is flat (p58).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Ameriprise Financial (AMP) was dropped from one Russell Index.",
-          "source": "Simply Wall St. - Ameriprise Financial (AMP) Was Dropped From One Russell Index And Added To Three"
-        },
-        {
-          "text": "There is anticipation around whether Ameriprise (AMP) will surpass estimates in its next earnings report.",
-          "source": "Zacks - Will Ameriprise (AMP) Beat Estimates Again in Its Next Earnings Report?"
+          "text": "Wolfe Research has downgraded Simon Property Group (SPG).",
+          "source": "[Insider Monkey] Simon Property Group (SPG) Downgraded at Wolfe Research. Here is Why"
         }
       ],
       "data_gap": false
@@ -90,42 +47,85 @@
     "TRGP": {
       "in_favor": [
         {
-          "text": "The company shows strong momentum (12-1) (p85).",
-          "source": "FACTS"
+          "text": "The ticker exhibits strong momentum (12-1) (p84).",
+          "source": "p84"
         },
         {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACTS"
+          "text": "It possesses exceptional quality based on ROE/margin (p95).",
+          "source": "p95"
         },
         {
-          "text": "Targa Resources, Inc. (TRGP) is noted as a strong momentum stock.",
-          "source": "Zacks - Targa Resources, Inc. (TRGP) is a Great Momentum Stock: Should You Buy?"
+          "text": "It is identified as a great momentum stock.",
+          "source": "[Zacks] Targa Resources, Inc. (TRGP) is a Great Momentum Stock: Should You Buy?"
         },
         {
-          "text": "Energy infrastructure stock Targa Resources is showing signs of a breakout.",
-          "source": "Investor's Business Daily - Energy Infrastructure Stock Targa Resources Teases A Breakout"
+          "text": "The energy infrastructure stock is described as teasing a breakout.",
+          "source": "[Investor's Business Daily] Energy Infrastructure Stock Targa Resources Teases A Breakout"
         },
         {
-          "text": "Targa Resources Corp. (TRGP) benefits from geopolitical tensions.",
-          "source": "Insider Monkey - Targa Resources Corp. (TRGP) Gains from Geopolitical Tensions"
+          "text": "The ticker is reported to gain from geopolitical tensions.",
+          "source": "[Insider Monkey] Targa Resources Corp. (TRGP) Gains from Geopolitical Tensions"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is flat (p71).",
-          "source": "FACTS"
+          "text": "There is strong analyst dispersion (p83).",
+          "source": "p83"
         },
         {
-          "text": "Value based on 1/PE is flat (p51).",
-          "source": "FACTS"
+          "text": "Value (1/PE) for the ticker is flat (p50).",
+          "source": "p50"
         },
         {
-          "text": "Low volatility characteristic is flat (p43).",
-          "source": "FACTS"
+          "text": "Low volatility characteristics are flat (p42).",
+          "source": "p42"
+        }
+      ],
+      "data_gap": false
+    },
+    "AMP": {
+      "in_favor": [
+        {
+          "text": "The company shows exceptional quality based on ROE/margin (p93).",
+          "source": "p93"
         },
         {
-          "text": "The broader energy sector saw stocks higher early Monday.",
-          "source": "MT Newswires - Sector Update: Energy Stocks Higher Early Monday"
+          "text": "It has exceptional value characteristics with its 1/PE ratio (p93).",
+          "source": "p93"
+        },
+        {
+          "text": "Earnings for the company are expected to grow.",
+          "source": "[Zacks] Ameriprise Financial Services (AMP) Earnings Expected to Grow: Should You Buy?"
+        },
+        {
+          "text": "The ticker was added to three Russell Indices.",
+          "source": "[Simply Wall St.] Ameriprise Financial (AMP) Was Dropped From One Russell Index And Added To Three"
+        },
+        {
+          "text": "There is a prospect of the company surpassing its earnings estimates again in its next report.",
+          "source": "[Zacks] Will Ameriprise (AMP) Beat Estimates Again in Its Next Earnings Report?"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) for the ticker is weak (p7).",
+          "source": "p7"
+        },
+        {
+          "text": "There is strong analyst dispersion (p86).",
+          "source": "p86"
+        },
+        {
+          "text": "Low volatility characteristics are flat (p58).",
+          "source": "p58"
+        },
+        {
+          "text": "Q2 earnings are on the horizon, with analysts providing insights on key performance measures.",
+          "source": "[Zacks] Ameriprise (AMP) Q2 Earnings on the Horizon: Analysts' Insights on Key Performance Measures"
+        },
+        {
+          "text": "The ticker was dropped from one Russell Index.",
+          "source": "[Simply Wall St.] Ameriprise Financial (AMP) Was Dropped From One Russell Index And Added To Three"
         }
       ],
       "data_gap": false
@@ -134,37 +134,33 @@
       "in_favor": [
         {
           "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACTS"
+          "source": "p95"
         },
         {
-          "text": "It shows a strong low volatility characteristic (p79).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Sysco is included in a Zacks industry outlook.",
-          "source": "Zacks - Zacks Industry Outlook Mondelez, Sysco, United Natural Foods and Mama's"
+          "text": "It exhibits strong low volatility characteristics (p78).",
+          "source": "p78"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p25).",
-          "source": "FACTS"
+          "text": "Momentum (12-1) for the ticker is weak (p24).",
+          "source": "p24"
         },
         {
-          "text": "Analyst dispersion is strong (p87).",
-          "source": "FACTS"
+          "text": "There is strong analyst dispersion (p86).",
+          "source": "p86"
         },
         {
-          "text": "Value based on 1/PE is flat (p68).",
-          "source": "FACTS"
+          "text": "Value (1/PE) for the ticker is flat (p69).",
+          "source": "p69"
         },
         {
-          "text": "There is anticipation for Sysco's Q4 2026 earnings report.",
-          "source": "Barchart - What to Expect From Sysco's Q4 2026 Earnings Report"
+          "text": "The restaurant sector remains mixed, with stronger operators observing better results.",
+          "source": "[MT Newswires] Restaurant Sector Remains Mixed as Stronger Operators Outperform, Morgan Stanley Says"
         },
         {
-          "text": "The restaurant sector remains mixed, with stronger operators showing better performance.",
-          "source": "MT Newswires - Restaurant Sector Remains Mixed as Stronger Operators Outperform, Morgan Stanley Says"
+          "text": "The Q4 2026 earnings report is an upcoming event to consider.",
+          "source": "[Barchart] What to Expect From Sysco's Q4 2026 Earnings Report"
         }
       ],
       "data_gap": false
@@ -172,42 +168,38 @@
     "CINF": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional value based on 1/PE (p95).",
-          "source": "FACTS"
+          "text": "The ticker has exceptional value characteristics with its 1/PE ratio (p95).",
+          "source": "p95"
         },
         {
-          "text": "It shows a strong low volatility characteristic (p83).",
-          "source": "FACTS"
+          "text": "It shows strong low volatility characteristics (p83).",
+          "source": "p83"
         },
         {
-          "text": "Cincinnati Financial (CINF) is highlighted as a strong choice.",
-          "source": "Zacks - Cincinnati Financial (CINF) Could Be a Great Choice"
+          "text": "The ticker observed a 0.84% increase in one week.",
+          "source": "[Zacks] Cincinnati Financial (CINF) Is Up 0.84% in One Week: What You Should Know"
         },
         {
-          "text": "Cincinnati Financial (CINF) is mentioned in the context of a cash-heavy stock being considered.",
-          "source": "StockStory - 1 Cash-Heavy Stock on Our Buy List and 2 We Turn Down"
+          "text": "The company is expected to surpass earnings estimates and could observe upward movement.",
+          "source": "[Zacks] Cincinnati Financial (CINF) Expected to Beat Earnings Estimates: Can the Stock Move Higher?"
+        },
+        {
+          "text": "It is suggested that Cincinnati Financial (CINF) could be a great choice.",
+          "source": "[Zacks] Cincinnati Financial (CINF) Could Be a Great Choice"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p58).",
-          "source": "FACTS"
+          "text": "Momentum (12-1) for the ticker is flat (p56).",
+          "source": "p56"
         },
         {
-          "text": "Analyst dispersion is exceptional (p95).",
-          "source": "FACTS"
+          "text": "There is exceptional analyst dispersion (p94).",
+          "source": "p94"
         },
         {
-          "text": "Quality based on ROE/margin is flat (p62).",
-          "source": "FACTS"
-        },
-        {
-          "text": "There is an open question regarding whether Cincinnati Financial (CINF) will surpass estimates in its next earnings report.",
-          "source": "Zacks - Will Cincinnati Financial (CINF) Beat Estimates Again in Its Next Earnings Report?"
-        },
-        {
-          "text": "Questions are being raised about the status of Cincinnati Financial (CINF) after Q1 earnings.",
-          "source": "StockStory - Cincinnati Financial (CINF): Buy, Sell, or Hold Post Q1 Earnings?"
+          "text": "Quality (ROE/margin) for the ticker is flat (p61).",
+          "source": "p61"
         }
       ],
       "data_gap": false
@@ -215,38 +207,38 @@
     "AIZ": {
       "in_favor": [
         {
-          "text": "The company shows strong momentum (12-1) (p77).",
-          "source": "FACTS"
+          "text": "The ticker exhibits strong momentum (12-1) (p76).",
+          "source": "p76"
         },
         {
-          "text": "The company exhibits strong value based on 1/PE (p89).",
-          "source": "FACTS"
+          "text": "It possesses strong value characteristics with its 1/PE ratio (p90).",
+          "source": "p90"
         },
         {
-          "text": "It shows a strong low volatility characteristic (p76).",
-          "source": "FACTS"
+          "text": "It shows strong low volatility characteristics (p75).",
+          "source": "p75"
         },
         {
-          "text": "Recent market buzz indicates mildly positive sentiment (0.25) with 8 mentions in the last 30 days.",
-          "source": "FACTS"
+          "text": "Recent market buzz indicates mildly positive sentiment (0.25) with 16 mentions in the last 30 days (Market sentiment fact).",
+          "source": "Market sentiment"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is exceptional (p95).",
-          "source": "FACTS"
+          "text": "There is exceptional analyst dispersion (p95).",
+          "source": "p95"
         },
         {
-          "text": "Quality based on ROE/margin is flat (p59).",
-          "source": "FACTS"
+          "text": "Quality (ROE/margin) for the ticker is flat (p58).",
+          "source": "p58"
         },
         {
-          "text": "An earnings preview is available for Assurant's quarterly results.",
-          "source": "Barchart - Assurant\u2019s Quarterly Earnings Preview: What You Need to Know"
+          "text": "The company's quarterly earnings preview is an upcoming event to consider.",
+          "source": "[Barchart] Assurant\u2019s Quarterly Earnings Preview: What You Need to Know"
         },
         {
-          "text": "StockStory identifies three reasons why AIZ carries risk.",
-          "source": "StockStory - 3 Reasons AIZ is Risky and 1 Stock to Buy Instead"
+          "text": "The ticker is identified with reasons why it is risky.",
+          "source": "[StockStory] 3 Reasons AIZ is Risky and 1 Stock to Buy Instead"
         }
       ],
       "data_gap": false
@@ -255,37 +247,25 @@
       "in_favor": [
         {
           "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACTS"
+          "source": "p95"
         },
         {
-          "text": "The company exhibits strong value based on 1/PE (p76).",
-          "source": "FACTS"
+          "text": "It exhibits strong value characteristics with its 1/PE ratio (p78).",
+          "source": "p78"
         },
         {
-          "text": "Masco (MAS) received a positive assessment.",
-          "source": "Zacks - Masco (MAS) Upgraded to Strong Buy: Here's What You Should Know"
-        },
-        {
-          "text": "Masco is mentioned in a list of value stocks for July 17th.",
-          "source": "Zacks - Best Value Stocks to Buy for July 17th"
+          "text": "Masco (MAS) was upgraded to 'Strong Buy'.",
+          "source": "[Zacks] Masco (MAS) Upgraded to Strong Buy: Here's What You Should Know"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p49).",
-          "source": "FACTS"
+          "text": "Momentum (12-1) for the ticker is flat (p47).",
+          "source": "p47"
         },
         {
-          "text": "Analyst dispersion is flat (p59).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Low volatility characteristic is flat (p44).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Masco shares have experienced a significant decline.",
-          "source": "StockStory - Quanex, Masco, and Hayward Shares Plummet, What You Need To Know"
+          "text": "Low volatility characteristics are flat (p44).",
+          "source": "p44"
         }
       ],
       "data_gap": false
@@ -293,46 +273,34 @@
     "USB": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional value based on 1/PE (p94).",
-          "source": "FACTS"
+          "text": "The ticker has exceptional value characteristics with its 1/PE ratio (p94).",
+          "source": "p94"
         },
         {
-          "text": "U.S. Bancorp (USB) has a stronger outlook and a BTIG fee push that could impact its investment case.",
-          "source": "Simply Wall St. - Is USB\u2019s Stronger Outlook And BTIG Fee Push Altering The Investment Case For U.S. Bancorp (USB)?"
+          "text": "U.S. Bancorp (USB) is identified as a great dividend stock.",
+          "source": "[Zacks] Why U.S. Bancorp (USB) is a Great Dividend Stock Right Now"
         },
         {
-          "text": "U.S. Bancorp (USB) Q2 2026 earnings call highlights strong EPS growth and strategic developments.",
-          "source": "GuruFocus.com - U.S. Bancorp (USB) Q2 2026 Earnings Call Highlights: Strong EPS Growth and Strategic ..."
-        },
-        {
-          "text": "US regional banks are seeing lending surges and fee boosts, setting aside broader concerns.",
-          "source": "Reuters - US regional banks brush off war jitters with lending surge, fee boost"
-        },
-        {
-          "text": "Financial stocks in the sector edged higher in the late afternoon.",
-          "source": "MT Newswires - Sector Update: Financial Stocks Edge Higher Late Afternoon"
+          "text": "Wall Street is raising expectations for other banks, including U.S. Bancorp, following strong earnings in the sector.",
+          "source": "[Barrons.com] Wall Street Raises Expectations for Goldman, Other Banks After Strong Earnings"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p68).",
-          "source": "FACTS"
+          "text": "Momentum (12-1) for the ticker is flat (p67).",
+          "source": "p67"
         },
         {
-          "text": "Analyst dispersion is exceptional (p93).",
-          "source": "FACTS"
+          "text": "There is exceptional analyst dispersion (p95).",
+          "source": "p95"
         },
         {
-          "text": "Quality based on ROE/margin is flat (p44).",
-          "source": "FACTS"
+          "text": "Quality (ROE/margin) for the ticker is flat (p44).",
+          "source": "p44"
         },
         {
-          "text": "Low volatility characteristic is flat (p69).",
-          "source": "FACTS"
-        },
-        {
-          "text": "The investment case for U.S. Bancorp (USB) is being assessed in light of its outlook and fee push.",
-          "source": "Simply Wall St. - Is USB\u2019s Stronger Outlook And BTIG Fee Push Altering The Investment Case For U.S. Bancorp (USB)?"
+          "text": "Low volatility characteristics are flat (p68).",
+          "source": "p68"
         }
       ],
       "data_gap": false
@@ -340,34 +308,34 @@
     "CB": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional value based on 1/PE (p95).",
-          "source": "FACTS"
+          "text": "The ticker has exceptional value characteristics with its 1/PE ratio (p95).",
+          "source": "p95"
         },
         {
-          "text": "It shows an exceptional low volatility characteristic (p93).",
-          "source": "FACTS"
+          "text": "It exhibits exceptional low volatility characteristics (p93).",
+          "source": "p93"
+        },
+        {
+          "text": "Chubb trades at 12 times earnings, which is below the broader market, suggesting a potential value opportunity.",
+          "source": "[Motley Fool] Chubb Trades at Just 12 Times Earnings, Well Below the Broader Market. Is One of the World's Biggest Insurers a Bargain?"
+        },
+        {
+          "text": "There is a prospect that Chubb Limited will deliver an earnings beat in the second quarter.",
+          "source": "[Zacks] Will Chubb Limited Deliver an Earnings Beat in the Second Quarter?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p61).",
-          "source": "FACTS"
+          "text": "Momentum (12-1) for the ticker is flat (p59).",
+          "source": "p59"
         },
         {
-          "text": "Analyst dispersion is flat (p64).",
-          "source": "FACTS"
+          "text": "Quality (ROE/margin) for the ticker is flat (p53).",
+          "source": "p53"
         },
         {
-          "text": "Quality based on ROE/margin is flat (p54).",
-          "source": "FACTS"
-        },
-        {
-          "text": "There is an open question regarding whether Chubb Limited will surpass earnings in the second quarter.",
-          "source": "Zacks - Will Chubb Limited Deliver an Earnings Beat in the Second Quarter?"
-        },
-        {
-          "text": "A preview for Chubb (CB) Q2 earnings provides details beyond headline estimates.",
-          "source": "Zacks - Chubb (CB) Q2 Earnings Preview: What You Should Know Beyond the Headline Estimates"
+          "text": "Q2 earnings for Chubb (CB) are an upcoming event to consider.",
+          "source": "[StockStory] Chubb (CB) Q2 Earnings: What To Expect"
         }
       ],
       "data_gap": false
@@ -375,34 +343,30 @@
     "MO": {
       "in_favor": [
         {
-          "text": "The company demonstrates strong quality based on ROE/margin (p86).",
-          "source": "FACTS"
+          "text": "The company exhibits strong quality based on ROE/margin (p86).",
+          "source": "p86"
         },
         {
-          "text": "The company exhibits strong value based on 1/PE (p87).",
-          "source": "FACTS"
+          "text": "It possesses strong value characteristics with its 1/PE ratio (p87).",
+          "source": "p87"
         },
         {
-          "text": "It shows a strong low volatility characteristic (p88).",
-          "source": "FACTS"
+          "text": "It shows strong low volatility characteristics (p88).",
+          "source": "p88"
         },
         {
-          "text": "Altria Group, Inc. (MO) outlook is supported by new FDA rule proposals concerning foreign tobacco manufacturers.",
-          "source": "Insider Monkey - Altria Group, Inc. (MO) Outlook Bolstered by New FDA Rule Proposals Targeting Foreign Tobacco Manufacturers"
+          "text": "Altria (MO) observed gains while the market experienced a dip.",
+          "source": "[Zacks] Altria (MO) Gains As Market Dips: What You Should Know"
         },
         {
-          "text": "Altria Group, Inc. (MO) is noted to be attracting investor attention.",
-          "source": "Zacks - Altria Group, Inc. (MO) is Attracting Investor Attention: Here is What You Should Know"
+          "text": "Altria Group, Inc.'s (MO) outlook is strengthened by new FDA rule proposals targeting foreign tobacco manufacturers.",
+          "source": "[Insider Monkey] Altria Group, Inc. (MO) Outlook Bolstered by New FDA Rule Proposals Targeting  Foreign Tobacco Manufacturers"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p45).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Analyst dispersion is flat (p66).",
-          "source": "FACTS"
+          "text": "Momentum (12-1) for the ticker is flat (p43).",
+          "source": "p43"
         }
       ],
       "data_gap": false
