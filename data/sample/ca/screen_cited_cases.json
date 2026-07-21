@@ -1,41 +1,41 @@
 {
-  "as_of": "2026-07-20",
+  "as_of": "2026-07-21",
   "cases": {
     "CM.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p79"
+          "text": "The ticker demonstrates strong momentum (12-1) (p79).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p86"
+          "text": "The ticker exhibits strong value (1/PE) (p86).",
+          "source": "FACTS"
         },
         {
-          "text": "An article compares ITUB and CM asking which stock is the better value option.",
-          "source": "ITUB vs. CM: Which Stock Is the Better Value Option?"
+          "text": "A Zacks article highlights ITUB vs. CM to consider which stock presents a better value option.",
+          "source": "Zacks"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is flat.",
-          "source": "p71"
+          "text": "Quality (ROE/margin) for the ticker is flat (p71).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p71"
+          "text": "Low volatility for the ticker is flat (p71).",
+          "source": "FACTS"
         },
         {
-          "text": "Analyst dispersion is strong, indicating significant differences in analyst views.",
-          "source": "p75"
+          "text": "Analyst dispersion for the ticker is strong (p75), suggesting varied perspectives.",
+          "source": "FACTS"
         },
         {
-          "text": "CIBC agreed to pay $10 million to settle an NSF class action.",
-          "source": "CIBC agrees to pay $10 million to settle NSF class action"
+          "text": "CIBC commented on the start of tough USMCA talks following new tariffs.",
+          "source": "Bloomberg"
         },
         {
-          "text": "News of the day mentions CIBC settling a class action.",
-          "source": "News of the day: Bay Street legend, CIBC settles class action, retirement portfolio advice, Wafr secures data centre funding, Toronto home sales and more"
+          "text": "News reports indicate CIBC has settled a class action.",
+          "source": "Financial Post"
         }
       ],
       "data_gap": false
@@ -43,30 +43,42 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p82"
+          "text": "The ticker shows strong momentum (12-1) (p82).",
+          "source": "FACTS"
         },
         {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p75"
+          "text": "The ticker demonstrates strong quality (ROE/margin) (p75).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is strong.",
-          "source": "p89"
+          "text": "The ticker exhibits strong low volatility (p89).",
+          "source": "FACTS"
         },
         {
-          "text": "Royal Bank Of Canada appointed Tarek A. Robbiati to its Board.",
-          "source": "Royal Bank Of Canada (TSX:RY) Appoints Tarek A. Robbiati To Its Board"
+          "text": "RBC Wealth Management has recruited a $1.6 billion team.",
+          "source": "Barrons.com"
+        },
+        {
+          "text": "Royal Bank of Canada appointed Tarek A. Robbiati to its board.",
+          "source": "Simply Wall St."
         }
       ],
       "to_watch": [
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p68"
+          "text": "Value (1/PE) for the ticker is flat (p68).",
+          "source": "FACTS"
         },
         {
-          "text": "Analyst dispersion is strong, indicating significant differences in analyst views.",
-          "source": "p79"
+          "text": "Analyst dispersion for the ticker is strong (p79), indicating a range of opinions.",
+          "source": "FACTS"
+        },
+        {
+          "text": "Treasury yields have reached a two-month high as oil sparks inflation risk, a broader market factor.",
+          "source": "Bloomberg"
+        },
+        {
+          "text": "Hyperscalers are impacting bond gauges across global markets, a general market trend.",
+          "source": "Bloomberg"
         }
       ],
       "data_gap": false
@@ -74,42 +86,46 @@
     "BNS.TO": {
       "in_favor": [
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p79"
+          "text": "The ticker exhibits strong value (1/PE) (p82).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is strong.",
-          "source": "p86"
+          "text": "The ticker shows strong low volatility (p86).",
+          "source": "FACTS"
         },
         {
-          "text": "Bank of Nova Scotia discloses a 7.7% TeraWulf stake and a 5.62% CleanSpark position.",
-          "source": "Bank of Nova Scotia discloses 7.7% TeraWulf stake and 5.62% CleanSpark position"
+          "text": "Bank of Nova Scotia disclosed significant stakes in TeraWulf and CleanSpark.",
+          "source": "Blockspace"
         },
         {
-          "text": "Scotiabank expects the Bank of Canada to begin gradual rate hikes late in 2026 as the economy rebounds.",
-          "source": "Scotiabank Expects Bank of Canada to Begin Gradual Rate Hikes Late in 2026 as Economy Rebounds"
+          "text": "Scotiabank sees Canada's inflation as flat with limited central bank implications.",
+          "source": "MT Newswires"
+        },
+        {
+          "text": "Scotiabank anticipates the Canadian economy to rebound, leading to gradual rate increases late in 2026.",
+          "source": "MT Newswires"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p71"
+          "text": "Momentum (12-1) for the ticker is flat (p71).",
+          "source": "FACTS"
         },
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p29"
+          "text": "Quality (ROE/margin) for the ticker is weak (p29).",
+          "source": "FACTS"
         },
         {
-          "text": "Analyst dispersion is exceptional, indicating very high disagreement among analysts.",
-          "source": "p93"
+          "text": "Analyst dispersion for the ticker is exceptional (p93), suggesting highly divergent views.",
+          "source": "FACTS"
         },
         {
-          "text": "Scotiabank forecasts Canadian light vehicle sales to fall 1.6% in 2026 before recovering in 2027.",
-          "source": "Scotiabank Forecasts Canadian Light Vehicle Sales to Fall 1.6% in 2026 Before Recovering in 2027"
+          "text": "Scotiabank forecasts a 1.6% decline in Canadian light vehicle sales for 2026 before a recovery in 2027.",
+          "source": "MT Newswires"
         },
         {
-          "text": "Canada inflation is seen flat at Scotiabank with limited central bank implications.",
-          "source": "Canada Inflation Seen Flat at Scotiabank With Limited Central Bank Implications"
+          "text": "The broader TSX index experienced drops due to financial and mining losses, amid US-Iran fighting hiking inflation fears.",
+          "source": "MT Newswires"
         }
       ],
       "data_gap": false
@@ -117,38 +133,42 @@
     "TD.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is exceptional.",
-          "source": "p93"
+          "text": "The ticker demonstrates exceptional momentum (12-1) (p93).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is strong.",
-          "source": "p79"
+          "text": "The ticker exhibits strong low volatility (p79).",
+          "source": "FACTS"
         },
         {
-          "text": "QCAD adds TD as a Reserve Custodian in a push for wider Canadian adoption.",
-          "source": "QCAD Adds TD as Reserve Custodian in Push for Wider Canadian Adoption"
+          "text": "QCAD has added TD as a reserve custodian to support wider Canadian adoption.",
+          "source": "CryptoProwl"
         },
         {
-          "text": "Toronto Dominion Bank launches Clover in Canada with Fiserv.",
-          "source": "Toronto Dominion Bank (TSX:TD) Launches Clover In Canada With Fiserv"
+          "text": "Toronto Dominion Bank launched Clover in Canada in collaboration with Fiserv.",
+          "source": "Simply Wall St."
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p39"
+          "text": "Quality (ROE/margin) for the ticker is weak (p39).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p57"
+          "text": "Value (1/PE) for the ticker is flat (p57).",
+          "source": "FACTS"
         },
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p54"
+          "text": "Analyst dispersion for the ticker is flat (p54).",
+          "source": "FACTS"
         },
         {
-          "text": "An article poses the question of whether TD is the better value option in comparison to UBS.",
-          "source": "UBS vs. TD: Which Stock Is the Better Value Option?"
+          "text": "Former TD Bank employees have been sentenced for money laundering and fraud involvement.",
+          "source": "Banking Dive"
+        },
+        {
+          "text": "A Zacks article questions whether UBS or TD is the better value option.",
+          "source": "Zacks"
         }
       ],
       "data_gap": false
@@ -156,77 +176,34 @@
     "BMO.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p75"
+          "text": "The ticker shows strong momentum (12-1) (p75).",
+          "source": "FACTS"
         },
         {
-          "text": "Canada's manufacturing sales rise as expected in May, reaching a record high.",
-          "source": "Canada's Manufacturing Sales Rise as Expected in May, Reaching Record High"
+          "text": "Canada's manufacturing sales increased as anticipated in May, reaching a record high.",
+          "source": "MT Newswires"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p36"
+          "text": "Quality (ROE/margin) for the ticker is weak (p36).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p64"
+          "text": "Value (1/PE) for the ticker is flat (p64).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p57"
+          "text": "Low volatility for the ticker is flat (p57).",
+          "source": "FACTS"
         },
         {
-          "text": "Bank of Montreal stock looks fully priced on its 156% run.",
-          "source": "Bank of Montreal (TSX:BMO) Stock Looks Fully Priced On Its 156% Run"
+          "text": "Simply Wall St. suggests Bank of Montreal stock appears fully priced after a 156% ascent.",
+          "source": "Simply Wall St."
         },
         {
-          "text": "The Bank of Canada is seen holding steady this year as it signals no urgency to move, according to economists.",
-          "source": "Bank of Canada Seen Holding Steady This Year as It Signals No Urgency to Move, Economists Say"
-        }
-      ],
-      "data_gap": false
-    },
-    "CVE.TO": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p89"
-        },
-        {
-          "text": "Value (1/PE) is strong.",
-          "source": "p89"
-        },
-        {
-          "text": "Cenovus Energy expands output as higher oil prices come back into focus.",
-          "source": "Cenovus Energy (TSX:CVE) Expands Output As Higher Oil Prices Come Back Into Focus"
-        },
-        {
-          "text": "Canada ties a new West Coast pipeline to oil sands expansion.",
-          "source": "Canada Ties New West Coast Pipeline to Oil Sands Expansion"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is flat.",
-          "source": "p68"
-        },
-        {
-          "text": "Lowvol is weak.",
-          "source": "p7"
-        },
-        {
-          "text": "Analyst dispersion is strong, indicating significant differences in analyst views.",
-          "source": "p82"
-        },
-        {
-          "text": "An article raises a question about whether options traders know something unknown about Cenovus stock.",
-          "source": "Do Options Traders Know Something About Cenovus Stock We Don't?"
-        },
-        {
-          "text": "A question is posed regarding whether Cenovus' key growth projects will support its long-term outlook.",
-          "source": "Will Cenovus' Key Growth Projects Support Its Long-Term Outlook?"
+          "text": "Economists indicate the Bank of Canada is expected to remain steady this year, signaling no urgency for policy adjustments.",
+          "source": "MT Newswires"
         }
       ],
       "data_gap": false
@@ -234,30 +211,85 @@
     "ATD.TO": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p82"
+          "text": "The ticker demonstrates strong quality (ROE/margin) (p82).",
+          "source": "FACTS"
         },
         {
-          "text": "Alimentation Couche Tard stock may be 38% undervalued after a focus on dividend growth.",
-          "source": "Alimentation Couche Tard (TSX:ATD) Stock May Be 38% Undervalued After Dividend Growth Focus"
+          "text": "Simply Wall St. suggests Alimentation Couche Tard stock may be undervalued by 38%, focusing on dividend growth.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "Seven & i, a peer company, experienced a 16% surge in shares to a record high.",
+          "source": "GuruFocus.com"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p39"
+          "text": "Momentum (12-1) for the ticker is weak (p39).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p71"
+          "text": "Low volatility for the ticker is weak (p25).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is weak.",
-          "source": "p25"
+          "text": "Value (1/PE) for the ticker is flat (p71).",
+          "source": "FACTS"
         },
         {
-          "text": "Analyst dispersion is strong, indicating significant differences in analyst views.",
-          "source": "p89"
+          "text": "Analyst dispersion for the ticker is strong (p89), suggesting a diversity of expert views.",
+          "source": "FACTS"
+        },
+        {
+          "text": "The owner of 7-Eleven is reportedly shifting strategy towards an embrace of SoftBank, and SoftBank is in talks to invest in Seven & i, which could impact the competitive landscape.",
+          "source": "Bloomberg, Reuters"
+        }
+      ],
+      "data_gap": false
+    },
+    "CVE.TO": {
+      "in_favor": [
+        {
+          "text": "The ticker shows strong momentum (12-1) (p89).",
+          "source": "FACTS"
+        },
+        {
+          "text": "The ticker exhibits strong value (1/PE) (p89).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Cenovus Energy is expanding its output as attention shifts to higher oil prices.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "A Zacks article questions whether Cenovus' key growth projects will support its long-term outlook, implying potential for growth.",
+          "source": "Zacks"
+        },
+        {
+          "text": "Canada's new West Coast pipeline is linked to oil sands expansion, which could benefit energy producers.",
+          "source": "Oilprice.com"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality (ROE/margin) for the ticker is flat (p68).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Low volatility for the ticker is weak (p7).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Analyst dispersion for the ticker is strong (p82), indicating varied perspectives.",
+          "source": "FACTS"
+        },
+        {
+          "text": "A Zacks article questions what options traders might know about Cenovus stock, suggesting potential uncertainty.",
+          "source": "Zacks"
+        },
+        {
+          "text": "Eni is expanding low-carbon mobility through a BMW biofuel alliance, highlighting a broader industry shift.",
+          "source": "Zacks"
         }
       ],
       "data_gap": false
@@ -265,73 +297,38 @@
     "GWO.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is exceptional.",
-          "source": "p93"
+          "text": "The ticker demonstrates exceptional momentum (12-1) (p93).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Simply Wall St. highlights GWO as a TSX dividend stock with yields up to 6.9% and a top dividend stock to consider in May 2026.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "MarketBeat provides highlights from Power Co. of Canada's Q1 Earnings Call.",
+          "source": "MarketBeat"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is flat.",
-          "source": "p57"
+          "text": "Analyst dispersion for the ticker is weak (p18), indicating less varied analyst views.",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p61"
+          "text": "Quality (ROE/margin) for the ticker is flat (p57).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p64"
+          "text": "Value (1/PE) for the ticker is flat (p61).",
+          "source": "FACTS"
         },
         {
-          "text": "Analyst dispersion is weak, indicating low disagreement but potentially a lack of strong positive divergent views.",
-          "source": "p18"
+          "text": "Low volatility for the ticker is flat (p64).",
+          "source": "FACTS"
         },
         {
-          "text": "CIBC reviewed Canadian lifecos' Q1, stating results were 'a little disappointing' for the group.",
-          "source": "CIBC Reviews Canadian Lifecos' Q1, Says Results \"a Little Disappointing\", Updates Price Targets on Group"
-        }
-      ],
-      "data_gap": false
-    },
-    "CNR.TO": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p86"
-        },
-        {
-          "text": "CNI's record June grain volumes signal strong export demand.",
-          "source": "CNI's Record June Grain Volumes Signal Strong Export Demand"
-        },
-        {
-          "text": "CNI strengthens energy logistics with record propane shipments.",
-          "source": "CNI Strengthens Energy Logistics With Record Propane Shipments"
-        },
-        {
-          "text": "Canadian National secures long-term growth through the PlasCred Project.",
-          "source": "Canadian National Secures Long-Term Growth Through PlasCred Project"
-        },
-        {
-          "text": "An article discusses how CN\u2019s Plastics Recycling Facility Deal could reshape its long-term infrastructure strategy.",
-          "source": "Could CN\u2019s Plastics Recycling Facility Deal Quietly Reshape Its Long-Term Infrastructure Strategy (TSX:CNR)?"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p46"
-        },
-        {
-          "text": "Value (1/PE) is weak.",
-          "source": "p39"
-        },
-        {
-          "text": "Lowvol is flat.",
-          "source": "p43"
-        },
-        {
-          "text": "Analyst dispersion is flat.",
-          "source": "p64"
+          "text": "CIBC's review of Canadian lifecos' Q1 results noted them as \"a little disappointing\" across the group.",
+          "source": "MT Newswires"
         }
       ],
       "data_gap": false
@@ -339,42 +336,81 @@
     "IFC.TO": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p79"
+          "text": "The ticker demonstrates strong quality (ROE/margin) (p79).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is exceptional.",
-          "source": "p93"
+          "text": "The ticker exhibits exceptional value (1/PE) (p93).",
+          "source": "FACTS"
         },
         {
-          "text": "AM Best\u2019s A+ Rating is mentioned in relation to Intact Financial\u2019s risk profile.",
-          "source": "Does AM Best\u2019s A+ Rating Keep Intact Financial\u2019s (TSX:IFC) Risk Profile a Competitive Advantage?"
+          "text": "AM Best\u2019s A+ rating for Intact Financial could support its risk profile as a competitive advantage.",
+          "source": "Simply Wall St."
         },
         {
-          "text": "An article provides a look at Intact Financial valuation after recent share price momentum.",
-          "source": "A Look At Intact Financial (TSX:IFC) Valuation After Recent Share Price Momentum"
+          "text": "Simply Wall St. provided a valuation analysis for Intact Financial after recent share price momentum.",
+          "source": "Simply Wall St."
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p7"
+          "text": "Momentum (12-1) for the ticker is weak (p7).",
+          "source": "FACTS"
         },
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p57"
+          "text": "Analyst dispersion for the ticker is flat (p57).",
+          "source": "FACTS"
         },
         {
-          "text": "Intact Financial reports 'elevated' losses driven by weather events.",
-          "source": "Intact Financial reports 'elevated' losses driven by weather events"
+          "text": "Low volatility for the ticker is flat (p54).",
+          "source": "FACTS"
         },
         {
-          "text": "News of the day mentions catastrophic insurance losses.",
-          "source": "News of the day: Canadian savings deteriorate, charitable estate donations, breaking the credit cycle, catastrophic insurance losses and more"
+          "text": "Intact Financial reported 'elevated' losses driven by weather events.",
+          "source": "Financial Post"
         },
         {
-          "text": "CIBC weighs in on a potential Hiscox acquisition involving Intact Financial.",
-          "source": "CIBC on Intact Financial; Weighs In On A Potential Hiscox Acquisition"
+          "text": "CIBC is considering a potential acquisition of Hiscox by Intact Financial, which could introduce strategic implications.",
+          "source": "MT Newswires"
+        }
+      ],
+      "data_gap": false
+    },
+    "CNR.TO": {
+      "in_favor": [
+        {
+          "text": "The ticker demonstrates strong quality (ROE/margin) (p86).",
+          "source": "FACTS"
+        },
+        {
+          "text": "CNI's record June grain volumes suggest robust export demand.",
+          "source": "Zacks"
+        },
+        {
+          "text": "CNI has strengthened its energy logistics through record propane shipments.",
+          "source": "Zacks"
+        },
+        {
+          "text": "Canadian National secured long-term growth by advancing the PlasCred Project.",
+          "source": "Zacks"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) for the ticker is flat (p46).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE) for the ticker is weak (p36).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Analyst dispersion for the ticker is flat (p64).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Low volatility for the ticker is flat (p43).",
+          "source": "FACTS"
         }
       ],
       "data_gap": false
