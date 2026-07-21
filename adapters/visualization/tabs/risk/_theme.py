@@ -119,7 +119,7 @@ def _metric_evidence(key: str, *, margin_top: int = 7) -> str:
     carrying meaning / healthy band / caveat).  Returns ``""`` for an unregistered
     key so callers can splice it unconditionally.
     """
-    chip = render_evidence_chip_by_key(key)
+    chip = render_evidence_chip_by_key(key, compact=True)
     if not chip:
         return ""
     return f'<div style="margin-top:{margin_top}px">{chip}</div>'

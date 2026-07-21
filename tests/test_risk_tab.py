@@ -658,7 +658,12 @@ def test_vitals_carry_registry_evidence_chips() -> None:
 
     html = risk._compose(_MACRO_V8)
     assert "ri-chip" in html, "vitals must render the evidence-chip component"
-    assert "ri-vbadge" in html, "evidence chip must carry a verdict badge"
+    # Compact mode (mobile-scan mockup): verdict badge + ADR move off the
+    # always-visible tile into the hover tooltip — assert on the tooltip
+    # class rather than the always-on ri-vbadge, which compact chips omit.
+    assert (
+        "ri-chip-tip-verdict" in html
+    ), "evidence chip must carry the verdict in its hover tooltip"
     # Registry labels for the chipped metrics (distinct from the short vital tooltips)
     assert "Effective number of bets" in html, "ENB chip label must appear"
     assert (
