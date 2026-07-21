@@ -256,7 +256,7 @@ def _benchmark(macro: dict[str, Any]) -> str:
 
     cards = ""
     for key, book_html, ref_html in rows_spec:
-        chip = render_evidence_chip_by_key(key)
+        chip = render_evidence_chip_by_key(key, compact=True)
         band = _band_text(key)
         band_html = (
             f'<div style="font-size:11px;color:{_MUT};line-height:1.5;margin-top:6px">'
