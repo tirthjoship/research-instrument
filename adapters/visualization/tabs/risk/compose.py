@@ -12,7 +12,7 @@ from adapters.visualization.components.risk_second_opinion import (
 )
 from adapters.visualization.data_loader import load_brief_summary
 
-from ._theme import _MUT
+from ._theme import _MUT, _PETROL
 from .components import (
     _contract_legend,
     _dials,
@@ -26,6 +26,24 @@ from .enb_section import _enb_section
 from .evidence import _benchmark, _evidence_bands, _flags_footer, _grill_drill
 from .factor_chart import _factor_chart
 from .sections import _decision_levers, _drift, _sector_section, _teach, _who_owns
+
+
+def _fold(eyebrow: str, title: str, html: str, *, section_id: str = "") -> str:
+    """Wrap *html* in a collapsed-by-default disclosure (mockup: 5-10 min scan mode).
+
+    Reuses the existing ``.teach``/``.tbody`` accordion styling (already shipped
+    for the Q&A walkthrough) so the deep-dive sections read as optional detail
+    rather than required reading on first load.
+    """
+    id_attr = f' id="{section_id}"' if section_id else ""
+    return (
+        f'<div class="ri-sec"{id_attr}>'
+        f'<span style="color:{_PETROL}">{eyebrow}</span> &middot; {title}</div>'
+        '<details class="teach">'
+        f'<summary><span class="h">{title}</span><span>&#43;</span></summary>'
+        f'<div class="tbody">{html}</div>'
+        "</details>"
+    )
 
 
 def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
@@ -53,6 +71,8 @@ def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
 
     flags: list[str] = list(macro.get("flags") or [])
 
+    # Glance layer — always visible. Answers "what's good, what's not" in one
+    # screen: banner, colour-coded vitals, standing narrative, gauge dials.
     parts = [
         _header(),
         _status_banner(flags),
@@ -61,19 +81,42 @@ def _compose(macro: dict[str, Any] | None, ai_html: str = "") -> str:
         _lens_nav(),
         _standing(macro),
         _dials(macro),
-        _grill_drill(flags),
-        _evidence_bands(macro),
-        _benchmark(macro),
-        _factor_chart(macro),
-        _enb_section(macro),
-        _sector_section(macro),
-        _who_owns(macro),
-        _decision_levers(macro),
-        _drift(macro),
     ]
-    # Mockup order: _drift → [Second opinion · Google AI] → _teach → _flags_footer
+
+    # Deep-dive layer — grouped into collapsed disclosures so a 5-10 minute
+    # read isn't forced to scroll past methodology to find the verdict.
+    parts.append(
+        _fold(
+            "The Evidence",
+            "How you compare & what's driving it",
+            _grill_drill(flags)
+            + _evidence_bands(macro)
+            + _benchmark(macro)
+            + _factor_chart(macro)
+            + _enb_section(macro),
+            section_id="evidence-fold",
+        )
+    )
+    parts.append(
+        _fold(
+            "The Book",
+            "Sector concentration & who owns the bet",
+            _sector_section(macro) + _who_owns(macro),
+            section_id="breakdown-fold",
+        )
+    )
+    decision_html = _decision_levers(macro) + _drift(macro)
     if ai_html:
-        parts.append(ai_html)
+        decision_html += ai_html
+    parts.append(
+        _fold(
+            "The Levers",
+            "What would change it & second opinion",
+            decision_html,
+            section_id="levers-fold",
+        )
+    )
+
     parts += [
         _teach(macro),
         _flags_footer(
