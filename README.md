@@ -11,6 +11,16 @@ failed.
 
 ---
 
+## Demo
+
+[![Watch the demo](docs/media/demo-thumbnail-play.png)](docs/media/demo.mp4)
+
+*Click to play (~26s) — GitHub opens it in its built-in video player. A tour of the Home
+tab's book-health summary through the discipline flags on real holdings. Live version:
+[research-instrument.streamlit.app](https://research-instrument.streamlit.app).*
+
+---
+
 ## The arc
 
 The project set out to beat the market, pre-registered its thesis, tried to kill it,
