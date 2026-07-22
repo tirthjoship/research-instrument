@@ -13,11 +13,10 @@ failed.
 
 ## Demo
 
-[![Watch the demo](docs/media/demo-thumbnail-play.png)](docs/media/demo.mp4)
+![Demo of the Home tab](docs/media/demo.gif)
 
-*Click to play (~26s) — GitHub opens it in its built-in video player. A tour of the Home
-tab's book-health summary through the discipline flags on real holdings. Live version:
-[research-instrument.streamlit.app](https://research-instrument.streamlit.app).*
+*A tour of the Home tab's book-health summary through the discipline flags on real
+holdings. Live version: [research-instrument.streamlit.app](https://research-instrument.streamlit.app).*
 
 ---
 
