@@ -1,45 +1,45 @@
 {
-  "as_of": "2026-07-21",
+  "as_of": "2026-07-22",
   "cases": {
     "SPG": {
       "in_favor": [
         {
-          "text": "The company's quality, as measured by ROE/margin, is exceptional (p95).",
-          "source": "facts"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p95"
         },
         {
-          "text": "Its value, based on 1/PE, is strong (p86).",
-          "source": "facts"
+          "text": "Value (1/PE) is strong.",
+          "source": "p86"
         },
         {
-          "text": "The company exhibits strong low volatility (p81).",
-          "source": "facts"
+          "text": "Low volatility is strong.",
+          "source": "p82"
         },
         {
-          "text": "This mall REIT has yielded over 4% and has seen a more than 21% increase this year.",
-          "source": "24/7 Wall St. - This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
+          "text": "This Mall REIT yields over 4% and is up more than 21% this year.",
+          "source": "[24/7 Wall St.] This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p68).",
-          "source": "facts"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p68"
         },
         {
-          "text": "Analyst dispersion is strong (p81), suggesting varying analyst opinions.",
-          "source": "facts"
+          "text": "Analyst dispersion is flat.",
+          "source": "p75"
         },
         {
-          "text": "Wall Street downgraded this mall REIT despite its recent performance.",
-          "source": "24/7 Wall St. - This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
+          "text": "Wall Street just downgraded the stock.",
+          "source": "[24/7 Wall St.] This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
         },
         {
           "text": "Simon Property Group (SPG) was downgraded at Wolfe Research.",
-          "source": "Insider Monkey - Simon Property Group (SPG) Downgraded at Wolfe Research. Here is Why"
+          "source": "[Insider Monkey] Simon Property Group (SPG) Downgraded at Wolfe Research. Here is Why"
         },
         {
-          "text": "A quarterly earnings preview indicates the need for information regarding upcoming performance.",
-          "source": "Barchart - Simon Property Group's Quarterly Earnings Preview: What You Need to Know"
+          "text": "A quarterly earnings preview indicates upcoming information to consider.",
+          "source": "[Barchart] Simon Property Group's Quarterly Earnings Preview: What You Need to Know"
         }
       ],
       "data_gap": false
@@ -47,38 +47,42 @@
     "TRGP": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong (p84).",
-          "source": "facts"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p84"
         },
         {
-          "text": "The company's quality, as measured by ROE/margin, is exceptional (p95).",
-          "source": "facts"
+          "text": "Analyst dispersion is strong.",
+          "source": "p81"
         },
         {
-          "text": "Targa Resources, Inc. (TRGP) is described as a strong momentum stock.",
-          "source": "Zacks - Targa Resources, Inc. (TRGP) is a Great Momentum Stock: Should You Buy?"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p94"
         },
         {
-          "text": "This energy infrastructure stock shows signs of potential advancement.",
-          "source": "Investor's Business Daily - Energy Infrastructure Stock Targa Resources Teases A Breakout"
+          "text": "Targa Resources, Inc. (TRGP) is noted as a Great Momentum Stock.",
+          "source": "[Zacks] Targa Resources, Inc. (TRGP) is a Great Momentum Stock: Should You Buy?"
+        },
+        {
+          "text": "Energy Infrastructure Stock Targa Resources Teases A Breakout.",
+          "source": "[Investor's Business Daily] Energy Infrastructure Stock Targa Resources Teases A Breakout"
         }
       ],
       "to_watch": [
         {
-          "text": "Value (1/PE) is flat (p51).",
-          "source": "facts"
+          "text": "Value (1/PE) is flat.",
+          "source": "p51"
         },
         {
-          "text": "Low volatility is flat (p43).",
-          "source": "facts"
+          "text": "Low volatility is flat.",
+          "source": "p44"
         },
         {
-          "text": "Analyst dispersion is strong (p84), suggesting varied analyst perspectives.",
-          "source": "facts"
+          "text": "The impact of Targa\u2019s New LNG-Focused Director and 2026 Dividend on the capital allocation narrative is an upcoming consideration.",
+          "source": "[Simply Wall St.] Will Targa\u2019s New LNG-Focused Director and 2026 Dividend Shape TRGP\u2019s Capital Allocation Narrative?"
         },
         {
-          "text": "Information is available on what to expect from Targa Resources' next earnings report.",
-          "source": "Barchart - Here's What to Expect From Targa Resources' Next Earnings Report"
+          "text": "The next earnings report is an upcoming event to observe.",
+          "source": "[Barchart] Here's What to Expect From Targa Resources' Next Earnings Report"
         }
       ],
       "data_gap": false
@@ -86,34 +90,34 @@
     "SYY": {
       "in_favor": [
         {
-          "text": "The company's quality, as measured by ROE/margin, is exceptional (p95).",
-          "source": "facts"
+          "text": "Analyst dispersion is strong.",
+          "source": "p87"
         },
         {
-          "text": "The company exhibits strong low volatility (p77).",
-          "source": "facts"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p95"
+        },
+        {
+          "text": "Low volatility is strong.",
+          "source": "p78"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p23).",
-          "source": "facts"
+          "text": "Momentum (12-1) is weak.",
+          "source": "p21"
         },
         {
-          "text": "Value (1/PE) is flat (p68).",
-          "source": "facts"
+          "text": "Value (1/PE) is flat.",
+          "source": "p67"
         },
         {
-          "text": "Analyst dispersion is strong (p88), indicating a range of analyst views.",
-          "source": "facts"
+          "text": "There is an inquiry into whether Sysco (SYY) is undervalued or if its quality is already priced in.",
+          "source": "[Simply Wall St.] Is Sysco (SYY) Undervalued Or Is Its Quality Already Priced In?"
         },
         {
-          "text": "There is an inquiry into whether Sysco (SYY) is undervalued or if its quality is already reflected in its price.",
-          "source": "Simply Wall St. - Is Sysco (SYY) Undervalued Or Is Its Quality Already Priced In?"
-        },
-        {
-          "text": "Sysco (SYY) may be among the S&P 500 stocks that some analysts keep off their radar.",
-          "source": "StockStory - 3 S&P 500 Stocks We Keep Off Our Radar"
+          "text": "Sysco (SYY) is among S&P 500 stocks that one source keeps off its radar.",
+          "source": "[StockStory] 3 S&P 500 Stocks We Keep Off Our Radar"
         }
       ],
       "data_gap": false
@@ -121,42 +125,38 @@
     "AMP": {
       "in_favor": [
         {
-          "text": "The company's quality, as measured by ROE/margin, is exceptional (p93).",
-          "source": "facts"
+          "text": "Analyst dispersion is strong.",
+          "source": "p86"
         },
         {
-          "text": "Its value, based on 1/PE, is exceptional (p93).",
-          "source": "facts"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p93"
         },
         {
-          "text": "Growth in Assets Under Management (AUM) balance is anticipated to support Ameriprise's Q2 earnings.",
-          "source": "Zacks - Growth in AUM Balance Likely to Support Ameriprise's Q2 Earnings"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p93"
         },
         {
-          "text": "Ameriprise Financial Services (AMP) earnings are expected to grow.",
-          "source": "Zacks - Ameriprise Financial Services (AMP) Earnings Expected to Grow: Should You Buy?"
+          "text": "There is a question about Ameriprise Financial (AMP) still being below fair value.",
+          "source": "[Simply Wall St.] Is Ameriprise Financial (AMP) Still Below Fair Value Going Into Earnings?"
+        },
+        {
+          "text": "Growth in AUM balance is likely to support Ameriprise's Q2 earnings, which are expected to grow.",
+          "source": "[Zacks] Growth in AUM Balance Likely to Support Ameriprise's Q2 Earnings"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p7).",
-          "source": "facts"
+          "text": "Momentum (12-1) is weak.",
+          "source": "p6"
         },
         {
-          "text": "Low volatility is flat (p57).",
-          "source": "facts"
+          "text": "Low volatility is flat.",
+          "source": "p59"
         },
         {
-          "text": "Analyst dispersion is strong (p87), indicating diverse analyst views.",
-          "source": "facts"
-        },
-        {
-          "text": "Q2 earnings are on the horizon for Ameriprise (AMP), with analysts providing insights on key performance measures.",
-          "source": "Zacks - Ameriprise (AMP) Q2 Earnings on the Horizon: Analysts' Insights on Key Performance Measures"
-        },
-        {
-          "text": "Ameriprise Financial (AMP) was dropped from one Russell Index while being added to three others.",
-          "source": "Simply Wall St. - Ameriprise Financial (AMP) Was Dropped From One Russell Index And Added To Three"
+          "text": "Ameriprise Financial (AMP) Q2 earnings are on the horizon, with key performance measures and insights from analysts to consider.",
+          "source": "[StockStory] Ameriprise Financial (AMP) Reports Q2: Everything You Need To Know Ahead Of Earnings"
         }
       ],
       "data_gap": false
@@ -164,46 +164,38 @@
     "CINF": {
       "in_favor": [
         {
-          "text": "Its value, based on 1/PE, is exceptional (p95).",
-          "source": "facts"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p94"
         },
         {
-          "text": "The company exhibits strong low volatility (p83).",
-          "source": "facts"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p95"
         },
         {
-          "text": "Cincinnati Financial (CINF) was up 0.84% in one week.",
-          "source": "Zacks - Cincinnati Financial (CINF) Is Up 0.84% in One Week: What You Should Know"
+          "text": "Low volatility is strong.",
+          "source": "p84"
         },
         {
-          "text": "Cincinnati Financial (CINF) is expected to surpass earnings estimates.",
-          "source": "Zacks - Cincinnati Financial (CINF) Expected to Beat Earnings Estimates: Can the Stock Move Higher?"
+          "text": "Cincinnati Financial (CINF) is up 0.84% in one week.",
+          "source": "[Zacks] Cincinnati Financial (CINF) Is Up 0.84% in One Week: What You Should Know"
         },
         {
-          "text": "Cincinnati Financial (CINF) is suggested as a favorable choice.",
-          "source": "Zacks - Cincinnati Financial (CINF) Could Be a Great Choice"
+          "text": "Cincinnati Financial (CINF) is expected to beat earnings estimates and could be a great choice.",
+          "source": "[Zacks] Cincinnati Financial (CINF) Expected to Beat Earnings Estimates: Can the Stock Move Higher?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p54).",
-          "source": "facts"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p54"
         },
         {
-          "text": "Quality (ROE/margin) is flat (p60).",
-          "source": "facts"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p61"
         },
         {
-          "text": "Analyst dispersion is exceptional (p95), indicating a very wide range of analyst opinions.",
-          "source": "facts"
-        },
-        {
-          "text": "There is an open question regarding whether Cincinnati Financial (CINF) will surpass estimates again in its next earnings report.",
-          "source": "Zacks - Will Cincinnati Financial (CINF) Beat Estimates Again in Its Next Earnings Report?"
-        },
-        {
-          "text": "The company may be one of the stocks identified by StockStory, with further research needed to determine if it's a cash-heavy stock noted positively or negatively.",
-          "source": "StockStory - 1 Cash-Heavy Stock on Our Buy List and 2 We Turn Down"
+          "text": "Q2 earnings and Wall Street projections for key metrics are subjects of current attention.",
+          "source": "[Zacks] Seeking Clues to Cincinnati Financial (CINF) Q2 Earnings? A Peek Into Wall Street Projections for Key Metrics"
         }
       ],
       "data_gap": false
@@ -211,38 +203,69 @@
     "AIZ": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong (p75).",
-          "source": "facts"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p75"
         },
         {
-          "text": "Its value, based on 1/PE, is strong (p89).",
-          "source": "facts"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p95"
         },
         {
-          "text": "Recent market buzz indicates a mildly positive sentiment with 24 mentions in the last 30 days.",
-          "source": "facts"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "Low volatility is strong.",
+          "source": "p76"
+        },
+        {
+          "text": "Recent market buzz shows mildly positive sentiment (0.25) with 32 mentions in the last 30 days.",
+          "source": "Market sentiment: Recent buzz: mildly positive sentiment (0.25), 32 mentions in the last 30d"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is flat (p58).",
-          "source": "facts"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p59"
         },
         {
-          "text": "Low volatility is flat (p75).",
-          "source": "facts"
+          "text": "Assurant is among S&P 500 stocks that one source keeps off its radar.",
+          "source": "[StockStory] 3 S&P 500 Stocks We Keep Off Our Radar"
         },
         {
-          "text": "Analyst dispersion is exceptional (p95), suggesting a wide divergence in analyst views.",
-          "source": "facts"
+          "text": "A quarterly earnings preview indicates upcoming information to consider.",
+          "source": "[Barchart] Assurant\u2019s Quarterly Earnings Preview: What You Need to Know"
+        }
+      ],
+      "data_gap": false
+    },
+    "CL": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong.",
+          "source": "p82"
         },
         {
-          "text": "An upcoming quarterly earnings preview for Assurant indicates that information on its performance is available.",
-          "source": "Barchart - Assurant\u2019s Quarterly Earnings Preview: What You Need to Know"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p95"
         },
         {
-          "text": "Assurant (AIZ) may be among the S&P 500 stocks that some analysts keep off their radar.",
-          "source": "StockStory - 3 S&P 500 Stocks We Keep Off Our Radar"
+          "text": "Low volatility is exceptional.",
+          "source": "p90"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p28"
+        },
+        {
+          "text": "Value (1/PE) is weak.",
+          "source": "p34"
+        },
+        {
+          "text": "The next quarterly earnings report is an upcoming event to observe.",
+          "source": "[Barchart] What to Expect From Colgate-Palmolive's Next Quarterly Earnings Report"
         }
       ],
       "data_gap": false
@@ -250,38 +273,30 @@
     "MAS": {
       "in_favor": [
         {
-          "text": "The company's quality, as measured by ROE/margin, is exceptional (p95).",
-          "source": "facts"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p95"
         },
         {
-          "text": "Its value, based on 1/PE, is strong (p77).",
-          "source": "facts"
+          "text": "Value (1/PE) is strong.",
+          "source": "p77"
         },
         {
-          "text": "Masco (MAS) received an upgraded, favorable rating.",
-          "source": "Zacks - Masco (MAS) Upgraded to Strong Buy: Here's What You Should Know"
-        },
-        {
-          "text": "Masco may be considered among value stocks.",
-          "source": "Zacks - Best Value Stocks to Buy for July 17th"
+          "text": "Masco (MAS) received an upgrade from one source.",
+          "source": "[Zacks] Masco (MAS) Upgraded to Strong Buy: Here's What You Should Know"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p46).",
-          "source": "facts"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p44"
         },
         {
-          "text": "Analyst dispersion is flat (p61).",
-          "source": "facts"
+          "text": "Analyst dispersion is flat.",
+          "source": "p61"
         },
         {
-          "text": "Low volatility is flat (p44).",
-          "source": "facts"
-        },
-        {
-          "text": "Further research may be warranted on whether Masco is a cash-producing stock or one that underwhelms.",
-          "source": "StockStory - 2 Cash-Producing Stocks to Research Further and 1 That Underwhelm"
+          "text": "Low volatility is flat.",
+          "source": "p46"
         }
       ],
       "data_gap": false
@@ -289,34 +304,34 @@
     "USB": {
       "in_favor": [
         {
-          "text": "Its value, based on 1/PE, is exceptional (p94).",
-          "source": "facts"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p95"
         },
         {
-          "text": "U.S. Bancorp (USB) is presented as a strong dividend stock.",
-          "source": "Zacks - Why U.S. Bancorp (USB) is a Great Dividend Stock Right Now"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p93"
+        },
+        {
+          "text": "U.S. Bancorp (USB) is referred to as a Great Dividend Stock.",
+          "source": "[Zacks] Why U.S. Bancorp (USB) is a Great Dividend Stock Right Now"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p66).",
-          "source": "facts"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p66"
         },
         {
-          "text": "Quality (ROE/margin) is flat (p43).",
-          "source": "facts"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p44"
         },
         {
-          "text": "Low volatility is flat (p67).",
-          "source": "facts"
+          "text": "Low volatility is flat.",
+          "source": "p69"
         },
         {
-          "text": "Analyst dispersion is exceptional (p95), highlighting a wide range of analyst perspectives.",
-          "source": "facts"
-        },
-        {
-          "text": "There is an inquiry into whether U.S. Bancorp (USB) has performed strongly compared to other finance stocks this year.",
-          "source": "Zacks - Has U.S. Bancorp (USB) Outpaced Other Finance Stocks This Year?"
+          "text": "A question is raised about whether U.S. Bancorp (USB) has performed strongly compared to other finance stocks this year.",
+          "source": "[Zacks] Has U.S. Bancorp (USB) Outpaced Other Finance Stocks This Year?"
         }
       ],
       "data_gap": false
@@ -324,73 +339,42 @@
     "ITW": {
       "in_favor": [
         {
-          "text": "The company's quality, as measured by ROE/margin, is exceptional (p95).",
-          "source": "facts"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p95"
         },
         {
-          "text": "The company exhibits exceptional low volatility (p90).",
-          "source": "facts"
+          "text": "Low volatility is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Wall Street anticipates earnings growth for Illinois Tool Works (ITW) in its upcoming report.",
-          "source": "Zacks - Illinois Tool Works (ITW) Reports Next Week: Wall Street Expects Earnings Growth"
+          "text": "A dividend stock, implying ITW, beat expectations again.",
+          "source": "[24/7 Wall St.] This Dividend Stock Beat Expectations Again. Here\u2019s The New Price Target"
         },
         {
-          "text": "There is a question about whether ITW will continue its pattern of surpassing earnings estimates.",
-          "source": "Zacks - Will Illinois Tool Works (ITW) Beat Estimates Again in Its Next Earnings Report?"
+          "text": "There is an inquiry into whether Illinois Tool Works (ITW) will continue to exceed estimates in its next earnings report, suggesting a history of doing so.",
+          "source": "[Zacks] Will Illinois Tool Works (ITW) Beat Estimates Again in Its Next Earnings Report?"
+        },
+        {
+          "text": "Wall Street expects earnings growth for Illinois Tool Works (ITW).",
+          "source": "[Zacks] Illinois Tool Works (ITW) Reports Next Week: Wall Street Expects Earnings Growth"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p23).",
-          "source": "facts"
+          "text": "Momentum (12-1) is weak.",
+          "source": "p22"
         },
         {
-          "text": "Value (1/PE) is flat (p60).",
-          "source": "facts"
+          "text": "Analyst dispersion is flat.",
+          "source": "p50"
         },
         {
-          "text": "Analyst dispersion is flat (p49).",
-          "source": "facts"
+          "text": "Value (1/PE) is flat.",
+          "source": "p61"
         },
         {
-          "text": "Illinois Tool Works (ITW) is scheduled to report earnings next week, with an open question on whether it will surpass estimates.",
-          "source": "Zacks - Will Illinois Tool Works (ITW) Beat Estimates Again in Its Next Earnings Report?"
-        }
-      ],
-      "data_gap": false
-    },
-    "MO": {
-      "in_favor": [
-        {
-          "text": "The company's quality, as measured by ROE/margin, is strong (p86).",
-          "source": "facts"
-        },
-        {
-          "text": "Its value, based on 1/PE, is strong (p87).",
-          "source": "facts"
-        },
-        {
-          "text": "The company exhibits strong low volatility (p88).",
-          "source": "facts"
-        },
-        {
-          "text": "Altria (MO) gained while the broader market experienced a downturn.",
-          "source": "Zacks - Altria (MO) Gains As Market Dips: What You Should Know"
-        },
-        {
-          "text": "Altria is identified as a super-high-yield dividend stock that a demographic group is accumulating for reliable passive income, including some considered \"Dividend Kings,\" and may be among stocks trading near all-time highs.",
-          "source": "24/7 Wall St. - Retire on Dividends Alone: The Super-High-Yield Stocks Boomers Are Buying and Never Selling; 24/7 Wall St. - Boomers Are Quietly Loading Up on These Super-High-Yield Dividend Kings for Reliable Passive Income; MarketBeat - 5 Stocks Quietly Trading Near All-Time Highs While Everyone Watches the AI Drama"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p41).",
-          "source": "facts"
-        },
-        {
-          "text": "Analyst dispersion is flat (p69).",
-          "source": "facts"
+          "text": "The next earnings report is an upcoming event to observe.",
+          "source": "[Zacks] Will Illinois Tool Works (ITW) Beat Estimates Again in Its Next Earnings Report?"
         }
       ],
       "data_gap": false
