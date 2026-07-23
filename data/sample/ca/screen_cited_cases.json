@@ -1,37 +1,33 @@
 {
-  "as_of": "2026-07-22",
+  "as_of": "2026-07-23",
   "cases": {
     "CM.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Strong.",
-          "source": "p79"
+          "text": "The ticker exhibits strong momentum (12-1) (p79).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is Strong.",
-          "source": "p86"
+          "text": "Quality (ROE/margin) is strong (p75).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE) is strong (p89).",
+          "source": "FACTS"
+        },
+        {
+          "text": "The stock is noted as a 'better value stock option' in comparisons (Zacks).",
+          "source": "[Zacks] ITUB or CM: Which Is the Better Value Stock Right Now?, [Zacks] ITUB vs. CM: Which Stock Is the Better Value Option?"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p69"
+          "text": "Analyst dispersion is flat (p68), indicating a lack of strong differentiation in analyst views.",
+          "source": "FACTS"
         },
         {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p72"
-        },
-        {
-          "text": "Lowvol is Flat.",
-          "source": "p72"
-        },
-        {
-          "text": "CIBC indicates that Trump's new tariff marks the start of tough USMCA talks.",
-          "source": "Trump\u2019s New Tariff Marks Start of Tough USMCA Talks, CIBC Says"
-        },
-        {
-          "text": "An article compares ITUB and CM to determine which stock is a better value option.",
-          "source": "ITUB vs. CM: Which Stock Is the Better Value Option?"
+          "text": "Low volatility is flat (p71).",
+          "source": "FACTS"
         }
       ],
       "data_gap": false
@@ -39,42 +35,34 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Strong.",
-          "source": "p83"
+          "text": "The ticker exhibits strong momentum (12-1) (p82).",
+          "source": "FACTS"
         },
         {
-          "text": "Quality (ROE/margin) is Strong.",
-          "source": "p76"
+          "text": "Quality (ROE/margin) is strong (p79).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is Strong.",
-          "source": "p90"
+          "text": "Low volatility is strong (p89).",
+          "source": "FACTS"
         },
         {
-          "text": "RBC Wealth Management has recruited a $1.6 billion Stifel team.",
-          "source": "RBC Wealth Management Recruits $1.6 Billion Stifel Team"
+          "text": "RBC Wealth Management recruited a $1.6 billion Stifel team (Barrons.com).",
+          "source": "[Barrons.com] RBC Wealth Management Recruits $1.6 Billion Stifel Team"
         },
         {
-          "text": "Royal Bank of Canada has appointed Tarek A. Robbiati to its board.",
-          "source": "Royal Bank Of Canada (TSX:RY) Appoints Tarek A. Robbiati To Its Board"
+          "text": "Royal Bank Of Canada appointed Tarek A. Robbiati to its Board (Simply Wall St.).",
+          "source": "[Simply Wall St.] Royal Bank Of Canada (TSX:RY) Appoints Tarek A. Robbiati To Its Board"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p72"
+          "text": "Analyst dispersion is flat (p71).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p69"
-        },
-        {
-          "text": "Treasury yields have hit a two-month high as oil sparks inflation risk.",
-          "source": "Treasury Yields Hit Two-Month High as Oil Sparks Inflation Risk"
-        },
-        {
-          "text": "Hyperscalers are noted for dragging down bond gauges across global markets.",
-          "source": "Hyperscalers Are Dragging Down Bond Gauges Across Global Markets"
+          "text": "Value (1/PE) is flat (p68).",
+          "source": "FACTS"
         }
       ],
       "data_gap": false
@@ -82,42 +70,38 @@
     "BNS.TO": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is Exceptional.",
-          "source": "p93"
+          "text": "Value (1/PE) is strong (p82).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is Strong.",
-          "source": "p83"
+          "text": "Low volatility is strong (p86).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is Strong.",
-          "source": "p86"
-        },
-        {
-          "text": "Bank of Nova Scotia has disclosed a 7.7% stake in TeraWulf and a 5.62% position in CleanSpark.",
-          "source": "Bank of Nova Scotia discloses 7.7% TeraWulf stake and 5.62% CleanSpark position"
+          "text": "Bank of Nova Scotia disclosed a 7.7% TeraWulf stake and a 5.62% CleanSpark position (Blockspace).",
+          "source": "[Blockspace] Bank of Nova Scotia discloses 7.7% TeraWulf stake and 5.62% CleanSpark position"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p72"
+          "text": "Momentum (12-1) is flat (p71).",
+          "source": "FACTS"
         },
         {
-          "text": "Quality (ROE/margin) is Weak.",
-          "source": "p31"
+          "text": "Quality (ROE/margin) is weak (p32).",
+          "source": "FACTS"
         },
         {
-          "text": "Scotiabank anticipates Canada's inflation to be flat, with limited implications for the central bank.",
-          "source": "Canada Inflation Seen Flat at Scotiabank With Limited Central Bank Implications"
+          "text": "Analyst dispersion is exceptional (p93), suggesting highly divergent views among analysts.",
+          "source": "FACTS"
         },
         {
-          "text": "Scotiabank expects the Bank of Canada to begin gradual rate increases late in 2026, following an economic rebound.",
-          "source": "Scotiabank Expects Bank of Canada to Begin Gradual Rate Hikes Late in 2026 as Economy Rebounds"
+          "text": "Scotiabank sees Canada inflation as flat with limited central bank implications (MT Newswires).",
+          "source": "[MT Newswires] Canada Inflation Seen Flat at Scotiabank With Limited Central Bank Implications"
         },
         {
-          "text": "Scotiabank forecasts a 1.6% decline in Canadian light vehicle sales in 2026 before a recovery in 2027.",
-          "source": "Scotiabank Forecasts Canadian Light Vehicle Sales to Fall 1.6% in 2026 Before Recovering in 2027"
+          "text": "Scotiabank expects the Bank of Canada to begin gradual rate hikes late in 2026 (MT Newswires).",
+          "source": "[MT Newswires] Scotiabank Expects Bank of Canada to Begin Gradual Rate Hikes Late in 2026 as Economy Rebounds"
         }
       ],
       "data_gap": false
@@ -125,38 +109,38 @@
     "TD.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Exceptional.",
-          "source": "p93"
+          "text": "The ticker exhibits exceptional momentum (12-1) (p93).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is Strong.",
-          "source": "p79"
+          "text": "Low volatility is strong (p79).",
+          "source": "FACTS"
         },
         {
-          "text": "QCAD has added TD as a reserve custodian in an effort for wider Canadian adoption.",
-          "source": "QCAD Adds TD as Reserve Custodian in Push for Wider Canadian Adoption"
+          "text": "The stock is considered a 'better value option' in comparisons (Zacks).",
+          "source": "[Zacks] UBS vs. TD: Which Stock Is the Better Value Option?"
+        },
+        {
+          "text": "TD was added as a reserve custodian for QCAD in a push for wider Canadian adoption (CryptoProwl).",
+          "source": "[CryptoProwl] QCAD Adds TD as Reserve Custodian in Push for Wider Canadian Adoption"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p52"
+          "text": "Analyst dispersion is flat (p50).",
+          "source": "FACTS"
         },
         {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p41"
+          "text": "Quality (ROE/margin) is flat (p43).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p59"
+          "text": "Value (1/PE) is flat (p61).",
+          "source": "FACTS"
         },
         {
-          "text": "Former TD Bank employees were sentenced to prison for money laundering and fraud involvement.",
-          "source": "Ex-TD Bank employees sentenced to prison for money laundering, fraud involvement"
-        },
-        {
-          "text": "An article compares UBS and TD regarding which stock is the better value option.",
-          "source": "UBS vs. TD: Which Stock Is the Better Value Option?"
+          "text": "Ex-TD Bank employees were sentenced for money laundering and fraud involvement (Banking Dive).",
+          "source": "[Banking Dive] Ex-TD Bank employees sentenced to prison for money laundering, fraud involvement"
         }
       ],
       "data_gap": false
@@ -164,34 +148,34 @@
     "BMO.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Strong.",
-          "source": "p76"
+          "text": "The ticker exhibits strong momentum (12-1) (p75).",
+          "source": "FACTS"
         },
         {
-          "text": "Canada's manufacturing sales increased as expected in May, reaching a record high.",
-          "source": "Canada's Manufacturing Sales Rise as Expected in May, Reaching Record High"
+          "text": "Canada's manufacturing sales rose to a record high in May (MT Newswires).",
+          "source": "[MT Newswires] Canada's Manufacturing Sales Rise as Expected in May, Reaching Record High"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p62"
+          "text": "Analyst dispersion is flat (p61).",
+          "source": "FACTS"
         },
         {
-          "text": "Quality (ROE/margin) is Weak.",
-          "source": "p38"
+          "text": "Quality (ROE/margin) is weak (p39).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p66"
+          "text": "Value (1/PE) is flat (p64).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is Flat.",
-          "source": "p59"
+          "text": "Low volatility is flat (p57).",
+          "source": "FACTS"
         },
         {
-          "text": "Trump\u2019s latest tariffs are casting doubt on a Canada investment revival.",
-          "source": "Trump\u2019s Latest Tariffs Cast Doubt on Canada Investment Revival"
+          "text": "Trump\u2019s latest tariffs cast doubt on Canada investment revival (Bloomberg).",
+          "source": "[Bloomberg] Trump\u2019s Latest Tariffs Cast Doubt on Canada Investment Revival"
         }
       ],
       "data_gap": false
@@ -199,30 +183,30 @@
     "ATD.TO": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is Strong.",
-          "source": "p90"
+          "text": "Quality (ROE/margin) is strong (p86).",
+          "source": "FACTS"
         },
         {
-          "text": "Quality (ROE/margin) is Strong.",
-          "source": "p83"
-        },
-        {
-          "text": "The stock may be 38% undervalued following a focus on dividend growth.",
-          "source": "Alimentation Couche Tard (TSX:ATD) Stock May Be 38% Undervalued After Dividend Growth Focus"
+          "text": "Alimentation Couche Tard stock may be 38% undervalued after a dividend growth focus (Simply Wall St.).",
+          "source": "[Simply Wall St.] Alimentation Couche Tard (TSX:ATD) Stock May Be 38% Undervalued After Dividend Growth Focus"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p41"
+          "text": "Momentum (12-1) is weak (p39).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p72"
+          "text": "Analyst dispersion is strong (p89), suggesting divergent views among analysts.",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is Weak.",
-          "source": "p28"
+          "text": "Value (1/PE) is flat (p71).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Low volatility is weak (p29).",
+          "source": "FACTS"
         }
       ],
       "data_gap": false
@@ -230,120 +214,38 @@
     "IFC.TO": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is Strong.",
-          "source": "p79"
+          "text": "Quality (ROE/margin) is strong (p82).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is Exceptional.",
-          "source": "p93"
+          "text": "Value (1/PE) is exceptional (p93).",
+          "source": "FACTS"
         },
         {
-          "text": "An A+ rating from AM Best is considered for keeping Intact Financial's risk profile a competitive advantage.",
-          "source": "Does AM Best\u2019s A+ Rating Keep Intact Financial\u2019s (TSX:IFC) Risk Profile a Competitive Advantage?"
+          "text": "AM Best\u2019s A+ Rating may keep Intact Financial\u2019s risk profile a competitive advantage (Simply Wall St.).",
+          "source": "[Simply Wall St.] Does AM Best\u2019s A+ Rating Keep Intact Financial\u2019s (TSX:IFC) Risk Profile a Competitive Advantage?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Weak.",
-          "source": "p10"
+          "text": "Momentum (12-1) is weak (p7).",
+          "source": "FACTS"
         },
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p59"
+          "text": "Analyst dispersion is flat (p57).",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is Flat.",
-          "source": "p55"
+          "text": "Low volatility is flat (p54).",
+          "source": "FACTS"
         },
         {
-          "text": "Intact Financial has reported 'elevated' losses driven by weather events.",
-          "source": "Intact Financial reports 'elevated' losses driven by weather events"
+          "text": "Canadian savings deterioration and catastrophic insurance losses are noted (Financial Post).",
+          "source": "[Financial Post] News of the day: Canadian savings deteriorate, charitable estate donations, breaking the credit cycle, catastrophic insurance losses and more"
         },
         {
-          "text": "News mentions catastrophic insurance losses as part of the day's events.",
-          "source": "News of the day: Canadian savings deteriorate, charitable estate donations, breaking the credit cycle, catastrophic insurance losses and more"
-        }
-      ],
-      "data_gap": false
-    },
-    "CNR.TO": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is Strong.",
-          "source": "p86"
-        },
-        {
-          "text": "CNI's June grain volumes reached record levels, indicating strong export demand.",
-          "source": "CNI's Record June Grain Volumes Signal Strong Export Demand"
-        },
-        {
-          "text": "CNI has strengthened its energy logistics with record propane shipments.",
-          "source": "CNI Strengthens Energy Logistics With Record Propane Shipments"
-        },
-        {
-          "text": "Canadian National has secured long-term growth through the PlasCred Project.",
-          "source": "Canadian National Secures Long-Term Growth Through PlasCred Project"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p48"
-        },
-        {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p66"
-        },
-        {
-          "text": "Value (1/PE) is Weak.",
-          "source": "p38"
-        },
-        {
-          "text": "Lowvol is Flat.",
-          "source": "p45"
-        }
-      ],
-      "data_gap": false
-    },
-    "CVE.TO": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Strong.",
-          "source": "p90"
-        },
-        {
-          "text": "Analyst dispersion is Strong.",
-          "source": "p76"
-        },
-        {
-          "text": "Value (1/PE) is Strong.",
-          "source": "p90"
-        },
-        {
-          "text": "Canada is tying a new West Coast pipeline to oil sands expansion, which could benefit producers.",
-          "source": "Canada Ties New West Coast Pipeline to Oil Sands Expansion"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p69"
-        },
-        {
-          "text": "Lowvol is Weak.",
-          "source": "p7"
-        },
-        {
-          "text": "An article compares Valero and Cenovus to determine which energy stock might be a better option.",
-          "source": "Valero vs Cenovus: Which Energy Stock Is the Better Pick Now?"
-        },
-        {
-          "text": "A question is posed regarding whether options traders have unique insights into Cenovus stock.",
-          "source": "Do Options Traders Know Something About Cenovus Stock We Don't?"
-        },
-        {
-          "text": "An article questions if Cenovus' key growth projects will support its long-term outlook.",
-          "source": "Will Cenovus' Key Growth Projects Support Its Long-Term Outlook?"
+          "text": "Intact Financial reported elevated losses driven by weather events (Financial Post).",
+          "source": "[Financial Post] Intact Financial reports 'elevated' losses driven by weather events"
         }
       ],
       "data_gap": false
@@ -351,26 +253,104 @@
     "CNQ.TO": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is Strong.",
-          "source": "p90"
+          "text": "Quality (ROE/margin) is exceptional (p93).",
+          "source": "FACTS"
         },
         {
-          "text": "Value (1/PE) is Exceptional.",
-          "source": "p93"
+          "text": "Value (1/PE) is exceptional (p93).",
+          "source": "FACTS"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p45"
+          "text": "Momentum (12-1) is flat (p43).",
+          "source": "FACTS"
         },
         {
-          "text": "Analyst dispersion is Weak.",
-          "source": "p28"
+          "text": "Analyst dispersion is weak (p25), suggesting limited variance in analyst opinions.",
+          "source": "FACTS"
         },
         {
-          "text": "Lowvol is Weak.",
-          "source": "p10"
+          "text": "Low volatility is weak (p11).",
+          "source": "FACTS"
+        }
+      ],
+      "data_gap": false
+    },
+    "CNR.TO": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is strong (p89).",
+          "source": "FACTS"
+        },
+        {
+          "text": "CN Railway signed deals with Union Pacific over operating rights (MT Newswires).",
+          "source": "[MT Newswires] CN Railway Signs Deals with Union Pacific Over Operating Rights"
+        },
+        {
+          "text": "CN and Union Pacific reached a settlement on the Norfolk Southern merger (FreightWaves).",
+          "source": "[FreightWaves] CN and UP reach settlement on Norfolk Southern merger"
+        },
+        {
+          "text": "CN will drop opposition to the Union Pacific-Norfolk Southern deal in return for expanded access (The Wall Street Journal).",
+          "source": "[The Wall Street Journal] CN to Drop Opposition to Union Pacific-Norfolk Southern Deal in Return for Expanded Access"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat (p46).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Analyst dispersion is flat (p64).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE) is weak (p36).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Low volatility is flat (p43).",
+          "source": "FACTS"
+        }
+      ],
+      "data_gap": false
+    },
+    "CVE.TO": {
+      "in_favor": [
+        {
+          "text": "The ticker exhibits strong momentum (12-1) (p89).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE) is strong (p86).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Cenovus is considered a competitive energy stock (Zacks).",
+          "source": "[Zacks] Valero vs Cenovus: Which Energy Stock Is the Better Pick Now?"
+        },
+        {
+          "text": "Cenovus' key growth projects are noted for their potential support to its long-term outlook (Zacks).",
+          "source": "[Zacks] Will Cenovus' Key Growth Projects Support Its Long-Term Outlook?"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is strong (p75), suggesting divergent views among analysts.",
+          "source": "FACTS"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat (p71).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Low volatility is weak (p7).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Questions are raised regarding options traders' insights into Cenovus stock (Zacks).",
+          "source": "[Zacks] Do Options Traders Know Something About Cenovus Stock We Don't?"
         }
       ],
       "data_gap": false

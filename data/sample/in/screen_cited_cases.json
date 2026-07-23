@@ -1,49 +1,6 @@
 {
-  "as_of": "2026-07-22",
+  "as_of": "2026-07-23",
   "cases": {
-    "COALINDIA.NS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p91"
-        },
-        {
-          "text": "Value (1/PE) is exceptional.",
-          "source": "p91"
-        },
-        {
-          "text": "Plans to invest $201 million in research and development by fiscal 2030.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Is ramping up supplies as a heatwave fuels record power demand.",
-          "source": "Reuters"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p57"
-        },
-        {
-          "text": "Analyst dispersion is weak.",
-          "source": "p39"
-        },
-        {
-          "text": "Lowvol is flat.",
-          "source": "p52"
-        },
-        {
-          "text": "India is selling up to a 2% stake via an offer for sale.",
-          "source": "Reuters"
-        },
-        {
-          "text": "India is likely to divest a stake worth $1.06 billion.",
-          "source": "Reuters"
-        }
-      ],
-      "data_gap": false
-    },
     "SBIN.NS": {
       "in_favor": [
         {
@@ -55,16 +12,16 @@
           "source": "p91"
         },
         {
-          "text": "SBI Funds Management rose nearly 9% in its debut after a $1.03 billion IPO.",
+          "text": "India's SBI Funds Management experienced a nearly 9% rise in its debut following a $1.03 billion IPO.",
           "source": "Reuters"
         },
         {
-          "text": "SBI Group partnered with Ondo Finance to bring Japanese stocks onchain.",
+          "text": "SBI Funds Management attracted $31 billion, making its IPO the country's fourth-most-bid.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Ondo Finance has partnered with SBI Group to facilitate the onchain trading of Japanese stocks.",
           "source": "TheStreet"
-        },
-        {
-          "text": "SBI Funds Management drew $31 billion in India's fourth-most-bid IPO.",
-          "source": "Reuters"
         }
       ],
       "to_watch": [
@@ -77,50 +34,54 @@
           "source": "p48"
         },
         {
-          "text": "Lowvol is flat.",
+          "text": "Low volatility is flat.",
           "source": "p70"
+        },
+        {
+          "text": "ServiceNow has committed $40 million to an Indian banking software specialist to expand its financial services efforts.",
+          "source": "TechCrunch"
         }
       ],
       "data_gap": false
     },
-    "NESTLEIND.NS": {
+    "COALINDIA.NS": {
       "in_favor": [
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "p78"
-        },
         {
           "text": "Quality (ROE/margin) is exceptional.",
           "source": "p91"
         },
         {
-          "text": "Lowvol is exceptional.",
+          "text": "Value (1/PE) is exceptional.",
           "source": "p91"
         },
         {
-          "text": "Profit jumped 26% on strong demand.",
+          "text": "Coal India plans to invest $201 million in research and development by fiscal 2030.",
           "source": "Reuters"
         },
         {
-          "text": "Profit jumped 46% as tax cuts boosted packaged food demand.",
+          "text": "Coal India has instructed its units to increase supplies in response to a heatwave driving record power demand.",
           "source": "Reuters"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "p74"
+          "source": "p57"
         },
         {
-          "text": "Value (1/PE) is weak.",
-          "source": "p13"
+          "text": "Low volatility is flat.",
+          "source": "p52"
         },
         {
-          "text": "India's FMCG sector faces margin squeeze as costs spike amid strong demand and price hikes.",
+          "text": "Analyst dispersion is weak.",
+          "source": "p39"
+        },
+        {
+          "text": "India intends to sell up to a 2% stake in Coal India through an offer for sale.",
           "source": "Reuters"
         },
         {
-          "text": "The finance chief is stepping down.",
+          "text": "India is likely to divest a stake in state-run Coal India worth $1.06 billion, according to CNBC-TV18 reports.",
           "source": "Reuters"
         }
       ],
@@ -137,33 +98,33 @@
           "source": "p91"
         },
         {
-          "text": "Hit a record high on strong fourth-quarter sales and shining jewellers' stocks due to festive-quarter sales.",
+          "text": "India's Titan reached a record high driven by strong fourth-quarter sales.",
           "source": "Reuters"
         },
         {
-          "text": "Q3 2026 earnings call highlights include strategic acquisitions and market aspects.",
-          "source": "GuruFocus.com"
+          "text": "Indian jewellers' stocks, including Titan, experienced growth on strong festive-quarter sales.",
+          "source": "Reuters"
         },
         {
-          "text": "Logged a quarterly sales surge supported by a gold price rally and festive demand.",
+          "text": "India's Titan reported a quarterly sales surge, supported by a gold price rally and festive demand.",
           "source": "Reuters"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p74"
-        },
-        {
           "text": "Value (1/PE) is weak.",
           "source": "p9"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p57"
+          "text": "Analyst dispersion is flat.",
+          "source": "p74"
         },
         {
-          "text": "India's jewelry stocks lost 12% as Modi targeted gold imports.",
+          "text": "Low volatility is flat.",
+          "source": "p61"
+        },
+        {
+          "text": "Indian jewelry stocks experienced a 12% decline as the government focused on $72 billion in gold imports.",
           "source": "BeInCrypto"
         }
       ],
@@ -176,19 +137,15 @@
           "source": "p91"
         },
         {
-          "text": "Q1 2027 earnings call highlighted record sales and strategic aspects.",
-          "source": "GuruFocus.com"
-        },
-        {
-          "text": "Beat profit views on higher prices and posted a two-fold quarterly profit rise on price recovery.",
+          "text": "India's JSW Steel surpassed profit expectations due to higher prices.",
           "source": "Reuters"
         },
         {
-          "text": "Q4 2026 earnings call highlighted strong financial performance.",
-          "source": "GuruFocus.com"
+          "text": "India's JSW Steel recorded a two-fold increase in quarterly profit following a price recovery.",
+          "source": "Reuters"
         },
         {
-          "text": "POSCO is deepening its India presence with JSW in a landmark steel plant deal.",
+          "text": "POSCO expanded its operations in India with JSW through a significant steel plant agreement.",
           "source": "Zacks"
         }
       ],
@@ -202,12 +159,12 @@
           "source": "p57"
         },
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p30"
+          "text": "Low volatility is flat.",
+          "source": "p48"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p48"
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p30"
         }
       ],
       "data_gap": false
@@ -215,20 +172,16 @@
     "POWERGRID.NS": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "p83"
-        },
-        {
           "text": "Value (1/PE) is strong.",
           "source": "p87"
         },
         {
-          "text": "Q2 2026 earnings call highlighted strong operational performance.",
-          "source": "GuruFocus.com"
+          "text": "Analyst dispersion is strong.",
+          "source": "p78"
         },
         {
-          "text": "GE Vernova is modernizing a key high-voltage power transmission link in India.",
-          "source": "POWER Magazine"
+          "text": "An Indian firm, in collaboration with an Africa fund, signed a $311 million deal for power lines in Kenya.",
+          "source": "Reuters"
         }
       ],
       "to_watch": [
@@ -238,14 +191,92 @@
         },
         {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "p70"
+          "source": "p74"
         },
         {
-          "text": "Lowvol is flat.",
+          "text": "Low volatility is flat.",
           "source": "p65"
         },
         {
-          "text": "Posted a profit decline due to higher expenses and delayed projects.",
+          "text": "India's Power Grid Corp reported a profit decline attributed to higher expenses and delayed projects.",
+          "source": "Reuters"
+        }
+      ],
+      "data_gap": false
+    },
+    "EICHERMOT.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is strong.",
+          "source": "p83"
+        },
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "India's Eicher Motors exceeded quarterly profit estimates due to robust sales.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Royal Enfield parent Eicher reached a record high, supported by capacity expansion and growth prospects.",
+          "source": "Reuters"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p48"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p48"
+        },
+        {
+          "text": "Low volatility is weak.",
+          "source": "p39"
+        }
+      ],
+      "data_gap": false
+    },
+    "NESTLEIND.NS": {
+      "in_favor": [
+        {
+          "text": "Low volatility is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "Analyst dispersion is strong.",
+          "source": "p83"
+        },
+        {
+          "text": "Nestle India's profit increased by 26% on strong demand, leading to share price appreciation.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Nestle India's profit surged by 46% as tax reductions stimulated demand for packaged food.",
+          "source": "Reuters"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p74"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p57"
+        },
+        {
+          "text": "Value (1/PE) is weak.",
+          "source": "p13"
+        },
+        {
+          "text": "India's FMCG sector is experiencing margin compression as costs increase amid strong demand and price adjustments.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Nestle India's finance chief is stepping down, and Edouard Mac Nab has been appointed as the new CFO.",
           "source": "Reuters"
         }
       ],
@@ -262,15 +293,15 @@
           "source": "p78"
         },
         {
-          "text": "Lowvol is exceptional.",
+          "text": "Low volatility is exceptional.",
           "source": "p91"
         },
         {
-          "text": "Q1 earnings rose year-over-year as net interest income, fee income improved and provisions fell.",
+          "text": "ICICI Bank's Q1 earnings increased year-over-year, supported by improvements in net interest income, fee income, and reduced provisions.",
           "source": "Zacks"
         },
         {
-          "text": "Reported a 15.9% rise in Q1 profit, surpassing estimates.",
+          "text": "India's ICICI Bank has established initial guidance for its first dollar bond issuance in nearly nine years.",
           "source": "Reuters"
         }
       ],
@@ -281,54 +312,11 @@
         },
         {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "p57"
+          "source": "p61"
         },
         {
-          "text": "India's HDFC Bank dropped on weak margins, affecting Nifty and bank stocks.",
+          "text": "Indian shares opened lower, influenced by HDFC Bank's margins and rising oil prices, impacting bank stocks broadly.",
           "source": "Reuters"
-        },
-        {
-          "text": "Indian shares opened lower, affected by HDFC Bank and higher oil prices.",
-          "source": "Reuters"
-        }
-      ],
-      "data_gap": false
-    },
-    "EICHERMOT.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p83"
-        },
-        {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p87"
-        },
-        {
-          "text": "Q4 2026 earnings call highlighted record sales and strategic aspects.",
-          "source": "GuruFocus.com"
-        },
-        {
-          "text": "Beat quarterly profit estimates on strong sales, with Q3 2026 earnings call highlighting robust revenue growth.",
-          "source": "Reuters, GuruFocus.com"
-        },
-        {
-          "text": "Royal Enfield parent Eicher reached a record high on capacity expansion and growth outlook.",
-          "source": "Reuters"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is flat.",
-          "source": "p48"
-        },
-        {
-          "text": "Value (1/PE) is flat.",
-          "source": "p48"
-        },
-        {
-          "text": "Lowvol is weak.",
-          "source": "p39"
         }
       ],
       "data_gap": false
@@ -344,19 +332,15 @@
           "source": "p91"
         },
         {
-          "text": "Plans to sell an India port stake to Swiss Shipping Group MSC for $1.40 billion.",
-          "source": "The Wall Street Journal, Reuters"
-        },
-        {
-          "text": "Plans to invest $1.36 billion in Europe expansion.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Adani Group is streamlining its internal structure to speed decisions.",
+          "text": "India's Adani Ports plans to invest $1.36 billion in its European expansion.",
           "source": "Reuters"
         }
       ],
       "to_watch": [
+        {
+          "text": "Low volatility is weak.",
+          "source": "p22"
+        },
         {
           "text": "Quality (ROE/margin) is flat.",
           "source": "p52"
@@ -366,11 +350,11 @@
           "source": "p57"
         },
         {
-          "text": "Lowvol is weak.",
-          "source": "p22"
+          "text": "Adani Ports will sell a 49% stake in an Indian port to Swiss Shipping Group MSC for $1.4 billion.",
+          "source": "The Wall Street Journal"
         },
         {
-          "text": "India's Kerala state was reportedly not consulted on MSC's $1.4 billion port investment.",
+          "text": "Kerala state in India was not consulted regarding MSC's $1.4 billion port investment.",
           "source": "Reuters"
         }
       ],
@@ -387,25 +371,25 @@
           "source": "p87"
         },
         {
-          "text": "Q4 2026 earnings call highlighted robust profit growth.",
+          "text": "Shriram Finance Ltd reported robust profit growth during its Q4 2026 earnings call.",
           "source": "GuruFocus.com"
         },
         {
-          "text": "Beat profit forecasts and crossed 3 trillion rupees in Assets Under Management (AUM).",
+          "text": "India's Shriram Finance exceeded profit forecasts and surpassed 3 trillion rupees in Assets Under Management (AUM).",
           "source": "Reuters"
         }
       ],
       "to_watch": [
         {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "p65"
+          "source": "p70"
         },
         {
           "text": "Value (1/PE) is flat.",
           "source": "p74"
         },
         {
-          "text": "Lowvol is weak.",
+          "text": "Low volatility is weak.",
           "source": "p9"
         }
       ],
