@@ -1,0 +1,874 @@
+{
+  "as_of": "2026-07-24",
+  "market": "in",
+  "universe_size": 50,
+  "top_n": 10,
+  "regime": "NEUTRAL",
+  "abstained": false,
+  "diagnostics": {
+    "scanned": 50,
+    "had_history": 50,
+    "above_trend": 22,
+    "cleared": 22
+  },
+  "candidates": [
+    {
+      "ticker": "COALINDIA.NS",
+      "composite": 0.7678786738582439,
+      "trend_health": 0.15747971300741115,
+      "label": "RESEARCH_ONLY",
+      "why": "COALINDIA.NS: RESEARCH_ONLY. Price is 0.2 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.2798453828893974,
+          "percentile": 0.5714285714285714,
+          "contribution": 0.05596907657787949
+        },
+        {
+          "name": "revision",
+          "value": -0.29144083914509944,
+          "percentile": 0.38095238095238093,
+          "contribution": -0.05828816782901989
+        },
+        {
+          "name": "quality",
+          "value": 1.5330942196760429,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.30661884393520855
+        },
+        {
+          "name": "value",
+          "value": 1.748931980010025,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.349786396002005
+        },
+        {
+          "name": "lowvol",
+          "value": 0.5689626258608537,
+          "percentile": 0.5714285714285714,
+          "contribution": 0.11379252517217073
+        }
+      ]
+    },
+    {
+      "ticker": "TITAN.NS",
+      "composite": 0.6551905142627963,
+      "trend_health": 7.667909358417024,
+      "label": "RESEARCH_ONLY",
+      "why": "TITAN.NS: RESEARCH_ONLY. Price is 7.7 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.275033102138814,
+          "percentile": 0.8571428571428571,
+          "contribution": 0.2550066204277628
+        },
+        {
+          "name": "revision",
+          "value": 0.752828648801317,
+          "percentile": 0.7142857142857143,
+          "contribution": 0.1505657297602634
+        },
+        {
+          "name": "quality",
+          "value": 1.5330942196760429,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.30661884393520855
+        },
+        {
+          "name": "value",
+          "value": -0.955872945331433,
+          "percentile": 0.09523809523809523,
+          "contribution": -0.1911745890662866
+        },
+        {
+          "name": "lowvol",
+          "value": 0.67086954602924,
+          "percentile": 0.6666666666666666,
+          "contribution": 0.13417390920584799
+        }
+      ]
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "composite": 0.5537476366000436,
+      "trend_health": 0.7210560518074018,
+      "label": "RESEARCH_ONLY",
+      "why": "POWERGRID.NS: RESEARCH_ONLY. Price is 0.7 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.9400591291559699,
+          "percentile": 0.2857142857142857,
+          "contribution": -0.18801182583119397
+        },
+        {
+          "name": "revision",
+          "value": 0.9881158297037499,
+          "percentile": 0.7619047619047619,
+          "contribution": 0.19762316594074997
+        },
+        {
+          "name": "quality",
+          "value": 0.2868474233835526,
+          "percentile": 0.7142857142857143,
+          "contribution": 0.057369484676710526
+        },
+        {
+          "name": "value",
+          "value": 1.748931980010025,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.349786396002005
+        },
+        {
+          "name": "lowvol",
+          "value": 0.6849020790588598,
+          "percentile": 0.7142857142857143,
+          "contribution": 0.13698041581177195
+        }
+      ]
+    },
+    {
+      "ticker": "EICHERMOT.NS",
+      "composite": 0.4902183189286274,
+      "trend_health": 3.1068590108015894,
+      "label": "RESEARCH_ONLY",
+      "why": "EICHERMOT.NS: RESEARCH_ONLY. Price is 3.1 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.126922704115463,
+          "percentile": 0.8095238095238095,
+          "contribution": 0.22538454082309262
+        },
+        {
+          "name": "revision",
+          "value": 0.041083591434571194,
+          "percentile": 0.47619047619047616,
+          "contribution": 0.008216718286914238
+        },
+        {
+          "name": "quality",
+          "value": 1.5330942196760429,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.30661884393520855
+        },
+        {
+          "name": "value",
+          "value": -0.2945227167146798,
+          "percentile": 0.5238095238095238,
+          "contribution": -0.058904543342935954
+        },
+        {
+          "name": "lowvol",
+          "value": 0.044513796131739385,
+          "percentile": 0.42857142857142855,
+          "contribution": 0.008902759226347878
+        }
+      ]
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "composite": 0.48654478850929017,
+      "trend_health": 3.4855815646170942,
+      "label": "RESEARCH_ONLY",
+      "why": "ICICIBANK.NS: RESEARCH_ONLY. Price is 3.5 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.310785347647412,
+          "percentile": 0.19047619047619047,
+          "contribution": -0.2621570695294824
+        },
+        {
+          "name": "revision",
+          "value": 1.3450358473083586,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.2690071694616717
+        },
+        {
+          "name": "quality",
+          "value": 0.21531042707799664,
+          "percentile": 0.5714285714285714,
+          "contribution": 0.043062085415599326
+        },
+        {
+          "name": "value",
+          "value": 1.0051937239701503,
+          "percentile": 0.8095238095238095,
+          "contribution": 0.20103874479403006
+        },
+        {
+          "name": "lowvol",
+          "value": 1.1779692918373574,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.2355938583674715
+        }
+      ]
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "composite": 0.47803702582213675,
+      "trend_health": 1.7609198970445923,
+      "label": "RESEARCH_ONLY",
+      "why": "JSWSTEEL.NS: RESEARCH_ONLY. Price is 1.8 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.30183283150236595,
+          "percentile": 0.6190476190476191,
+          "contribution": 0.06036656630047319
+        },
+        {
+          "name": "revision",
+          "value": 0.2979133701573676,
+          "percentile": 0.5714285714285714,
+          "contribution": 0.05958267403147351
+        },
+        {
+          "name": "quality",
+          "value": -0.29965185852998305,
+          "percentile": 0.2857142857142857,
+          "contribution": -0.05993037170599661
+        },
+        {
+          "name": "value",
+          "value": 1.748931980010025,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.349786396002005
+        },
+        {
+          "name": "lowvol",
+          "value": 0.34115880597090814,
+          "percentile": 0.5238095238095238,
+          "contribution": 0.06823176119418163
+        }
+      ]
+    },
+    {
+      "ticker": "NESTLEIND.NS",
+      "composite": 0.4647613971030645,
+      "trend_health": 4.280374077120507,
+      "label": "RESEARCH_ONLY",
+      "why": "NESTLEIND.NS: RESEARCH_ONLY. Price is 4.3 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.8388582741712468,
+          "percentile": 0.7619047619047619,
+          "contribution": 0.16777165483424936
+        },
+        {
+          "name": "revision",
+          "value": 1.0546290573672124,
+          "percentile": 0.8095238095238095,
+          "contribution": 0.21092581147344247
+        },
+        {
+          "name": "quality",
+          "value": 0.1381261289619412,
+          "percentile": 0.5238095238095238,
+          "contribution": 0.02762522579238824
+        },
+        {
+          "name": "value",
+          "value": -0.8857757668224356,
+          "percentile": 0.19047619047619047,
+          "contribution": -0.17715515336448712
+        },
+        {
+          "name": "lowvol",
+          "value": 1.1779692918373574,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.2355938583674715
+        }
+      ]
+    },
+    {
+      "ticker": "ADANIPORTS.NS",
+      "composite": 0.42482623004812553,
+      "trend_health": 5.648750258987157,
+      "label": "RESEARCH_ONLY",
+      "why": "ADANIPORTS.NS: RESEARCH_ONLY. Price is 5.6 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.2926791652271248,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.25853583304542493
+        },
+        {
+          "name": "revision",
+          "value": 1.3450358473083586,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.2690071694616717
+        },
+        {
+          "name": "quality",
+          "value": 0.13282076633009998,
+          "percentile": 0.47619047619047616,
+          "contribution": 0.026564153266019998
+        },
+        {
+          "name": "value",
+          "value": 0.014471363118788848,
+          "percentile": 0.6190476190476191,
+          "contribution": 0.0028942726237577696
+        },
+        {
+          "name": "lowvol",
+          "value": -0.6608759917437445,
+          "percentile": 0.23809523809523808,
+          "contribution": -0.13217519834874888
+        }
+      ]
+    },
+    {
+      "ticker": "SHRIRAMFIN.NS",
+      "composite": 0.41076224748092016,
+      "trend_health": 3.0474904527915383,
+      "label": "RESEARCH_ONLY",
+      "why": "SHRIRAMFIN.NS: RESEARCH_ONLY. Price is 3.0 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.2926791652271248,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.25853583304542493
+        },
+        {
+          "name": "revision",
+          "value": 1.2677338565895182,
+          "percentile": 0.8571428571428571,
+          "contribution": 0.25354677131790365
+        },
+        {
+          "name": "quality",
+          "value": 0.26802194307701926,
+          "percentile": 0.6666666666666666,
+          "contribution": 0.053604388615403856
+        },
+        {
+          "name": "value",
+          "value": 0.9586133977341792,
+          "percentile": 0.7619047619047619,
+          "contribution": 0.19172267954683583
+        },
+        {
+          "name": "lowvol",
+          "value": -1.7332371252232406,
+          "percentile": 0.09523809523809523,
+          "contribution": -0.3466474250446481
+        }
+      ]
+    },
+    {
+      "ticker": "HINDALCO.NS",
+      "composite": 0.2925745967803507,
+      "trend_health": 1.1762504739659256,
+      "label": "RESEARCH_ONLY",
+      "why": "HINDALCO.NS: RESEARCH_ONLY. Price is 1.2 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.2926791652271248,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.25853583304542493
+        },
+        {
+          "name": "revision",
+          "value": -0.12323947134522101,
+          "percentile": 0.42857142857142855,
+          "contribution": -0.0246478942690442
+        },
+        {
+          "name": "quality",
+          "value": -0.7749096659049135,
+          "percentile": 0.23809523809523808,
+          "contribution": -0.1549819331809827
+        },
+        {
+          "name": "value",
+          "value": 1.4708092306581892,
+          "percentile": 0.8571428571428571,
+          "contribution": 0.29416184613163787
+        },
+        {
+          "name": "lowvol",
+          "value": -0.402466274733426,
+          "percentile": 0.2857142857142857,
+          "contribution": -0.0804932549466852
+        }
+      ]
+    },
+    {
+      "ticker": "BAJAJ-AUTO.NS",
+      "composite": 0.2664440889807674,
+      "trend_health": 7.2676336989226415,
+      "label": "RESEARCH_ONLY",
+      "why": "BAJAJ-AUTO.NS: RESEARCH_ONLY. Price is 7.3 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.5914878271574355,
+          "percentile": 0.6666666666666666,
+          "contribution": 0.1182975654314871
+        },
+        {
+          "name": "revision",
+          "value": 0.19652300022745967,
+          "percentile": 0.5238095238095238,
+          "contribution": 0.03930460004549193
+        },
+        {
+          "name": "quality",
+          "value": 0.24560250743923884,
+          "percentile": 0.6190476190476191,
+          "contribution": 0.049120501487847766
+        },
+        {
+          "name": "value",
+          "value": 0.24598321786781585,
+          "percentile": 0.7142857142857143,
+          "contribution": 0.04919664357356317
+        },
+        {
+          "name": "lowvol",
+          "value": 0.05262389221188693,
+          "percentile": 0.47619047619047616,
+          "contribution": 0.010524778442377387
+        }
+      ]
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "composite": 0.18087544063621655,
+      "trend_health": 6.250077678049345,
+      "label": "RESEARCH_ONLY",
+      "why": "SUNPHARMA.NS: RESEARCH_ONLY. Price is 6.3 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.22288401978117955,
+          "percentile": 0.3333333333333333,
+          "contribution": -0.04457680395623591
+        },
+        {
+          "name": "revision",
+          "value": 0.33816689942710615,
+          "percentile": 0.6190476190476191,
+          "contribution": 0.06763337988542123
+        },
+        {
+          "name": "quality",
+          "value": -0.016413950281689658,
+          "percentile": 0.42857142857142855,
+          "contribution": -0.0032827900563379316
+        },
+        {
+          "name": "value",
+          "value": -0.3724610180205117,
+          "percentile": 0.47619047619047616,
+          "contribution": -0.07449220360410233
+        },
+        {
+          "name": "lowvol",
+          "value": 1.1779692918373574,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.2355938583674715
+        }
+      ]
+    },
+    {
+      "ticker": "APOLLOHOSP.NS",
+      "composite": 0.05877233387173688,
+      "trend_health": 8.54113885088919,
+      "label": "RESEARCH_ONLY",
+      "why": "APOLLOHOSP.NS: RESEARCH_ONLY. Price is 8.5 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.22182836651940188,
+          "percentile": 0.5238095238095238,
+          "contribution": 0.044365673303880374
+        },
+        {
+          "name": "revision",
+          "value": -1.3053049730328536,
+          "percentile": 0.14285714285714285,
+          "contribution": -0.26106099460657073
+        },
+        {
+          "name": "quality",
+          "value": 1.1444336217111641,
+          "percentile": 0.8571428571428571,
+          "contribution": 0.22888672434223284
+        },
+        {
+          "name": "value",
+          "value": -0.8127587025770304,
+          "percentile": 0.23809523809523808,
+          "contribution": -0.16255174051540608
+        },
+        {
+          "name": "lowvol",
+          "value": 1.0456633567380025,
+          "percentile": 0.8571428571428571,
+          "contribution": 0.2091326713476005
+        }
+      ]
+    },
+    {
+      "ticker": "GRASIM.NS",
+      "composite": 0.042190436330540294,
+      "trend_health": 4.2707110677083335,
+      "label": "RESEARCH_ONLY",
+      "why": "GRASIM.NS: RESEARCH_ONLY. Price is 4.3 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.027190062558997766,
+          "percentile": 0.42857142857142855,
+          "contribution": 0.005438012511799553
+        },
+        {
+          "name": "revision",
+          "value": 1.3450358473083586,
+          "percentile": 0.9047619047619048,
+          "contribution": 0.2690071694616717
+        },
+        {
+          "name": "quality",
+          "value": -1.4596437268725397,
+          "percentile": 0.09523809523809523,
+          "contribution": -0.29192874537450797
+        },
+        {
+          "name": "value",
+          "value": -0.41855486459902064,
+          "percentile": 0.3333333333333333,
+          "contribution": -0.08371097291980413
+        },
+        {
+          "name": "lowvol",
+          "value": 0.7169248632569055,
+          "percentile": 0.7619047619047619,
+          "contribution": 0.14338497265138112
+        }
+      ]
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "composite": -0.09195031830273397,
+      "trend_health": 2.887619472682965,
+      "label": "RESEARCH_ONLY",
+      "why": "BAJFINANCE.NS: RESEARCH_ONLY. Price is 2.9 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.1036620661733854,
+          "percentile": 0.47619047619047616,
+          "contribution": 0.02073241323467708
+        },
+        {
+          "name": "revision",
+          "value": -0.791662569662037,
+          "percentile": 0.2857142857142857,
+          "contribution": -0.15833251393240738
+        },
+        {
+          "name": "quality",
+          "value": 0.5290115564175918,
+          "percentile": 0.7619047619047619,
+          "contribution": 0.10580231128351836
+        },
+        {
+          "name": "value",
+          "value": -0.1174405281867806,
+          "percentile": 0.5714285714285714,
+          "contribution": -0.023488105637356118
+        },
+        {
+          "name": "lowvol",
+          "value": -0.18332211625582942,
+          "percentile": 0.3333333333333333,
+          "contribution": -0.03666442325116588
+        }
+      ]
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "composite": -0.11542756706358395,
+      "trend_health": 1.8971353578504875,
+      "label": "RESEARCH_ONLY",
+      "why": "ASIANPAINT.NS: RESEARCH_ONLY. Price is 1.9 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.16475326805531262,
+          "percentile": 0.38095238095238093,
+          "contribution": -0.03295065361106252
+        },
+        {
+          "name": "revision",
+          "value": -1.4424499613718271,
+          "percentile": 0.09523809523809523,
+          "contribution": -0.28848999227436545
+        },
+        {
+          "name": "quality",
+          "value": 1.0395241830440272,
+          "percentile": 0.8095238095238095,
+          "contribution": 0.20790483660880543
+        },
+        {
+          "name": "value",
+          "value": -0.72813766088433,
+          "percentile": 0.2857142857142857,
+          "contribution": -0.145627532176866
+        },
+        {
+          "name": "lowvol",
+          "value": 0.7186788719495227,
+          "percentile": 0.8095238095238095,
+          "contribution": 0.14373577438990454
+        }
+      ]
+    },
+    {
+      "ticker": "ADANIENT.NS",
+      "composite": -0.24926024384757514,
+      "trend_health": 7.064004786754966,
+      "label": "RESEARCH_ONLY",
+      "why": "ADANIENT.NS: RESEARCH_ONLY. Price is 7.1 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.8300347101287004,
+          "percentile": 0.7142857142857143,
+          "contribution": 0.1660069420257401
+        },
+        {
+          "name": "revision",
+          "value": 0.5942213839341299,
+          "percentile": 0.6666666666666666,
+          "contribution": 0.11884427678682599
+        },
+        {
+          "name": "quality",
+          "value": -0.19713856122440704,
+          "percentile": 0.3333333333333333,
+          "contribution": -0.03942771224488141
+        },
+        {
+          "name": "value",
+          "value": -0.39102550167895606,
+          "percentile": 0.38095238095238093,
+          "contribution": -0.07820510033579121
+        },
+        {
+          "name": "lowvol",
+          "value": -2.082393250397343,
+          "percentile": 0.0,
+          "contribution": -0.4164786500794686
+        }
+      ]
+    },
+    {
+      "ticker": "TECHM.NS",
+      "composite": -0.6516373184308836,
+      "trend_health": 1.542274540875413,
+      "label": "RESEARCH_ONLY",
+      "why": "TECHM.NS: RESEARCH_ONLY. Price is 1.5 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.1013159785336524,
+          "percentile": 0.23809523809523808,
+          "contribution": -0.22026319570673047
+        },
+        {
+          "name": "revision",
+          "value": -1.2205590659890493,
+          "percentile": 0.19047619047619047,
+          "contribution": -0.24411181319780986
+        },
+        {
+          "name": "quality",
+          "value": -1.0504461728442422,
+          "percentile": 0.14285714285714285,
+          "contribution": -0.21008923456884845
+        },
+        {
+          "name": "value",
+          "value": 0.21308994884723137,
+          "percentile": 0.6666666666666666,
+          "contribution": 0.04261798976944627
+        },
+        {
+          "name": "lowvol",
+          "value": -0.09895532363470566,
+          "percentile": 0.38095238095238093,
+          "contribution": -0.019791064726941133
+        }
+      ]
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "composite": -0.7196336819421612,
+      "trend_health": 0.4625361224929901,
+      "label": "RESEARCH_ONLY",
+      "why": "ULTRACEMCO.NS: RESEARCH_ONLY. Price is 0.5 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.375026044185252,
+          "percentile": 0.14285714285714285,
+          "contribution": -0.2750052088370504
+        },
+        {
+          "name": "revision",
+          "value": -1.5537412433467628,
+          "percentile": 0.0,
+          "contribution": -0.3107482486693526
+        },
+        {
+          "name": "quality",
+          "value": -0.9451946238577162,
+          "percentile": 0.19047619047619047,
+          "contribution": -0.18903892477154324
+        },
+        {
+          "name": "value",
+          "value": -0.3787224641190221,
+          "percentile": 0.42857142857142855,
+          "contribution": -0.07574449282380442
+        },
+        {
+          "name": "lowvol",
+          "value": 0.6545159657979474,
+          "percentile": 0.6190476190476191,
+          "contribution": 0.13090319315958948
+        }
+      ]
+    },
+    {
+      "ticker": "MAXHEALTH.NS",
+      "composite": -0.8334458196224641,
+      "trend_health": 0.9039240052189199,
+      "label": "RESEARCH_ONLY",
+      "why": "MAXHEALTH.NS: RESEARCH_ONLY. Price is 0.9 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.4577124213937467,
+          "percentile": 0.0,
+          "contribution": -0.29154248427874935
+        },
+        {
+          "name": "revision",
+          "value": -0.8148812910303511,
+          "percentile": 0.23809523809523808,
+          "contribution": -0.16297625820607023
+        },
+        {
+          "name": "quality",
+          "value": -0.082645241673944,
+          "percentile": 0.38095238095238093,
+          "contribution": -0.016529048334788802
+        },
+        {
+          "name": "value",
+          "value": -0.8901025685188655,
+          "percentile": 0.14285714285714285,
+          "contribution": -0.1780205137037731
+        },
+        {
+          "name": "lowvol",
+          "value": -0.9218875754954131,
+          "percentile": 0.14285714285714285,
+          "contribution": -0.18437751509908262
+        }
+      ]
+    },
+    {
+      "ticker": "INDIGO.NS",
+      "composite": -1.2244474469704187,
+      "trend_health": 0.45575500268311975,
+      "label": "RESEARCH_ONLY",
+      "why": "INDIGO.NS: RESEARCH_ONLY. Price is 0.5 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.44448419289031,
+          "percentile": 0.09523809523809523,
+          "contribution": -0.28889683857806203
+        },
+        {
+          "name": "revision",
+          "value": -0.4693025212975447,
+          "percentile": 0.3333333333333333,
+          "contribution": -0.09386050425950894
+        },
+        {
+          "name": "quality",
+          "value": -1.8864687076406625,
+          "percentile": 0.0,
+          "contribution": -0.3772937415281325
+        },
+        {
+          "name": "value",
+          "value": -1.4547910423866808,
+          "percentile": 0.0,
+          "contribution": -0.29095820847733617
+        },
+        {
+          "name": "lowvol",
+          "value": -0.8671907706368953,
+          "percentile": 0.19047619047619047,
+          "contribution": -0.17343815412737906
+        }
+      ]
+    },
+    {
+      "ticker": "ETERNAL.NS",
+      "composite": -1.687021333033039,
+      "trend_health": 1.3912349170749163,
+      "label": "RESEARCH_ONLY",
+      "why": "ETERNAL.NS: RESEARCH_ONLY. Price is 1.4 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.4577124213937467,
+          "percentile": 0.0,
+          "contribution": -0.29154248427874935
+        },
+        {
+          "name": "revision",
+          "value": -1.5537412433467628,
+          "percentile": 0.0,
+          "contribution": -0.3107482486693526
+        },
+        {
+          "name": "quality",
+          "value": -1.8864687076406625,
+          "percentile": 0.0,
+          "contribution": -0.3772937415281325
+        },
+        {
+          "name": "value",
+          "value": -1.4547910423866808,
+          "percentile": 0.0,
+          "contribution": -0.29095820847733617
+        },
+        {
+          "name": "lowvol",
+          "value": -2.082393250397343,
+          "percentile": 0.0,
+          "contribution": -0.4164786500794686
+        }
+      ]
+    }
+  ]
+}

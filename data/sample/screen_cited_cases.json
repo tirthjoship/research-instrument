@@ -1,131 +1,41 @@
 {
-  "as_of": "2026-07-23",
+  "as_of": "2026-07-24",
   "cases": {
     "SPG": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is exceptional (p95).",
-          "source": "Fact (p95)"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "Fact: Quality (ROE/margin)"
         },
         {
-          "text": "Value (1/PE) is strong (p84).",
-          "source": "Fact (p84)"
+          "text": "Value (1/PE) is strong.",
+          "source": "Fact: Value (1/PE)"
         },
         {
-          "text": "Lowvol is strong (p81).",
-          "source": "Fact (p81)"
+          "text": "Lowvol is strong.",
+          "source": "Fact: Lowvol"
         },
         {
-          "text": "The company yields over 4% and has increased by more than 21% this year.",
-          "source": "24/7 Wall St. - This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
+          "text": "This mall REIT yields over 4% and has seen an increase of more than 21% this year.",
+          "source": "24/7 Wall St.: This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p68).",
-          "source": "Fact (p68)"
+          "text": "Momentum (12-1) is flat.",
+          "source": "Fact: Momentum (12-1)"
         },
         {
-          "text": "Analyst dispersion is flat (p74).",
-          "source": "Fact (p74)"
+          "text": "Analyst dispersion is flat.",
+          "source": "Fact: Analyst dispersion"
         },
         {
-          "text": "Simon Property Group received a downgrade from Wolfe Research.",
-          "source": "Insider Monkey - Simon Property Group (SPG) Downgraded at Wolfe Research. Here is Why"
+          "text": "Wall Street has downgraded this mall REIT despite its yield and year-to-date increase.",
+          "source": "24/7 Wall St.: This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
         },
         {
-          "text": "Despite its year-to-date increase and yield, the company was downgraded by Wall Street.",
-          "source": "24/7 Wall St. - This Mall REIT Yields Over 4% And Is Up More Than 21% This Year, Wall Street Just Downgraded It Anyway"
-        },
-        {
-          "text": "A quarterly earnings preview is available for review.",
-          "source": "Barchart - Simon Property Group's Quarterly Earnings Preview: What You Need to Know"
-        }
-      ],
-      "data_gap": false
-    },
-    "GOOGL": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is exceptional (p92).",
-          "source": "Fact (p92)"
-        },
-        {
-          "text": "Quality (ROE/margin) is strong (p89).",
-          "source": "Fact (p89)"
-        },
-        {
-          "text": "Value (1/PE) is strong (p84).",
-          "source": "Fact (p84)"
-        },
-        {
-          "text": "Analysts project Google, Amazon, Meta, and Microsoft will invest an \"unprecedented\" $1 trillion in AI capital expenditure by 2027.",
-          "source": "Yahoo Finance Video - Google, Amazon, Meta, & Microsoft will spend 'unprecedented' $1T on AI capex in 2027: Analyst"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is flat (p50).",
-          "source": "Fact (p50)"
-        },
-        {
-          "text": "Lowvol is flat (p47).",
-          "source": "Fact (p47)"
-        },
-        {
-          "text": "Market sentiment is neutral (0.06) based on 61 mentions in the last 30 days.",
-          "source": "Fact (Market sentiment)"
-        },
-        {
-          "text": "Google's stock experienced a decline as Intel reported strong earnings.",
-          "source": "Yahoo Finance - Tech stocks live: Intel reports blowout earnings as Tesla and Google fall"
-        },
-        {
-          "text": "The market saw a general sell-off that affected Google.",
-          "source": "Investor's Business Daily - Dow Jones Futures: Market Sells Off On Oil Prices, Google, Tesla; Intel Rises Late, SpaceX Starship Launch Due"
-        }
-      ],
-      "data_gap": false
-    },
-    "GOOG": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is exceptional (p92).",
-          "source": "Fact (p92)"
-        },
-        {
-          "text": "Quality (ROE/margin) is strong (p89).",
-          "source": "Fact (p89)"
-        },
-        {
-          "text": "Value (1/PE) is strong (p83).",
-          "source": "Fact (p83)"
-        },
-        {
-          "text": "Analysts project Google, Amazon, Meta, and Microsoft will invest an \"unprecedented\" $1 trillion in AI capital expenditure by 2027.",
-          "source": "Yahoo Finance Video - Google, Amazon, Meta, & Microsoft will spend 'unprecedented' $1T on AI capex in 2027: Analyst"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is flat (p51).",
-          "source": "Fact (p51)"
-        },
-        {
-          "text": "Lowvol is flat (p49).",
-          "source": "Fact (p49)"
-        },
-        {
-          "text": "Market sentiment is neutral (-0.09) based on 55 mentions in the last 30 days.",
-          "source": "Fact (Market sentiment)"
-        },
-        {
-          "text": "Google's stock experienced a decline as Intel reported strong earnings.",
-          "source": "Yahoo Finance - Tech stocks live: Intel reports blowout earnings as Tesla and Google fall"
-        },
-        {
-          "text": "The market saw a general sell-off that affected Google.",
-          "source": "Investor's Business Daily - Dow Jones Futures: Market Sells Off On Oil Prices, Google, Tesla; Intel Rises Late, SpaceX Starship Launch Due"
+          "text": "Upcoming quarterly earnings for Simon Property Group are being previewed.",
+          "source": "Barchart: Simon Property Group's Quarterly Earnings Preview: What You Need to Know"
         }
       ],
       "data_gap": false
@@ -133,42 +43,42 @@
     "TRGP": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong (p84).",
-          "source": "Fact (p84)"
+          "text": "Momentum (12-1) is strong.",
+          "source": "Fact: Momentum (12-1)"
         },
         {
-          "text": "Analyst dispersion is strong (p80).",
-          "source": "Fact (p80)"
+          "text": "Analyst dispersion is strong.",
+          "source": "Fact: Analyst dispersion"
         },
         {
-          "text": "Quality (ROE/margin) is exceptional (p94).",
-          "source": "Fact (p94)"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "Fact: Quality (ROE/margin)"
         },
         {
-          "text": "The company exhibits strong momentum characteristics.",
-          "source": "Zacks - Targa Resources, Inc. (TRGP) is a Great Momentum Stock: Should You Buy?"
-        },
-        {
-          "text": "Simply Wall St. raised the question of whether Targa Resources is undervalued following its board update and dividend declaration.",
-          "source": "Simply Wall St. - Is Targa Resources (TRGP) Undervalued Following Its Board Update And Dividend Declaration?"
+          "text": "Targa Resources, Inc. is identified as having strong momentum.",
+          "source": "Zacks: Targa Resources, Inc. (TRGP) is a Great Momentum Stock: Should You Buy?"
         }
       ],
       "to_watch": [
         {
-          "text": "Value (1/PE) is flat (p50).",
-          "source": "Fact (p50)"
+          "text": "Value (1/PE) is flat.",
+          "source": "Fact: Value (1/PE)"
         },
         {
-          "text": "Lowvol is flat (p43).",
-          "source": "Fact (p43)"
+          "text": "Lowvol is flat.",
+          "source": "Fact: Lowvol"
         },
         {
-          "text": "Targa's new LNG-focused director and 2026 dividend may shape its capital allocation strategy.",
-          "source": "Simply Wall St. - Will Targa\u2019s New LNG-Focused Director and 2026 Dividend Shape TRGP\u2019s Capital Allocation Narrative?"
+          "text": "There is inquiry into whether the company is undervalued following a board update and dividend declaration.",
+          "source": "Simply Wall St.: Is Targa Resources (TRGP) Undervalued Following Its Board Update And Dividend Declaration?"
         },
         {
-          "text": "Expectations for Targa Resources' next earnings report are available for review.",
-          "source": "Barchart - Here's What to Expect From Targa Resources' Next Earnings Report"
+          "text": "Discussions are ongoing about how a new LNG-focused director and 2026 dividend might influence Targa\u2019s capital allocation narrative.",
+          "source": "Simply Wall St.: Will Targa\u2019s New LNG-Focused Director and 2026 Dividend Shape TRGP\u2019s Capital Allocation Narrative?"
+        },
+        {
+          "text": "Information is pending regarding Targa Resources' next earnings report.",
+          "source": "Barchart: Here's What to Expect From Targa Resources' Next Earnings Report"
         }
       ],
       "data_gap": false
@@ -176,69 +86,34 @@
     "SYY": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is strong (p86).",
-          "source": "Fact (p86)"
+          "text": "Analyst dispersion is strong.",
+          "source": "Fact: Analyst dispersion"
         },
         {
-          "text": "Quality (ROE/margin) is exceptional (p95).",
-          "source": "Fact (p95)"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "Fact: Quality (ROE/margin)"
         },
         {
-          "text": "Lowvol is strong (p77).",
-          "source": "Fact (p77)"
+          "text": "Lowvol is strong.",
+          "source": "Fact: Lowvol"
         },
         {
-          "text": "Simply Wall St. is evaluating if Sysco's quality attributes are already reflected in its current valuation.",
-          "source": "Simply Wall St. - Is Sysco (SYY) Undervalued Or Is Its Quality Already Priced In?"
+          "text": "The quality of Sysco (SYY) is a point of discussion.",
+          "source": "Simply Wall St.: Is Sysco (SYY) Undervalued Or Is Its Quality Already Priced In?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p22).",
-          "source": "Fact (p22)"
+          "text": "Momentum (12-1) is weak.",
+          "source": "Fact: Momentum (12-1)"
         },
         {
-          "text": "Value (1/PE) is flat (p66).",
-          "source": "Fact (p66)"
-        }
-      ],
-      "data_gap": false
-    },
-    "AMP": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is strong (p85).",
-          "source": "Fact (p85)"
+          "text": "Value (1/PE) is flat.",
+          "source": "Fact: Value (1/PE)"
         },
         {
-          "text": "Quality (ROE/margin) is exceptional (p93).",
-          "source": "Fact (p93)"
-        },
-        {
-          "text": "Value (1/PE) is exceptional (p93).",
-          "source": "Fact (p93)"
-        },
-        {
-          "text": "Ameriprise Financial's Q2 earnings call highlighted strong revenue growth.",
-          "source": "GuruFocus.com - Ameriprise Financial Inc (AMP) Q2 2026 Earnings Call Highlights: Strong Revenue Growth and ..."
-        },
-        {
-          "text": "AMP's Q2 earnings surpassed expectations, with revenue growth and Assets Under Management (AUM) and Assets Under Administration (AUA) reaching record levels.",
-          "source": "Zacks - AMP Q2 Earnings Beat as Revenues Grow & AUM, AUA Touch Record Levels"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p6).",
-          "source": "Fact (p6)"
-        },
-        {
-          "text": "Lowvol is flat (p58).",
-          "source": "Fact (p58)"
-        },
-        {
-          "text": "Key metrics relating to Ameriprise's Q2 earnings are available for examination.",
-          "source": "Zacks - Here's What Key Metrics Tell Us About Ameriprise (AMP) Q2 Earnings"
+          "text": "There is an inquiry into whether Sysco (SYY) is undervalued or if its quality is already reflected in its price.",
+          "source": "Simply Wall St.: Is Sysco (SYY) Undervalued Or Is Its Quality Already Priced In?"
         }
       ],
       "data_gap": false
@@ -246,38 +121,81 @@
     "CINF": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is exceptional (p95).",
-          "source": "Fact (p95)"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "Fact: Analyst dispersion"
         },
         {
-          "text": "Value (1/PE) is exceptional (p95).",
-          "source": "Fact (p95)"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "Fact: Value (1/PE)"
         },
         {
-          "text": "Lowvol is strong (p82).",
-          "source": "Fact (p82)"
+          "text": "Lowvol is strong.",
+          "source": "Fact: Lowvol"
         },
         {
-          "text": "Cincinnati Financial increased by 0.84% in one week.",
-          "source": "Zacks - Cincinnati Financial (CINF) Is Up 0.84% in One Week: What You Should Know"
+          "text": "Cincinnati Financial (CINF) has seen a 0.84% increase in one week.",
+          "source": "Zacks: Cincinnati Financial (CINF) Is Up 0.84% in One Week: What You Should Know"
         },
         {
-          "text": "Zacks is exploring if Cincinnati Financial could surpass its earnings estimates this season and identifies it among insurance stocks with potential to surpass Q2 earnings expectations.",
-          "source": "Zacks - Can Cincinnati Financial Surpass Estimates This Earnings Season?; Zacks - 5 Insurance Stocks Poised to Outperform Q2 Earnings Expectations"
+          "text": "Cincinnati Financial is implied to be among Wall Street's most reliable dividend growers and among insurance stocks poised to exceed Q2 earnings expectations.",
+          "source": "24/7 Wall St.: These 4 Stocks Are Wall Street\u2019s Most Reliable Dividend Growers"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p55).",
-          "source": "Fact (p55)"
+          "text": "Momentum (12-1) is flat.",
+          "source": "Fact: Momentum (12-1)"
         },
         {
-          "text": "Quality (ROE/margin) is flat (p63).",
-          "source": "Fact (p63)"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "Fact: Quality (ROE/margin)"
         },
         {
-          "text": "Wall Street projections for key Q2 earnings metrics for Cincinnati Financial are available for review.",
-          "source": "Zacks - Seeking Clues to Cincinnati Financial (CINF) Q2 Earnings? A Peek Into Wall Street Projections for Key Metrics"
+          "text": "Upcoming earnings season raises the question of whether Cincinnati Financial can surpass estimates.",
+          "source": "Zacks: Can Cincinnati Financial Surpass Estimates This Earnings Season?"
+        },
+        {
+          "text": "Wall Street projections for key metrics are being examined for clues regarding Cincinnati Financial's Q2 earnings.",
+          "source": "Zacks: Seeking Clues to Cincinnati Financial (CINF) Q2 Earnings? A Peek Into Wall Street Projections for Key Metrics"
+        }
+      ],
+      "data_gap": false
+    },
+    "AMP": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong.",
+          "source": "Fact: Analyst dispersion"
+        },
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "Fact: Quality (ROE/margin)"
+        },
+        {
+          "text": "Value (1/PE) is exceptional.",
+          "source": "Fact: Value (1/PE)"
+        },
+        {
+          "text": "Ameriprise Financial Inc. (AMP) reported strong revenue growth in its Q2 2026 earnings, with revenues increasing and Assets Under Management (AUM) and Assets Under Administration (AUA) reaching record levels.",
+          "source": "Zacks: AMP Q2 Earnings Beat as Revenues Grow & AUM, AUA Touch Record Levels"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "Fact: Momentum (12-1)"
+        },
+        {
+          "text": "Lowvol is flat.",
+          "source": "Fact: Lowvol"
+        },
+        {
+          "text": "Highlights from Ameriprise Financial's Q2 earnings call are available for review.",
+          "source": "MarketBeat: Ameriprise Financial Q2 Earnings Call Highlights"
+        },
+        {
+          "text": "Key metrics regarding Ameriprise (AMP) Q2 earnings provide further details.",
+          "source": "Zacks: Here's What Key Metrics Tell Us About Ameriprise (AMP) Q2 Earnings"
         }
       ],
       "data_gap": false
@@ -285,34 +203,34 @@
     "AIZ": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong (p75).",
-          "source": "Fact (p75)"
+          "text": "Momentum (12-1) is strong.",
+          "source": "Fact: Momentum (12-1)"
         },
         {
-          "text": "Analyst dispersion is exceptional (p95).",
-          "source": "Fact (p95)"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "Fact: Analyst dispersion"
         },
         {
-          "text": "Value (1/PE) is strong (p90).",
-          "source": "Fact (p90)"
+          "text": "Value (1/PE) is strong.",
+          "source": "Fact: Value (1/PE)"
         },
         {
-          "text": "Market sentiment is mildly positive (0.23) based on 40 mentions in the last 30 days.",
-          "source": "Fact (Market sentiment)"
+          "text": "Recent market sentiment is mildly positive, with 48 mentions in the last 30 days.",
+          "source": "Fact: Market sentiment"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is flat (p60).",
-          "source": "Fact (p60)"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "Fact: Quality (ROE/margin)"
         },
         {
-          "text": "Lowvol is flat (p74).",
-          "source": "Fact (p74)"
+          "text": "Lowvol is flat.",
+          "source": "Fact: Lowvol"
         },
         {
-          "text": "Barchart provides a preview of Assurant's upcoming quarterly earnings.",
-          "source": "Barchart - Assurant\u2019s Quarterly Earnings Preview: What You Need to Know"
+          "text": "A preview of Assurant\u2019s quarterly earnings is available for review.",
+          "source": "Barchart: Assurant\u2019s Quarterly Earnings Preview: What You Need to Know"
         }
       ],
       "data_gap": false
@@ -320,38 +238,42 @@
     "CL": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is strong (p81).",
-          "source": "Fact (p81)"
+          "text": "Analyst dispersion is strong.",
+          "source": "Fact: Analyst dispersion"
         },
         {
-          "text": "Quality (ROE/margin) is exceptional (p95).",
-          "source": "Fact (p95)"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "Fact: Quality (ROE/margin)"
         },
         {
-          "text": "Lowvol is strong (p89).",
-          "source": "Fact (p89)"
+          "text": "Lowvol is strong.",
+          "source": "Fact: Lowvol"
         },
         {
-          "text": "UBS suggests Colgate-Palmolive's Q2 organic sales growth will be supported by ongoing international momentum.",
-          "source": "MT Newswires - Colgate-Palmolive's Q2 Organic Sales Growth to Be Driven by Continued International Momentum, UBS Says"
+          "text": "Colgate-Palmolive (CL) earnings are expected to grow.",
+          "source": "Zacks: Colgate-Palmolive (CL) Earnings Expected to Grow: Should You Buy?"
+        },
+        {
+          "text": "UBS suggests Colgate-Palmolive's Q2 organic sales growth will be supported by continued international momentum.",
+          "source": "MT Newswires: Colgate-Palmolive's Q2 Organic Sales Growth to Be Driven by Continued International Momentum, UBS Says"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p28).",
-          "source": "Fact (p28)"
+          "text": "Momentum (12-1) is weak.",
+          "source": "Fact: Momentum (12-1)"
         },
         {
-          "text": "Value (1/PE) is weak (p35).",
-          "source": "Fact (p35)"
+          "text": "Value (1/PE) is weak.",
+          "source": "Fact: Value (1/PE)"
         },
         {
-          "text": "Options traders may be anticipating a significant movement in Colgate-Palmolive stock.",
-          "source": "Zacks - Are Options Traders Betting on a Big Move in Colgate-Palmolive Stock?"
+          "text": "There is discussion around whether options traders are anticipating a significant movement in Colgate-Palmolive stock.",
+          "source": "Zacks: Are Options Traders Betting on a Big Move in Colgate-Palmolive Stock?"
         },
         {
-          "text": "Expectations for Colgate-Palmolive's next quarterly earnings report are available.",
-          "source": "Barchart - What to Expect From Colgate-Palmolive's Next Quarterly Earnings Report"
+          "text": "Information is pending regarding Colgate-Palmolive's next quarterly earnings report.",
+          "source": "Barchart: What to Expect From Colgate-Palmolive's Next Quarterly Earnings Report"
         }
       ],
       "data_gap": false
@@ -359,30 +281,112 @@
     "MAS": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is exceptional (p95).",
-          "source": "Fact (p95)"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "Fact: Quality (ROE/margin)"
         },
         {
-          "text": "Value (1/PE) is strong (p77).",
-          "source": "Fact (p77)"
+          "text": "Value (1/PE) is strong.",
+          "source": "Fact: Value (1/PE)"
         },
         {
-          "text": "Masco received an elevated rating to 'Strong' from Zacks, with further details provided.",
-          "source": "Zacks - Masco (MAS) Upgraded to Strong Buy: Here's What You Should Know"
+          "text": "Masco (MAS) has received an enhanced assessment.",
+          "source": "Zacks: Masco (MAS) Upgraded to Strong Buy: Here's What You Should Know"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p46).",
-          "source": "Fact (p46)"
+          "text": "Momentum (12-1) is flat.",
+          "source": "Fact: Momentum (12-1)"
         },
         {
-          "text": "Analyst dispersion is flat (p60).",
-          "source": "Fact (p60)"
+          "text": "Analyst dispersion is flat.",
+          "source": "Fact: Analyst dispersion"
         },
         {
-          "text": "Lowvol is flat (p44).",
-          "source": "Fact (p44)"
+          "text": "Lowvol is flat.",
+          "source": "Fact: Lowvol"
+        }
+      ],
+      "data_gap": false
+    },
+    "HAS": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "Fact: Quality (ROE/margin)"
+        },
+        {
+          "text": "Value (1/PE) is strong.",
+          "source": "Fact: Value (1/PE)"
+        },
+        {
+          "text": "Hasbro's growth strategy is reportedly expanding beyond children to include 'kidults'.",
+          "source": "Fortune: Hasbro\u2019s growth strategy isn\u2019t just about kids anymore\u2014it\u2019s about \u2018kidults\u2019"
+        },
+        {
+          "text": "UBS suggests Hasbro is well-positioned to exceed expectations and increase guidance in the second half of the year.",
+          "source": "MT Newswires: Hasbro Well Positioned to Beat, Raise in H2, UBS Says"
+        },
+        {
+          "text": "Growth for HAS stock is improving.",
+          "source": "Zacks: Is HAS Stock a Buy Now as Growth Improves but Valuation Stays Mixed?"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "Fact: Momentum (12-1)"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "Fact: Analyst dispersion"
+        },
+        {
+          "text": "Lowvol is weak.",
+          "source": "Fact: Lowvol"
+        },
+        {
+          "text": "Valuation for HAS stock remains mixed despite improving growth.",
+          "source": "Zacks: Is HAS Stock a Buy Now as Growth Improves but Valuation Stays Mixed?"
+        },
+        {
+          "text": "Hasbro's stock outlook for 2026 is influenced by margin risks.",
+          "source": "Zacks: Hasbro Stock Outlook Hinges on Magic Growth and Margin Risks in 2026"
+        }
+      ],
+      "data_gap": false
+    },
+    "USB": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is exceptional.",
+          "source": "Fact: Analyst dispersion"
+        },
+        {
+          "text": "Value (1/PE) is exceptional.",
+          "source": "Fact: Value (1/PE)"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "Fact: Momentum (12-1)"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "Fact: Quality (ROE/margin)"
+        },
+        {
+          "text": "Lowvol is flat.",
+          "source": "Fact: Lowvol"
+        },
+        {
+          "text": "An earnings call transcript for U.S. Bancorp (USB) Q2 2026 is available.",
+          "source": "Motley Fool: U.S. Bancorp (USB) Q2 2026 Earnings Call Transcript"
+        },
+        {
+          "text": "A U.S. Bancorp Vice Chair sold $2.3 million in stock following a 40% increase in share value.",
+          "source": "Motley Fool: A U.S. Bancorp Vice Chair Sold $2.3 Million in Stock After a 40% Run \u2014 What Should Investors Know?"
         }
       ],
       "data_gap": false
