@@ -1,33 +1,107 @@
 {
-  "as_of": "2026-07-27",
+  "as_of": "2026-07-28",
   "cases": {
     "SPG": {
       "in_favor": [
         {
-          "text": "The company shows exceptional quality based on ROE/margin metrics.",
+          "text": "Quality (ROE/margin) is exceptional.",
           "source": "p95"
         },
         {
-          "text": "It demonstrates strong value characteristics as indicated by its 1/PE ratio.",
+          "text": "Value (1/PE) is strong.",
           "source": "p84"
         },
         {
-          "text": "The stock exhibits strong low volatility attributes.",
-          "source": "p81"
+          "text": "Lowvol is strong.",
+          "source": "p82"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "p70"
-        },
-        {
-          "text": "Analyst dispersion metrics are flat.",
           "source": "p71"
         },
         {
-          "text": "A quarterly earnings preview highlights upcoming financial disclosures for attention.",
-          "source": "[Barchart] Simon Property Group's Quarterly Earnings Preview: What You Need to Know"
+          "text": "Analyst dispersion is flat.",
+          "source": "p71"
+        }
+      ],
+      "data_gap": false
+    },
+    "GOOG": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is exceptional.",
+          "source": "p92"
+        },
+        {
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p89"
+        },
+        {
+          "text": "Value (1/PE) is strong.",
+          "source": "p84"
+        },
+        {
+          "text": "Big Tech earnings this week mark a pivotal moment for the AI trade.",
+          "source": "Yahoo Finance: Tech stocks today: Big Tech earnings this week mark a pivotal moment for the AI trade"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p52"
+        },
+        {
+          "text": "Lowvol is flat.",
+          "source": "p46"
+        },
+        {
+          "text": "Recent market sentiment indicates neutral buzz (0.00) with 79 mentions in the last 30 days.",
+          "source": "Market sentiment"
+        },
+        {
+          "text": "Investors are reportedly trying to encourage 'Mag 7' companies to lower AI spending.",
+          "source": "Reuters Videos: Market Talk: Investors trying to 'bully' Mag 7 to lower AI spending"
+        }
+      ],
+      "data_gap": false
+    },
+    "GOOGL": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is exceptional.",
+          "source": "p93"
+        },
+        {
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p89"
+        },
+        {
+          "text": "Value (1/PE) is strong.",
+          "source": "p83"
+        },
+        {
+          "text": "Big Tech earnings this week mark a pivotal moment for the AI trade.",
+          "source": "Yahoo Finance: Tech stocks today: Big Tech earnings this week mark a pivotal moment for the AI trade"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p49"
+        },
+        {
+          "text": "Lowvol is flat.",
+          "source": "p45"
+        },
+        {
+          "text": "Recent market sentiment indicates neutral buzz (0.07) with 85 mentions in the last 30 days.",
+          "source": "Market sentiment"
+        },
+        {
+          "text": "Investors are reportedly trying to encourage 'Mag 7' companies to lower AI spending.",
+          "source": "Reuters Videos: Market Talk: Investors trying to 'bully' Mag 7 to lower AI spending"
         }
       ],
       "data_gap": false
@@ -35,7 +109,7 @@
     "TRGP": {
       "in_favor": [
         {
-          "text": "The stock demonstrates strong momentum (12-1).",
+          "text": "Momentum (12-1) is strong.",
           "source": "p85"
         },
         {
@@ -47,30 +121,30 @@
           "source": "p93"
         },
         {
-          "text": "It is characterized as a 'Great Momentum Stock'.",
-          "source": "[Zacks] Targa Resources, Inc. (TRGP) is a Great Momentum Stock: Should You Buy?"
+          "text": "The company has had a board update and dividend declaration.",
+          "source": "Simply Wall St.: Is Targa Resources (TRGP) Undervalued Following Its Board Update And Dividend Declaration?"
         },
         {
-          "text": "Questions are raised about whether the stock is undervalued following a board update and dividend declaration.",
-          "source": "[Simply Wall St.] Is Targa Resources (TRGP) Undervalued Following Its Board Update And Dividend Declaration?"
+          "text": "A new LNG-focused director and 2026 dividend may shape the company\u2019s capital allocation narrative.",
+          "source": "Simply Wall St.: Will Targa\u2019s New LNG-Focused Director and 2026 Dividend Shape TRGP\u2019s Capital Allocation Narrative?"
         }
       ],
       "to_watch": [
         {
           "text": "Value (1/PE) is flat.",
-          "source": "p55"
+          "source": "p56"
         },
         {
-          "text": "Low volatility characteristics are flat.",
-          "source": "p42"
+          "text": "Lowvol is flat.",
+          "source": "p41"
         },
         {
-          "text": "The next earnings report is an upcoming event for consideration.",
-          "source": "[Barchart] Here's What to Expect From Targa Resources' Next Earnings Report"
+          "text": "The upcoming earnings report will provide further information.",
+          "source": "Barchart: Here's What to Expect From Targa Resources' Next Earnings Report"
         },
         {
-          "text": "The impact of a new LNG-focused director and the 2026 dividend on capital allocation is a topic of discussion.",
-          "source": "[Simply Wall St.] Will Targa\u2019s New LNG-Focused Director and 2026 Dividend Shape TRGP\u2019s Capital Allocation Narrative?"
+          "text": "There is a consideration whether the company is undervalued following its recent board update and dividend declaration.",
+          "source": "Simply Wall St.: Is Targa Resources (TRGP) Undervalued Following Its Board Update And Dividend Declaration?"
         }
       ],
       "data_gap": false
@@ -79,45 +153,111 @@
       "in_favor": [
         {
           "text": "Analyst dispersion is exceptional.",
-          "source": "p94"
+          "source": "p90"
         },
         {
           "text": "Value (1/PE) is exceptional.",
           "source": "p95"
         },
         {
-          "text": "The stock exhibits strong low volatility characteristics.",
-          "source": "p82"
+          "text": "Lowvol is strong.",
+          "source": "p83"
         },
         {
-          "text": "The company has raised its dividend for 65 consecutive years.",
-          "source": "[Motley Fool] Cincinnati Financial Has Raised Its Dividend for 65 Straight Years. At 10 Times Earnings, Is the Dividend King a Buy?"
+          "text": "Q2 revenues rose year-over-year on premium growth.",
+          "source": "Zacks: CINF Q2 Earnings Miss Estimates, Revenues Rise Y/Y on Premium Growth"
         },
         {
-          "text": "Q2 CY2026 sales surpassed estimates due to investment gains.",
-          "source": "[StockStory] Cincinnati Financial\u2019s (NASDAQ:CINF) Q2 CY2026: Sales Beat Estimates due to Investment Gains"
+          "text": "Insurance stocks are noted for their potential as long-term compounders.",
+          "source": "Motley Fool: Why Insurance Stocks Can Be Some of the Market's Best Long-Term Compounders"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "p57"
+          "source": "p58"
         },
         {
           "text": "Quality (ROE/margin) is flat.",
+          "source": "p67"
+        },
+        {
+          "text": "Q2 earnings missed estimates.",
+          "source": "Zacks: CINF Q2 Earnings Miss Estimates, Revenues Rise Y/Y on Premium Growth"
+        },
+        {
+          "text": "Key metrics are being examined following Cincinnati Financial's Q2 earnings.",
+          "source": "Zacks: Here's What Key Metrics Tell Us About Cincinnati Financial (CINF) Q2 Earnings"
+        }
+      ],
+      "data_gap": false
+    },
+    "SYY": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong.",
+          "source": "p85"
+        },
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p95"
+        },
+        {
+          "text": "Lowvol is strong.",
+          "source": "p77"
+        },
+        {
+          "text": "Wall Street anticipates earnings growth for the upcoming report.",
+          "source": "Zacks: Sysco (SYY) Reports Next Week: Wall Street Expects Earnings Growth"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p26"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p65"
+        },
+        {
+          "text": "There is an assessment underway regarding whether the company's quality is already reflected in its valuation or if it is undervalued.",
+          "source": "Simply Wall St.: Is Sysco (SYY) Undervalued Or Is Its Quality Already Priced In?"
+        }
+      ],
+      "data_gap": false
+    },
+    "LMT": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p95"
+        },
+        {
+          "text": "Lockheed is innovating drone fighter technology.",
+          "source": "Reuters Videos: Tech Weekly: Tesla under strain, Lockheed innovates drone fighter"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p52"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p51"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p71"
+        },
+        {
+          "text": "Lowvol is flat.",
           "source": "p63"
         },
         {
-          "text": "Q2 earnings and revenues missed estimates.",
-          "source": "[Zacks] Cincinnati Financial (CINF) Q2 Earnings and Revenues Miss Estimates"
-        },
-        {
-          "text": "The stock could be 22% overvalued despite solid profitability.",
-          "source": "[Simply Wall St.] Cincinnati Financial (CINF) Stock Could Be 22% Overvalued Despite Solid Profitability"
-        },
-        {
-          "text": "The Q2 earnings report preview is a focal point for future performance.",
-          "source": "[StockStory] Cincinnati Financial (CINF) Q2 Earnings Report Preview: What To Look For"
+          "text": "There is a query whether Lockheed Martin Corporation is currently a stock to prioritize.",
+          "source": "Zacks: Is Most-Watched Stock Lockheed Martin Corporation (LMT) Worth Betting on Now?"
         }
       ],
       "data_gap": false
@@ -133,100 +273,30 @@
           "source": "p95"
         },
         {
-          "text": "The stock exhibits strong low volatility characteristics.",
-          "source": "p88"
+          "text": "Lowvol is strong.",
+          "source": "p89"
         },
         {
-          "text": "The company is identified as a 'Dividend King' that has continued to pay and raise dividends through various market downturns.",
-          "source": "[24/7 Wall St.] 5 Dividend Kings Continued to Pay and Raise Dividends Through Every Market Crash Since Black Monday"
+          "text": "As a Dividend King, the company has consistently paid and raised dividends through various market downturns.",
+          "source": "24/7 Wall St.: 5 Dividend Kings Continued to Pay and Raise Dividends Through Every Market Crash Since Black Monday"
         },
         {
-          "text": "The stock was noted to have offered a superb opportunity.",
-          "source": "[Motley Fool] This Dividend King Stock Just Offered a Superb Buy-the-Dip Opportunity"
+          "text": "A recent article highlighted a superb opportunity for this Dividend King stock.",
+          "source": "Motley Fool: This Dividend King Stock Just Offered a Superb Buy-the-Dip Opportunity"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is weak.",
-          "source": "p32"
+          "source": "p34"
         },
         {
           "text": "Value (1/PE) is weak.",
-          "source": "p36"
+          "source": "p34"
         },
         {
-          "text": "Factors likely to shape the upcoming Q2 earnings are being considered.",
-          "source": "[Zacks] Colgate's Pre-Q2 Earnings: What's Likely to Shape the Results?"
-        }
-      ],
-      "data_gap": false
-    },
-    "SYY": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "p86"
-        },
-        {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p94"
-        },
-        {
-          "text": "The stock exhibits strong low volatility characteristics.",
-          "source": "p77"
-        },
-        {
-          "text": "Questions are raised regarding whether its quality is already reflected in its valuation.",
-          "source": "[Simply Wall St.] Is Sysco (SYY) Undervalued Or Is Its Quality Already Priced In?"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p25"
-        },
-        {
-          "text": "Value (1/PE) is flat.",
-          "source": "p66"
-        },
-        {
-          "text": "Analysis is exploring if the stock is undervalued or if its quality is already accounted for in its price.",
-          "source": "[Simply Wall St.] Is Sysco (SYY) Undervalued Or Is Its Quality Already Priced In?"
-        }
-      ],
-      "data_gap": false
-    },
-    "LMT": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
-        },
-        {
-          "text": "The stock experienced a strong Q2 earnings rally.",
-          "source": "[Insider Monkey] Should You Buy Lockheed Martin After Its Strong Q2 Earnings Rally?"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p50"
-        },
-        {
-          "text": "Analyst dispersion is flat.",
-          "source": "p46"
-        },
-        {
-          "text": "Value (1/PE) is flat.",
-          "source": "p71"
-        },
-        {
-          "text": "Low volatility characteristics are flat.",
-          "source": "p62"
-        },
-        {
-          "text": "The potential to position for Lockheed Martin after its Q2 earnings rally is under consideration.",
-          "source": "[Insider Monkey] Should You Buy Lockheed Martin After Its Strong Q2 Earnings Rally?"
+          "text": "The upcoming pre-Q2 earnings will provide insights into factors shaping the results.",
+          "source": "Zacks: Colgate's Pre-Q2 Earnings: What's Likely to Shape the Results?"
         }
       ],
       "data_gap": false
@@ -234,7 +304,7 @@
     "AIZ": {
       "in_favor": [
         {
-          "text": "The stock shows strong momentum (12-1).",
+          "text": "Momentum (12-1) is strong.",
           "source": "p77"
         },
         {
@@ -243,72 +313,29 @@
         },
         {
           "text": "Value (1/PE) is strong.",
-          "source": "p90"
+          "source": "p89"
         },
         {
-          "text": "Recent market buzz indicates mildly positive sentiment (0.20) with 56 mentions in the last 30 days.",
-          "source": "Market sentiment: Recent buzz"
+          "text": "Recent market sentiment shows mildly positive buzz (0.16) with 64 mentions in the last 30 days.",
+          "source": "Market sentiment"
         },
         {
-          "text": "Kelli Ertel was appointed to an expanded leadership role.",
-          "source": "[Simply Wall St.] Assurant (AIZ) Appoints Kelli Ertel To Expanded Leadership Role"
+          "text": "Assurant has appointed Kelli Ertel to an expanded leadership role.",
+          "source": "Simply Wall St.: Assurant (AIZ) Appoints Kelli Ertel To Expanded Leadership Role"
         }
       ],
       "to_watch": [
         {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "p60"
+          "source": "p58"
         },
         {
-          "text": "Low volatility characteristics are flat.",
+          "text": "Lowvol is flat.",
           "source": "p74"
         },
         {
-          "text": "The quarterly earnings preview is a point of interest for future financial performance.",
-          "source": "[Barchart] Assurant\u2019s Quarterly Earnings Preview: What You Need to Know"
-        }
-      ],
-      "data_gap": false
-    },
-    "MSI": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is exceptional.",
-          "source": "p95"
-        },
-        {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
-        },
-        {
-          "text": "The stock exhibits strong low volatility characteristics.",
-          "source": "p82"
-        },
-        {
-          "text": "Wall Street analysts expect the stock has the potential for a 25.35% rally.",
-          "source": "[Zacks] Does Motorola (MSI) Have the Potential to Rally 25.35% as Wall Street Analysts Expect?"
-        },
-        {
-          "text": "Consideration of whether 5G tailwinds could support earnings expectations for wireless stocks.",
-          "source": "[Zacks] Can 5G Tailwinds Help These 3 Wireless Stocks Beat Estimates?"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p13"
-        },
-        {
-          "text": "Value (1/PE) is weak.",
-          "source": "p39"
-        },
-        {
-          "text": "The upcoming earnings report is a focus for investors.",
-          "source": "[Barchart] Motorola Solutions Earnings Preview: What to Expect"
-        },
-        {
-          "text": "The continuation of its earnings surprise streak is a point of interest.",
-          "source": "[Zacks] Can Motorola (MSI) Keep the Earnings Surprise Streak Alive?"
+          "text": "Upcoming quarterly earnings preview will offer additional insights.",
+          "source": "Barchart: Assurant\u2019s Quarterly Earnings Preview: What You Need to Know"
         }
       ],
       "data_gap": false
@@ -320,77 +347,30 @@
           "source": "p95"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p75"
-        },
-        {
-          "text": "The stock appears to be below its fair value at current levels.",
-          "source": "[Simply Wall St.] Masco (MAS) Stock Looks Below Fair Value At Current Levels"
-        },
-        {
-          "text": "The stock was upgraded.",
-          "source": "[Zacks] Masco (MAS) Upgraded to Strong Buy: Here's What You Should Know"
+          "text": "There is a question of whether Masco will continue to exceed estimates in its next earnings report.",
+          "source": "Zacks: Will Masco (MAS) Beat Estimates Again in Its Next Earnings Report?"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "p48"
+          "source": "p49"
         },
         {
           "text": "Analyst dispersion is flat.",
-          "source": "p56"
+          "source": "p54"
         },
         {
-          "text": "Low volatility characteristics are flat.",
+          "text": "Value (1/PE) is flat.",
+          "source": "p74"
+        },
+        {
+          "text": "Lowvol is flat.",
           "source": "p44"
         },
         {
-          "text": "Upcoming Q2 earnings considerations are a focus.",
-          "source": "[Zacks] Masco Gears Up for Q2 Earnings: What's in the Offing for the Stock?"
-        }
-      ],
-      "data_gap": false
-    },
-    "HAS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
-        },
-        {
-          "text": "Value (1/PE) is strong.",
-          "source": "p84"
-        },
-        {
-          "text": "The stock still appears below fair value even after a 61% return.",
-          "source": "[Simply Wall St.] Hasbro (HAS) Stock Still Looks Below Fair Value After A 61% Return"
-        },
-        {
-          "text": "The business is noted to be inflecting, according to UBS.",
-          "source": "[MT Newswires] Hasbro's Valuation Multiple Compressing Even as Business is Inflecting, UBS Says"
-        },
-        {
-          "text": "Its growth strategy is expanding beyond children to include 'kidults'.",
-          "source": "[Fortune] Hasbro\u2019s growth strategy isn\u2019t just about kids anymore\u2014it\u2019s about \u2018kidults\u2019"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p33"
-        },
-        {
-          "text": "Analyst dispersion is flat.",
-          "source": "p45"
-        },
-        {
-          "text": "Low volatility characteristics are weak.",
-          "source": "p39"
-        },
-        {
-          "text": "Valuation multiple is compressing even as the business shows signs of inflection.",
-          "source": "[MT Newswires] Hasbro's Valuation Multiple Compressing Even as Business is Inflecting, UBS Says"
+          "text": "Masco is preparing for its Q2 earnings, with specific areas to monitor for the stock.",
+          "source": "Zacks: Masco Gears Up for Q2 Earnings: What's in the Offing for the Stock?"
         }
       ],
       "data_gap": false

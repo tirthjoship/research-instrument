@@ -1,68 +1,72 @@
 {
-  "as_of": "2026-07-27",
+  "as_of": "2026-07-28",
   "cases": {
+    "TITAN.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is Strong (p86).",
+          "source": "Fact"
+        },
+        {
+          "text": "Quality (ROE/margin) is Exceptional (p91).",
+          "source": "Fact"
+        },
+        {
+          "text": "The company hit a record high on strong fourth-quarter sales.",
+          "source": "[Reuters] India's Titan hits record high on strong fourth-quarter sales"
+        },
+        {
+          "text": "Q3 2026 earnings call highlights mentioned strategic acquisitions.",
+          "source": "[GuruFocus.com] Titan Co Ltd (BOM:500114) Q3 2026 Earnings Call Highlights: Strategic Acquisitions and Market ..."
+        },
+        {
+          "text": "A quarterly sales surge was logged due to a gold price rally and festive demand.",
+          "source": "[Reuters] India's Titan logs quarterly sales surge on gold price rally, festive demand"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Value (1/PE) is Weak (p9).",
+          "source": "Fact"
+        },
+        {
+          "text": "India's jewelry stocks saw declines as the government targeted $72 billion in gold imports.",
+          "source": "[BeInCrypto] India Jewelry Stocks Lose 12% as Modi Targets $72 Billion In Gold Imports"
+        }
+      ],
+      "data_gap": false
+    },
     "COALINDIA.NS": {
       "in_favor": [
         {
-          "text": "The company shows exceptional quality (ROE/margin) and value (1/PE) characteristics (p91).",
-          "source": "Facts"
+          "text": "Quality (ROE/margin) is Strong (p77).",
+          "source": "Fact"
         },
         {
-          "text": "A plan to invest $201 million in research and development by fiscal 2030 has been outlined [Reuters] Coal India to invest $201 million in research and development by fiscal 2030.",
+          "text": "Value (1/PE) is Exceptional (p91).",
+          "source": "Fact"
+        },
+        {
+          "text": "The company plans to invest $201 million in research and development by fiscal 2030.",
           "source": "[Reuters] Coal India to invest $201 million in research and development by fiscal 2030"
         },
         {
-          "text": "Units were asked to increase supplies to meet record power demand driven by a heatwave [Reuters] Coal India asks units to ramp up supplies as heatwave fuels record power demand.",
+          "text": "Units were asked to ramp up supplies as a heatwave fueled record power demand.",
           "source": "[Reuters] Coal India asks units to ramp up supplies as heatwave fuels record power demand"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) and low volatility metrics are flat (p59, p55).",
-          "source": "Facts"
+          "text": "Analyst dispersion is Weak (p36).",
+          "source": "Fact"
         },
         {
-          "text": "Analyst dispersion is weak (p36).",
-          "source": "Facts"
-        },
-        {
-          "text": "India plans to divest a stake in the company, potentially up to 2% or $1.06 billion [Reuters] India to sell up to 2% stake in Coal India via offer for sale; [Reuters] India likely to divest stake worth $1.06 billion in state-run Coal India, CNBC-TV18 reports.",
+          "text": "India's government intends to sell up to a 2% stake via an offer for sale.",
           "source": "[Reuters] India to sell up to 2% stake in Coal India via offer for sale"
-        }
-      ],
-      "data_gap": false
-    },
-    "TITAN.NS": {
-      "in_favor": [
-        {
-          "text": "The company exhibits strong momentum (12-1) and exceptional quality (ROE/margin) (p86, p91).",
-          "source": "Facts"
         },
         {
-          "text": "Titan reached a record high driven by strong fourth-quarter sales [Reuters] India's Titan hits record high on strong fourth-quarter sales; [Reuters] Indian jewellers' stocks shine on strong festive-quarter sales; Titan hits record high.",
-          "source": "[Reuters] India's Titan hits record high on strong fourth-quarter sales"
-        },
-        {
-          "text": "Quarterly sales surged due to a gold price rally and festive demand [Reuters] India's Titan logs quarterly sales surge on gold price rally, festive demand.",
-          "source": "[Reuters] India's Titan logs quarterly sales surge on gold price rally, festive demand"
-        },
-        {
-          "text": "Strategic acquisitions were highlighted in Q3 2026 earnings [GuruFocus.com] Titan Co Ltd (BOM:500114) Q3 2026 Earnings Call Highlights: Strategic Acquisitions and Market ....",
-          "source": "[GuruFocus.com] Titan Co Ltd (BOM:500114) Q3 2026 Earnings Call Highlights: Strategic Acquisitions and Market ..."
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Value (1/PE) is weak (p9).",
-          "source": "Facts"
-        },
-        {
-          "text": "Analyst dispersion and low volatility are flat (p73, p68).",
-          "source": "Facts"
-        },
-        {
-          "text": "Indian jewelry stocks experienced losses as the government targeted gold imports [BeInCrypto] India Jewelry Stocks Lose 12% as Modi Targets $72 Billion In Gold Imports.",
-          "source": "[BeInCrypto] India Jewelry Stocks Lose 12% as Modi Targets $72 Billion In Gold Imports"
+          "text": "India is likely to divest a stake worth $1.06 billion in the state-run company.",
+          "source": "[Reuters] India likely to divest stake worth $1.06 billion in state-run Coal India, CNBC-TV18 reports"
         }
       ],
       "data_gap": false
@@ -70,29 +74,29 @@
     "POWERGRID.NS": {
       "in_favor": [
         {
-          "text": "Exceptional value (1/PE) and strong analyst dispersion are noted (p91, p82).",
-          "source": "Facts"
+          "text": "Analyst dispersion is Strong (p82).",
+          "source": "Fact"
         },
         {
-          "text": "Strong operational performance was highlighted in the Q2 2026 earnings call [GuruFocus.com] Power Grid Corp Of India Ltd (BOM:532898) Q2 2026 Earnings Call Highlights: Strong Operational ....",
+          "text": "Value (1/PE) is Exceptional (p91).",
+          "source": "Fact"
+        },
+        {
+          "text": "Q2 2026 earnings call highlights included strong operational performance.",
           "source": "[GuruFocus.com] Power Grid Corp Of India Ltd (BOM:532898) Q2 2026 Earnings Call Highlights: Strong Operational ..."
         },
         {
-          "text": "An Indian firm was part of a $311 million power lines deal in Kenya [Reuters] Kenya signs $311 million power lines deal with Africa fund, Indian firm.",
-          "source": "[Reuters] Kenya signs $311 million power lines deal with Africa fund, Indian firm"
+          "text": "GE Vernova is set to modernize a key high-voltage power transmission link in India.",
+          "source": "[POWER Magazine] GE Vernova to Modernize a Key High-Voltage Power Transmission Link in India"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p32).",
-          "source": "Facts"
+          "text": "Momentum (12-1) is Weak (p32).",
+          "source": "Fact"
         },
         {
-          "text": "Quality (ROE/margin) and low volatility are flat (p68, p64).",
-          "source": "Facts"
-        },
-        {
-          "text": "The company recorded a profit decline due to higher expenses and delayed projects [Reuters] India's Power Grid Corp posts profit decline due on higher expenses, delayed projects.",
+          "text": "The company posted a profit decline due to higher expenses and delayed projects.",
           "source": "[Reuters] India's Power Grid Corp posts profit decline due on higher expenses, delayed projects"
         }
       ],
@@ -101,26 +105,30 @@
     "SHRIRAMFIN.NS": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional momentum (12-1), strong analyst dispersion, quality (ROE/margin), and value (1/PE) (p91, p86, p77, p82).",
-          "source": "Facts"
+          "text": "Momentum (12-1) is Exceptional (p91).",
+          "source": "Fact"
         },
         {
-          "text": "Strong quarterly profit was reported, alongside an expanding loanbook at a lower cost [Reuters] India's Shriram Finance posts strong quarterly profit, expanding loanbook at lower cost.",
-          "source": "[Reuters] India's Shriram Finance posts strong quarterly profit, expanding loanbook at lower cost"
+          "text": "Analyst dispersion is Strong (p86).",
+          "source": "Fact"
         },
         {
-          "text": "The company exceeded profit forecasts and surpassed 3 trillion rupees in AUM [Reuters] India's Shriram Finance beats profit forecasts, crosses 3 trillion rupees in AUM.",
+          "text": "Quality (ROE/margin) is Strong (p82).",
+          "source": "Fact"
+        },
+        {
+          "text": "Value (1/PE) is Strong (p82).",
+          "source": "Fact"
+        },
+        {
+          "text": "The company reported robust profit growth in Q1 2027 and Q4 2026, expanded its loanbook at lower cost, beat profit forecasts, and crossed 3 trillion rupees in AUM.",
           "source": "[Reuters] India's Shriram Finance beats profit forecasts, crosses 3 trillion rupees in AUM"
-        },
-        {
-          "text": "Robust profit growth was noted in both Q4 2026 and Q1 2027 earnings calls [GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q4 2026 Earnings Call Highlights: Robust Profit Growth and ...; [GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q1 2027 Earnings Call Highlights: Robust Profit Growth and ....",
-          "source": "[GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q1 2027 Earnings Call Highlights: Robust Profit Growth and ..."
         }
       ],
       "to_watch": [
         {
-          "text": "Low volatility is weak (p9).",
-          "source": "Facts"
+          "text": "Low volatility is Weak (p9).",
+          "source": "Fact"
         }
       ],
       "data_gap": false
@@ -128,61 +136,34 @@
     "ICICIBANK.NS": {
       "in_favor": [
         {
-          "text": "Exceptional analyst dispersion and low volatility are observed (p91).",
-          "source": "Facts"
+          "text": "Analyst dispersion is Exceptional (p91).",
+          "source": "Fact"
         },
         {
-          "text": "Value (1/PE) is strong (p77).",
-          "source": "Facts"
+          "text": "Value (1/PE) is Strong (p77).",
+          "source": "Fact"
         },
         {
-          "text": "Q1 earnings increased year-over-year due to improved Net Interest Income (NII) and fee income, and declining provisions [Zacks] IBN Q1 Earnings Rise Y/Y as NII, Fee Income Improve & Provisions Fall.",
-          "source": "[Zacks] IBN Q1 Earnings Rise Y/Y as NII, Fee Income Improve & Provisions Fall"
+          "text": "Low volatility is Exceptional (p91).",
+          "source": "Fact"
         },
         {
-          "text": "ICICI Bank priced $1 billion in debt, marking the largest dollar issue by an Indian private lender [Reuters] ICICI Bank prices $1 billion debt in largest dollar issue by Indian private lender; [Reuters] India's ICICI Bank sets initial guidance for first dollar bond in nearly 9 years, bankers say.",
+          "text": "The bank priced a $1 billion debt issue, representing the largest dollar issue by an Indian private lender.",
           "source": "[Reuters] ICICI Bank prices $1 billion debt in largest dollar issue by Indian private lender"
+        },
+        {
+          "text": "Q1 earnings rose year-over-year as net interest income and fee income improved, and provisions fell.",
+          "source": "[Zacks] IBN Q1 Earnings Rise Y/Y as NII, Fee Income Improve & Provisions Fall"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p18).",
-          "source": "Facts"
+          "text": "Momentum (12-1) is Weak (p18).",
+          "source": "Fact"
         },
         {
-          "text": "Quality (ROE/margin) is flat (p59).",
-          "source": "Facts"
-        }
-      ],
-      "data_gap": false
-    },
-    "EICHERMOT.NS": {
-      "in_favor": [
-        {
-          "text": "The company has strong momentum (12-1) and exceptional quality (ROE/margin) (p82, p91).",
-          "source": "Facts"
-        },
-        {
-          "text": "Eicher Motors surpassed quarterly profit estimates driven by robust sales [Reuters] India's Eicher Motors beats quarterly profit estimates on strong sales.",
-          "source": "[Reuters] India's Eicher Motors beats quarterly profit estimates on strong sales"
-        },
-        {
-          "text": "Record sales and strategic initiatives were highlighted in the Q4 2026 earnings call [GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q4 2026 Earnings Call Highlights: Record Sales and Strategic ....",
-          "source": "[GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q4 2026 Earnings Call Highlights: Record Sales and Strategic ..."
-        },
-        {
-          "text": "Robust revenue growth was reported in Q3 2026 earnings [GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q3 2026 Earnings Call Highlights: Robust Revenue Growth and ....",
-          "source": "[GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q3 2026 Earnings Call Highlights: Robust Revenue Growth and ..."
-        },
-        {
-          "text": "The company, parent of Royal Enfield, reached a record high based on capacity expansion and growth outlook [Reuters] Royal Enfield parent Eicher jumps to record high on capacity expansion, growth outlook.",
-          "source": "[Reuters] Royal Enfield parent Eicher jumps to record high on capacity expansion, growth outlook"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion, value (1/PE), and low volatility are flat (p50, p50, p41).",
-          "source": "Facts"
+          "text": "Weak margins at a peer (HDFC Bank) contributed to a decline in Nifty and bank stocks, indicating potential sector headwinds.",
+          "source": "[Reuters] India's HDFC Bank drops on weak margins; drags Nifty, bank stocks"
         }
       ],
       "data_gap": false
@@ -190,34 +171,30 @@
     "JSWSTEEL.NS": {
       "in_favor": [
         {
-          "text": "Exceptional value (1/PE) is observed (p91).",
-          "source": "Facts"
+          "text": "Value (1/PE) is Exceptional (p91).",
+          "source": "Fact"
         },
         {
-          "text": "JSW Steel surpassed profit expectations due to higher prices [Reuters] India's JSW Steel beats profit view on higher prices.",
+          "text": "Q1 2027 earnings call highlighted record sales and strategic initiatives.",
+          "source": "[GuruFocus.com] JSW Steel Ltd (BOM:500228) Q1 2027 Earnings Call Highlights: Record Sales and Strategic ..."
+        },
+        {
+          "text": "The company beat profit views on higher prices.",
           "source": "[Reuters] India's JSW Steel beats profit view on higher prices"
         },
         {
-          "text": "The company posted a two-fold quarterly profit increase driven by price recovery [Reuters] India's JSW Steel posts two-fold quarterly profit rise on price recovery.",
-          "source": "[Reuters] India's JSW Steel posts two-fold quarterly profit rise on price recovery"
-        },
-        {
-          "text": "Strong financial performance was highlighted in Q4 2026 earnings [GuruFocus.com] JSW Steel Ltd (BOM:500228) Q4 2026 Earnings Call Highlights: Strong Financial Performance Amid ....",
+          "text": "Q4 2026 earnings call noted strong financial performance.",
           "source": "[GuruFocus.com] JSW Steel Ltd (BOM:500228) Q4 2026 Earnings Call Highlights: Strong Financial Performance Amid ..."
         },
         {
-          "text": "Record sales and strategic initiatives were discussed in the Q1 2027 earnings call [GuruFocus.com] JSW Steel Ltd (BOM:500228) Q1 2027 Earnings Call Highlights: Record Sales and Strategic ....",
-          "source": "[GuruFocus.com] JSW Steel Ltd (BOM:500228) Q1 2027 Earnings Call Highlights: Record Sales and Strategic ..."
+          "text": "The company posted a two-fold quarterly profit rise on price recovery and deepened its India presence with a landmark steel plant deal with POSCO.",
+          "source": "[Zacks] POSCO Deepens India Push With JSW in Landmark Steel Plant Deal"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1), analyst dispersion, and low volatility are flat (p64, p59, p50).",
-          "source": "Facts"
-        },
-        {
-          "text": "Quality (ROE/margin) is weak (p32).",
-          "source": "Facts"
+          "text": "Quality (ROE/margin) is Weak (p32).",
+          "source": "Fact"
         }
       ],
       "data_gap": false
@@ -225,68 +202,94 @@
     "NESTLEIND.NS": {
       "in_favor": [
         {
-          "text": "Strong momentum (12-1) and analyst dispersion are noted (p77).",
-          "source": "Facts"
+          "text": "Momentum (12-1) is Strong (p77).",
+          "source": "Fact"
         },
         {
-          "text": "Exceptional low volatility is observed (p91).",
-          "source": "Facts"
+          "text": "Analyst dispersion is Strong (p77).",
+          "source": "Fact"
         },
         {
-          "text": "Nestle India's profit increased 26% on strong demand, leading to a rise in shares [Reuters] Nestle India profit jumps 26% on strong demand, shares rise.",
+          "text": "Low volatility is Exceptional (p91).",
+          "source": "Fact"
+        },
+        {
+          "text": "Profit jumped 26% on strong demand.",
           "source": "[Reuters] Nestle India profit jumps 26% on strong demand, shares rise"
         },
         {
-          "text": "Profit also surged 46% as tax cuts supported packaged food demand [Reuters] Nestle India profit jumps 46% as tax cuts boost packaged food demand.",
+          "text": "Profit jumped 46% as tax cuts boosted packaged food demand.",
           "source": "[Reuters] Nestle India profit jumps 46% as tax cuts boost packaged food demand"
         }
       ],
       "to_watch": [
         {
-          "text": "Value (1/PE) is weak (p18).",
-          "source": "Facts"
+          "text": "Value (1/PE) is Weak (p14).",
+          "source": "Fact"
         },
         {
-          "text": "Quality (ROE/margin) is flat (p55).",
-          "source": "Facts"
-        },
-        {
-          "text": "The broader FMCG sector in India faces margin compression due to rising costs despite strong demand [Reuters] India's FMCG sector faces margin squeeze as costs spike amid strong demand, price hikes.",
+          "text": "India's FMCG sector faces margin squeeze as costs spike amid strong demand.",
           "source": "[Reuters] India's FMCG sector faces margin squeeze as costs spike amid strong demand, price hikes"
         },
         {
-          "text": "The company's finance chief will step down, with an insider named as the new CFO [Reuters] Nestle India names insider Edouard Mac Nab new CFO; [Reuters] Nestle India's finance chief to step down.",
+          "text": "The company's finance chief is stepping down, with an insider named as the new CFO.",
           "source": "[Reuters] Nestle India's finance chief to step down"
         }
       ],
       "data_gap": false
     },
+    "EICHERMOT.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is Strong (p82).",
+          "source": "Fact"
+        },
+        {
+          "text": "Quality (ROE/margin) is Exceptional (p91).",
+          "source": "Fact"
+        },
+        {
+          "text": "Q4 2026 earnings call highlighted record sales and strategic initiatives, and Q3 2026 saw robust revenue growth.",
+          "source": "[GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q3 2026 Earnings Call Highlights: Robust Revenue Growth and ..."
+        },
+        {
+          "text": "The company beat quarterly profit estimates on strong sales.",
+          "source": "[Reuters] India's Eicher Motors beats quarterly profit estimates on strong sales"
+        },
+        {
+          "text": "The stock jumped to a record high on capacity expansion and a positive growth outlook.",
+          "source": "[Reuters] Royal Enfield parent Eicher jumps to record high on capacity expansion, growth outlook"
+        }
+      ],
+      "to_watch": [],
+      "data_gap": false
+    },
     "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "Exceptional momentum (12-1) and analyst dispersion are observed (p91).",
-          "source": "Facts"
+          "text": "Momentum (12-1) is Exceptional (p91).",
+          "source": "Fact"
         },
         {
-          "text": "Adani Ports intends to invest $1.36 billion in European expansion [Reuters] India's Adani Ports to invest $1.36 billion in Europe expansion.",
-          "source": "[Reuters] India's Adani Ports to invest $1.36 billion in Europe expansion"
+          "text": "Analyst dispersion is Exceptional (p91).",
+          "source": "Fact"
         },
         {
-          "text": "The company is selling a 49% stake in an Indian port to MSC for $1.4 billion [The Wall Street Journal] Adani Ports to Sell India Port Stake to Swiss Shipping Group MSC for $1.40B; [Reuters] Adani Ports to sell 49% stake in Indian port to MSC for $1.4 billion.",
+          "text": "The company plans to sell an India port stake to Swiss Shipping Group MSC for $1.4 billion.",
           "source": "[Reuters] Adani Ports to sell 49% stake in Indian port to MSC for $1.4 billion"
+        },
+        {
+          "text": "The company plans to invest $1.36 billion in Europe expansion.",
+          "source": "[Reuters] India's Adani Ports to invest $1.36 billion in Europe expansion"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) and value (1/PE) are flat (p50, p64).",
-          "source": "Facts"
+          "text": "Low volatility is Weak (p23).",
+          "source": "Fact"
         },
         {
-          "text": "Low volatility is weak (p23).",
-          "source": "Facts"
-        },
-        {
-          "text": "Reports indicated that India's Kerala state was not consulted on MSC's $1.4 billion port investment [Reuters] India's Kerala state not consulted on MSC's $1.4 billion port investment, chief minister says.",
+          "text": "The chief minister of Kerala state indicated non-consultation regarding a $1.4 billion port investment by MSC.",
           "source": "[Reuters] India's Kerala state not consulted on MSC's $1.4 billion port investment, chief minister says"
         }
       ],
@@ -295,29 +298,33 @@
     "HINDALCO.NS": {
       "in_favor": [
         {
-          "text": "Exceptional momentum (12-1) and strong value (1/PE) are noted (p91, p86).",
-          "source": "Facts"
+          "text": "Momentum (12-1) is Exceptional (p91).",
+          "source": "Fact"
         },
         {
-          "text": "The company anticipates steady Novelis earnings and robust domestic demand in 2027 [Reuters] India's Hindalco sees steady Novelis earnings, strong domestic demand in 2027.",
-          "source": "[Reuters] India's Hindalco sees steady Novelis earnings, strong domestic demand in 2027"
+          "text": "Value (1/PE) is Strong (p86).",
+          "source": "Fact"
         },
         {
-          "text": "Strong EBITDA growth was highlighted in the Q4 2026 earnings call [GuruFocus.com] Hindalco Industries Ltd (FRA:HID) Q4 2026 Earnings Call Highlights: Strong EBITDA Growth Amid ....",
+          "text": "Q4 2026 earnings call highlighted strong EBITDA growth.",
           "source": "[GuruFocus.com] Hindalco Industries Ltd (FRA:HID) Q4 2026 Earnings Call Highlights: Strong EBITDA Growth Amid ..."
+        },
+        {
+          "text": "The company anticipates steady Novelis earnings and strong domestic demand in 2027.",
+          "source": "[Reuters] India's Hindalco sees steady Novelis earnings, strong domestic demand in 2027"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) and low volatility are weak (p23, p27).",
-          "source": "Facts"
+          "text": "Quality (ROE/margin) is Weak (p23).",
+          "source": "Fact"
         },
         {
-          "text": "Analyst dispersion is flat (p41).",
-          "source": "Facts"
+          "text": "Low volatility is Weak (p27).",
+          "source": "Fact"
         },
         {
-          "text": "Hindalco missed profit estimates, attributed to disruptions at Novelis [Reuters] India's Hindalco misses profit estimates as Novelis disruptions weigh.",
+          "text": "The company missed profit estimates as Novelis disruptions impacted results.",
           "source": "[Reuters] India's Hindalco misses profit estimates as Novelis disruptions weigh"
         }
       ],
