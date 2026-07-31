@@ -1,68 +1,78 @@
 {
-  "as_of": "2026-07-30",
+  "as_of": "2026-07-31",
   "cases": {
     "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional momentum, analyst dispersion, and quality (ROE/margin).",
-          "source": "p90"
+          "text": "The company exhibits exceptional momentum (12-1), strong analyst dispersion, and exceptional quality (ROE/margin).",
+          "source": "p91, p82, p91"
         },
         {
-          "text": "Value (1/PE) metrics are strong.",
-          "source": "p76"
+          "text": "Adani Ports plans to sell a 49% stake in an Indian port to Swiss Shipping Group MSC for $1.4 billion.",
+          "source": "[The Wall Street Journal] Adani Ports to Sell India Port Stake to Swiss Shipping Group MSC for $1.40B, [Reuters] Adani Ports to sell 49% stake in Indian port to MSC for $1.4 billion"
         },
         {
-          "text": "Adani Ports is set to invest $1.36 billion in Europe expansion.",
-          "source": "Reuters"
-        },
-        {
-          "text": "The company is selling a 49% stake in an Indian port to Swiss Shipping Group MSC for $1.4 billion.",
-          "source": "The Wall Street Journal, Reuters"
+          "text": "Adani Ports intends to invest $1.36 billion in Europe expansion.",
+          "source": "[Reuters] India's Adani Ports to invest $1.36 billion in Europe expansion"
         }
       ],
       "to_watch": [
         {
-          "text": "Low volatility metrics are weak.",
-          "source": "p24"
+          "text": "The stock shows weak low volatility.",
+          "source": "p23"
         },
         {
-          "text": "India's Kerala state reported not being consulted on MSC's $1.4 billion port investment.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Billionaire Adani is considering starting an airline as part of his broader business endeavors.",
-          "source": "Reuters"
+          "text": "India's Kerala state chief minister stated that the state was not consulted on MSC's $1.4 billion port investment.",
+          "source": "[Reuters] India's Kerala state not consulted on MSC's $1.4 billion port investment, chief minister says"
         }
       ],
       "data_gap": false
     },
-    "SHRIRAMFIN.NS": {
+    "SBIN.NS": {
       "in_favor": [
         {
-          "text": "The company shows exceptional momentum and value (1/PE).",
-          "source": "p90"
+          "text": "The company displays strong momentum (12-1) and exceptional value (1/PE).",
+          "source": "p77, p91"
         },
         {
-          "text": "Analyst dispersion and quality (ROE/margin) metrics are strong.",
-          "source": "p86, p81"
+          "text": "India's SBI Funds Management saw its shares rise nearly 9% in its debut after a $1.03 billion IPO.",
+          "source": "[Reuters] India's SBI Funds Management rises nearly 9% in debut after $1.03 billion IPO"
         },
         {
-          "text": "Shriram Finance reported robust profit growth in Q1 2027 and Q4 2026.",
-          "source": "GuruFocus.com"
+          "text": "Ondo Finance partnered with SBI Group to facilitate bringing Japanese stocks onchain.",
+          "source": "[TheStreet] Ondo Finance partners with SBI Group to bring Japanese stocks onchain"
+        }
+      ],
+      "to_watch": [],
+      "data_gap": false
+    },
+    "TITAN.NS": {
+      "in_favor": [
+        {
+          "text": "The company demonstrates strong momentum (12-1) and exceptional quality (ROE/margin).",
+          "source": "p86, p91"
         },
         {
-          "text": "The company posted strong quarterly profit and expanded its loanbook at a lower cost.",
-          "source": "Reuters"
+          "text": "Titan hit a record high on strong fourth-quarter sales and saw its stock shine on strong festive-quarter sales.",
+          "source": "[Reuters] India's Titan hits record high on strong fourth-quarter sales, [Reuters] Indian jewellers' stocks shine on strong festive-quarter sales; Titan hits record high"
         },
         {
-          "text": "Shriram Finance exceeded 3 trillion rupees in Assets Under Management (AUM) and surpassed profit forecasts.",
-          "source": "Reuters"
+          "text": "Quarterly sales surged due to a gold price rally and festive demand.",
+          "source": "[Reuters] India's Titan logs quarterly sales surge on gold price rally, festive demand"
+        },
+        {
+          "text": "The Q3 2026 earnings call highlighted strategic acquisitions.",
+          "source": "[GuruFocus.com] Titan Co Ltd (BOM:500114) Q3 2026 Earnings Call Highlights: Strategic Acquisitions and Market ..."
         }
       ],
       "to_watch": [
         {
-          "text": "Low volatility metrics are weak.",
-          "source": "p10"
+          "text": "The stock exhibits weak value (1/PE).",
+          "source": "p9"
+        },
+        {
+          "text": "Indian jewelry stocks lost 12% as the government targets $72 billion in gold imports.",
+          "source": "[BeInCrypto] India Jewelry Stocks Lose 12% as Modi Targets $72 Billion In Gold Imports"
         }
       ],
       "data_gap": false
@@ -70,65 +80,22 @@
     "ICICIBANK.NS": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional analyst dispersion and low volatility.",
-          "source": "p90"
+          "text": "The company shows strong value (1/PE) and exceptional low volatility.",
+          "source": "p82, p91"
         },
         {
-          "text": "Value (1/PE) metrics are strong.",
-          "source": "p86"
-        },
-        {
-          "text": "ICICI Bank priced $1 billion in debt, which is noted as the largest dollar issue by an Indian private lender.",
-          "source": "Reuters"
+          "text": "ICICI Bank priced $1 billion in debt, marking the largest dollar issue by an Indian private lender.",
+          "source": "[Reuters] ICICI Bank prices $1 billion debt in largest dollar issue by Indian private lender"
         },
         {
           "text": "The bank set initial guidance for its first dollar bond in nearly 9 years.",
-          "source": "Reuters"
+          "source": "[Reuters] India's ICICI Bank sets initial guidance for first dollar bond in nearly 9 years, bankers say"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum metrics are weak.",
-          "source": "p24"
-        },
-        {
-          "text": "Quality (ROE/margin) metrics are flat.",
-          "source": "p67"
-        }
-      ],
-      "data_gap": false
-    },
-    "TITAN.NS": {
-      "in_favor": [
-        {
-          "text": "The company shows strong momentum and analyst dispersion.",
-          "source": "p86, p76"
-        },
-        {
-          "text": "Quality (ROE/margin) metrics are exceptional.",
-          "source": "p90"
-        },
-        {
-          "text": "Titan reached a record high driven by strong fourth-quarter and festive-quarter sales.",
-          "source": "Reuters"
-        },
-        {
-          "text": "The company reported a quarterly sales surge, supported by a gold price rally and festive demand.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Q3 2026 earnings call highlights include strategic acquisitions.",
-          "source": "GuruFocus.com"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Value (1/PE) metrics are weak.",
-          "source": "p10"
-        },
-        {
-          "text": "Indian jewelry stocks experienced losses as the government targeted gold imports.",
-          "source": "BeInCrypto"
+          "text": "The company has weak momentum (12-1) and exceptional analyst dispersion.",
+          "source": "p18, p91"
         }
       ],
       "data_gap": false
@@ -136,26 +103,44 @@
     "EICHERMOT.NS": {
       "in_favor": [
         {
-          "text": "The company demonstrates strong momentum and exceptional quality (ROE/margin).",
-          "source": "p81, p90"
+          "text": "The company has strong momentum (12-1) and strong quality (ROE/margin).",
+          "source": "p82, p86"
         },
         {
-          "text": "Eicher Motors reported record revenue in Q1 2027 and record sales in Q4 2026.",
-          "source": "GuruFocus.com"
+          "text": "Q1 2027 earnings call highlighted record revenue and strategic progress.",
+          "source": "[GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q1 2027 Earnings Call Highlights: Record Revenue and Strategic ..."
         },
         {
-          "text": "The company surpassed first-quarter profit forecasts and quarterly profit estimates, driven by strong sales and steady demand.",
-          "source": "Reuters"
+          "text": "The company beat first-quarter profit forecasts and general quarterly profit estimates on strong sales, indicating steady demand.",
+          "source": "[Reuters] India's Eicher Motors beats first-quarter profit forecast, sees steady demand, [Reuters] India's Eicher Motors beats quarterly profit estimates on strong sales"
         },
         {
-          "text": "Q3 2026 earnings call highlighted robust revenue growth.",
-          "source": "GuruFocus.com"
+          "text": "Record sales were reported in Q4 2026 and robust revenue growth in Q3 2026 earnings calls.",
+          "source": "[GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q4 2026 Earnings Call Highlights: Record Sales and Strategic ..., [GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q3 2026 Earnings Call Highlights: Robust Revenue Growth and ..."
+        }
+      ],
+      "to_watch": [],
+      "data_gap": false
+    },
+    "SHRIRAMFIN.NS": {
+      "in_favor": [
+        {
+          "text": "The company shows exceptional momentum (12-1), strong analyst dispersion, and strong value (1/PE).",
+          "source": "p91, p86, p86"
+        },
+        {
+          "text": "Q1 2027 and Q4 2026 earnings calls highlighted robust profit growth.",
+          "source": "[GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q1 2027 Earnings Call Highlights: Robust Profit Growth and ..., [GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q4 2026 Earnings Call Highlights: Robust Profit Growth and ..."
+        },
+        {
+          "text": "Shriram Finance posted strong quarterly profit, expanded its loanbook at a lower cost, and surpassed 3 trillion rupees in Assets Under Management (AUM).",
+          "source": "[Reuters] India's Shriram Finance posts strong quarterly profit, expanding loanbook at lower cost, [Reuters] India's Shriram Finance beats profit forecasts, crosses 3 trillion rupees in AUM"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion, value (1/PE), and low volatility metrics are flat.",
-          "source": "p52, p43"
+          "text": "The stock has weak low volatility.",
+          "source": "p9"
         }
       ],
       "data_gap": false
@@ -163,61 +148,52 @@
     "JSWSTEEL.NS": {
       "in_favor": [
         {
-          "text": "Value (1/PE) metrics are exceptional.",
-          "source": "p90"
+          "text": "The company presents exceptional value (1/PE).",
+          "source": "p91"
         },
         {
-          "text": "JSW Steel reported record sales in Q1 2027.",
-          "source": "GuruFocus.com"
+          "text": "Q1 2027 earnings call highlighted record sales and strategic initiatives.",
+          "source": "[GuruFocus.com] JSW Steel Ltd (BOM:500228) Q1 2027 Earnings Call Highlights: Record Sales and Strategic ..."
         },
         {
-          "text": "The company surpassed profit views due to higher prices and posted a two-fold quarterly profit rise on price recovery.",
-          "source": "Reuters"
+          "text": "JSW Steel beat profit views on higher prices and posted a two-fold quarterly profit rise on price recovery.",
+          "source": "[Reuters] India's JSW Steel beats profit view on higher prices, [Reuters] India's JSW Steel posts two-fold quarterly profit rise on price recovery"
         },
         {
-          "text": "Q4 2026 earnings highlighted strong financial performance.",
-          "source": "GuruFocus.com"
+          "text": "Q4 2026 earnings call highlighted strong financial performance.",
+          "source": "[GuruFocus.com] JSW Steel Ltd (BOM:500228) Q4 2026 Earnings Call Highlights: Strong Financial Performance Amid ..."
         },
         {
-          "text": "POSCO is deepening its presence in India through a steel plant deal with JSW.",
-          "source": "Zacks"
+          "text": "POSCO is deepening its India presence with JSW in a landmark steel plant deal.",
+          "source": "[Zacks] POSCO Deepens India Push With JSW in Landmark Steel Plant Deal"
         }
       ],
-      "to_watch": [
-        {
-          "text": "Momentum, analyst dispersion, quality (ROE/margin), and low volatility metrics are flat.",
-          "source": "p62, p43, p52"
-        }
-      ],
+      "to_watch": [],
       "data_gap": false
     },
     "NESTLEIND.NS": {
       "in_favor": [
         {
-          "text": "The company shows strong momentum and analyst dispersion, alongside exceptional low volatility.",
-          "source": "p76, p81, p90"
+          "text": "The company has strong analyst dispersion and exceptional low volatility.",
+          "source": "p77, p91"
         },
         {
-          "text": "Nestle India's profit increased by 26% due to strong demand and by 46% as tax cuts boosted packaged food demand.",
-          "source": "Reuters"
+          "text": "Nestle India's profit jumped 26% on strong demand.",
+          "source": "[Reuters] Nestle India profit jumps 26% on strong demand, shares rise"
         },
         {
-          "text": "An insider, Edouard Mac Nab, has been appointed as the new CFO.",
-          "source": "Reuters"
+          "text": "Profit also jumped 46% as tax cuts boosted packaged food demand.",
+          "source": "[Reuters] Nestle India profit jumps 46% as tax cuts boost packaged food demand"
         }
       ],
       "to_watch": [
         {
-          "text": "Value (1/PE) metrics are weak, and quality (ROE/margin) metrics are flat.",
-          "source": "p14, p62"
+          "text": "The stock exhibits weak value (1/PE).",
+          "source": "p14"
         },
         {
-          "text": "The broader FMCG sector in India is experiencing margin squeeze due to spiking costs, despite strong demand and price hikes.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Nestle India's previous finance chief is stepping down.",
-          "source": "Reuters"
+          "text": "India's FMCG sector generally faces margin squeeze as costs spike amid strong demand and price hikes.",
+          "source": "[Reuters] India's FMCG sector faces margin squeeze as costs spike amid strong demand, price hikes"
         }
       ],
       "data_gap": false
@@ -225,30 +201,26 @@
     "HINDALCO.NS": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional momentum and value (1/PE).",
-          "source": "p90"
+          "text": "The company shows exceptional momentum (12-1) and exceptional value (1/PE).",
+          "source": "p91, p91"
         },
         {
-          "text": "Hindalco recorded strong EBITDA growth in Q4 2026.",
-          "source": "GuruFocus.com"
+          "text": "Q4 2026 earnings call highlighted strong EBITDA growth.",
+          "source": "[GuruFocus.com] Hindalco Industries Ltd (FRA:HID) Q4 2026 Earnings Call Highlights: Strong EBITDA Growth Amid ..."
         },
         {
-          "text": "The company projects steady Novelis earnings and strong domestic demand in 2027.",
-          "source": "Reuters"
+          "text": "Hindalco anticipates steady Novelis earnings and strong domestic demand in 2027.",
+          "source": "[Reuters] India's Hindalco sees steady Novelis earnings, strong domestic demand in 2027"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) and low volatility metrics are weak.",
-          "source": "p29"
+          "text": "The company exhibits weak analyst dispersion, weak quality (ROE/margin), and weak low volatility.",
+          "source": "p36, p27, p27"
         },
         {
-          "text": "Analyst dispersion metrics are flat.",
-          "source": "p43"
-        },
-        {
-          "text": "Hindalco's profit estimates were missed as Novelis disruptions impacted results.",
-          "source": "Reuters"
+          "text": "Hindalco missed profit estimates due to Novelis disruptions.",
+          "source": "[Reuters] India's Hindalco misses profit estimates as Novelis disruptions weigh"
         }
       ],
       "data_gap": false
@@ -256,63 +228,23 @@
     "BAJAJ-AUTO.NS": {
       "in_favor": [
         {
-          "text": "Value (1/PE) metrics are strong.",
-          "source": "p81"
+          "text": "The company displays strong value (1/PE).",
+          "source": "p77"
         },
         {
-          "text": "Bajaj Auto reported record growth and strategic expansions in Q1 2027.",
-          "source": "GuruFocus.com"
+          "text": "Q1 2027 earnings call highlighted record growth and strategic expansions.",
+          "source": "[GuruFocus.com] Bajaj Auto Ltd (BOM:532977) Q1 2027 Earnings Call Highlights: Record Growth and Strategic Expansions"
         },
         {
-          "text": "The company posted a quarterly profit rise, attributed to strong export demand.",
-          "source": "Reuters"
+          "text": "Bajaj Auto posted a quarterly profit rise driven by strong export demand.",
+          "source": "[Reuters] India's Bajaj Auto posts quarterly profit rise on strong export demand"
         },
         {
           "text": "Bajaj Auto Credit accepted bids for 3-year bonds.",
-          "source": "Reuters"
+          "source": "[Reuters] Bajaj Auto Credit accepts bids for 3-year bonds, bankers say"
         }
       ],
-      "to_watch": [
-        {
-          "text": "Momentum, analyst dispersion, quality (ROE/margin), and low volatility metrics are flat.",
-          "source": "p67, p57, p71, p48"
-        }
-      ],
-      "data_gap": false
-    },
-    "SUNPHARMA.NS": {
-      "in_favor": [
-        {
-          "text": "Low volatility metrics are exceptional.",
-          "source": "p90"
-        },
-        {
-          "text": "Sun Pharma surpassed profit views, driven by demand for specialty drugs.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Organon & Co. shareholders cleared a merger deal with Sun Pharma.",
-          "source": "MarketBeat"
-        },
-        {
-          "text": "Sun Pharma is proceeding with the acquisition of Innovcare Lifesciences for $28.7 million.",
-          "source": "Pharmaceutical Technology"
-        },
-        {
-          "text": "The Organon buyout by Sun Pharma is shifting focus towards cash value and timing.",
-          "source": "Simply Wall St."
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum metrics are weak.",
-          "source": "p38"
-        },
-        {
-          "text": "Analyst dispersion, quality (ROE/margin), and value (1/PE) metrics are flat.",
-          "source": "p67, p57, p43"
-        }
-      ],
+      "to_watch": [],
       "data_gap": false
     }
   }

@@ -1,68 +1,33 @@
 {
-  "as_of": "2026-07-30",
+  "as_of": "2026-07-31",
   "cases": {
     "CM.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p81"
+          "text": "The company exhibits strong momentum (12-1) (p81).",
+          "source": "Fact"
         },
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "p75"
+          "text": "Analyst dispersion is strong (p77).",
+          "source": "Fact"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p84"
+          "text": "Value (1/PE) indicators are strong (p84).",
+          "source": "Fact"
         },
         {
-          "text": "Low volatility is strong.",
-          "source": "p75"
+          "text": "Low volatility indicators are strong (p77).",
+          "source": "Fact"
         },
         {
-          "text": "A comparison article discusses the company as a 'Better Value Stock'.",
+          "text": "The company is mentioned in an analysis discussing better value stock options.",
           "source": "[Zacks] ITUB or CM: Which Is the Better Value Stock Right Now?"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is flat.",
-          "source": "p66"
-        },
-        {
-          "text": "Broader economic concerns include a warning of an economic reckoning this year with the Fed potentially on hold.",
-          "source": "[Bloomberg] Whitney Warns of Economic Reckoning This Year, Sees Fed on Hold"
-        }
-      ],
-      "data_gap": false
-    },
-    "CVE.TO": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is exceptional.",
-          "source": "p91"
-        },
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "p78"
-        },
-        {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p84"
-        },
-        {
-          "text": "Value (1/PE) is exceptional.",
-          "source": "p94"
-        },
-        {
-          "text": "The company's earnings strength supports an undervalued narrative, with Q2 earnings increasing year-over-year due to higher pricing and oil sands volumes, alongside higher output guidance. The CEO anticipates new West Coast pipelines will fuel oil growth.",
-          "source": "[Simply Wall St.] Cenovus Energy (TSX:CVE) Earnings Strength Keeps Undervalued Narrative In Play; [Zacks] CVE Q2 Earnings Increase Y/Y on Higher Pricing & Oil Sands Volumes; [Simply Wall St.] Cenovus Energy (TSX:CVE) CEO Sees New West Coast Pipelines Fueling Oil Growth"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Low volatility is weak.",
-          "source": "p6"
+          "text": "Quality (ROE/margin) is flat (p65).",
+          "source": "Fact"
         }
       ],
       "data_gap": false
@@ -70,30 +35,34 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p84"
+          "text": "The company exhibits strong momentum (12-1) (p84).",
+          "source": "Fact"
         },
         {
-          "text": "Low volatility is exceptional.",
-          "source": "p91"
+          "text": "Low volatility indicators are exceptional (p90).",
+          "source": "Fact"
         },
         {
-          "text": "The company's valuation is a subject of discussion, with analysis focusing on whether it is trading at a discount or appropriately priced.",
-          "source": "[Simply Wall St.] Is Royal Bank Of Canada (TSX:RY) Trading At A Discount Or Priced Right?"
+          "text": "RBC successfully attracted a $1.5 billion financial advisor team.",
+          "source": "[Barrons.com] RBC Lures $1.5 Billion Financial Advisor Team Away From UBS"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p72"
+          "text": "Analyst dispersion is flat (p74).",
+          "source": "Fact"
         },
         {
-          "text": "Quality (ROE/margin) is flat.",
-          "source": "p72"
+          "text": "Quality (ROE/margin) is flat (p71).",
+          "source": "Fact"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p62"
+          "text": "Value (1/PE) is flat (p68).",
+          "source": "Fact"
+        },
+        {
+          "text": "An analysis questions if the stock is trading at a discount or priced appropriately.",
+          "source": "[Simply Wall St.] Is Royal Bank Of Canada (TSX:RY) Trading At A Discount Or Priced Right?"
         }
       ],
       "data_gap": false
@@ -101,34 +70,73 @@
     "BNS.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p75"
+          "text": "Analyst dispersion is exceptional (p94).",
+          "source": "Fact"
         },
         {
-          "text": "Analyst dispersion is exceptional.",
-          "source": "p94"
+          "text": "Value (1/PE) indicators are strong (p77).",
+          "source": "Fact"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p81"
+          "text": "Low volatility indicators are strong (p87).",
+          "source": "Fact"
         },
         {
-          "text": "Low volatility is strong.",
-          "source": "p88"
+          "text": "The stock may be 25% undervalued based on earnings power.",
+          "source": "[Simply Wall St.] Bank of Nova Scotia (TSX:BNS) Stock May Be 25% Undervalued On Earnings Power"
         },
         {
-          "text": "The stock may be 25% undervalued based on its earnings power. Additionally, the AT1 Reset and Eurobond Issuance could influence its investment narrative. The company has also disclosed stakes in TeraWulf and CleanSpark.",
-          "source": "[Simply Wall St.] Bank of Nova Scotia (TSX:BNS) Stock May Be 25% Undervalued On Earnings Power; [Simply Wall St.] Did Scotiabank\u2019s AT1 Reset and Eurobond Issuance Just Reframe Bank of Nova Scotia's (TSX:BNS) Investment Narrative?; [Blockspace] Bank of Nova Scotia discloses 7.7% TeraWulf stake and 5.62% CleanSpark position"
+          "text": "The company has disclosed stakes of 7.7% in TeraWulf and 5.62% in CleanSpark.",
+          "source": "[Blockspace] Bank of Nova Scotia discloses 7.7% TeraWulf stake and 5.62% CleanSpark position"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p28"
+          "text": "Momentum (12-1) is flat (p74).",
+          "source": "Fact"
         },
         {
-          "text": "Scotiabank anticipates flat Canada inflation, which has limited central bank implications.",
-          "source": "[MT Newswires] Canada Inflation Seen Flat at Scotiabank With Limited Central Bank Implications"
+          "text": "Quality (ROE/margin) is weak (p29).",
+          "source": "Fact"
+        },
+        {
+          "text": "AT1 reset and Eurobond issuance are reframing the investment narrative.",
+          "source": "[Simply Wall St.] Did Scotiabank\u2019s AT1 Reset and Eurobond Issuance Just Reframe Bank of Nova Scotia's (TSX:BNS) Investment Narrative?"
+        }
+      ],
+      "data_gap": false
+    },
+    "CVE.TO": {
+      "in_favor": [
+        {
+          "text": "The company exhibits exceptional momentum (12-1) (p90).",
+          "source": "Fact"
+        },
+        {
+          "text": "Quality (ROE/margin) indicators are strong (p84).",
+          "source": "Fact"
+        },
+        {
+          "text": "Value (1/PE) indicators are exceptional (p94).",
+          "source": "Fact"
+        },
+        {
+          "text": "Earnings strength maintains an undervalued narrative.",
+          "source": "[Simply Wall St.] Cenovus Energy (TSX:CVE) Earnings Strength Keeps Undervalued Narrative In Play"
+        },
+        {
+          "text": "The CEO anticipates new West Coast pipelines will fuel oil growth and Q2 earnings increased year-over-year due to higher pricing and oil sands volumes, with strong Q2 results and higher output guidance.",
+          "source": "[Simply Wall St.] Cenovus Energy (TSX:CVE) CEO Sees New West Coast Pipelines Fueling Oil Growth, [Zacks] CVE Q2 Earnings Increase Y/Y on Higher Pricing & Oil Sands Volumes, [Simply Wall St.] How Cenovus\u2019s Strong Q2 2026 Results and Higher Output Guidance Will Impact Cenovus Energy (TSX:CVE) Investors"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is flat (p61).",
+          "source": "Fact"
+        },
+        {
+          "text": "Low volatility indicators are weak (p6).",
+          "source": "Fact"
         }
       ],
       "data_gap": false
@@ -136,65 +144,38 @@
     "TD.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is exceptional.",
-          "source": "p94"
+          "text": "The company exhibits exceptional momentum (12-1) (p94).",
+          "source": "Fact"
         },
         {
-          "text": "Low volatility is strong.",
-          "source": "p81"
+          "text": "Low volatility indicators are strong (p81).",
+          "source": "Fact"
         },
         {
-          "text": "TD Bank has entered stablecoin reserves custody through a collaboration with Stablecorp.",
+          "text": "TD Bank has joined Stablecoin Reserves Custody with Stablecorp.",
           "source": "[Simply Wall St.] TD Bank (TSX:TD) Joins Stablecoin Reserves Custody With Stablecorp"
+        },
+        {
+          "text": "TD is part of a discussion comparing better value stock options.",
+          "source": "[Zacks] UBS vs. TD: Which Stock Is the Better Value Option?"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p53"
+          "text": "Analyst dispersion is flat (p55).",
+          "source": "Fact"
         },
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p38"
+          "text": "Quality (ROE/margin) is weak (p39).",
+          "source": "Fact"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p56"
+          "text": "Value (1/PE) is flat (p55).",
+          "source": "Fact"
         },
         {
-          "text": "Former employees of TD Bank have been sentenced for involvement in money laundering and fraud.",
+          "text": "Former employees were sentenced for money laundering and fraud involvement.",
           "source": "[Banking Dive] Ex-TD Bank employees sentenced to prison for money laundering, fraud involvement"
-        }
-      ],
-      "data_gap": false
-    },
-    "CNQ.TO": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p91"
-        },
-        {
-          "text": "Value (1/PE) is exceptional.",
-          "source": "p94"
-        },
-        {
-          "text": "The stock is noted to still appear below fair value, even after a significant increase, and is seen as potentially 8% below fair value with a 'Buy Rating' boosting interest.",
-          "source": "[Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Stock Still Looks Below Fair Value After 308% Run; [Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Could Be 8% Below Fair Value As Buy Rating Lifts Interest"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p50"
-        },
-        {
-          "text": "Analyst dispersion is weak.",
-          "source": "p31"
-        },
-        {
-          "text": "Low volatility is weak.",
-          "source": "p12"
         }
       ],
       "data_gap": false
@@ -202,34 +183,34 @@
     "BMO.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p78"
+          "text": "The company exhibits strong momentum (12-1) (p77).",
+          "source": "Fact"
         },
         {
-          "text": "BMO has provided insights into Bank of Canada deliberations concerning trade risks and the rate outlook.",
+          "text": "BMO provided insights on Bank of Canada deliberations, offering clues on trade risks and rate outlook.",
           "source": "[MT Newswires] Bank of Canada Deliberations May Offer Clues on Trade Risks, Rate Outlook, BMO Says"
         },
         {
-          "text": "BMO has upgraded Robert Half stock.",
+          "text": "BMO upgraded Robert Half stock, leading to share gains for Robert Half.",
           "source": "[InvestorsHub] Robert Half shares gain after BMO upgrades the stock"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p66"
+          "text": "Analyst dispersion is flat (p71).",
+          "source": "Fact"
         },
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p34"
+          "text": "Quality (ROE/margin) is weak (p32).",
+          "source": "Fact"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p59"
+          "text": "Value (1/PE) is flat (p58).",
+          "source": "Fact"
         },
         {
-          "text": "Low volatility is flat.",
-          "source": "p62"
+          "text": "Low volatility indicators are flat (p65).",
+          "source": "Fact"
         },
         {
           "text": "The stock could be 10% overvalued following a recent debt issuance.",
@@ -238,68 +219,72 @@
       ],
       "data_gap": false
     },
+    "CNQ.TO": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) indicators are exceptional (p90).",
+          "source": "Fact"
+        },
+        {
+          "text": "Value (1/PE) indicators are exceptional (p94).",
+          "source": "Fact"
+        },
+        {
+          "text": "The stock still appears below fair value even after a significant run.",
+          "source": "[Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Stock Still Looks Below Fair Value After 308% Run"
+        },
+        {
+          "text": "The stock could be 8% below fair value, with a 'Buy' rating increasing interest.",
+          "source": "[Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Could Be 8% Below Fair Value As Buy Rating Lifts Interest"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat (p48).",
+          "source": "Fact"
+        },
+        {
+          "text": "Analyst dispersion is weak (p35).",
+          "source": "Fact"
+        },
+        {
+          "text": "Low volatility indicators are weak (p13).",
+          "source": "Fact"
+        }
+      ],
+      "data_gap": false
+    },
     "QSR.TO": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is exceptional.",
-          "source": "p94"
+          "text": "Analyst dispersion is exceptional (p94).",
+          "source": "Fact"
         },
         {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p94"
+          "text": "Quality (ROE/margin) indicators are exceptional (p94).",
+          "source": "Fact"
         },
         {
-          "text": "Church's Chicken, a brand under Restaurant Brands, is preparing for its next growth phase with significant investment.",
+          "text": "Church's Chicken is preparing for its next growth phase with significant investment.",
           "source": "[QSR] Church\u2019s Chicken Readies for Next Growth Phase with \u2018Significant\u2019 Investment"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p25"
+          "text": "Momentum (12-1) is weak (p23).",
+          "source": "Fact"
         },
         {
-          "text": "Value (1/PE) is weak.",
-          "source": "p38"
+          "text": "Value (1/PE) is weak (p35).",
+          "source": "Fact"
         },
         {
-          "text": "Low volatility is flat.",
-          "source": "p41"
+          "text": "Low volatility indicators are flat (p42).",
+          "source": "Fact"
         },
         {
-          "text": "The Q2 setup for Restaurant Brands is considered 'Slightly Unfavorable' due to weakness observed at Tim Hortons.",
+          "text": "A Q2 setup is described as 'slightly unfavorable' due to Tim Hortons weakness.",
           "source": "[MT Newswires] Restaurant Brands' Q2 Setup 'Slightly Unfavorable' on Tim Hortons Weakness, RBC Capital Markets Says"
-        }
-      ],
-      "data_gap": false
-    },
-    "ATD.TO": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is exceptional.",
-          "source": "p91"
-        },
-        {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p81"
-        },
-        {
-          "text": "The stock may be 38% undervalued following a focus on dividend growth.",
-          "source": "[Simply Wall St.] Alimentation Couche Tard (TSX:ATD) Stock May Be 38% Undervalued After Dividend Growth Focus"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p47"
-        },
-        {
-          "text": "Value (1/PE) is flat.",
-          "source": "p69"
-        },
-        {
-          "text": "Low volatility is weak.",
-          "source": "p28"
         }
       ],
       "data_gap": false
@@ -307,38 +292,69 @@
     "CNR.TO": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p88"
+          "text": "Quality (ROE/margin) indicators are strong (p87).",
+          "source": "Fact"
         },
         {
-          "text": "Canadian National Railway's Q2 earnings surpassed expectations, supported by growth in grain and energy volumes.",
+          "text": "Q2 earnings exceeded expectations, driven by grain and energy volume growth.",
           "source": "[Zacks] Canadian National Q2 Earnings Beat on Grain and Energy Volume Growth"
         },
         {
-          "text": "The Q2 earnings performance has drawn attention to the company's valuation.",
+          "text": "The earnings beat is bringing valuation back into focus.",
           "source": "[Simply Wall St.] Canadian National Railway (TSX:CNR) Earnings Beat Puts Valuation Back In Focus"
         },
         {
-          "text": "Price targets for CN Rail have been increased by RBC and TD.",
+          "text": "Price targets for CN Rail have been raised by RBC and TD.",
           "source": "[MT Newswires] CN Rail Price Targets Raised at RBC, TD"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p53"
+          "text": "Momentum (12-1) is flat (p52).",
+          "source": "Fact"
         },
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p50"
+          "text": "Analyst dispersion is flat (p52).",
+          "source": "Fact"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p44"
+          "text": "Value (1/PE) is flat (p42).",
+          "source": "Fact"
         },
         {
-          "text": "Low volatility is flat.",
-          "source": "p47"
+          "text": "Low volatility indicators are flat (p48).",
+          "source": "Fact"
+        }
+      ],
+      "data_gap": false
+    },
+    "ATD.TO": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is exceptional (p90).",
+          "source": "Fact"
+        },
+        {
+          "text": "Quality (ROE/margin) indicators are strong (p81).",
+          "source": "Fact"
+        },
+        {
+          "text": "Alimentation Couche-Tard plans to acquire Poland's Zabka Group for approximately $8.6-8.7 billion, describing it as its largest and most transformational acquisition.",
+          "source": "[MarketBeat] Alimentation Couche-Tard Calls \u017babka Deal Its Largest, Most Transformational Acquisition, [MT Newswires] Alimentation Couche-Tard to Acquire Poland's Zabka Group For $8.6 Billion, [C-Store Dive] Alimentation Couche-Tard plans to acquire Polish c-store chain \u017babka for $8.6B, [The Wall Street Journal] Couche-Tard Plans to Buy Poland\u2019s Zabka for About $8.7 Billion"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat (p45).",
+          "source": "Fact"
+        },
+        {
+          "text": "Value (1/PE) is flat (p65).",
+          "source": "Fact"
+        },
+        {
+          "text": "Low volatility indicators are weak (p29).",
+          "source": "Fact"
         }
       ],
       "data_gap": false
