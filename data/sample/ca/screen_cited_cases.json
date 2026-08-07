@@ -4,34 +4,42 @@
     "SU.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional momentum (12-1) and value (1/PE) metrics.",
+          "text": "Momentum (12-1) is exceptional.",
           "source": "p92"
         },
         {
-          "text": "The energy sector has experienced oil-driven gains.",
-          "source": "MT Newswires: TSX Closer: Index Slips From Record High as Tech Weakness Offsets Oil-Driven Energy Gains"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p92"
         },
         {
-          "text": "Analyst dispersion is strong, suggesting significant attention and a range of views.",
-          "source": "p89"
+          "text": "The broader energy sector has seen gains, helping to offset tech weakness in the TSX.",
+          "source": "MT Newswires: TSX Closer"
+        },
+        {
+          "text": "The energy sector overall is experiencing updates and activity.",
+          "source": "MT Newswires: Sector Update: Energy"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) metrics are flat.",
+          "text": "Analyst dispersion is strong.",
+          "source": "p86"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
           "source": "p69"
         },
         {
-          "text": "Low volatility ranking is weak.",
+          "text": "Low volatility is weak.",
           "source": "p33"
         },
         {
-          "text": "CEO Rich Kruger is stepping down in 2027.",
+          "text": "Suncor CEO Rich Kruger is stepping down in 2027.",
           "source": "Financial Post: Suncor CEO Rich Kruger stepping down in 2027"
         },
         {
-          "text": "Peter Zebedee is being promoted to CEO, indicating a leadership transition.",
-          "source": "The Wall Street Journal: Suncor to Promote Peter Zebedee to CEO"
+          "text": "News of Suncor CEO stepping down was highlighted among other daily news.",
+          "source": "Financial Post: News of the day: Suncor CEO stepping down, GTA housing, Burger King dethrones Tim Hortons, quantum-imaging startup, investing regulations and more"
         }
       ],
       "data_gap": false
@@ -39,29 +47,33 @@
     "CVE.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional momentum (12-1) and value (1/PE) metrics.",
+          "text": "Momentum (12-1) is exceptional.",
           "source": "p94"
         },
         {
-          "text": "Quality (ROE/margin) metrics are strong.",
+          "text": "Quality (ROE/margin) is strong.",
           "source": "p78"
         },
         {
-          "text": "Analyst dispersion is strong, indicating significant attention.",
-          "source": "p83"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p94"
         },
         {
-          "text": "Earnings strength maintains an undervalued narrative.",
+          "text": "Earnings strength supports a narrative of the company being undervalued.",
           "source": "Simply Wall St.: Cenovus Energy (TSX:CVE) Earnings Strength Keeps Undervalued Narrative In Play"
         },
         {
-          "text": "The CEO sees new West Coast pipelines potentially fueling oil growth; Q2 earnings highlighted production growth and increased year-over-year on higher pricing and oil sands volumes.",
-          "source": "Simply Wall St.: Cenovus Energy (TSX:CVE) CEO Sees New West Coast Pipelines Fueling Oil Growth | Zacks: CVE Q2 Earnings Call Highlights Production Growth | Zacks: CVE Q2 Earnings Increase Y/Y on Higher Pricing & Oil Sands Volumes"
+          "text": "The CEO anticipates new West Coast pipelines will fuel oil growth, and Q2 earnings highlighted production growth.",
+          "source": "Simply Wall St.: Cenovus Energy (TSX:CVE) CEO Sees New West Coast Pipelines Fueling Oil Growth; Zacks: CVE Q2 Earnings Call Highlights Production Growth"
         }
       ],
       "to_watch": [
         {
-          "text": "Low volatility ranking is weak.",
+          "text": "Analyst dispersion is strong.",
+          "source": "p81"
+        },
+        {
+          "text": "Low volatility is weak.",
           "source": "p14"
         }
       ],
@@ -70,26 +82,34 @@
     "CNQ.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong momentum (12-1), analyst dispersion, quality (ROE/margin), and value (1/PE) metrics.",
-          "source": "p78 | p75 | p89 | p89"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p78"
         },
         {
-          "text": "The energy sector has experienced oil-driven gains.",
-          "source": "MT Newswires: TSX Closer: Index Slips From Record High as Tech Weakness Offsets Oil-Driven Energy Gains"
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p86"
         },
         {
-          "text": "There is a general case for dividend-paying energy giants.",
-          "source": "Zacks: Beyond Oil Prices: The Case for 3 Dividend-Paying Energy Giants"
+          "text": "Value (1/PE) is strong.",
+          "source": "p86"
+        },
+        {
+          "text": "The Q2 earnings call indicated higher output and growth discipline.",
+          "source": "Zacks: CNQ Q2 Earnings Call Flags Higher Output and Growth Discipline"
+        },
+        {
+          "text": "The company is noted as a dividend-paying energy giant, and the energy sector has shown recent gains.",
+          "source": "Zacks: Beyond Oil Prices: The Case for 3 Dividend-Paying Energy Giants; MT Newswires: TSX Closer"
         }
       ],
       "to_watch": [
         {
-          "text": "Low volatility ranking is weak.",
-          "source": "p25"
+          "text": "Analyst dispersion is flat.",
+          "source": "p72"
         },
         {
-          "text": "Q2 earnings are anticipated.",
-          "source": "Zacks: Canadian Natural to Report Q2 Earnings: What's in the Offing?"
+          "text": "Low volatility is weak.",
+          "source": "p25"
         }
       ],
       "data_gap": false
@@ -97,84 +117,34 @@
     "CM.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong momentum (12-1), analyst dispersion, value (1/PE), and low volatility metrics.",
+          "text": "Momentum (12-1) is strong.",
           "source": "p81"
         },
         {
-          "text": "An earnings beat is expected from Canadian banks for Q3.",
+          "text": "Value (1/PE) is strong.",
+          "source": "p81"
+        },
+        {
+          "text": "Low volatility is strong.",
+          "source": "p81"
+        },
+        {
+          "text": "BofA Securities anticipates an earnings beat from Canadian banks in their Q3 preview.",
           "source": "MT Newswires: BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
         },
         {
-          "text": "A financial services name offers accelerating profit.",
+          "text": "A financial services name, implied to be this ticker, is noted for accelerating profit.",
           "source": "Investor's Business Daily: This Financial Services Name Offers Two Buy Points And Accelerating Profit"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) metrics are flat.",
+          "text": "Analyst dispersion is strong.",
+          "source": "p78"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
           "source": "p50"
-        }
-      ],
-      "data_gap": false
-    },
-    "RY.TO": {
-      "in_favor": [
-        {
-          "text": "The company exhibits exceptional low volatility metrics.",
-          "source": "p92"
-        },
-        {
-          "text": "An earnings beat is expected from Canadian banks for Q3.",
-          "source": "MT Newswires: BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
-        },
-        {
-          "text": "Royal Bank of Canada (RBC) has attracted a $1.5 billion financial advisor team from another firm.",
-          "source": "Barrons.com: RBC Lures $1.5 Billion Financial Advisor Team Away From UBS"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1), analyst dispersion, quality (ROE/margin), and value (1/PE) metrics are flat.",
-          "source": "p69 | p69 | p58 | p67"
-        }
-      ],
-      "data_gap": false
-    },
-    "BNS.TO": {
-      "in_favor": [
-        {
-          "text": "The company exhibits strong value (1/PE) and low volatility metrics.",
-          "source": "p78 | p89"
-        },
-        {
-          "text": "An earnings beat is expected from Canadian banks for Q3.",
-          "source": "MT Newswires: BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
-        },
-        {
-          "text": "The stock may be 25% undervalued based on earnings power.",
-          "source": "Simply Wall St.: Bank of Nova Scotia (TSX:BNS) Stock May Be 25% Undervalued On Earnings Power"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) metrics are flat.",
-          "source": "p61"
-        },
-        {
-          "text": "Quality (ROE/margin) metrics are weak.",
-          "source": "p25"
-        },
-        {
-          "text": "Exceptional analyst dispersion suggests a wide range of differing views.",
-          "source": "p94"
-        },
-        {
-          "text": "Recent AT1 reset and Eurobond issuance may reframe the investment narrative.",
-          "source": "Simply Wall St.: Did Scotiabank\u2019s AT1 Reset and Eurobond Issuance Just Reframe Bank of Nova Scotia's (TSX:BNS) Investment Narrative?"
-        },
-        {
-          "text": "Scotiabank's view on flat Canada inflation with limited central bank implications could be a point of observation.",
-          "source": "MT Newswires: Canada Inflation Seen Flat at Scotiabank With Limited Central Bank Implications"
         }
       ],
       "data_gap": false
@@ -182,34 +152,116 @@
     "QSR.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional quality (ROE/margin) metrics.",
+          "text": "Quality (ROE/margin) is exceptional.",
           "source": "p94"
         },
         {
-          "text": "Burger King's U.S. operations experienced an 8.5% surge, marking its best quarter in years.",
-          "source": "GuruFocus.com: Restaurant Brands Stock Slips Despite Burger King's 8.5% U.S. Surge | Moby: Restaurant Brands Falls on Burger King\u2019s Best Quarter in Years"
+          "text": "Burger King, a key brand, is noted for its strong performance in the US market.",
+          "source": "Yahoo Finance: Burger King vs. McDonald's: Why the king is reigning supreme in the US"
+        },
+        {
+          "text": "Burger King recorded an 8.5% surge in the U.S.",
+          "source": "GuruFocus.com: Restaurant Brands Stock Slips Despite Burger King's 8.5% U.S. Surge"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) and low volatility metrics are flat.",
-          "source": "p44 | p44"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p44"
         },
         {
-          "text": "Value (1/PE) metrics are weak.",
-          "source": "p39"
-        },
-        {
-          "text": "Exceptional analyst dispersion indicates a wide range of differing views.",
+          "text": "Analyst dispersion is exceptional.",
           "source": "p94"
         },
         {
-          "text": "The stock experienced declines despite Burger King's strong performance.",
-          "source": "GuruFocus.com: Restaurant Brands Stock Slips Despite Burger King's 8.5% U.S. Surge | Moby: Restaurant Brands Falls on Burger King\u2019s Best Quarter in Years"
+          "text": "Value (1/PE) is flat.",
+          "source": "p69"
         },
         {
-          "text": "The broader consumer stocks sector has seen declines.",
-          "source": "MT Newswires: Sector Update: Consumer Stocks Decline Late Afternoon | MT Newswires: Sector Update: Consumer Stocks Decline Thursday Afternoon"
+          "text": "Low volatility is flat.",
+          "source": "p44"
+        },
+        {
+          "text": "The stock experienced a decline despite Burger King's strong U.S. surge, and the broader consumer sector has experienced declines.",
+          "source": "GuruFocus.com: Restaurant Brands Stock Slips Despite Burger King's 8.5% U.S. Surge; MT Newswires: Sector Update: Consumer Stocks Decline Late Afternoon; MT Newswires: Sector Update: Consumer Stocks Decline Thursday Afternoon"
+        }
+      ],
+      "data_gap": false
+    },
+    "RY.TO": {
+      "in_favor": [
+        {
+          "text": "Low volatility is exceptional.",
+          "source": "p92"
+        },
+        {
+          "text": "BofA Securities anticipates an earnings beat from Canadian banks in their Q3 preview.",
+          "source": "MT Newswires: BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
+        },
+        {
+          "text": "RBC has attracted a $1.5 billion financial advisor team from UBS.",
+          "source": "Barrons.com: RBC Lures $1.5 Billion Financial Advisor Team Away From UBS"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p69"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p67"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p58"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p64"
+        }
+      ],
+      "data_gap": false
+    },
+    "BNS.TO": {
+      "in_favor": [
+        {
+          "text": "Value (1/PE) is strong.",
+          "source": "p75"
+        },
+        {
+          "text": "Low volatility is strong.",
+          "source": "p89"
+        },
+        {
+          "text": "BofA Securities anticipates an earnings beat from Canadian banks in their Q3 preview.",
+          "source": "MT Newswires: BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
+        },
+        {
+          "text": "The stock may be 25% undervalued based on its earnings power.",
+          "source": "Simply Wall St.: Bank of Nova Scotia (TSX:BNS) Stock May Be 25% Undervalued On Earnings Power"
+        },
+        {
+          "text": "Scotiabank's assessment sees Canada inflation as flat, with limited central bank implications.",
+          "source": "MT Newswires: Canada Inflation Seen Flat at Scotiabank With Limited Central Bank Implications"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p61"
+        },
+        {
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p92"
+        },
+        {
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p25"
+        },
+        {
+          "text": "An AT1 reset and Eurobond issuance may be reframing the investment narrative for the company.",
+          "source": "Simply Wall St.: Did Scotiabank\u2019s AT1 Reset and Eurobond Issuance Just Reframe Bank of Nova Scotia's (TSX:BNS) Investment Narrative?"
         }
       ],
       "data_gap": false
@@ -217,33 +269,37 @@
     "TD.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong momentum (12-1) and low volatility metrics.",
-          "source": "p89 | p83"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p89"
         },
         {
-          "text": "An earnings beat is expected from Canadian banks for Q3.",
+          "text": "Low volatility is strong.",
+          "source": "p83"
+        },
+        {
+          "text": "BofA Securities anticipates an earnings beat from Canadian banks in their Q3 preview.",
           "source": "MT Newswires: BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
         },
         {
-          "text": "TD Bank has joined Stablecoin Reserves Custody with Stablecorp.",
+          "text": "TD Bank has joined Stablecorp for stablecoin reserves custody.",
           "source": "Simply Wall St.: TD Bank (TSX:TD) Joins Stablecoin Reserves Custody With Stablecorp"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) metrics are weak.",
+          "text": "Analyst dispersion is flat.",
+          "source": "p53"
+        },
+        {
+          "text": "Quality (ROE/margin) is weak.",
           "source": "p33"
         },
         {
-          "text": "Value (1/PE) metrics are flat.",
-          "source": "p58"
+          "text": "Value (1/PE) is flat.",
+          "source": "p56"
         },
         {
-          "text": "Its status as a better value stock compared to a peer is a subject of evaluation.",
-          "source": "Zacks: UBS or TD: Which Is the Better Value Stock Right Now?"
-        },
-        {
-          "text": "Former employees have been sentenced to prison for money laundering and fraud involvement.",
+          "text": "Former TD Bank employees were sentenced to prison for money laundering and fraud.",
           "source": "Banking Dive: Ex-TD Bank employees sentenced to prison for money laundering, fraud involvement"
         }
       ],
@@ -252,30 +308,46 @@
     "CNR.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong quality (ROE/margin) metrics.",
+          "text": "Quality (ROE/margin) is strong.",
           "source": "p83"
         },
         {
-          "text": "Canadian National Railway reported an earnings beat.",
-          "source": "Simply Wall St.: Canadian National Railway (TSX:CNR) Earnings Beat Puts Valuation Back In Focus | Zacks: Canadian National Q2 Earnings Beat on Grain and Energy Volume Growth"
+          "text": "The company reported an earnings beat.",
+          "source": "Simply Wall St.: Canadian National Railway (TSX:CNR) Earnings Beat Puts Valuation Back In Focus"
         },
         {
-          "text": "Earnings were supported by grain and energy volume growth.",
+          "text": "Q2 earnings beat was driven by grain and energy volume growth.",
           "source": "Zacks: Canadian National Q2 Earnings Beat on Grain and Energy Volume Growth"
         },
         {
-          "text": "Price targets for CN Rail have been raised by RBC and TD.",
+          "text": "Price targets for CN Rail were raised by RBC and TD.",
           "source": "MT Newswires: CN Rail Price Targets Raised at RBC, TD"
+        },
+        {
+          "text": "Volume growth is highlighted as a factor fueling rail sector activity.",
+          "source": "FreightWaves: Unpacking Rail Earnings: How Volume Growth Fuels Merger Talks"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1), analyst dispersion, value (1/PE), and low volatility metrics are flat.",
-          "source": "p56 | p53 | p44 | p56"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p56"
         },
         {
-          "text": "Volume growth may lead to merger discussions.",
-          "source": "FreightWaves: Unpacking Rail Earnings: How Volume Growth Fuels Merger Talks"
+          "text": "Analyst dispersion is flat.",
+          "source": "p56"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p42"
+        },
+        {
+          "text": "Low volatility is flat.",
+          "source": "p56"
+        },
+        {
+          "text": "An earnings beat has brought the company's valuation back into focus, suggesting a re-evaluation is underway.",
+          "source": "Simply Wall St.: Canadian National Railway (TSX:CNR) Earnings Beat Puts Valuation Back In Focus"
         }
       ],
       "data_gap": false
@@ -283,29 +355,37 @@
     "ATD.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong analyst dispersion and quality (ROE/margin) metrics.",
-          "source": "p86 | p75"
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p75"
         },
         {
-          "text": "Alimentation Couche-Tard has agreed to acquire Poland's \u017babka Group for $8.6 billion (32.62bn-zloty deal).",
-          "source": "Retail Insight Network: Couche-Tard agrees \u017babka acquisition in 32.62bn-zloty deal | MT Newswires: Alimentation Couche-Tard to Acquire Poland's Zabka Group For $8.6 Billion | C-Store Dive: Alimentation Couche-Tard plans to acquire Polish c-store chain \u017babka for $8.6B"
+          "text": "Couche-Tard has agreed to acquire \u017babka in a 32.62bn-zloty deal, valued at $8.6 billion.",
+          "source": "Retail Insight Network: Couche-Tard agrees \u017babka acquisition in 32.62bn-zloty deal; MT Newswires: Alimentation Couche-Tard to Acquire Poland's Zabka Group For $8.6 Billion"
         },
         {
-          "text": "The \u017babka deal is described as its largest and most transformational acquisition.",
+          "text": "The \u017babka deal is characterized as the company's largest and most transformational acquisition.",
           "source": "MarketBeat: Alimentation Couche-Tard Calls \u017babka Deal Its Largest, Most Transformational Acquisition"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) and value (1/PE) metrics are flat.",
-          "source": "p50 | p61"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p50"
         },
         {
-          "text": "Low volatility ranking is weak.",
+          "text": "Analyst dispersion is strong.",
+          "source": "p83"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p58"
+        },
+        {
+          "text": "Low volatility is weak.",
           "source": "p39"
         },
         {
-          "text": "The potential impact of the \u017babka deal on its broader business is a point of observation.",
+          "text": "The potential impact of the \u017babka deal on its broader business needs to be assessed.",
           "source": "C-Store Dive: How Couche-Tard\u2019s \u017babka deal could impact its broader business"
         }
       ],
