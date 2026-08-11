@@ -1,37 +1,37 @@
 {
-  "as_of": "2026-08-10",
+  "as_of": "2026-08-11",
   "cases": {
     "SPG": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional quality based on ROE/margin data.",
-          "source": "p95"
+          "text": "The company demonstrates Exceptional Quality (ROE/margin) and Strong Value (1/PE) characteristics.",
+          "source": "p95, p85"
         },
         {
-          "text": "The company shows strong value based on a 1/PE metric.",
-          "source": "p85"
+          "text": "Q2 FFO topped estimates, driven by leasing strength, leading to raised guidance.",
+          "source": "[Zacks] SPG's Q2 FFO Top Estimates on Leasing Strength, Guidance Raised"
         },
         {
-          "text": "The stock exhibits strong low volatility characteristics.",
-          "source": "p88"
+          "text": "Simon Property Group is positioned to generate additional rent from Saks Global closures.",
+          "source": "[Retail Dive] Simon poised to rake in millions more in rent thanks to Saks Global closures"
         },
         {
-          "text": "Analysts are considering if the company may report a stronger-than-expected Q2 earnings result.",
-          "source": "[Zacks] Is a Beat in Store for Simon Property Stock in Q2 Earnings?"
+          "text": "Q2 earnings calls highlighted strong leasing momentum.",
+          "source": "[GuruFocus.com] Simon Property Group Inc (SPG) (Q2 2026) Earnings Call Highlights: Strong Leasing Momentum ..."
         },
         {
-          "text": "The stock appears to be valued attractively relative to its fair value.",
-          "source": "[Simply Wall St.] Simon Property Group (SPG) Stock Looks Cheap Relative To Fair Value"
+          "text": "The company exhibits a Strong Lowvol factor.",
+          "source": "p89"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) for the stock is currently flat.",
-          "source": "p64"
+          "text": "Momentum (12-1) is Flat.",
+          "source": "p63"
         },
         {
-          "text": "Analyst dispersion metrics are flat.",
-          "source": "p71"
+          "text": "Analyst dispersion is Strong, indicating a wide range of analyst opinions.",
+          "source": "p77"
         }
       ],
       "data_gap": false
@@ -39,69 +39,61 @@
     "DVA": {
       "in_favor": [
         {
-          "text": "The stock displays exceptional momentum (12-1).",
+          "text": "The company shows Exceptional momentum (12-1).",
           "source": "p92"
         },
         {
-          "text": "The company's quality, based on ROE/margin, is exceptional.",
-          "source": "p94"
+          "text": "Exceptional Quality (ROE/margin) and Strong Value (1/PE) characteristics are noted.",
+          "source": "p93, p86"
         },
         {
-          "text": "The stock indicates strong value based on its 1/PE metric.",
-          "source": "p84"
-        },
-        {
-          "text": "The stock still appears undervalued despite reporting an earnings beat in Q2.",
+          "text": "Despite a Q2 earnings beat, the stock still appears undervalued.",
           "source": "[Simply Wall St.] DaVita (DVA) Stock Still Looks Undervalued Despite A Q2 Earnings Beat"
         },
         {
-          "text": "Shares increased following an upgrade of the stock.",
+          "text": "DaVita shares rose after TD Cowen upgraded the stock.",
           "source": "[InvestorsHub] DaVita Shares Rise After TD Cowen Upgrades Stock to Buy"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is weak, suggesting varied views among analysts.",
+          "text": "Analyst dispersion is Weak, suggesting a lack of diversity in analyst views.",
           "source": "p38"
         },
         {
-          "text": "The stock exhibits weak low volatility characteristics.",
-          "source": "p26"
+          "text": "The company has a Weak Lowvol factor.",
+          "source": "p25"
         },
         {
-          "text": "Despite a Q2 earnings beat, the stock experienced a pre-market decline and margins were down.",
+          "text": "Despite a Q2 earnings beat, the stock was down in pre-market trading and margins were down.",
           "source": "[Zacks] DaVita Stock Down in Pre-Market Despite Q2 Earnings Beat, Margins Down"
         }
       ],
       "data_gap": false
     },
-    "TRGP": {
+    "COR": {
       "in_favor": [
         {
-          "text": "The stock demonstrates strong momentum (12-1).",
-          "source": "p89"
+          "text": "The company demonstrates Exceptional Quality (ROE/margin).",
+          "source": "p95"
         },
         {
-          "text": "Analyst dispersion is strong, indicating a degree of consensus among analysts.",
-          "source": "p78"
-        },
-        {
-          "text": "The company's quality, based on ROE/margin, is exceptional.",
-          "source": "p92"
-        },
-        {
-          "text": "Q2 earnings for the company surpassed estimates.",
-          "source": "[Zacks] Targa Resources, Inc. (TRGP) Q2 Earnings Top Estimates"
+          "text": "Cencora's Q3 Earnings Call Highlights were reported.",
+          "source": "[MarketBeat] Cencora Q3 Earnings Call Highlights"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's value (1/PE) is flat.",
-          "source": "p58"
+          "text": "Momentum (12-1) is Weak.",
+          "source": "p33"
         },
         {
-          "text": "The stock's low volatility metric is flat.",
-          "source": "p44"
+          "text": "Analyst dispersion is Strong, indicating varied analyst perspectives.",
+          "source": "p87"
+        },
+        {
+          "text": "Value (1/PE) and Lowvol factors are Flat.",
+          "source": "p60, p69"
         }
       ],
       "data_gap": false
@@ -109,77 +101,69 @@
     "CL": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is strong, suggesting a degree of consensus among analysts.",
-          "source": "p86"
+          "text": "The company exhibits Exceptional Quality (ROE/margin) and Exceptional Lowvol factors.",
+          "source": "p95, p94"
         },
         {
-          "text": "The company exhibits exceptional quality based on ROE/margin.",
-          "source": "p95"
-        },
-        {
-          "text": "The stock demonstrates exceptional low volatility characteristics.",
-          "source": "p94"
-        },
-        {
-          "text": "U.S. consumer brands, including soap products, are reporting stronger sales internationally.",
+          "text": "U.S. consumer brands, including those related to soap, are reportedly seeing better sales overseas.",
           "source": "[The Wall Street Journal] U.S. Consumer Brands Say Chicken, Soap and Snacks Are Selling Better Overseas"
         }
       ],
       "to_watch": [
         {
-          "text": "The stock displays weak momentum (12-1).",
-          "source": "p37"
+          "text": "Momentum (12-1) is Weak.",
+          "source": "p36"
         },
         {
-          "text": "The stock's value (1/PE) is weak.",
+          "text": "Analyst dispersion is Strong.",
+          "source": "p85"
+        },
+        {
+          "text": "Value (1/PE) is Weak.",
           "source": "p33"
         },
         {
-          "text": "A director of Colgate-Palmolive recently sold 4,170 shares.",
+          "text": "Analyst questions from Colgate-Palmolive\u2019s Q2 Earnings Call were highlighted as 'revealing'.",
+          "source": "[StockStory] 5 Revealing Analyst Questions From Colgate-Palmolive\u2019s Q2 Earnings Call"
+        },
+        {
+          "text": "A director sold 4,170 shares for $389,353.",
           "source": "[Motley Fool] What to Know About Colgate-Palmolive Director John Cahill Selling 4,170 Shares for $389,353"
         }
       ],
       "data_gap": false
     },
-    "LMT": {
+    "TRGP": {
       "in_favor": [
         {
-          "text": "The company's quality, based on ROE/margin, is exceptional.",
-          "source": "p94"
+          "text": "The company demonstrates Strong momentum (12-1).",
+          "source": "p88"
         },
         {
-          "text": "The Pentagon has requested defense firms to accelerate weapons production.",
-          "source": "[Investing.com] Pentagon asks defence firms to accelerate weapons production"
+          "text": "Exceptional Quality (ROE/margin) characteristics are noted.",
+          "source": "p92"
         },
         {
-          "text": "The company may be a relevant participant in addressing missile shortages.",
-          "source": "[Benzinga Prediction Markets] Palantir AI Boosts Pentagon Capabilities but LMT, RTX May Be the Better Missile Shortage Plays"
+          "text": "Q2 earnings topped estimates.",
+          "source": "[Zacks] Targa Resources, Inc. (TRGP) Q2 Earnings Top Estimates"
         },
         {
-          "text": "Reports highlight missile shortages, potentially indicating demand for the company's products.",
-          "source": "[Benzinga] Trump Threatens Long Prison Terms for 'Treasonous' Leakers as Reports of Missile Shortages and a Clash with Hegseth Swirl: 'The US Has Massive Amounts...'"
+          "text": "Q2 earnings call highlights and summaries were provided.",
+          "source": "[MarketBeat] Targa Resources Q2 Earnings Call Highlights, [Moby] Targa Resources Corp. Q2 2026 Earnings Call Summary"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) for the stock is flat.",
-          "source": "p65"
+          "text": "Analyst dispersion is Strong, indicating varied analyst opinions.",
+          "source": "p77"
         },
         {
-          "text": "Analyst dispersion metrics are flat.",
-          "source": "p51"
+          "text": "Value (1/PE) and Lowvol factors are Flat.",
+          "source": "p58, p44"
         },
         {
-          "text": "The company's value (1/PE) is flat.",
-          "source": "p67"
-        },
-        {
-          "text": "The stock's low volatility metric is flat.",
-          "source": "p65"
-        },
-        {
-          "text": "Recent market sentiment is strongly negative.",
-          "source": "Recent buzz: strongly negative sentiment (-1.00)"
+          "text": "Key metrics versus estimates from Q2 earnings were reviewed.",
+          "source": "[Zacks] Targa Resources (TRGP) Q2 Earnings: Taking a Look at Key Metrics Versus Estimates"
         }
       ],
       "data_gap": false
@@ -187,22 +171,22 @@
     "ITW": {
       "in_favor": [
         {
-          "text": "The company's quality based on ROE/margin is exceptional.",
-          "source": "p95"
+          "text": "The company exhibits Exceptional Quality (ROE/margin) and Exceptional Lowvol factors.",
+          "source": "p95, p94"
         },
         {
-          "text": "The stock displays exceptional low volatility characteristics.",
-          "source": "p93"
-        },
-        {
-          "text": "The stock increased by 8.5% after the company raised its 2026 guidance and enhanced share buybacks.",
+          "text": "The stock was up 8.5% after the company raised its 2026 guidance and boosted share repurchases.",
           "source": "[Simply Wall St.] Illinois Tool Works (ITW) Is Up 8.5% After Raising 2026 Guidance And Boosting Share Buybacks"
         }
       ],
       "to_watch": [
         {
-          "text": "The stock shows weak momentum (12-1).",
-          "source": "p37"
+          "text": "Momentum (12-1) is Weak.",
+          "source": "p36"
+        },
+        {
+          "text": "Analyst dispersion and Value (1/PE) factors are Flat.",
+          "source": "p62, p55"
         }
       ],
       "data_gap": false
@@ -210,96 +194,88 @@
     "CINF": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is exceptional, suggesting a high degree of consensus among analysts.",
-          "source": "p95"
+          "text": "The company demonstrates Exceptional Value (1/PE) and a Strong Lowvol factor.",
+          "source": "p95, p87"
         },
         {
-          "text": "The stock demonstrates exceptional value based on its 1/PE metric.",
-          "source": "p95"
+          "text": "The stock's fair value has edged higher as analysts consider growth.",
+          "source": "[Simply Wall St.] Cincinnati Financial (CINF) Stock Fair Value Edges Higher As Analysts Weigh Growth And Catastrophe Risks"
         },
         {
-          "text": "The stock exhibits strong low volatility characteristics.",
-          "source": "p86"
-        },
-        {
-          "text": "The company has demonstrated stronger performance than the industry.",
-          "source": "[Zacks] CINF Outperforms Industry: What Should Investors Do Now?"
-        },
-        {
-          "text": "The company is identified as a strong dividend stock.",
+          "text": "The company is noted for its dividend characteristics.",
           "source": "[Zacks] Why Cincinnati Financial (CINF) is a Great Dividend Stock Right Now"
         }
       ],
       "to_watch": [
         {
-          "text": "Analysts are weighing catastrophe risks when evaluating the company.",
+          "text": "Momentum (12-1) and Quality (ROE/margin) factors are Flat.",
+          "source": "p47, p64"
+        },
+        {
+          "text": "Analyst dispersion is Exceptional.",
+          "source": "p95"
+        },
+        {
+          "text": "Analysts are weighing catastrophe risks.",
           "source": "[Simply Wall St.] Cincinnati Financial (CINF) Stock Fair Value Edges Higher As Analysts Weigh Growth And Catastrophe Risks"
         },
         {
-          "text": "Q2 reports indicate slower premium growth and the company facing industry headwinds.",
+          "text": "A Q2 deep dive noted slower premium growth and margin expansion amidst industry headwinds.",
           "source": "[StockStory] CINF Q2 Deep Dive: Slower Premium Growth and Margin Expansion Amid Industry Headwinds"
+        },
+        {
+          "text": "Insightful analyst questions from Cincinnati Financial\u2019s Q2 Earnings Call were highlighted.",
+          "source": "[StockStory] 5 Insightful Analyst Questions From Cincinnati Financial\u2019s Q2 Earnings Call"
         }
       ],
       "data_gap": false
     },
-    "SYY": {
+    "LMT": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is strong, suggesting a degree of consensus among analysts.",
-          "source": "p85"
+          "text": "The company exhibits Exceptional Quality (ROE/margin).",
+          "source": "p94"
         },
         {
-          "text": "The company's quality based on ROE/margin is exceptional.",
-          "source": "p93"
+          "text": "The Pentagon provided Lockheed Martin with $58.62 billion.",
+          "source": "[Insider Monkey] Why Did The Pentagon Just Hand Lockheed Martin (LMT) $58.62B?"
         },
         {
-          "text": "The stock exhibits strong low volatility characteristics.",
-          "source": "p81"
-        },
-        {
-          "text": "The company reported an earnings beat in Q4 and provided higher guidance, with the stock potentially remaining undervalued.",
-          "source": "[Simply Wall St.] Sysco (SYY) Beats On Q4 And Guides Higher, Is The Stock Still Undervalued?"
-        },
-        {
-          "text": "Q4 earnings call highlights strong Q4 results and efficiency driven by AI.",
-          "source": "[GuruFocus.com] Sysco Corp (SYY) (Q4 2026) Earnings Call Highlights: Strong Q4 Results and AI-Driven Efficiency ..."
+          "text": "Lockheed Martin is investing millions to develop a hypersonic weapons system.",
+          "source": "[The Wall Street Journal] Lockheed Martin Investing Millions to Develop Hypersonic Weapons System"
         }
       ],
       "to_watch": [
         {
-          "text": "The stock displays weak momentum (12-1).",
-          "source": "p33"
+          "text": "Momentum (12-1), Analyst dispersion, Value (1/PE), and Lowvol factors are Flat.",
+          "source": "p64, p51, p68, p64"
+        },
+        {
+          "text": "Recent market buzz shows strongly negative sentiment (-1.00) from 1 mention in the last 30 days.",
+          "source": "Market sentiment: Recent buzz: strongly negative sentiment (-1.00), 1 mentions in the last 30d"
         }
       ],
       "data_gap": false
     },
-    "GOOG": {
+    "AMP": {
       "in_favor": [
         {
-          "text": "The stock displays exceptional momentum (12-1).",
-          "source": "p90"
+          "text": "The company shows Exceptional Quality (ROE/margin) and Strong Value (1/PE).",
+          "source": "p90, p89"
         },
         {
-          "text": "The company's quality based on ROE/margin is strong.",
-          "source": "p88"
-        },
-        {
-          "text": "The stock indicates strong value based on its 1/PE metric.",
-          "source": "p78"
-        },
-        {
-          "text": "The company ranks among the top Cloud hyperscalers for AI.",
-          "source": "[Yahoo Finance Video] Why Google and Amazon rank top among Cloud hyperscalers for AI"
-        },
-        {
-          "text": "Potential catalysts could support a rebound for the stock.",
-          "source": "[Investor's Business Daily] Google Stock Sputters, But These Catalysts Could Spark A Rebound"
+          "text": "Ameriprise stock appears to be below its fair value, with strong returns noted.",
+          "source": "[Simply Wall St.] Ameriprise (AMP) Stock Looks Below Fair Value As Returns Stay Strong"
         }
       ],
       "to_watch": [
         {
-          "text": "The stock is currently sputtering.",
-          "source": "[Investor's Business Daily] Google Stock Sputters, But These Catalysts Could Spark A Rebound"
+          "text": "Momentum (12-1) is Weak.",
+          "source": "p32"
+        },
+        {
+          "text": "Analyst dispersion and Lowvol factors are Flat.",
+          "source": "p73, p61"
         }
       ],
       "data_gap": false
@@ -307,19 +283,24 @@
     "GL": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is strong, suggesting a degree of consensus among analysts.",
-          "source": "p76"
-        },
-        {
-          "text": "The stock displays exceptional value based on its 1/PE metric.",
-          "source": "p94"
-        },
-        {
-          "text": "The stock exhibits strong low volatility characteristics.",
-          "source": "p83"
+          "text": "The company demonstrates Exceptional Value (1/PE) and a Strong Lowvol factor.",
+          "source": "p94, p84"
         }
       ],
-      "to_watch": [],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) and Quality (ROE/margin) factors are Flat.",
+          "source": "p67, p63"
+        },
+        {
+          "text": "Analyst dispersion is Strong.",
+          "source": "p75"
+        },
+        {
+          "text": "No specific article content for GL was provided to inform additional points.",
+          "source": "N/A"
+        }
+      ],
       "data_gap": false
     }
   }
