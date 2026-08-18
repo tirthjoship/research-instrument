@@ -1,29 +1,33 @@
 {
-  "as_of": "2026-08-17",
+  "as_of": "2026-08-18",
   "cases": {
     "CNQ.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong momentum (12-1), strong analyst dispersion, exceptional quality (ROE/margin), and exceptional value (1/PE).",
-          "source": "p75, p84, p91, p94"
+          "text": "The company exhibits exceptional quality (ROE/margin) and value (1/PE), alongside strong analyst dispersion.",
+          "source": "Facts"
         },
         {
-          "text": "Q2 earnings and revenues surpassed estimates and increased year-over-year.",
-          "source": "Zacks: Canadian Natural Q2 Earnings & Revenues Beat Estimates, Increase YoY"
+          "text": "Canadian Natural's Q2 earnings and revenues surpassed estimates and showed a year-over-year increase.",
+          "source": "Zacks] Canadian Natural Q2 Earnings & Revenues Beat Estimates, Increase YoY"
         },
         {
-          "text": "The company posted record Q2 results and is re-evaluating oil sands expansion opportunities.",
-          "source": "Simply Wall St.: Canadian Natural Resources (TSX:CNQ) Posts Record Q2 And Revisits Oil Sands Expansion"
+          "text": "The stock appears attractively priced, even after a substantial recent price movement.",
+          "source": "Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Stock Still Looks Cheap As Its 294% Run Continues"
         },
         {
-          "text": "The stock is considered inexpensive despite a substantial 294% run.",
-          "source": "Simply Wall St.: Canadian Natural Resources (TSX:CNQ) Stock Still Looks Cheap As Its 294% Run Continues"
+          "text": "The company reported record Q2 results and is re-evaluating oil sands expansion possibilities.",
+          "source": "Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Posts Record Q2 And Revisits Oil Sands Expansion"
         }
       ],
       "to_watch": [
         {
-          "text": "The stock exhibits weak low volatility characteristics.",
-          "source": "p28"
+          "text": "The stock shows flat momentum (12-1) and weak low volatility characteristics.",
+          "source": "Facts"
+        },
+        {
+          "text": "Canadian oil producers are targeting late 2027 for a decision on the Pathways carbon capture project.",
+          "source": "Reuters] Canada's oil producers target late 2027 for Pathways carbon capture decision"
         }
       ],
       "data_gap": false
@@ -31,30 +35,30 @@
     "SU.TO": {
       "in_favor": [
         {
-          "text": "The company shows exceptional momentum (12-1), strong analyst dispersion, and exceptional value (1/PE).",
-          "source": "p91, p78, p94"
+          "text": "Suncor shows exceptional momentum (12-1) and value (1/PE), coupled with strong analyst dispersion.",
+          "source": "Facts"
         },
         {
-          "text": "Q2 earnings and revenues surpassed estimates and increased year-over-year.",
-          "source": "Zacks: Suncor Energy Q2 Earnings & Revenues Beat Estimates, Rise Y/Y"
+          "text": "Suncor has increased share repurchases, supported by record cash flow.",
+          "source": "Zacks] Suncor Boosts Buybacks as Record Cash Flow Supports Bigger Returns"
         },
         {
-          "text": "The company is increasing buybacks, supported by record cash flow.",
-          "source": "Zacks: Suncor Boosts Buybacks as Record Cash Flow Supports Bigger Returns"
+          "text": "Suncor Energy's Q2 earnings and revenues surpassed estimates and rose year-over-year.",
+          "source": "Zacks] Suncor Energy Q2 Earnings & Revenues Beat Estimates, Rise Y/Y"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's quality (ROE/margin) is flat.",
-          "source": "p66"
+          "text": "The company's quality (ROE/margin) and low volatility are characterized as flat.",
+          "source": "Facts"
         },
         {
-          "text": "The stock exhibits weak low volatility characteristics.",
-          "source": "p38"
+          "text": "Canadian oil producers are targeting late 2027 for a decision on the Pathways carbon capture project.",
+          "source": "Reuters] Canada's oil producers target late 2027 for Pathways carbon capture decision"
         },
         {
-          "text": "Investors may be anticipating a new direction for the company under Peter Zebedee.",
-          "source": "Simply Wall St.: Should Suncor Energy (TSX:SU) Investors Expect A New Direction Under Peter Zebedee?"
+          "text": "There is a discussion about whether investors should anticipate a new direction for the company under Peter Zebedee.",
+          "source": "Simply Wall St.] Should Suncor Energy (TSX:SU) Investors Expect A New Direction Under Peter Zebedee?"
         }
       ],
       "data_gap": false
@@ -62,57 +66,22 @@
     "CVE.TO": {
       "in_favor": [
         {
-          "text": "The company shows exceptional momentum (12-1), strong analyst dispersion, strong quality (ROE/margin), and exceptional value (1/PE).",
-          "source": "p94, p81, p75, p94"
+          "text": "The company exhibits exceptional momentum (12-1) and value (1/PE), in addition to strong analyst dispersion.",
+          "source": "Facts"
         },
         {
-          "text": "Refiners are experiencing record profits, indicating a positive industry environment.",
-          "source": "Investor's Business Daily: Record Profits For Refiners. These 5 Oil Stocks Are Worthy Bets."
-        },
-        {
-          "text": "The company's earnings strength continues to support an undervalued perception.",
-          "source": "Simply Wall St.: Cenovus Energy (TSX:CVE) Earnings Strength Keeps Undervalued Narrative In Play"
+          "text": "Refiners are experiencing record profits, with some oil stocks identified as noteworthy.",
+          "source": "Investor's Business Daily] Record Profits For Refiners. These 5 Oil Stocks Are Worthy Bets."
         }
       ],
       "to_watch": [
         {
-          "text": "The stock exhibits weak low volatility characteristics.",
-          "source": "p16"
-        }
-      ],
-      "data_gap": false
-    },
-    "QSR.TO": {
-      "in_favor": [
-        {
-          "text": "The company shows exceptional analyst dispersion and exceptional quality (ROE/margin).",
-          "source": "p94, p94"
+          "text": "The company's quality (ROE/margin) is flat, and its low volatility is weak.",
+          "source": "Facts"
         },
         {
-          "text": "Burger King revamped its Whopper and surpassed Wendy\u2019s in some aspects.",
-          "source": "The Wall Street Journal: How Burger King Revamped Its Whopper and Overtook Wendy\u2019s"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The company's momentum (12-1) is flat.",
-          "source": "p41"
-        },
-        {
-          "text": "The company's value (1/PE) is flat.",
-          "source": "p62"
-        },
-        {
-          "text": "The stock exhibits flat low volatility characteristics.",
-          "source": "p50"
-        },
-        {
-          "text": "Competition is increasing in Canada's cold beverage market.",
-          "source": "Financial Post: Competition brewing in Canada's cold beverage market, as KFC and Dunkin' take on Tim Hortons"
-        },
-        {
-          "text": "Skyrocketing beef prices are causing Americans to reach their spending limits.",
-          "source": "Bloomberg: Skyrocketing Beef Prices Finally Have Americans Reaching Their Spending Limit"
+          "text": "Canadian oil producers are targeting late 2027 for a decision on the Pathways carbon capture project.",
+          "source": "Reuters] Canada's oil producers target late 2027 for Pathways carbon capture decision"
         }
       ],
       "data_gap": false
@@ -120,26 +89,45 @@
     "CM.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong momentum (12-1), strong value (1/PE), and strong low volatility.",
-          "source": "p78, p81, p81"
+          "text": "The company demonstrates strong momentum (12-1), value (1/PE), and low volatility.",
+          "source": "Facts"
         },
         {
-          "text": "BofA Securities anticipates an earnings beat from Canadian banks in their Q3 preview.",
-          "source": "MT Newswires: BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
+          "text": "BofA Securities anticipates earnings surpassing expectations for Canadian banks in their Q3 preview.",
+          "source": "MT Newswires] BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
         },
         {
-          "text": "A financial services entity is highlighted for accelerating profit.",
-          "source": "Investor's Business Daily: This Financial Services Name Offers Two Buy Points And Accelerating Profit"
+          "text": "Some financial services entities are noted for potential entry points and accelerating profit.",
+          "source": "Investor's Business Daily] This Financial Services Name Offers Two Buy Points And Accelerating Profit"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's analyst dispersion is flat.",
-          "source": "p56"
+          "text": "Analyst dispersion and quality (ROE/margin) for the company are flat.",
+          "source": "Facts"
+        }
+      ],
+      "data_gap": false
+    },
+    "QSR.TO": {
+      "in_favor": [
+        {
+          "text": "The company exhibits exceptional analyst dispersion and quality (ROE/margin).",
+          "source": "Facts"
         },
         {
-          "text": "The company's quality (ROE/margin) is flat.",
-          "source": "p53"
+          "text": "Burger King has revamped its Whopper and surpassed Wendy's.",
+          "source": "The Wall Street Journal] How Burger King Revamped Its Whopper and Overtook Wendy\u2019s"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock shows weak momentum (12-1), flat value (1/PE), and flat low volatility.",
+          "source": "Facts"
+        },
+        {
+          "text": "Skyrocketing beef prices are leading Americans to reach their spending limit.",
+          "source": "Bloomberg] Skyrocketing Beef Prices Finally Have Americans Reaching Their Spending Limit"
         }
       ],
       "data_gap": false
@@ -147,30 +135,18 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "The stock exhibits exceptional low volatility characteristics.",
-          "source": "p91"
+          "text": "The company demonstrates exceptional low volatility.",
+          "source": "Facts"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's momentum (12-1) is flat.",
-          "source": "p66"
+          "text": "The stock exhibits flat momentum (12-1), analyst dispersion, quality (ROE/margin), and value (1/PE).",
+          "source": "Facts"
         },
         {
-          "text": "The company's analyst dispersion is flat.",
-          "source": "p50"
-        },
-        {
-          "text": "The company's quality (ROE/margin) is flat.",
-          "source": "p59"
-        },
-        {
-          "text": "The company's value (1/PE) is flat.",
-          "source": "p59"
-        },
-        {
-          "text": "The stock experienced a pullback this month, leading to questions about its valuation.",
-          "source": "Simply Wall St.: Royal Bank Of Canada (TSX:RY) Pulled Back This Month, Is It Overvalued Or Undervalued?"
+          "text": "There is a discussion regarding whether the stock is overvalued or undervalued following a recent pullback.",
+          "source": "Simply Wall St.] Royal Bank Of Canada (TSX:RY) Pulled Back This Month, Is It Overvalued Or Undervalued?"
         }
       ],
       "data_gap": false
@@ -178,34 +154,57 @@
     "BNS.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong value (1/PE) and strong low volatility.",
-          "source": "p78, p88"
+          "text": "The company demonstrates exceptional low volatility.",
+          "source": "Facts"
         },
         {
-          "text": "BofA Securities anticipates an earnings beat from Canadian banks in their Q3 preview.",
-          "source": "MT Newswires: BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
+          "text": "BofA Securities anticipates earnings surpassing expectations for Canadian banks in their Q3 preview.",
+          "source": "MT Newswires] BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
         },
         {
-          "text": "The stock may be 25% undervalued based on earnings power.",
-          "source": "Simply Wall St.: Bank of Nova Scotia (TSX:BNS) Stock May Be 25% Undervalued On Earnings Power"
+          "text": "The stock may be significantly undervalued based on its earnings potential.",
+          "source": "Simply Wall St.] Bank of Nova Scotia (TSX:BNS) Stock May Be 25% Undervalued On Earnings Power"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's momentum (12-1) is flat.",
-          "source": "p56"
+          "text": "The stock exhibits flat momentum (12-1), analyst dispersion, and value (1/PE), with weak quality (ROE/margin).",
+          "source": "Facts"
         },
         {
-          "text": "The company's analyst dispersion is flat.",
-          "source": "p72"
+          "text": "A recent AT1 reset and Eurobond issuance may be reframing the company's investment narrative.",
+          "source": "Simply Wall St.] Did Scotiabank\u2019s AT1 Reset and Eurobond Issuance Just Reframe Bank of Nova Scotia's (TSX:BNS) Investment Narrative?"
+        }
+      ],
+      "data_gap": false
+    },
+    "TD.TO": {
+      "in_favor": [
+        {
+          "text": "The company demonstrates strong momentum (12-1) and low volatility.",
+          "source": "Facts"
         },
         {
-          "text": "The company's quality (ROE/margin) is weak.",
-          "source": "p22"
+          "text": "BofA Securities anticipates earnings surpassing expectations for Canadian banks in their Q3 preview.",
+          "source": "MT Newswires] BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
         },
         {
-          "text": "Recent AT1 reset and Eurobond issuance could redefine its investment narrative.",
-          "source": "Simply Wall St.: Did Scotiabank\u2019s AT1 Reset and Eurobond Issuance Just Reframe Bank of Nova Scotia's (TSX:BNS) Investment Narrative?"
+          "text": "TD Bank has engaged in stablecoin reserves custody with Stablecorp.",
+          "source": "Simply Wall St.] TD Bank (TSX:TD) Joins Stablecoin Reserves Custody With Stablecorp"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock exhibits flat analyst dispersion and value (1/PE), with weak quality (ROE/margin).",
+          "source": "Facts"
+        },
+        {
+          "text": "The stock could be slightly overvalued following a direct deposit app update.",
+          "source": "Simply Wall St.] Toronto Dominion Bank (TSX:TD) Could Be 4% Overvalued Following Its Direct Deposit App Update"
+        },
+        {
+          "text": "A comparison is raised regarding its value relative to another financial institution.",
+          "source": "Zacks] UBS or TD: Which Is the Better Value Stock Right Now?"
         }
       ],
       "data_gap": false
@@ -214,76 +213,29 @@
       "in_favor": [
         {
           "text": "The company exhibits strong quality (ROE/margin).",
-          "source": "p78"
+          "source": "Facts"
         },
         {
-          "text": "CNI is advancing its hybrid locomotive program to boost efficiency.",
-          "source": "Zacks: CNI Advances Hybrid Locomotive Program to Boost Efficiency"
+          "text": "Canadian National is advancing its hybrid locomotive program to enhance efficiency.",
+          "source": "Zacks] CNI Advances Hybrid Locomotive Program to Boost Efficiency"
         },
         {
-          "text": "The company set a record for grain movement in the 2025-26 crop year.",
-          "source": "Zacks: Canadian National Sets Record Grain Movement in 2025-26 Crop Year"
+          "text": "Canadian National has set a record for grain movement for the 2025-26 crop year.",
+          "source": "Zacks] Canadian National Sets Record Grain Movement in 2025-26 Crop Year"
         },
         {
-          "text": "An earnings beat was reported, drawing attention to the company's valuation.",
-          "source": "Simply Wall St.: Canadian National Railway (TSX:CNR) Earnings Beat Puts Valuation Back In Focus"
+          "text": "Volume growth is identified as a factor supporting potential merger discussions for rail companies.",
+          "source": "FreightWaves] Unpacking Rail Earnings: How Volume Growth Fuels Merger Talks"
         },
         {
-          "text": "Volume growth is a factor in the broader rail industry.",
-          "source": "FreightWaves: Unpacking Rail Earnings: How Volume Growth Fuels Merger Talks"
+          "text": "Recent earnings surpassed expectations, drawing attention to valuation.",
+          "source": "Simply Wall St.] Canadian National Railway (TSX:CNR) Earnings Beat Puts Valuation Back In Focus"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's momentum (12-1) is flat.",
-          "source": "p53"
-        },
-        {
-          "text": "The company's analyst dispersion is flat.",
-          "source": "p62"
-        },
-        {
-          "text": "The company's value (1/PE) is flat.",
-          "source": "p41"
-        },
-        {
-          "text": "The stock exhibits flat low volatility characteristics.",
-          "source": "p59"
-        }
-      ],
-      "data_gap": false
-    },
-    "TD.TO": {
-      "in_favor": [
-        {
-          "text": "The company exhibits strong momentum (12-1) and strong low volatility.",
-          "source": "p88, p84"
-        },
-        {
-          "text": "BofA Securities anticipates an earnings beat from Canadian banks in their Q3 preview.",
-          "source": "MT Newswires: BofA Securities Expects Earnings Beat From Canadian Banks in Q3 Preview"
-        },
-        {
-          "text": "TD Bank has joined Stablecorp for stablecoin reserves custody.",
-          "source": "Simply Wall St.: TD Bank (TSX:TD) Joins Stablecoin Reserves Custody With Stablecorp"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The company's analyst dispersion is flat.",
-          "source": "p44"
-        },
-        {
-          "text": "The company's quality (ROE/margin) is weak.",
-          "source": "p34"
-        },
-        {
-          "text": "The company's value (1/PE) is flat.",
-          "source": "p53"
-        },
-        {
-          "text": "The stock could be 4% overvalued following its direct deposit app update.",
-          "source": "Simply Wall St.: Toronto Dominion Bank (TSX:TD) Could Be 4% Overvalued Following Its Direct Deposit App Update"
+          "text": "The stock shows flat momentum (12-1), analyst dispersion, and low volatility, with weak value (1/PE).",
+          "source": "Facts"
         }
       ],
       "data_gap": false
@@ -291,38 +243,22 @@
     "ATD.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong analyst dispersion.",
-          "source": "p75"
+          "text": "Couche-Tard has agreed to acquire \u017babka in a 32.62 billion zloty deal, valued at $8.6 billion.",
+          "source": "Retail Insight Network] Couche-Tard agrees \u017babka acquisition in 32.62bn-zloty deal"
         },
         {
-          "text": "Couche-Tard has agreed to acquire \u017babka Group for 32.62 billion zloty, equivalent to $8.6 billion.",
-          "source": "Retail Insight Network: Couche-Tard agrees \u017babka acquisition in 32.62bn-zloty deal; MT Newswires: Alimentation Couche-Tard to Acquire Poland's Zabka Group For $8.6 Billion"
-        },
-        {
-          "text": "The \u017babka deal is described as the company's largest and most transformational acquisition.",
-          "source": "MarketBeat: Alimentation Couche-Tard Calls \u017babka Deal Its Largest, Most Transformational Acquisition"
+          "text": "This acquisition is described by Alimentation Couche-Tard as its largest and most transformational.",
+          "source": "MarketBeat] Alimentation Couche-Tard Calls \u017babka Deal Its Largest, Most Transformational Acquisition"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's momentum (12-1) is flat.",
-          "source": "p47"
+          "text": "The stock exhibits flat momentum (12-1), analyst dispersion, quality (ROE/margin), value (1/PE), and low volatility.",
+          "source": "Facts"
         },
         {
-          "text": "The company's quality (ROE/margin) is flat.",
-          "source": "p72"
-        },
-        {
-          "text": "The company's value (1/PE) is flat.",
-          "source": "p66"
-        },
-        {
-          "text": "The stock exhibits flat low volatility characteristics.",
-          "source": "p44"
-        },
-        {
-          "text": "The \u017babka deal could impact its broader business operations.",
-          "source": "C-Store Dive: How Couche-Tard\u2019s \u017babka deal could impact its broader business"
+          "text": "The potential impact of the \u017babka deal on Couche-Tard's broader business is being considered.",
+          "source": "C-Store Dive] How Couche-Tard\u2019s \u017babka deal could impact its broader business"
         }
       ],
       "data_gap": false
