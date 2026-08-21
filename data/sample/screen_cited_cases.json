@@ -1,37 +1,41 @@
 {
-  "as_of": "2026-08-20",
+  "as_of": "2026-08-21",
   "cases": {
     "SPG": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "text": "Exceptional quality (ROE/margin) (p95)",
           "source": "p95"
         },
         {
-          "text": "There is strong value based on 1/PE metrics.",
-          "source": "p84"
+          "text": "Strong value (1/PE) (p85)",
+          "source": "p85"
         },
         {
-          "text": "The stock demonstrates strong low volatility.",
+          "text": "Strong low volatility characteristics (p89)",
           "source": "p89"
         },
         {
-          "text": "Simon Property Group expects to more than double $18M in lost Saks rents.",
-          "source": "[CRE Daily] Simon Property to More Than Double $18M in Lost Saks Rents"
+          "text": "Achieved record revenue growth and an upgraded outlook in Q2 2026",
+          "source": "[GuruFocus.com] SP Group AS (OCSE:SPG) (Q2 2026) Earnings Call Highlights"
         },
         {
-          "text": "The company has raised its 2026 outlook due to strong leasing activity and new projects.",
-          "source": "[CRE Daily] Simon Ups 2026 Outlook on Strong Leasing, New Projects"
+          "text": "Expected to more than double $18M in lost Saks rents",
+          "source": "[CRE Daily] Simon Property to More Than Double $18M in Lost Saks Rents"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p65"
+          "text": "Flat momentum (12-1) (p64)",
+          "source": "p64"
         },
         {
-          "text": "Analyst dispersion is strong, prompting a question about whether Wall Street analysts hold a bullish view on the stock.",
-          "source": "p85, [Barchart] Are Wall Street Analysts Bullish on Simon Property Stock?"
+          "text": "Strong analyst dispersion (p86)",
+          "source": "p86"
+        },
+        {
+          "text": "Analyst sentiment regarding the stock is a topic of discussion",
+          "source": "[Barchart] Are Wall Street Analysts Bullish on Simon Property Stock?"
         }
       ],
       "data_gap": false
@@ -39,26 +43,30 @@
     "DVA": {
       "in_favor": [
         {
-          "text": "The company shows exceptional momentum (12-1).",
+          "text": "Exceptional momentum (12-1) (p92)",
           "source": "p92"
         },
         {
-          "text": "Exceptional quality is noted based on ROE/margin.",
+          "text": "Weak analyst dispersion, suggesting consensus (p37)",
+          "source": "p37"
+        },
+        {
+          "text": "Exceptional quality (ROE/margin) (p94)",
           "source": "p94"
         },
         {
-          "text": "The stock presents strong value (1/PE).",
-          "source": "p86"
-        },
-        {
-          "text": "Analyst dispersion is weak, suggesting a greater consensus among analysts.",
-          "source": "p37"
+          "text": "Strong value (1/PE) (p87)",
+          "source": "p87"
         }
       ],
       "to_watch": [
         {
-          "text": "Low volatility is weak.",
+          "text": "Weak low volatility characteristics (p24)",
           "source": "p24"
+        },
+        {
+          "text": "Analyst questions from the Q2 earnings call are a focus",
+          "source": "[StockStory] The Top 5 Analyst Questions From DaVita\u2019s Q2 Earnings Call"
         }
       ],
       "data_gap": false
@@ -66,73 +74,34 @@
     "CL": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional quality (ROE/margin).",
+          "text": "Exceptional quality (ROE/margin) (p95)",
           "source": "p95"
         },
         {
-          "text": "Exceptional low volatility is observed.",
+          "text": "Exceptional low volatility characteristics (p94)",
           "source": "p94"
         },
         {
-          "text": "Colgate-Palmolive is identified as an overlooked dividend king.",
-          "source": "[Insider Monkey] Why Colgate-Palmolive Remains an Overlooked Dividend King"
-        },
-        {
-          "text": "Q2 revenues rose by 4.9%.",
-          "source": "[Zacks] CL's Q2 Revenues Rise 4.9%: Can Growth Hold Amid Global Volatility?"
+          "text": "Raised 2026 profit outlook following Q2 earnings beat and margin gains",
+          "source": "[Zacks] Colgate Raises 2026 Profit Outlook After Q2 Earnings Beat and Margin Gains"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p39"
+          "text": "Weak momentum (12-1) (p38)",
+          "source": "p38"
         },
         {
-          "text": "Analyst dispersion is strong, indicating varied opinions among analysts.",
+          "text": "Strong analyst dispersion (p86)",
           "source": "p86"
         },
         {
-          "text": "Value (1/PE) is weak.",
-          "source": "p34"
+          "text": "Weak value (1/PE) (p33)",
+          "source": "p33"
         },
         {
-          "text": "The stock slipped below its 50-day SMA, prompting caution.",
-          "source": "[Zacks] Colgate-Palmolive Stock Slips Below 50-Day SMA: Time to Be Cautious?"
-        },
-        {
-          "text": "There are questions regarding the sustainability of Q2 revenue growth amid global volatility.",
-          "source": "[Zacks] CL's Q2 Revenues Rise 4.9%: Can Growth Hold Amid Global Volatility?"
-        }
-      ],
-      "data_gap": false
-    },
-    "ITW": {
-      "in_favor": [
-        {
-          "text": "The company exhibits exceptional quality (ROE/margin).",
-          "source": "p95"
-        },
-        {
-          "text": "Exceptional low volatility is noted for the stock.",
-          "source": "p94"
-        },
-        {
-          "text": "Illinois Tool Works (ITW) saw an 8.5% increase in its stock price after raising its 2026 guidance and boosting share buybacks.",
-          "source": "[Simply Wall St.] Illinois Tool Works (ITW) Is Up 8.5% After Raising 2026 Guidance And Boosting Share Buybacks"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p39"
-        },
-        {
-          "text": "Analyst dispersion is flat.",
-          "source": "p61"
-        },
-        {
-          "text": "Value (1/PE) is flat.",
-          "source": "p55"
+          "text": "Valuation remains high despite growth improvements",
+          "source": "[Zacks] Is Colgate Stock a Buy as Growth Improves but Valuation Stays Rich?"
         }
       ],
       "data_gap": false
@@ -140,73 +109,61 @@
     "LMT": {
       "in_favor": [
         {
-          "text": "The company has exceptional quality (ROE/margin).",
+          "text": "Exceptional quality (ROE/margin) (p94)",
           "source": "p94"
-        },
-        {
-          "text": "Lockheed Martin (LMT) completed its first Japan ASEV, an Indo Pacific defense milestone.",
-          "source": "[Simply Wall St.] Lockheed Martin (LMT) Completes First Japan ASEV In Indo Pacific Defense Milestone"
-        },
-        {
-          "text": "Lockheed Martin (LMT) stock may be 24% undervalued based on Japan defense system news.",
-          "source": "[Simply Wall St.] Lockheed Martin (LMT) Stock May Be 24% Undervalued On Japan Defense System News"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p66"
+          "text": "Flat momentum (12-1) (p65)",
+          "source": "p65"
         },
         {
-          "text": "Analyst dispersion is flat.",
+          "text": "Flat analyst dispersion (p49)",
           "source": "p49"
         },
         {
-          "text": "Value (1/PE) is flat.",
+          "text": "Flat value (1/PE) (p68)",
           "source": "p68"
         },
         {
-          "text": "Recent buzz shows strongly negative sentiment (-1.00) based on one mention in the last 30 days.",
-          "source": "Market sentiment"
+          "text": "Recent market sentiment is strongly negative (-1.00), with 1 mention in the last 30 days",
+          "source": "p. market sentiment"
         },
         {
-          "text": "The stock dropped, prompting an inquiry into the reasons for the decline.",
+          "text": "The stock experienced a decline",
           "source": "[Motley Fool] Why Did Lockheed Martin Stock Drop Today?"
         }
       ],
       "data_gap": false
     },
-    "AMP": {
+    "ITW": {
       "in_favor": [
         {
-          "text": "The company's quality (ROE/margin) is exceptional.",
-          "source": "p91"
+          "text": "Exceptional quality (ROE/margin) (p95)",
+          "source": "p95"
         },
         {
-          "text": "The stock shows strong value (1/PE).",
-          "source": "p90"
-        },
-        {
-          "text": "Ameriprise has gained 14.6% year-to-date.",
-          "source": "[Zacks] Ameriprise Gains 14.6% YTD: Should You Buy the Stock Now?"
+          "text": "Exceptional low volatility characteristics (p94)",
+          "source": "p94"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p35"
+          "text": "Weak momentum (12-1) (p38)",
+          "source": "p38"
         },
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p74"
+          "text": "Flat analyst dispersion (p61)",
+          "source": "p61"
         },
         {
-          "text": "Low volatility is flat.",
-          "source": "p63"
+          "text": "Flat value (1/PE) (p56)",
+          "source": "p56"
         },
         {
-          "text": "Questions are raised about whether it is a better value stock compared to PS.",
-          "source": "[Zacks] AMP or PS: Which Is the Better Value Stock Right Now?"
+          "text": "Analyst estimates and ratings are a subject of discussion",
+          "source": "[Barchart] Illinois Tool Works Stock: Analyst Estimates & Ratings"
         }
       ],
       "data_gap": false
@@ -214,30 +171,69 @@
     "CINF": {
       "in_favor": [
         {
-          "text": "The company offers exceptional value (1/PE).",
+          "text": "Exceptional value (1/PE) (p95)",
           "source": "p95"
         },
         {
-          "text": "The stock demonstrates strong low volatility.",
+          "text": "Strong low volatility characteristics (p87)",
           "source": "p87"
+        },
+        {
+          "text": "Considered as a value option in comparisons",
+          "source": "[Zacks] ESNT vs. CINF: Which Stock Is the Better Value Option?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p50"
+          "text": "Flat momentum (12-1) (p49)",
+          "source": "p49"
         },
         {
-          "text": "Exceptional analyst dispersion suggests a wide range of opinions among analysts.",
+          "text": "Exceptional analyst dispersion (p95)",
           "source": "p95"
         },
         {
-          "text": "Quality (ROE/margin) is flat.",
+          "text": "Flat quality (ROE/margin) (p65)",
           "source": "p65"
+        }
+      ],
+      "data_gap": false
+    },
+    "AMP": {
+      "in_favor": [
+        {
+          "text": "Exceptional quality (ROE/margin) (p91)",
+          "source": "p91"
         },
         {
-          "text": "Questions are raised about whether it is the better value option compared to ESNT.",
-          "source": "[Zacks] ESNT vs. CINF: Which Stock Is the Better Value Option?"
+          "text": "Strong value (1/PE) (p90)",
+          "source": "p90"
+        },
+        {
+          "text": "Recognized among the 15 largest independent brokerages in wealth management in 2026",
+          "source": "[Financial Planning] IBD Elite 2026: The 15 largest independent brokerages in wealth management"
+        },
+        {
+          "text": "Considered as a value stock option in comparisons",
+          "source": "[Zacks] AMP or PS: Which Is the Better Value Stock Right Now?"
+        },
+        {
+          "text": "Experienced a 14.6% gain year-to-date",
+          "source": "[Zacks] Ameriprise Gains 14.6% YTD"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Weak momentum (12-1) (p35)",
+          "source": "p35"
+        },
+        {
+          "text": "Flat analyst dispersion (p74)",
+          "source": "p74"
+        },
+        {
+          "text": "Flat low volatility characteristics (p62)",
+          "source": "p62"
         }
       ],
       "data_gap": false
@@ -245,45 +241,41 @@
     "GL": {
       "in_favor": [
         {
-          "text": "Exceptional value (1/PE) is noted.",
+          "text": "Exceptional value (1/PE) (p95)",
           "source": "p95"
         },
         {
-          "text": "The stock exhibits strong low volatility.",
+          "text": "Strong low volatility characteristics (p83)",
           "source": "p83"
         },
         {
-          "text": "The company is implementing a bigger buyback program.",
-          "source": "[Simply Wall St.] Is Globe Life\u2019s Bigger Buyback Amid Weaker Margins Altering The Investment Case For GL?"
+          "text": "Trades at a discount",
+          "source": "[Zacks] Globe Life Lags Industry, Trades at a Discount"
         },
         {
-          "text": "Globe Life (GL) could be 5% undervalued after mixed Q2 earnings.",
+          "text": "Could be 5% undervalued",
           "source": "[Simply Wall St.] Globe Life (GL) Could Be 5% Undervalued After Mixed Q2 Earnings"
-        },
-        {
-          "text": "The stock trades at a discount.",
-          "source": "[Zacks] Globe Life Lags Industry, Trades at a Discount: Time to Buy or Hold?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p69"
+          "text": "Flat momentum (12-1) (p68)",
+          "source": "p68"
         },
         {
-          "text": "Strong analyst dispersion suggests a wide range of opinions among analysts.",
-          "source": "p76"
-        },
-        {
-          "text": "Quality (ROE/margin) is flat.",
+          "text": "Flat quality (ROE/margin) (p64)",
           "source": "p64"
         },
         {
-          "text": "Globe Life lags its industry.",
-          "source": "[Zacks] Globe Life Lags Industry, Trades at a Discount: Time to Buy or Hold?"
+          "text": "Experienced a 0.3% decline since its last earnings report",
+          "source": "[Zacks] Globe Life (GL) Down 0.3% Since Last Earnings Report"
         },
         {
-          "text": "The company has weaker margins, potentially altering the investment case.",
+          "text": "Lags its industry",
+          "source": "[Zacks] Globe Life Lags Industry, Trades at a Discount"
+        },
+        {
+          "text": "Noted for weaker margins amidst a larger buyback, which may alter its investment considerations",
           "source": "[Simply Wall St.] Is Globe Life\u2019s Bigger Buyback Amid Weaker Margins Altering The Investment Case For GL?"
         }
       ],
@@ -292,34 +284,34 @@
     "GOOG": {
       "in_favor": [
         {
-          "text": "The company shows strong momentum (12-1).",
+          "text": "Strong momentum (12-1) (p90)",
           "source": "p90"
         },
         {
-          "text": "Strong quality (ROE/margin) is observed.",
+          "text": "Strong quality (ROE/margin) (p88)",
           "source": "p88"
         },
         {
-          "text": "The stock provides strong value (1/PE).",
+          "text": "Strong value (1/PE) (p79)",
           "source": "p79"
         },
         {
-          "text": "Recent buzz shows mildly positive sentiment (0.18) with 163 mentions in the last 30 days.",
-          "source": "Market sentiment"
-        },
-        {
-          "text": "Waymo is making its own AI chip for its robotaxi service, a move that reduces its dependence on Nvidia.",
-          "source": "[Yahoo Finance Video] Waymo is making its own AI chip for its robotaxi service, [GuruFocus.com] Waymo Builds Its Own Chip and Reduces Its Nvidia Dependence"
+          "text": "Recent market sentiment is mildly positive (0.19), with 165 mentions in the last 30 days",
+          "source": "p. market sentiment"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is flat.",
+          "text": "Flat analyst dispersion (p53)",
           "source": "p53"
         },
         {
-          "text": "Low volatility is flat.",
+          "text": "Flat low volatility characteristics (p48)",
           "source": "p48"
+        },
+        {
+          "text": "Faces competition in the AI sector with Anthropic advancing, hiring an ex-Google chip chief and pushing into hardware",
+          "source": "[Investing.com] Anthropic hires ex-Google chip chief as AI lab pushes into hardware - Bloomberg"
         }
       ],
       "data_gap": false
@@ -327,41 +319,41 @@
     "SYY": {
       "in_favor": [
         {
-          "text": "Exceptional quality (ROE/margin) is noted.",
+          "text": "Exceptional quality (ROE/margin) (p93)",
           "source": "p93"
         },
         {
-          "text": "The stock exhibits strong low volatility.",
+          "text": "Strong low volatility characteristics (p81)",
           "source": "p81"
         },
         {
-          "text": "Sysco has added two board members to advance its AI transformation.",
+          "text": "Adding two board members to advance AI transformation",
           "source": "[Reuters] Food distributor Sysco adds two board members to advance AI transformation"
         },
         {
-          "text": "Sysco's stock looks below fair value based on cash flow and earnings.",
+          "text": "Stock appears to be below fair value, based on cash flow and earnings",
           "source": "[Simply Wall St.] Sysco (SYY) Stock Looks Below Fair Value On Cash Flow And Earnings"
-        },
-        {
-          "text": "The stock may still be below fair value, considering its plans for a Jetro deal.",
-          "source": "[Simply Wall St.] Sysco (SYY) Plans Jetro Deal, Is The Stock Still Below Fair Value?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p35"
+          "text": "Weak momentum (12-1) (p34)",
+          "source": "p34"
         },
         {
-          "text": "Strong analyst dispersion suggests a wide range of opinions among analysts.",
+          "text": "Strong analyst dispersion (p79)",
           "source": "p79"
         },
         {
-          "text": "Value (1/PE) is flat.",
+          "text": "Flat value (1/PE) (p63)",
           "source": "p63"
         },
         {
-          "text": "The case for the company could change following weaker returns on earlier investments.",
+          "text": "Planning a Jetro deal",
+          "source": "[Simply Wall St.] Sysco (SYY) Plans Jetro Deal, Is The Stock Still Below Fair Value?"
+        },
+        {
+          "text": "Outlook may be impacted by weaker returns on earlier investments",
           "source": "[Simply Wall St.] The Bull Case For Sysco (SYY) Could Change Following Weaker Returns On Earlier Investments"
         }
       ],
