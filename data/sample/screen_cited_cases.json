@@ -1,40 +1,40 @@
 {
-  "as_of": "2026-08-21",
+  "as_of": "2026-08-24",
   "cases": {
     "SPG": {
       "in_favor": [
         {
-          "text": "Exceptional quality (ROE/margin) (p95)",
+          "text": "Quality (ROE/margin) is exceptional (p95).",
           "source": "p95"
         },
         {
-          "text": "Strong value (1/PE) (p85)",
+          "text": "Value (1/PE) is strong (p85).",
           "source": "p85"
         },
         {
-          "text": "Strong low volatility characteristics (p89)",
-          "source": "p89"
+          "text": "Low volatility is exceptional (p90).",
+          "source": "p90"
         },
         {
-          "text": "Achieved record revenue growth and an upgraded outlook in Q2 2026",
-          "source": "[GuruFocus.com] SP Group AS (OCSE:SPG) (Q2 2026) Earnings Call Highlights"
+          "text": "The Q2 2026 earnings call for SP Group AS highlighted record revenue growth and an upgraded outlook.",
+          "source": "[GuruFocus.com] SP Group AS (OCSE:SPG) (Q2 2026) Earnings Call Highlights: Record Revenue Growth and Upgraded ..."
         },
         {
-          "text": "Expected to more than double $18M in lost Saks rents",
+          "text": "Simon Property is positioned to more than double $18M in lost Saks rents.",
           "source": "[CRE Daily] Simon Property to More Than Double $18M in Lost Saks Rents"
         }
       ],
       "to_watch": [
         {
-          "text": "Flat momentum (12-1) (p64)",
+          "text": "Momentum (12-1) is flat (p64).",
           "source": "p64"
         },
         {
-          "text": "Strong analyst dispersion (p86)",
-          "source": "p86"
+          "text": "Analyst dispersion is strong (p85), suggesting varied views among analysts.",
+          "source": "p85"
         },
         {
-          "text": "Analyst sentiment regarding the stock is a topic of discussion",
+          "text": "An article questions whether Wall Street analysts are bullish on Simon Property stock, indicating a need for further assessment of analyst sentiment.",
           "source": "[Barchart] Are Wall Street Analysts Bullish on Simon Property Stock?"
         }
       ],
@@ -43,30 +43,30 @@
     "DVA": {
       "in_favor": [
         {
-          "text": "Exceptional momentum (12-1) (p92)",
+          "text": "Momentum (12-1) is exceptional (p92).",
           "source": "p92"
         },
         {
-          "text": "Weak analyst dispersion, suggesting consensus (p37)",
-          "source": "p37"
-        },
-        {
-          "text": "Exceptional quality (ROE/margin) (p94)",
+          "text": "Quality (ROE/margin) is exceptional (p94).",
           "source": "p94"
         },
         {
-          "text": "Strong value (1/PE) (p87)",
+          "text": "Value (1/PE) is strong (p87).",
           "source": "p87"
+        },
+        {
+          "text": "Analyst dispersion is weak (p37), potentially indicating general agreement or less varied views among analysts.",
+          "source": "p37"
+        },
+        {
+          "text": "DaVita's Q2 earnings call generated top analyst questions, indicating market interest in the company's performance and outlook.",
+          "source": "[StockStory] The Top 5 Analyst Questions From DaVita\u2019s Q2 Earnings Call"
         }
       ],
       "to_watch": [
         {
-          "text": "Weak low volatility characteristics (p24)",
+          "text": "Low volatility is weak (p24), suggesting higher price fluctuations.",
           "source": "p24"
-        },
-        {
-          "text": "Analyst questions from the Q2 earnings call are a focus",
-          "source": "[StockStory] The Top 5 Analyst Questions From DaVita\u2019s Q2 Earnings Call"
         }
       ],
       "data_gap": false
@@ -74,34 +74,30 @@
     "CL": {
       "in_favor": [
         {
-          "text": "Exceptional quality (ROE/margin) (p95)",
+          "text": "Quality (ROE/margin) is exceptional (p95).",
           "source": "p95"
         },
         {
-          "text": "Exceptional low volatility characteristics (p94)",
-          "source": "p94"
+          "text": "Low volatility is exceptional (p95).",
+          "source": "p95"
         },
         {
-          "text": "Raised 2026 profit outlook following Q2 earnings beat and margin gains",
-          "source": "[Zacks] Colgate Raises 2026 Profit Outlook After Q2 Earnings Beat and Margin Gains"
+          "text": "Colgate-Palmolive (CL) is featured in a Q2 teardown of household products stocks, allowing for comparative assessment.",
+          "source": "[StockStory] Household Products Stocks Q2 Teardown: Colgate-Palmolive (NYSE:CL) Vs The Rest"
         }
       ],
       "to_watch": [
         {
-          "text": "Weak momentum (12-1) (p38)",
-          "source": "p38"
+          "text": "Momentum (12-1) is weak (p39).",
+          "source": "p39"
         },
         {
-          "text": "Strong analyst dispersion (p86)",
-          "source": "p86"
+          "text": "Analyst dispersion is strong (p85), indicating varied views among analysts.",
+          "source": "p85"
         },
         {
-          "text": "Weak value (1/PE) (p33)",
-          "source": "p33"
-        },
-        {
-          "text": "Valuation remains high despite growth improvements",
-          "source": "[Zacks] Is Colgate Stock a Buy as Growth Improves but Valuation Stays Rich?"
+          "text": "Value (1/PE) is weak (p34).",
+          "source": "p34"
         }
       ],
       "data_gap": false
@@ -109,30 +105,38 @@
     "LMT": {
       "in_favor": [
         {
-          "text": "Exceptional quality (ROE/margin) (p94)",
+          "text": "Quality (ROE/margin) is exceptional (p94).",
           "source": "p94"
+        },
+        {
+          "text": "Lockheed Martin (LMT) is a subject of comparison with NOC regarding growth prospects in the defense sector.",
+          "source": "[Zacks] LMT vs. NOC: Which Defense Stock Offers Better Growth Prospects?"
+        },
+        {
+          "text": "Analysts are evaluating target prices for Lockheed Martin stock.",
+          "source": "[Barchart] What Are Wall Street Analysts' Target Price for Lockheed Martin Stock?"
         }
       ],
       "to_watch": [
         {
-          "text": "Flat momentum (12-1) (p65)",
+          "text": "Momentum (12-1) is flat (p65).",
           "source": "p65"
         },
         {
-          "text": "Flat analyst dispersion (p49)",
-          "source": "p49"
+          "text": "Analyst dispersion is flat (p48).",
+          "source": "p48"
         },
         {
-          "text": "Flat value (1/PE) (p68)",
-          "source": "p68"
+          "text": "Value (1/PE) is flat (p70).",
+          "source": "p70"
         },
         {
-          "text": "Recent market sentiment is strongly negative (-1.00), with 1 mention in the last 30 days",
-          "source": "p. market sentiment"
+          "text": "Low volatility is flat (p64).",
+          "source": "p64"
         },
         {
-          "text": "The stock experienced a decline",
-          "source": "[Motley Fool] Why Did Lockheed Martin Stock Drop Today?"
+          "text": "Recent market buzz shows strongly negative sentiment (-1.00) with 1 mention in the last 30 days.",
+          "source": "Recent buzz: strongly negative sentiment (-1.00), 1 mentions in the last 30d"
         }
       ],
       "data_gap": false
@@ -140,30 +144,38 @@
     "ITW": {
       "in_favor": [
         {
-          "text": "Exceptional quality (ROE/margin) (p95)",
+          "text": "Quality (ROE/margin) is exceptional (p95).",
           "source": "p95"
         },
         {
-          "text": "Exceptional low volatility characteristics (p94)",
-          "source": "p94"
+          "text": "Low volatility is exceptional (p95).",
+          "source": "p95"
+        },
+        {
+          "text": "Analyst estimates and ratings are available for Illinois Tool Works stock.",
+          "source": "[Barchart] Illinois Tool Works Stock: Analyst Estimates & Ratings"
+        },
+        {
+          "text": "An article mentions industrial dividend growers, which may indicate a favorable sector trend.",
+          "source": "[24/7 Wall St.] 4 Industrial Dividend Growers That Fly Under the Radar and Look Like Buys in August"
         }
       ],
       "to_watch": [
         {
-          "text": "Weak momentum (12-1) (p38)",
-          "source": "p38"
+          "text": "Momentum (12-1) is weak (p39).",
+          "source": "p39"
         },
         {
-          "text": "Flat analyst dispersion (p61)",
-          "source": "p61"
+          "text": "Analyst dispersion is flat (p59).",
+          "source": "p59"
         },
         {
-          "text": "Flat value (1/PE) (p56)",
-          "source": "p56"
+          "text": "Value (1/PE) is flat (p57).",
+          "source": "p57"
         },
         {
-          "text": "Analyst estimates and ratings are a subject of discussion",
-          "source": "[Barchart] Illinois Tool Works Stock: Analyst Estimates & Ratings"
+          "text": "An article indicates that some stocks are facing headwinds, suggesting the potential for challenges in the broader market.",
+          "source": "[StockStory] 1 Surging Stock with Competitive Advantages and 2 Facing Headwinds"
         }
       ],
       "data_gap": false
@@ -171,69 +183,81 @@
     "CINF": {
       "in_favor": [
         {
-          "text": "Exceptional value (1/PE) (p95)",
+          "text": "Analyst dispersion is exceptional (p95), potentially indicating strong consensus or limited variability in analyst opinions.",
           "source": "p95"
         },
         {
-          "text": "Strong low volatility characteristics (p87)",
-          "source": "p87"
+          "text": "Value (1/PE) is exceptional (p95).",
+          "source": "p95"
         },
         {
-          "text": "Considered as a value option in comparisons",
+          "text": "Low volatility is strong (p88).",
+          "source": "p88"
+        },
+        {
+          "text": "CINF is a subject of comparison for value against ESNT.",
           "source": "[Zacks] ESNT vs. CINF: Which Stock Is the Better Value Option?"
+        },
+        {
+          "text": "CINF is identified as an insurance stock worth attention and as one of two S&P 500 stocks to research further.",
+          "source": "[StockStory] 1 Insurance Stock Worth Your Attention and 2 That Underwhelm"
         }
       ],
       "to_watch": [
         {
-          "text": "Flat momentum (12-1) (p49)",
-          "source": "p49"
+          "text": "Momentum (12-1) is flat (p48).",
+          "source": "p48"
         },
         {
-          "text": "Exceptional analyst dispersion (p95)",
-          "source": "p95"
+          "text": "Quality (ROE/margin) is flat (p64).",
+          "source": "p64"
         },
         {
-          "text": "Flat quality (ROE/margin) (p65)",
-          "source": "p65"
+          "text": "An article indicates that two insurance stocks underwhelm, implying a selective approach is needed in the sector.",
+          "source": "[StockStory] 1 Insurance Stock Worth Your Attention and 2 That Underwhelm"
         }
       ],
       "data_gap": false
     },
-    "AMP": {
+    "HAS": {
       "in_favor": [
         {
-          "text": "Exceptional quality (ROE/margin) (p91)",
-          "source": "p91"
+          "text": "Quality (ROE/margin) is exceptional (p95).",
+          "source": "p95"
         },
         {
-          "text": "Strong value (1/PE) (p90)",
-          "source": "p90"
+          "text": "Value (1/PE) is strong (p81).",
+          "source": "p81"
         },
         {
-          "text": "Recognized among the 15 largest independent brokerages in wealth management in 2026",
-          "source": "[Financial Planning] IBD Elite 2026: The 15 largest independent brokerages in wealth management"
+          "text": "Hasbro (HAS) was up 4.8% since its last earnings report.",
+          "source": "[Zacks] Why Is Hasbro (HAS) Up 4.8% Since Last Earnings Report?"
         },
         {
-          "text": "Considered as a value stock option in comparisons",
-          "source": "[Zacks] AMP or PS: Which Is the Better Value Stock Right Now?"
+          "text": "Hasbro's MAGIC business is booming, with potential for Marvel and Hobbit to extend growth.",
+          "source": "[Zacks] Hasbro MAGIC Business Is Booming: Can Marvel and Hobbit Extend Growth?"
         },
         {
-          "text": "Experienced a 14.6% gain year-to-date",
-          "source": "[Zacks] Ameriprise Gains 14.6% YTD"
+          "text": "Hasbro (HAS) received an upgrade.",
+          "source": "[Zacks] Hasbro (HAS) Upgraded to Buy: Here's What You Should Know"
         }
       ],
       "to_watch": [
         {
-          "text": "Weak momentum (12-1) (p35)",
-          "source": "p35"
+          "text": "Momentum (12-1) is flat (p49).",
+          "source": "p49"
         },
         {
-          "text": "Flat analyst dispersion (p74)",
-          "source": "p74"
+          "text": "Analyst dispersion is flat (p58).",
+          "source": "p58"
         },
         {
-          "text": "Flat low volatility characteristics (p62)",
-          "source": "p62"
+          "text": "Low volatility is flat (p41).",
+          "source": "p41"
+        },
+        {
+          "text": "An article questions if Wall Street analysts think Hasbro is a good investment, indicating ongoing evaluation.",
+          "source": "[Zacks] Wall Street Analysts Think Hasbro (HAS) Is a Good Investment: Is It?"
         }
       ],
       "data_gap": false
@@ -241,77 +265,85 @@
     "GL": {
       "in_favor": [
         {
-          "text": "Exceptional value (1/PE) (p95)",
+          "text": "Value (1/PE) is exceptional (p95).",
           "source": "p95"
         },
         {
-          "text": "Strong low volatility characteristics (p83)",
-          "source": "p83"
+          "text": "Low volatility is strong (p85).",
+          "source": "p85"
         },
         {
-          "text": "Trades at a discount",
-          "source": "[Zacks] Globe Life Lags Industry, Trades at a Discount"
+          "text": "Globe Life's health insurance growth contributes to earnings momentum.",
+          "source": "[Zacks] Globe Life's Health Insurance Growth Powers Earnings Momentum"
         },
         {
-          "text": "Could be 5% undervalued",
-          "source": "[Simply Wall St.] Globe Life (GL) Could Be 5% Undervalued After Mixed Q2 Earnings"
+          "text": "Globe Life trades at a discount.",
+          "source": "[Zacks] Globe Life Lags Industry, Trades at a Discount: Time to Buy or Hold?"
         }
       ],
       "to_watch": [
         {
-          "text": "Flat momentum (12-1) (p68)",
+          "text": "Momentum (12-1) is flat (p68).",
           "source": "p68"
         },
         {
-          "text": "Flat quality (ROE/margin) (p64)",
-          "source": "p64"
+          "text": "Analyst dispersion is strong (p75), indicating varied analyst views.",
+          "source": "p75"
         },
         {
-          "text": "Experienced a 0.3% decline since its last earnings report",
-          "source": "[Zacks] Globe Life (GL) Down 0.3% Since Last Earnings Report"
+          "text": "Quality (ROE/margin) is flat (p63).",
+          "source": "p63"
         },
         {
-          "text": "Lags its industry",
-          "source": "[Zacks] Globe Life Lags Industry, Trades at a Discount"
+          "text": "An article presents '3 Reasons to Avoid GL'.",
+          "source": "[StockStory] 3 Reasons to Avoid GL and 1 Stock to Buy Instead"
         },
         {
-          "text": "Noted for weaker margins amidst a larger buyback, which may alter its investment considerations",
-          "source": "[Simply Wall St.] Is Globe Life\u2019s Bigger Buyback Amid Weaker Margins Altering The Investment Case For GL?"
+          "text": "Globe Life (GL) was down 0.3% since its last earnings report, raising questions about a potential rebound.",
+          "source": "[Zacks] Globe Life (GL) Down 0.3% Since Last Earnings Report: Can It Rebound?"
         }
       ],
       "data_gap": false
     },
-    "GOOG": {
+    "AMP": {
       "in_favor": [
         {
-          "text": "Strong momentum (12-1) (p90)",
+          "text": "Quality (ROE/margin) is exceptional (p91).",
+          "source": "p91"
+        },
+        {
+          "text": "Value (1/PE) is strong (p90).",
           "source": "p90"
         },
         {
-          "text": "Strong quality (ROE/margin) (p88)",
-          "source": "p88"
+          "text": "Ameriprise (AMP) gained 14.6% year-to-date.",
+          "source": "[Zacks] Ameriprise Gains 14.6% YTD: Should You Buy the Stock Now?"
         },
         {
-          "text": "Strong value (1/PE) (p79)",
-          "source": "p79"
+          "text": "AMP is listed as a potential value stock when compared to PS.",
+          "source": "[Zacks] AMP or PS: Which Is the Better Value Stock Right Now?"
         },
         {
-          "text": "Recent market sentiment is mildly positive (0.19), with 165 mentions in the last 30 days",
-          "source": "p. market sentiment"
+          "text": "Ameriprise is included among the 15 largest independent brokerages in wealth management for IBD Elite 2026.",
+          "source": "[Financial Planning] IBD Elite 2026: The 15 largest independent brokerages in wealth management"
         }
       ],
       "to_watch": [
         {
-          "text": "Flat analyst dispersion (p53)",
-          "source": "p53"
+          "text": "Momentum (12-1) is weak (p35).",
+          "source": "p35"
         },
         {
-          "text": "Flat low volatility characteristics (p48)",
-          "source": "p48"
+          "text": "Analyst dispersion is flat (p69).",
+          "source": "p69"
         },
         {
-          "text": "Faces competition in the AI sector with Anthropic advancing, hiring an ex-Google chip chief and pushing into hardware",
-          "source": "[Investing.com] Anthropic hires ex-Google chip chief as AI lab pushes into hardware - Bloomberg"
+          "text": "Low volatility is flat (p63).",
+          "source": "p63"
+        },
+        {
+          "text": "An article questions whether to acquire Ameriprise stock now, suggesting a need for current evaluation.",
+          "source": "[Zacks] Ameriprise Gains 14.6% YTD: Should You Buy the Stock Now?"
         }
       ],
       "data_gap": false
@@ -319,41 +351,45 @@
     "SYY": {
       "in_favor": [
         {
-          "text": "Exceptional quality (ROE/margin) (p93)",
+          "text": "Quality (ROE/margin) is exceptional (p93).",
           "source": "p93"
         },
         {
-          "text": "Strong low volatility characteristics (p81)",
-          "source": "p81"
+          "text": "Low volatility is strong (p82).",
+          "source": "p82"
         },
         {
-          "text": "Adding two board members to advance AI transformation",
+          "text": "Sysco adds two board members to advance AI transformation.",
           "source": "[Reuters] Food distributor Sysco adds two board members to advance AI transformation"
         },
         {
-          "text": "Stock appears to be below fair value, based on cash flow and earnings",
+          "text": "Sysco stock appears below fair value based on cash flow and earnings.",
           "source": "[Simply Wall St.] Sysco (SYY) Stock Looks Below Fair Value On Cash Flow And Earnings"
+        },
+        {
+          "text": "Record revenue and U.S. direct-sales expansion are noted, fueling a scaling phase.",
+          "source": "[Exec Edge] Beyond Oil: Record Revenue & U.S. Direct-Sales Expansion Fuel Scaling Phase \u2013 Quarterly Update Report"
         }
       ],
       "to_watch": [
         {
-          "text": "Weak momentum (12-1) (p34)",
-          "source": "p34"
+          "text": "Momentum (12-1) is weak (p35).",
+          "source": "p35"
         },
         {
-          "text": "Strong analyst dispersion (p79)",
+          "text": "Analyst dispersion is strong (p79), indicating varied analyst views.",
           "source": "p79"
         },
         {
-          "text": "Flat value (1/PE) (p63)",
-          "source": "p63"
+          "text": "Value (1/PE) is flat (p65).",
+          "source": "p65"
         },
         {
-          "text": "Planning a Jetro deal",
+          "text": "Sysco's plans for a Jetro deal raise questions about the stock's valuation relative to fair value.",
           "source": "[Simply Wall St.] Sysco (SYY) Plans Jetro Deal, Is The Stock Still Below Fair Value?"
         },
         {
-          "text": "Outlook may be impacted by weaker returns on earlier investments",
+          "text": "The positive case for Sysco could change following weaker returns on earlier investments.",
           "source": "[Simply Wall St.] The Bull Case For Sysco (SYY) Could Change Following Weaker Returns On Earlier Investments"
         }
       ],
