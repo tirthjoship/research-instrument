@@ -1,41 +1,45 @@
 {
-  "as_of": "2026-08-24",
+  "as_of": "2026-08-25",
   "cases": {
     "SBIN.NS": {
       "in_favor": [
         {
           "text": "Value (1/PE) is exceptional.",
-          "source": "Fact"
+          "source": "p91"
         },
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "Fact"
-        },
-        {
-          "text": "The entity is returning to the dollar debt market, with bankers noting strong demand.",
+          "text": "The company returned to the dollar debt market, with bankers noting strong demand.",
           "source": "[Reuters] State Bank of India returns to dollar debt market, bankers see strong demand"
         },
         {
-          "text": "Quarterly profit surpassed views due to healthy loan growth.",
+          "text": "India's largest lender surpassed quarterly profit views due to healthy loan growth.",
           "source": "[Reuters] India's largest lender SBI beats quarterly profit view on healthy loan growth"
         },
         {
-          "text": "The entity is leading India's overseas deposit drive alongside other major financial institutions.",
+          "text": "State Bank of India, along with HSBC and ICICI, is a leader in India's overseas deposit drive.",
           "source": "[Reuters] State Bank of India, HSBC and ICICI lead India's overseas deposit drive, data shows"
+        },
+        {
+          "text": "Demand for State Bank of India's perpetual bonds is observed to encourage more issuances.",
+          "source": "[Reuters] State Bank of India's perpetual bond demand seen spurring more issuances, bankers say"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "Fact"
+          "source": "p61"
+        },
+        {
+          "text": "Analyst dispersion is strong, indicating varied analyst perspectives.",
+          "source": "p78"
         },
         {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "Fact"
+          "source": "p61"
         },
         {
           "text": "Lowvol is flat.",
-          "source": "Fact"
+          "source": "p74"
         }
       ],
       "data_gap": false
@@ -43,34 +47,34 @@
     "ICICIBANK.NS": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is exceptional.",
-          "source": "Fact"
-        },
-        {
           "text": "Value (1/PE) is strong.",
-          "source": "Fact"
+          "source": "p87"
         },
         {
           "text": "Lowvol is exceptional.",
-          "source": "Fact"
+          "source": "p91"
         },
         {
-          "text": "The entity, among other private lenders, is considering dollar debt ahead of a regulatory deadline.",
-          "source": "[Reuters] Four Indian private lenders eye dollar debt before RBI swap window deadline, bankers say"
-        },
-        {
-          "text": "The entity has accessed dollar debt markets again within a short period.",
+          "text": "ICICI Bank, along with Axis Bank, tapped dollar debt again in less than two months.",
           "source": "[Reuters] India's ICICI Bank, Axis Bank tap dollar debt again in less than two months, bankers say"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is weak.",
-          "source": "Fact"
+          "source": "p17"
+        },
+        {
+          "text": "Analyst dispersion is exceptional, indicating highly varied analyst perspectives.",
+          "source": "p91"
         },
         {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "Fact"
+          "source": "p70"
+        },
+        {
+          "text": "Four Indian private lenders, including ICICI Bank, are considering dollar debt before an RBI swap window deadline.",
+          "source": "[Reuters] Four Indian private lenders eye dollar debt before RBI swap window deadline, bankers say"
         }
       ],
       "data_gap": false
@@ -78,41 +82,41 @@
     "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "Fact"
-        },
-        {
           "text": "Quality (ROE/margin) is exceptional.",
-          "source": "Fact"
+          "source": "p91"
         },
         {
-          "text": "The entity reported higher profit, driven by domestic demand.",
+          "text": "Adani Ports reported higher profit driven by domestic demand.",
           "source": "[Reuters] India's Adani Ports posts higher profit on domestic demand"
         },
         {
-          "text": "A stake in an Indian port is being sold to Swiss Shipping Group MSC for $1.4 billion.",
+          "text": "Adani Ports plans to divest an India port stake to Swiss Shipping Group MSC for $1.40 billion.",
           "source": "[The Wall Street Journal] Adani Ports to Sell India Port Stake to Swiss Shipping Group MSC for $1.40B"
         },
         {
-          "text": "This transaction involves selling a 49% stake in an Indian port for $1.4 billion.",
+          "text": "Adani Ports is set to sell a 49% stake in an Indian port to MSC for $1.4 billion.",
           "source": "[Reuters] Adani Ports to sell 49% stake in Indian port to MSC for $1.4 billion"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "Fact"
+          "source": "p70"
+        },
+        {
+          "text": "Analyst dispersion is strong, indicating varied analyst perspectives.",
+          "source": "p83"
         },
         {
           "text": "Value (1/PE) is flat.",
-          "source": "Fact"
+          "source": "p61"
         },
         {
           "text": "Lowvol is weak.",
-          "source": "Fact"
+          "source": "p17"
         },
         {
-          "text": "Kerala state reported not being consulted on the $1.4 billion port investment involving MSC.",
+          "text": "Kerala state was reportedly not consulted on MSC's $1.4 billion port investment, according to the chief minister.",
           "source": "[Reuters] India's Kerala state not consulted on MSC's $1.4 billion port investment, chief minister says"
         }
       ],
@@ -122,37 +126,37 @@
       "in_favor": [
         {
           "text": "Quality (ROE/margin) is strong.",
-          "source": "Fact"
+          "source": "p83"
         },
         {
           "text": "Lowvol is exceptional.",
-          "source": "Fact"
+          "source": "p91"
         },
         {
-          "text": "Quarterly profit significantly increased due to the strength of specialty medicines.",
+          "text": "Quarterly profit for Sun Pharma increased due to strength in specialty medicines.",
           "source": "[Reuters] Sun Pharma's quarterly profit jumps on strength in specialty medicines"
         },
         {
-          "text": "The entity secured South Africa's approval to introduce a generic version of Ozempic.",
-          "source": "[Reuters] India's Sun Pharma wins South Africa approval to launch generic Ozempic"
+          "text": "Organon & Co. shareholders approved a merger deal involving Sun Pharma.",
+          "source": "[MarketBeat] Organon & Co. Shareholders Clear Sun Pharma Merger Deal"
         },
         {
-          "text": "The entity is set to acquire Innovcare Lifesciences for $28.7 million.",
-          "source": "[Pharmaceutical Technology] Sun Pharma to acquire Innovcare Lifesciences for $28.7m"
+          "text": "Sun Pharma secured South Africa's approval to introduce a generic Ozempic.",
+          "source": "[Reuters] India's Sun Pharma wins South Africa approval to launch generic Ozempic"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "Fact"
+          "source": "p57"
         },
         {
           "text": "Analyst dispersion is flat.",
-          "source": "Fact"
+          "source": "p70"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "Fact"
+          "text": "Value (1/PE) is weak.",
+          "source": "p39"
         }
       ],
       "data_gap": false
@@ -161,41 +165,41 @@
       "in_favor": [
         {
           "text": "Value (1/PE) is exceptional.",
-          "source": "Fact"
+          "source": "p91"
         },
         {
           "text": "Q1 2027 earnings call highlighted record sales.",
           "source": "[GuruFocus.com] JSW Steel Ltd (BOM:500228) Q1 2027 Earnings Call Highlights: Record Sales and Strategic ..."
         },
         {
-          "text": "Quarterly profit surpassed views, supported by higher prices.",
+          "text": "The company surpassed profit views due to higher prices.",
           "source": "[Reuters] India's JSW Steel beats profit view on higher prices"
         },
         {
-          "text": "The entity recorded a two-fold quarterly profit rise due to price recovery.",
-          "source": "[Reuters] India's JSW Steel posts two-fold quarterly profit rise on price recovery"
+          "text": "Q4 2026 earnings call highlighted strong financial performance.",
+          "source": "[GuruFocus.com] JSW Steel Ltd (BOM:500228) Q4 2026 Earnings Call Highlights: Strong Financial Performance Amid ..."
         },
         {
-          "text": "POSCO is enhancing its India strategy through a landmark steel plant agreement with JSW.",
-          "source": "[Zacks] POSCO Deepens India Push With JSW in Landmark Steel Plant Deal"
+          "text": "The company reported a two-fold quarterly profit increase driven by price recovery.",
+          "source": "[Reuters] India's JSW Steel posts two-fold quarterly profit rise on price recovery"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "Fact"
+          "source": "p52"
         },
         {
           "text": "Analyst dispersion is flat.",
-          "source": "Fact"
+          "source": "p48"
         },
         {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "Fact"
+          "source": "p57"
         },
         {
           "text": "Lowvol is flat.",
-          "source": "Fact"
+          "source": "p57"
         }
       ],
       "data_gap": false
@@ -204,19 +208,19 @@
       "in_favor": [
         {
           "text": "Quality (ROE/margin) is exceptional.",
-          "source": "Fact"
+          "source": "p91"
         },
         {
           "text": "Value (1/PE) is strong.",
-          "source": "Fact"
+          "source": "p83"
         },
         {
           "text": "Lowvol is strong.",
-          "source": "Fact"
+          "source": "p78"
         },
         {
-          "text": "The entity, among other private lenders, is considering dollar debt ahead of a regulatory deadline.",
-          "source": "[Reuters] Four Indian private lenders eye dollar debt before RBI swap window deadline, bankers say"
+          "text": "Kotak Investment Banking appointed co-CEOs.",
+          "source": "[Reuters] India's Kotak Investment Banking appoints co-CEOs"
         },
         {
           "text": "Q1 2027 earnings call highlighted strong profit growth.",
@@ -226,11 +230,15 @@
       "to_watch": [
         {
           "text": "Momentum (12-1) is weak.",
-          "source": "Fact"
+          "source": "p13"
         },
         {
           "text": "Analyst dispersion is flat.",
-          "source": "Fact"
+          "source": "p57"
+        },
+        {
+          "text": "Four Indian private lenders are considering dollar debt before an RBI swap window deadline.",
+          "source": "[Reuters] Four Indian private lenders eye dollar debt before RBI swap window deadline, bankers say"
         }
       ],
       "data_gap": false
@@ -239,41 +247,41 @@
       "in_favor": [
         {
           "text": "Quality (ROE/margin) is strong.",
-          "source": "Fact"
+          "source": "p87"
         },
         {
-          "text": "Q1 2027 earnings call highlighted record revenue and strategic initiatives.",
+          "text": "Q1 2027 earnings call highlighted record revenue.",
           "source": "[GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q1 2027 Earnings Call Highlights: Record Revenue and Strategic ..."
         },
         {
-          "text": "First-quarter profit surpassed forecasts, with steady demand observed.",
+          "text": "Eicher Motors surpassed first-quarter profit forecasts and observes steady demand.",
           "source": "[Reuters] India's Eicher Motors beats first-quarter profit forecast, sees steady demand"
         },
         {
-          "text": "Q4 2026 earnings call highlighted record sales and strategic initiatives.",
+          "text": "Q4 2026 earnings call highlighted record sales.",
           "source": "[GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q4 2026 Earnings Call Highlights: Record Sales and Strategic ..."
         },
         {
-          "text": "Quarterly profit estimates were surpassed on strong sales.",
+          "text": "The company surpassed quarterly profit estimates due to strong sales.",
           "source": "[Reuters] India's Eicher Motors beats quarterly profit estimates on strong sales"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "Fact"
+          "source": "p65"
         },
         {
           "text": "Analyst dispersion is flat.",
-          "source": "Fact"
+          "source": "p61"
         },
         {
           "text": "Value (1/PE) is weak.",
-          "source": "Fact"
+          "source": "p35"
         },
         {
           "text": "Lowvol is flat.",
-          "source": "Fact"
+          "source": "p43"
         }
       ],
       "data_gap": false
@@ -282,36 +290,36 @@
       "in_favor": [
         {
           "text": "Momentum (12-1) is strong.",
-          "source": "Fact"
-        },
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "Fact"
+          "source": "p78"
         },
         {
           "text": "Lowvol is exceptional.",
-          "source": "Fact"
+          "source": "p91"
         },
         {
-          "text": "The entity's first-quarter profit rose due to strong demand.",
+          "text": "Nestle India's stock experienced an increase after strong demand elevated first-quarter profit.",
           "source": "[Reuters] Nestle India jumps after strong demand lifts first-quarter profit"
         },
         {
-          "text": "Profit increased by 26% on strong demand.",
+          "text": "Nestle India's profit surged 26% on strong demand, leading to a rise in shares.",
           "source": "[Reuters] Nestle India profit jumps 26% on strong demand, shares rise"
         }
       ],
       "to_watch": [
         {
+          "text": "Analyst dispersion is flat.",
+          "source": "p74"
+        },
+        {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "Fact"
+          "source": "p65"
         },
         {
           "text": "Value (1/PE) is weak.",
-          "source": "Fact"
+          "source": "p13"
         },
         {
-          "text": "The broader FMCG sector is facing margin pressure from rising costs, despite strong demand and price adjustments.",
+          "text": "The FMCG sector in India faces margin pressure as costs increase amidst strong demand and price adjustments.",
           "source": "[Reuters] India's FMCG sector faces margin squeeze as costs spike amid strong demand, price hikes"
         }
       ],
@@ -321,29 +329,33 @@
       "in_favor": [
         {
           "text": "Momentum (12-1) is exceptional.",
-          "source": "Fact"
-        },
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "Fact"
+          "source": "p91"
         },
         {
           "text": "Quality (ROE/margin) is strong.",
-          "source": "Fact"
+          "source": "p78"
         },
         {
           "text": "Value (1/PE) is strong.",
-          "source": "Fact"
+          "source": "p78"
         },
         {
-          "text": "The entity anticipates reduced borrowing costs following a profit surge.",
+          "text": "Q1 2027 earnings call highlighted robust profit growth.",
+          "source": "[GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q1 2027 Earnings Call Highlights: Robust Profit Growth and ..."
+        },
+        {
+          "text": "Shriram Finance anticipates reduced borrowing costs following a profit surge.",
           "source": "[Reuters] India's Shriram Finance expects lower borrowing costs after profit surge"
         }
       ],
       "to_watch": [
         {
+          "text": "Analyst dispersion is strong, indicating varied analyst perspectives.",
+          "source": "p87"
+        },
+        {
           "text": "Lowvol is weak.",
-          "source": "Fact"
+          "source": "p9"
         }
       ],
       "data_gap": false
@@ -352,37 +364,37 @@
       "in_favor": [
         {
           "text": "Momentum (12-1) is exceptional.",
-          "source": "Fact"
+          "source": "p91"
         },
         {
           "text": "Value (1/PE) is exceptional.",
-          "source": "Fact"
+          "source": "p91"
         },
         {
-          "text": "Hindustan Copper plans to supply Chilean copper to the entity.",
+          "text": "Hindustan Copper is planning to supply Chilean copper to Hindalco.",
           "source": "[Mining Technology] Hindustan Copper plans supply of Chilean copper to Hindalco and Adani"
+        },
+        {
+          "text": "Hindustan Copper intends to sell copper concentrate from Chile to Hindalco.",
+          "source": "[Reuters] India's Hindustan Copper plans to sell copper concentrate sourced from Chile to Hindalco, Adani, sources say"
         },
         {
           "text": "Q1 2027 earnings call highlighted record EBITDA.",
           "source": "[GuruFocus.com] Hindalco Industries Ltd (FRA:HID) (Q1 2027) Earnings Call Highlights: Record EBITDA and ..."
-        },
-        {
-          "text": "The entity reported a profit surge as metal prices gained strength.",
-          "source": "[Reuters] India's Hindalco posts profit surge as metal prices strengthen"
         }
       ],
       "to_watch": [
         {
           "text": "Analyst dispersion is flat.",
-          "source": "Fact"
+          "source": "p43"
         },
         {
           "text": "Quality (ROE/margin) is weak.",
-          "source": "Fact"
+          "source": "p13"
         },
         {
           "text": "Lowvol is weak.",
-          "source": "Fact"
+          "source": "p30"
         }
       ],
       "data_gap": false
