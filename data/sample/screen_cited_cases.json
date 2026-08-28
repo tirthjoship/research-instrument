@@ -1,37 +1,41 @@
 {
-  "as_of": "2026-08-27",
+  "as_of": "2026-08-28",
   "cases": {
     "SPG": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional quality based on ROE/margin metrics.",
+          "text": "Exceptional Quality (ROE/margin).",
           "source": "p95"
         },
         {
-          "text": "It exhibits strong value characteristics as indicated by its 1/PE ratio.",
-          "source": "p84"
+          "text": "Strong Value (1/PE).",
+          "source": "p85"
         },
         {
-          "text": "Strong low volatility characteristics are observed.",
-          "source": "p90"
+          "text": "Exceptional Lowvol.",
+          "source": "p91"
         },
         {
-          "text": "Simon Property Group is mentioned in a discussion about which retail real estate stock showed significant performance in 2026.",
-          "source": "[24/7 Wall St.]"
+          "text": "Q2 2026 earnings call highlights include record revenue growth.",
+          "source": "GuruFocus.com"
         },
         {
-          "text": "Simon Property is positioned to more than double $18M in previously lost Saks rents.",
-          "source": "[CRE Daily]"
+          "text": "Simon Property is exploring ways to more than double $18M in lost Saks rents.",
+          "source": "CRE Daily"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p65"
+          "text": "Flat Momentum (12-1).",
+          "source": "p63"
         },
         {
-          "text": "Strong analyst dispersion suggests a wide range of opinions among Wall Street analysts regarding Simon Property stock.",
-          "source": "p85, [Barchart]"
+          "text": "Strong analyst dispersion is present.",
+          "source": "p86"
+        },
+        {
+          "text": "Analyst sentiment is being questioned regarding a bullish stance on Simon Property stock.",
+          "source": "Barchart"
         }
       ],
       "data_gap": false
@@ -39,61 +43,34 @@
     "DVA": {
       "in_favor": [
         {
-          "text": "The company shows exceptional momentum (12-1).",
+          "text": "Exceptional Momentum (12-1).",
           "source": "p92"
         },
         {
-          "text": "Weak analyst dispersion indicates a relatively narrow range of analyst views.",
-          "source": "p36"
-        },
-        {
-          "text": "Exceptional quality is noted based on ROE/margin metrics.",
+          "text": "Exceptional Quality (ROE/margin).",
           "source": "p94"
         },
         {
-          "text": "Strong value characteristics are present, as indicated by its 1/PE ratio.",
+          "text": "Strong Value (1/PE).",
           "source": "p85"
         },
         {
-          "text": "DaVita and Humana are expanding their value-based care partnership for kidney disease patients to include more than 10,000 patients.",
-          "source": "[Zacks], [InvestorsHub]"
+          "text": "DVA and Humana expanded value-based care initiatives for kidney disease patients.",
+          "source": "Zacks"
+        },
+        {
+          "text": "The kidney care partnership between DaVita and Humana has expanded to more than 10,000 patients.",
+          "source": "InvestorsHub"
         }
       ],
       "to_watch": [
         {
-          "text": "Low volatility characteristics are weak.",
-          "source": "p23"
-        }
-      ],
-      "data_gap": false
-    },
-    "COR": {
-      "in_favor": [
-        {
-          "text": "Exceptional quality is observed based on ROE/margin metrics.",
-          "source": "p95"
+          "text": "Weak Analyst dispersion.",
+          "source": "p39"
         },
         {
-          "text": "Cencora (COR) is recognized for leveraging healthcare growth and AI-driven productivity.",
-          "source": "[Insider Monkey]"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p37"
-        },
-        {
-          "text": "Strong analyst dispersion indicates a wide array of opinions among analysts.",
-          "source": "p90"
-        },
-        {
-          "text": "Value based on 1/PE is flat.",
-          "source": "p58"
-        },
-        {
-          "text": "Low volatility characteristics are flat.",
-          "source": "p68"
+          "text": "Weak Lowvol.",
+          "source": "p25"
         }
       ],
       "data_gap": false
@@ -101,30 +78,34 @@
     "CL": {
       "in_favor": [
         {
-          "text": "Exceptional quality is noted based on ROE/margin metrics.",
+          "text": "Exceptional Quality (ROE/margin).",
           "source": "p95"
         },
         {
-          "text": "The company exhibits exceptional low volatility characteristics.",
-          "source": "p94"
+          "text": "Exceptional Lowvol.",
+          "source": "p95"
         },
         {
-          "text": "Colgate-Palmolive (CL) displayed volume-led Q2 strength, potentially influencing its investment narrative.",
-          "source": "[Simply Wall St.]"
+          "text": "Colgate-Palmolive demonstrated volume-led Q2 strength, potentially shifting its investment narrative.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "Colgate-Palmolive was a subject in a Q2 teardown of household products stocks.",
+          "source": "StockStory"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p39"
+          "text": "Weak Momentum (12-1).",
+          "source": "p38"
         },
         {
-          "text": "Strong analyst dispersion suggests varied analyst perspectives.",
-          "source": "p85"
+          "text": "Strong analyst dispersion is present.",
+          "source": "p87"
         },
         {
-          "text": "Value based on 1/PE is weak.",
-          "source": "p31"
+          "text": "Weak Value (1/PE).",
+          "source": "p34"
         }
       ],
       "data_gap": false
@@ -132,38 +113,38 @@
     "LMT": {
       "in_favor": [
         {
-          "text": "Exceptional quality is observed based on ROE/margin metrics.",
+          "text": "Exceptional Quality (ROE/margin).",
           "source": "p94"
         },
         {
-          "text": "Lockheed Martin (LMT) is expanding into AI airspace monitoring and sea launch technologies.",
-          "source": "[Simply Wall St.]"
+          "text": "Lockheed Martin was noted to rise during a general market dip.",
+          "source": "Zacks"
         },
         {
-          "text": "Lockheed Martin (LMT) was noted for rising even as the broader market experienced a dip.",
-          "source": "[Zacks]"
+          "text": "The Lockheed Martin Europe CEO has discussed Rheinmetall and transatlantic deterrence.",
+          "source": "Bloomberg"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p66"
+          "text": "Flat Momentum (12-1).",
+          "source": "p65"
         },
         {
-          "text": "Analyst dispersion is flat, indicating moderate agreement.",
-          "source": "p48"
+          "text": "Flat Analyst dispersion.",
+          "source": "p50"
         },
         {
-          "text": "Value based on 1/PE is flat.",
-          "source": "p69"
+          "text": "Flat Value (1/PE).",
+          "source": "p68"
         },
         {
-          "text": "Low volatility characteristics are flat.",
-          "source": "p63"
+          "text": "Flat Lowvol.",
+          "source": "p64"
         },
         {
-          "text": "Recent market buzz indicates strongly negative sentiment (-1.00) from one mention in the last 30 days.",
-          "source": "Market sentiment"
+          "text": "Recent market buzz reflects strongly negative sentiment.",
+          "source": "facts"
         }
       ],
       "data_gap": false
@@ -171,30 +152,38 @@
     "ITW": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional quality based on ROE/margin metrics.",
+          "text": "Exceptional Quality (ROE/margin).",
           "source": "p95"
         },
         {
-          "text": "Exceptional low volatility characteristics are observed.",
+          "text": "Exceptional Lowvol.",
           "source": "p95"
+        },
+        {
+          "text": "Illinois Tool Works is a subject of analyst estimates and ratings.",
+          "source": "Barchart"
+        },
+        {
+          "text": "It is mentioned among industrial dividend growers.",
+          "source": "24/7 Wall St."
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p39"
+          "text": "Weak Momentum (12-1).",
+          "source": "p38"
         },
         {
-          "text": "Analyst dispersion is flat, suggesting moderate agreement.",
-          "source": "p59"
+          "text": "Flat Analyst dispersion.",
+          "source": "p61"
         },
         {
-          "text": "Value based on 1/PE is flat.",
-          "source": "p54"
+          "text": "Flat Value (1/PE).",
+          "source": "p56"
         },
         {
-          "text": "Analyst estimates and ratings are available for Illinois Tool Works stock, providing ongoing insights.",
-          "source": "[Barchart]"
+          "text": "Illinois Tool Works was down 2.4% since its last earnings report.",
+          "source": "Zacks"
         }
       ],
       "data_gap": false
@@ -202,34 +191,46 @@
     "CINF": {
       "in_favor": [
         {
-          "text": "Exceptional value characteristics are observed, as indicated by its 1/PE ratio.",
+          "text": "Exceptional Analyst dispersion.",
           "source": "p95"
         },
         {
-          "text": "Strong low volatility characteristics are present.",
-          "source": "p87"
+          "text": "Exceptional Value (1/PE).",
+          "source": "p95"
         },
         {
-          "text": "CINF is considered in discussions comparing value options among stocks.",
-          "source": "[Zacks]"
+          "text": "Strong Lowvol.",
+          "source": "p89"
+        },
+        {
+          "text": "Described as an \"Underrated Dividend King\" that investors may be overlooking.",
+          "source": "Insider Monkey"
+        },
+        {
+          "text": "The board authorized a repurchase of 53,000,000 shares.",
+          "source": "Simply Wall St."
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p49"
+          "text": "Flat Momentum (12-1).",
+          "source": "p47"
         },
         {
-          "text": "Exceptional analyst dispersion indicates a very wide range of opinions among analysts regarding Cincinnati Financial stock.",
-          "source": "p95, [Barchart]"
-        },
-        {
-          "text": "Quality based on ROE/margin is flat.",
+          "text": "Flat Quality (ROE/margin).",
           "source": "p64"
         },
         {
-          "text": "Cincinnati Financial (CINF) was down 6.1% since its last earnings report, leading to questions about a potential rebound.",
-          "source": "[Zacks]"
+          "text": "Cincinnati Financial had a weaker quarter.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "The stock was down 6.1% since its last earnings report.",
+          "source": "Zacks"
+        },
+        {
+          "text": "The company's Q2 earnings were reviewed among other property & casualty insurance stocks.",
+          "source": "StockStory"
         }
       ],
       "data_gap": false
@@ -237,34 +238,38 @@
     "HAS": {
       "in_favor": [
         {
-          "text": "Exceptional quality is noted based on ROE/margin metrics.",
+          "text": "Exceptional Quality (ROE/margin).",
           "source": "p95"
         },
         {
-          "text": "Strong value characteristics are present, as indicated by its 1/PE ratio.",
-          "source": "p79"
+          "text": "Strong Value (1/PE).",
+          "source": "p81"
         },
         {
-          "text": "A deal with Upper Deck Trading Card is expected to expand Hasbro\u2019s franchise monetization.",
-          "source": "[Simply Wall St.]"
+          "text": "Hasbro expanded its Upper Deck partnership, which is expected to impact franchise monetization.",
+          "source": "Simply Wall St."
         },
         {
-          "text": "Hasbro (HAS) was up 4.8% since its last earnings report.",
-          "source": "[Zacks]"
+          "text": "The stock appears reasonable on earnings, and cash flow seems inexpensive.",
+          "source": "Simply Wall St."
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p50"
+          "text": "Flat Momentum (12-1).",
+          "source": "p48"
         },
         {
-          "text": "Analyst dispersion is flat, suggesting moderate agreement.",
-          "source": "p57"
+          "text": "Flat Analyst dispersion.",
+          "source": "p59"
         },
         {
-          "text": "Low volatility characteristics are weak.",
-          "source": "p40"
+          "text": "Flat Lowvol.",
+          "source": "p42"
+        },
+        {
+          "text": "An article questions whether the stock is fully priced after its Upper Deck partnership expansion.",
+          "source": "Simply Wall St."
         }
       ],
       "data_gap": false
@@ -272,38 +277,38 @@
     "AMP": {
       "in_favor": [
         {
-          "text": "Exceptional quality is observed based on ROE/margin metrics.",
+          "text": "Exceptional Quality (ROE/margin).",
           "source": "p91"
         },
         {
-          "text": "Strong value characteristics are present, as indicated by its 1/PE ratio.",
-          "source": "p89"
+          "text": "Strong Value (1/PE).",
+          "source": "p90"
         },
         {
-          "text": "Ameriprise (AMP) has recorded a 14.6% gain year-to-date.",
-          "source": "[Zacks]"
+          "text": "Analyst estimates and ratings are available for Ameriprise Financial stock.",
+          "source": "Barchart"
         },
         {
-          "text": "AMP is considered in comparisons when evaluating value stocks.",
-          "source": "[Zacks]"
+          "text": "Ameriprise Financial's Q2 earnings were reviewed in the context of custody bank stocks.",
+          "source": "StockStory"
+        },
+        {
+          "text": "Ameriprise Financial is listed among the 15 largest independent brokerages in wealth management.",
+          "source": "Financial Planning"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p36"
+          "text": "Weak Momentum (12-1).",
+          "source": "p35"
         },
         {
-          "text": "Analyst dispersion is flat, indicating moderate agreement.",
-          "source": "p68"
+          "text": "Flat Analyst dispersion.",
+          "source": "p70"
         },
         {
-          "text": "Low volatility characteristics are flat.",
-          "source": "p62"
-        },
-        {
-          "text": "Reflections are being made on Ameriprise Financial's Q2 earnings in the context of custody bank stocks.",
-          "source": "[StockStory]"
+          "text": "Flat Lowvol.",
+          "source": "p63"
         }
       ],
       "data_gap": false
@@ -311,42 +316,81 @@
     "GL": {
       "in_favor": [
         {
-          "text": "Exceptional value characteristics are observed, as indicated by its 1/PE ratio.",
+          "text": "Exceptional Value (1/PE).",
           "source": "p94"
         },
         {
-          "text": "Strong low volatility characteristics are present.",
-          "source": "p84"
+          "text": "Strong Lowvol.",
+          "source": "p85"
         },
         {
-          "text": "Globe Life's health insurance growth is noted for powering earnings momentum.",
-          "source": "[Zacks]"
+          "text": "Health insurance growth is contributing to earnings momentum.",
+          "source": "Zacks"
         },
         {
-          "text": "Globe Life is noted to trade at a discount.",
-          "source": "[Zacks]"
+          "text": "Globe Life trades at a discount.",
+          "source": "Zacks"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p68"
+          "text": "Flat Momentum (12-1).",
+          "source": "p67"
         },
         {
-          "text": "Strong analyst dispersion suggests a wide range of opinions among analysts.",
-          "source": "p75"
+          "text": "Strong analyst dispersion is present.",
+          "source": "p77"
         },
         {
-          "text": "Quality based on ROE/margin is flat.",
+          "text": "Flat Quality (ROE/margin).",
           "source": "p63"
         },
         {
-          "text": "An article identifies reasons to avoid GL.",
-          "source": "[StockStory]"
+          "text": "An article highlights reasons to consider avoiding GL.",
+          "source": "StockStory"
         },
         {
-          "text": "Globe Life (GL) was down 0.3% since its last earnings report, raising questions about a rebound, and is noted to lag its industry.",
-          "source": "[Zacks]"
+          "text": "Globe Life was down 0.3% since its last earnings report.",
+          "source": "Zacks"
+        }
+      ],
+      "data_gap": false
+    },
+    "SYY": {
+      "in_favor": [
+        {
+          "text": "Exceptional Quality (ROE/margin).",
+          "source": "p93"
+        },
+        {
+          "text": "Strong Lowvol.",
+          "source": "p83"
+        },
+        {
+          "text": "D.E. Shaw recognizes value in Sysco, citing new growth opportunities in AI and Restaurant Depot.",
+          "source": "Insider Monkey"
+        },
+        {
+          "text": "The food distributor added two board members to advance its AI transformation.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Sysco is listed among Dividend Aristocrats.",
+          "source": "24/7 Wall St."
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Weak Momentum (12-1).",
+          "source": "p34"
+        },
+        {
+          "text": "Strong analyst dispersion is present.",
+          "source": "p80"
+        },
+        {
+          "text": "Flat Value (1/PE).",
+          "source": "p64"
         }
       ],
       "data_gap": false
