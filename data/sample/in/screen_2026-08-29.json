@@ -1,0 +1,15 @@
+{
+  "as_of": "2026-08-29",
+  "market": "in",
+  "universe_size": 50,
+  "top_n": 10,
+  "regime": "NEUTRAL",
+  "abstained": false,
+  "diagnostics": {
+    "scanned": 50,
+    "had_history": 50,
+    "above_trend": 0,
+    "cleared": 0
+  },
+  "candidates": []
+}
