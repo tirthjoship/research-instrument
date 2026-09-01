@@ -4,81 +4,81 @@
     "SBIN.NS": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional value based on its 1/PE ratio.",
-          "source": "(p94)"
+          "text": "The value factor (1/PE) is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "The company exhibits strong low volatility.",
-          "source": "(p75)"
+          "text": "Low volatility is strong.",
+          "source": "p77"
         },
         {
-          "text": "Strong demand was observed for State Bank of India's return to the dollar debt market.",
-          "source": "[Reuters]"
+          "text": "The institution reported beating quarterly profit expectations due to healthy loan growth.",
+          "source": "Reuters - India's largest lender SBI beats quarterly profit view on healthy loan growth"
         },
         {
-          "text": "India's largest lender SBI surpassed quarterly profit views driven by healthy loan growth.",
-          "source": "[Reuters]"
+          "text": "It saw strong demand upon returning to the dollar debt market.",
+          "source": "Reuters - State Bank of India returns to dollar debt market, bankers see strong demand"
         },
         {
-          "text": "State Bank of India is a leader in India's overseas deposit drive.",
-          "source": "[Reuters]"
+          "text": "Demand for its perpetual bonds is observed to spur more issuances.",
+          "source": "Reuters - State Bank of India's perpetual bond demand seen spurring more issuances, bankers say"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) metrics are flat.",
-          "source": "(p69)"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p64"
         },
         {
-          "text": "Analyst dispersion is strong, suggesting varied views among analysts.",
-          "source": "(p81)"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p64"
         },
         {
-          "text": "Quality metrics (ROE/margin) are flat.",
-          "source": "(p62)"
+          "text": "Analyst dispersion is strong, indicating a range of views.",
+          "source": "p77"
+        },
+        {
+          "text": "State Bank of India is noted as leading India's overseas deposit drive.",
+          "source": "Reuters - State Bank of India, HSBC and ICICI lead India's overseas deposit drive, data shows"
         }
       ],
       "data_gap": false
     },
-    "JSWSTEEL.NS": {
+    "AXISBANK.NS": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional value based on its 1/PE ratio.",
-          "source": "(p94)"
+          "text": "The value factor (1/PE) is strong.",
+          "source": "p86"
         },
         {
-          "text": "Q1 2027 earnings call highlighted record sales and strategic initiatives.",
-          "source": "[GuruFocus.com]"
+          "text": "Axis Bank is focused on growth areas like data centres and gold loans, intending to outpace industry credit growth.",
+          "source": "Reuters - India's Axis Bank bets on data centres to gold loans to outpace industry credit growth"
         },
         {
-          "text": "The company surpassed profit views due to higher prices.",
-          "source": "[Reuters]"
-        },
-        {
-          "text": "Q4 2026 earnings call highlighted strong financial performance.",
-          "source": "[GuruFocus.com]"
-        },
-        {
-          "text": "A landmark steel plant deal with POSCO is deepening its presence in India.",
-          "source": "[Zacks]"
+          "text": "Axis Bank tapped dollar debt again in less than two months.",
+          "source": "Reuters - India's ICICI Bank, Axis Bank tap dollar debt again in less than two months, bankers say"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) metrics are flat.",
-          "source": "(p56)"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p45"
         },
         {
-          "text": "Analyst dispersion metrics are flat.",
-          "source": "(p44)"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p59"
         },
         {
-          "text": "Quality metrics (ROE/margin) are flat.",
-          "source": "(p56)"
+          "text": "Low volatility is flat.",
+          "source": "p55"
         },
         {
-          "text": "Low volatility metrics are flat.",
-          "source": "(p50)"
+          "text": "Analyst dispersion is strong, suggesting varied perspectives among analysts.",
+          "source": "p86"
+        },
+        {
+          "text": "Indian private-sector banks, including this one, experienced a sell-off due to NIM fears.",
+          "source": "Barchart - India\u2019s Private-Sector Banks Sold Off on NIM Fears. Ignore the Panic and Buy the Dip in HDFC Stock Here."
         }
       ],
       "data_gap": false
@@ -86,38 +86,26 @@
     "SUNPHARMA.NS": {
       "in_favor": [
         {
-          "text": "The company exhibits strong quality based on ROE/margin.",
-          "source": "(p88)"
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p86"
         },
         {
-          "text": "The company demonstrates exceptional low volatility.",
-          "source": "(p94)"
-        },
-        {
-          "text": "Quarterly profit increased due to strength in specialty medicines.",
-          "source": "[Reuters]"
-        },
-        {
-          "text": "Organon & Co. shareholders cleared a merger deal with Sun Pharma.",
-          "source": "[MarketBeat]"
-        },
-        {
-          "text": "Sun Pharma received South Africa approval to launch generic Ozempic.",
-          "source": "[Reuters]"
+          "text": "Low volatility is exceptional.",
+          "source": "p91"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) metrics are flat.",
-          "source": "(p62)"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p59"
         },
         {
-          "text": "Analyst dispersion metrics are flat.",
-          "source": "(p69)"
+          "text": "Analyst dispersion is flat.",
+          "source": "p68"
         },
         {
-          "text": "Value based on 1/PE ratio is weak.",
-          "source": "(p38)"
+          "text": "Value (1/PE) is weak.",
+          "source": "p36"
         }
       ],
       "data_gap": false
@@ -125,30 +113,77 @@
     "ICICIBANK.NS": {
       "in_favor": [
         {
-          "text": "The company exhibits strong quality based on ROE/margin.",
-          "source": "(p75)"
+          "text": "The value factor (1/PE) is strong.",
+          "source": "p82"
         },
         {
-          "text": "The company demonstrates strong value based on its 1/PE ratio.",
-          "source": "(p88)"
-        },
-        {
-          "text": "The company exhibits exceptional low volatility.",
-          "source": "(p94)"
+          "text": "Low volatility is exceptional.",
+          "source": "p91"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) metrics are weak.",
-          "source": "(p25)"
+          "text": "Momentum (12-1) is weak.",
+          "source": "p18"
         },
         {
-          "text": "Analyst dispersion is exceptional, indicating a wide range of analyst opinions.",
-          "source": "(p94)"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p73"
         },
         {
-          "text": "Prudential plans to sell a 2% stake in ICICI Prudential AMC.",
-          "source": "[Reuters]"
+          "text": "Analyst dispersion is exceptional, suggesting a wide range of views among analysts.",
+          "source": "p91"
+        },
+        {
+          "text": "Prudential plans to sell a 2% stake in ICICI Prudential AMC, valued at approximately $333 million.",
+          "source": "Reuters - Prudential to sell 2% stake in ICICI Prudential AMC worth about $333 million"
+        },
+        {
+          "text": "Asian equities traded as American Depositary Receipts experienced mixed trading with instances of declines.",
+          "source": "MT Newswires - Asian Equities Traded in the US as American Depositary Receipts Decline in Thursday Trading"
+        }
+      ],
+      "data_gap": false
+    },
+    "JSWSTEEL.NS": {
+      "in_favor": [
+        {
+          "text": "The value factor (1/PE) is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "Reported beating profit expectations, supported by higher prices.",
+          "source": "Reuters - India's JSW Steel beats profit view on higher prices"
+        },
+        {
+          "text": "Posted a two-fold quarterly profit increase attributed to price recovery.",
+          "source": "Reuters - India's JSW Steel posts two-fold quarterly profit rise on price recovery"
+        },
+        {
+          "text": "Recent earnings calls highlighted record sales and strong financial performance in Q1 2027 and Q4 2026.",
+          "source": "GuruFocus.com - JSW Steel Ltd (BOM:500228) Q1 2027 Earnings Call Highlights: Record Sales and Strategic ..."
+        },
+        {
+          "text": "POSCO is partnering with JSW in a significant steel plant deal in India.",
+          "source": "Zacks - POSCO Deepens India Push With JSW in Landmark Steel Plant Deal"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p55"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p50"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p55"
+        },
+        {
+          "text": "Low volatility is flat.",
+          "source": "p50"
         }
       ],
       "data_gap": false
@@ -156,73 +191,38 @@
     "EICHERMOT.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) metrics are strong.",
-          "source": "(p75)"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "The company exhibits exceptional quality based on ROE/margin.",
-          "source": "(p94)"
+          "text": "Reported beating first-quarter profit forecasts and observed steady demand.",
+          "source": "Reuters - India's Eicher Motors beats first-quarter profit forecast, sees steady demand"
         },
         {
-          "text": "Q1 2027 earnings call highlighted record revenue and strategic initiatives.",
-          "source": "[GuruFocus.com]"
+          "text": "Exceeded quarterly profit estimates, driven by strong sales.",
+          "source": "Reuters - India's Eicher Motors beats quarterly profit estimates on strong sales"
         },
         {
-          "text": "The company surpassed first-quarter profit forecasts and observed steady demand.",
-          "source": "[Reuters]"
-        },
-        {
-          "text": "Q4 2026 earnings call highlighted record sales and strategic initiatives.",
-          "source": "[GuruFocus.com]"
+          "text": "Recent earnings calls (Q1 2027, Q4 2026, Q3 2026) highlighted record revenue, record sales, and robust revenue growth.",
+          "source": "GuruFocus.com - Eicher Motors Ltd (BOM:505200) Q1 2027 Earnings Call Highlights: Record Revenue and Strategic ..."
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion metrics are flat.",
-          "source": "(p62)"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p68"
         },
         {
-          "text": "Value based on 1/PE ratio is flat.",
-          "source": "(p44)"
+          "text": "Analyst dispersion is flat.",
+          "source": "p64"
         },
         {
-          "text": "Low volatility metrics are weak.",
-          "source": "(p31)"
-        }
-      ],
-      "data_gap": false
-    },
-    "SHRIRAMFIN.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) metrics are exceptional.",
-          "source": "(p94)"
+          "text": "Value (1/PE) is flat.",
+          "source": "p41"
         },
         {
-          "text": "The company exhibits strong quality based on ROE/margin.",
-          "source": "(p81)"
-        },
-        {
-          "text": "The company demonstrates strong value based on its 1/PE ratio.",
-          "source": "(p81)"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted robust profit growth.",
-          "source": "[GuruFocus.com]"
-        },
-        {
-          "text": "The company anticipates lower borrowing costs following a profit surge.",
-          "source": "[Reuters]"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is strong, suggesting varied views among analysts.",
-          "source": "(p88)"
-        },
-        {
-          "text": "Low volatility metrics are weak.",
-          "source": "(p12)"
+          "text": "Low volatility is weak.",
+          "source": "p36"
         }
       ],
       "data_gap": false
@@ -230,38 +230,73 @@
     "NESTLEIND.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) metrics are strong.",
-          "source": "(p81)"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p77"
         },
         {
-          "text": "The company exhibits strong low volatility.",
-          "source": "(p88)"
+          "text": "Low volatility is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Nestle India's first-quarter profit increased due to strong demand.",
-          "source": "[Reuters]"
+          "text": "First-quarter profit increased due to strong demand.",
+          "source": "Reuters - Nestle India jumps after strong demand lifts first-quarter profit"
         },
         {
-          "text": "Nestle India's profit increased by 26% on strong demand, leading to a rise in shares.",
-          "source": "[Reuters]"
+          "text": "Profit jumped 26% on strong demand, with shares rising.",
+          "source": "Reuters - Nestle India profit jumps 26% on strong demand, shares rise"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is strong, suggesting varied views among analysts.",
-          "source": "(p75)"
+          "text": "Analyst dispersion is flat.",
+          "source": "p73"
         },
         {
-          "text": "Quality metrics (ROE/margin) are flat.",
-          "source": "(p69)"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p68"
         },
         {
-          "text": "Value based on 1/PE ratio is weak.",
-          "source": "(p19)"
+          "text": "Value (1/PE) is weak.",
+          "source": "p14"
         },
         {
-          "text": "The FMCG sector faces margin squeeze as costs increase despite strong demand, which may impact Nestle India.",
-          "source": "[Reuters]"
+          "text": "The broader FMCG sector in India faces margin pressure from spiking costs despite strong demand, potentially leading to price hikes.",
+          "source": "Reuters - India's FMCG sector faces margin squeeze as costs spike amid strong demand, price hikes"
+        }
+      ],
+      "data_gap": false
+    },
+    "SHRIRAMFIN.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p82"
+        },
+        {
+          "text": "The value factor (1/PE) is strong.",
+          "source": "p77"
+        },
+        {
+          "text": "Expects reduced borrowing costs after experiencing a profit surge.",
+          "source": "Reuters - India's Shriram Finance expects lower borrowing costs after profit surge"
+        },
+        {
+          "text": "Recent earnings calls (Q1 2027, Q4 2026) highlighted robust profit growth.",
+          "source": "GuruFocus.com - Shriram Finance Ltd (BOM:511218) Q1 2027 Earnings Call Highlights: Robust Profit Growth and ..."
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Low volatility is weak.",
+          "source": "p9"
+        },
+        {
+          "text": "Analyst dispersion is strong, indicating a range of analyst views.",
+          "source": "p82"
         }
       ],
       "data_gap": false
@@ -269,116 +304,69 @@
     "KOTAKBANK.NS": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional quality based on ROE/margin.",
-          "source": "(p94)"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "The company demonstrates strong value based on its 1/PE ratio.",
-          "source": "(p75)"
-        },
-        {
-          "text": "Kotak Investment Banking announced the appointment of co-CEOs.",
-          "source": "[Reuters]"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted strong profit growth.",
-          "source": "[GuruFocus.com]"
+          "text": "The Q1 2027 earnings call highlighted strong profit growth.",
+          "source": "GuruFocus.com - Kotak Mahindra Bank Ltd (BOM:500247) Q1 2027 Earnings Call Highlights: Strong Profit Growth ..."
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) metrics are weak.",
-          "source": "(p19)"
+          "text": "Momentum (12-1) is weak.",
+          "source": "p14"
         },
         {
-          "text": "Analyst dispersion metrics are flat.",
-          "source": "(p56)"
+          "text": "Analyst dispersion is flat.",
+          "source": "p59"
         },
         {
-          "text": "Low volatility metrics are flat.",
-          "source": "(p69)"
+          "text": "Value (1/PE) is flat.",
+          "source": "p73"
+        },
+        {
+          "text": "Low volatility is flat.",
+          "source": "p73"
+        },
+        {
+          "text": "Kotak Investment Banking appointed co-CEOs.",
+          "source": "Reuters - India's Kotak Investment Banking appoints co-CEOs"
         }
       ],
       "data_gap": false
     },
-    "TITAN.NS": {
+    "BAJAJ-AUTO.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) metrics are exceptional.",
-          "source": "(p94)"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p82"
         },
         {
-          "text": "Q1 FY27 earnings call highlighted strong growth.",
-          "source": "[GuruFocus.com]"
+          "text": "Analyst dispersion is weak, suggesting higher consensus among analysts.",
+          "source": "p36"
         },
         {
-          "text": "The company reached a record high driven by strong fourth-quarter sales.",
-          "source": "[Reuters]"
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p77"
         },
         {
-          "text": "Q3 2026 earnings call highlighted strategic acquisitions.",
-          "source": "[GuruFocus.com]"
+          "text": "The Q1 2027 earnings call highlighted record growth and strategic expansions.",
+          "source": "GuruFocus.com - Bajaj Auto Ltd (BOM:532977) Q1 2027 Earnings Call Highlights: Record Growth and Strategic Expansions"
         },
         {
-          "text": "Indian jewellers' stocks, including Titan, performed well on strong festive-quarter sales, with Titan achieving a record high.",
-          "source": "[Reuters]"
+          "text": "The company is expanding its EV focus with motorcycle plans and Chetak expansion.",
+          "source": "Reuters - India's Bajaj Auto deepens EV push with motorcycle plans, Chetak expansion"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion metrics are flat.",
-          "source": "(p50)"
+          "text": "Value (1/PE) is flat.",
+          "source": "p64"
         },
         {
-          "text": "Quality based on ROE/margin is weak.",
-          "source": "(p19)"
-        },
-        {
-          "text": "Value based on 1/PE ratio is weak.",
-          "source": "(p12)"
-        },
-        {
-          "text": "Low volatility metrics are flat.",
-          "source": "(p56)"
-        },
-        {
-          "text": "The company is experiencing challenges related to customs duty, and Indian jewelry stocks have experienced losses due to government policies targeting gold imports.",
-          "source": "[GuruFocus.com], [BeInCrypto]"
-        }
-      ],
-      "data_gap": false
-    },
-    "ADANIENT.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) metrics are strong.",
-          "source": "(p88)"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted strategic growth.",
-          "source": "[GuruFocus.com]"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is exceptional, indicating a wide range of analyst opinions.",
-          "source": "(p94)"
-        },
-        {
-          "text": "Quality based on ROE/margin is weak.",
-          "source": "(p31)"
-        },
-        {
-          "text": "Value based on 1/PE ratio is weak.",
-          "source": "(p31)"
-        },
-        {
-          "text": "Low volatility metrics are weak.",
-          "source": "(p0)"
-        },
-        {
-          "text": "The company reported a quarterly loss due to a US settlement charge and faced challenges in Q1 2027, and stated it is not evaluating a proposal to enter the airline business.",
-          "source": "[Reuters], [GuruFocus.com]"
+          "text": "Low volatility is weak.",
+          "source": "p32"
         }
       ],
       "data_gap": false
