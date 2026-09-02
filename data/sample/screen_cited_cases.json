@@ -1,355 +1,55 @@
 {
-  "as_of": "2026-09-01",
+  "as_of": "2026-09-02",
   "cases": {
     "SPG": {
-      "in_favor": [
-        {
-          "text": "The company shows Exceptional Quality (ROE/margin).",
-          "source": "p95"
-        },
-        {
-          "text": "The company demonstrates Strong Value (1/PE).",
-          "source": "p85"
-        },
-        {
-          "text": "The company exhibits Exceptional Lowvol characteristics.",
-          "source": "p92"
-        },
-        {
-          "text": "Simon launched a media network to unlock value from mall traffic.",
-          "source": "Zacks"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p63"
-        },
-        {
-          "text": "Analyst dispersion is Strong, indicating varied opinions.",
-          "source": "p86"
-        },
-        {
-          "text": "There is discussion regarding whether Wall Street analysts hold a favorable view on Simon Property stock.",
-          "source": "Barchart"
-        }
-      ],
-      "data_gap": false
-    },
-    "DVA": {
-      "in_favor": [
-        {
-          "text": "The company displays Exceptional Momentum (12-1).",
-          "source": "p92"
-        },
-        {
-          "text": "The company has Exceptional Quality (ROE/margin).",
-          "source": "p93"
-        },
-        {
-          "text": "The company presents Strong Value (1/PE).",
-          "source": "p85"
-        },
-        {
-          "text": "DaVita is highlighted in a Zacks Industry Outlook among other healthcare companies.",
-          "source": "Zacks"
-        },
-        {
-          "text": "DVA and Humana expanded value-based care initiatives for kidney disease patients.",
-          "source": "Zacks"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The company shows Weak Lowvol characteristics.",
-          "source": "p25"
-        },
-        {
-          "text": "Analyst dispersion is Weak, suggesting a higher degree of consensus among analysts.",
-          "source": "p38"
-        }
-      ],
-      "data_gap": false
-    },
-    "COR": {
-      "in_favor": [
-        {
-          "text": "The company demonstrates Exceptional Quality (ROE/margin).",
-          "source": "p95"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Weak.",
-          "source": "p36"
-        },
-        {
-          "text": "Analyst dispersion is Exceptional, indicating significant divergence in analyst opinions.",
-          "source": "p91"
-        },
-        {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p57"
-        },
-        {
-          "text": "Lowvol is Flat.",
-          "source": "p70"
-        }
-      ],
-      "data_gap": false
-    },
-    "LMT": {
-      "in_favor": [
-        {
-          "text": "The company exhibits Exceptional Quality (ROE/margin).",
-          "source": "p94"
-        },
-        {
-          "text": "Lockheed Martin is highlighted in a Zacks Analyst Blog, alongside other defense industry firms.",
-          "source": "Zacks"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Recent market buzz indicates strongly negative sentiment (-1.00) with 1 mention in the last 30 days.",
-          "source": "Market sentiment fact"
-        },
-        {
-          "text": "Lockheed Martin experienced a dip greater than the broader market.",
-          "source": "Zacks"
-        },
-        {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p64"
-        },
-        {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p71"
-        },
-        {
-          "text": "Lowvol is Flat.",
-          "source": "p64"
-        }
-      ],
-      "data_gap": false
-    },
-    "ITW": {
-      "in_favor": [
-        {
-          "text": "The company has Exceptional Quality (ROE/margin).",
-          "source": "p95"
-        },
-        {
-          "text": "The company shows Exceptional Lowvol characteristics.",
-          "source": "p95"
-        },
-        {
-          "text": "Analyst estimates and ratings are available for Illinois Tool Works stock.",
-          "source": "Barchart"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Weak.",
-          "source": "p38"
-        },
-        {
-          "text": "Illinois Tool Works is down 2.4% since its last earnings report.",
-          "source": "Zacks"
-        },
-        {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p58"
-        }
-      ],
-      "data_gap": false
-    },
-    "CL": {
-      "in_favor": [
-        {
-          "text": "The company has Exceptional Quality (ROE/margin).",
-          "source": "p95"
-        },
-        {
-          "text": "The company displays Exceptional Lowvol characteristics.",
-          "source": "p95"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Weak.",
-          "source": "p38"
-        },
-        {
-          "text": "Analyst dispersion is Strong, indicating varied opinions.",
-          "source": "p87"
-        },
-        {
-          "text": "Value (1/PE) is Weak.",
-          "source": "p33"
-        }
-      ],
-      "data_gap": false
-    },
-    "CINF": {
-      "in_favor": [
-        {
-          "text": "The company shows Exceptional Value (1/PE).",
-          "source": "p95"
-        },
-        {
-          "text": "The company demonstrates Strong Lowvol characteristics.",
-          "source": "p89"
-        },
-        {
-          "text": "Cincinnati Financial is described as an underrated dividend king that investors may be overlooking.",
-          "source": "Insider Monkey"
-        },
-        {
-          "text": "Cincinnati Financial's Board authorized 53,000,000 shares for repurchase.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "A director acquired 1,000 shares of the insurer, valued at over $171,000.",
-          "source": "Motley Fool"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p47"
-        },
-        {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p63"
-        },
-        {
-          "text": "Analyst dispersion is Exceptional, indicating significant divergence in analyst opinions.",
-          "source": "p95"
-        },
-        {
-          "text": "An article questions if Cincinnati Financial is fairly valued after a weaker quarter and a bigger buyback.",
-          "source": "Simply Wall St."
-        }
-      ],
-      "data_gap": false
-    },
-    "AMP": {
-      "in_favor": [
-        {
-          "text": "The company has Exceptional Quality (ROE/margin).",
-          "source": "p90"
-        },
-        {
-          "text": "The company displays Exceptional Value (1/PE).",
-          "source": "p90"
-        },
-        {
-          "text": "Ameriprise stock may be 50% undervalued based on its earnings power.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "Ameriprise Financial could be 4% below fair value on account of buyback driven EPS growth.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "Investors might be undervaluing Ameriprise Financial.",
-          "source": "Zacks"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Weak.",
-          "source": "p34"
-        },
-        {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p71"
-        },
-        {
-          "text": "Lowvol is Flat.",
-          "source": "p64"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "HAS": {
-      "in_favor": [
-        {
-          "text": "The company demonstrates Exceptional Quality (ROE/margin).",
-          "source": "p95"
-        },
-        {
-          "text": "The company presents Strong Value (1/PE).",
-          "source": "p80"
-        },
-        {
-          "text": "Hasbro stock gained nearly 11% in 3 months.",
-          "source": "Zacks"
-        },
-        {
-          "text": "Hasbro expanded its Upper Deck partnership, which is noted for its impact on franchise monetization.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "Hasbro stock appears reasonable on earnings, while cash flow seems inexpensive.",
-          "source": "Simply Wall St."
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p47"
-        },
-        {
-          "text": "An article questions if Hasbro stock is fully priced after expanding its Upper Deck partnership.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "Lowvol is Flat.",
-          "source": "p42"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "GL": {
-      "in_favor": [
-        {
-          "text": "The company shows Exceptional Value (1/PE).",
-          "source": "p95"
-        },
-        {
-          "text": "The company displays Strong Lowvol characteristics.",
-          "source": "p86"
-        },
-        {
-          "text": "Globe Life's health insurance growth contributes to earnings momentum.",
-          "source": "Zacks"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p67"
-        },
-        {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p62"
-        },
-        {
-          "text": "Analyst dispersion is Strong, indicating varied opinions.",
-          "source": "p77"
-        },
-        {
-          "text": "Globe Life is down 0.3% since its last earnings report.",
-          "source": "Zacks"
-        },
-        {
-          "text": "An article highlights three reasons to avoid GL.",
-          "source": "StockStory"
-        }
-      ],
-      "data_gap": false
+    "CL": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "TRGP": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "COR": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "ITW": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "AMP": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "MAS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "MSI": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "CINF": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     }
   }
 }
