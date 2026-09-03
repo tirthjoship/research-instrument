@@ -1,55 +1,291 @@
 {
-  "as_of": "2026-09-02",
+  "as_of": "2026-09-03",
   "cases": {
     "SPG": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "The company demonstrates exceptional quality metrics (ROE/margin) and strong value (1/PE).",
+          "source": "p95, p86"
+        },
+        {
+          "text": "It exhibits exceptional low volatility.",
+          "source": "p91"
+        },
+        {
+          "text": "Simon Property Group launched a media network with the goal of unlocking value from mall traffic.",
+          "source": "Zacks"
+        },
+        {
+          "text": "The company has been a dominant entity in retail real estate.",
+          "source": "24/7 Wall St."
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p40"
+        },
+        {
+          "text": "There is strong analyst dispersion, indicating a lack of consensus among analysts.",
+          "source": "p85"
+        }
+      ],
+      "data_gap": false
     },
     "HAS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "The company shows exceptional quality metrics (ROE/margin) and strong value (1/PE).",
+          "source": "p95, p79"
+        },
+        {
+          "text": "Hasbro stock has registered gains of nearly 11% in the past three months.",
+          "source": "Zacks"
+        },
+        {
+          "text": "The company has expanded its Upper Deck partnership, which is expected to extend franchise monetization.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "The stock appears reasonable on earnings, and its cash flow looks inexpensive.",
+          "source": "Simply Wall St."
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p56"
+        },
+        {
+          "text": "Questions have been raised regarding whether the stock is fully priced following its partnership expansion.",
+          "source": "Simply Wall St."
+        }
+      ],
+      "data_gap": false
     },
     "CL": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "The company exhibits exceptional quality metrics (ROE/margin).",
+          "source": "p95"
+        },
+        {
+          "text": "It demonstrates exceptional low volatility.",
+          "source": "p95"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p38"
+        },
+        {
+          "text": "There is strong analyst dispersion.",
+          "source": "p86"
+        },
+        {
+          "text": "Value (1/PE) is weak.",
+          "source": "p33"
+        },
+        {
+          "text": "Valuation has drawn fresh focus, with questions on whether the stock is fully priced.",
+          "source": "Simply Wall St."
+        }
+      ],
+      "data_gap": false
     },
     "TRGP": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "The company shows exceptional momentum (12-1) and exceptional quality metrics (ROE/margin).",
+          "source": "p91, p92"
+        },
+        {
+          "text": "Targa Resources is extending its growth runway through new Permian projects.",
+          "source": "MT Newswires"
+        },
+        {
+          "text": "A deal with ExxonMobil could further extend its Permian growth runway.",
+          "source": "Zacks"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock is near a 52-week high, prompting discussion about realizing gains.",
+          "source": "Zacks"
+        }
+      ],
+      "data_gap": false
     },
     "COR": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "The company exhibits exceptional quality metrics (ROE/margin).",
+          "source": "p95"
+        },
+        {
+          "text": "Its cell and gene push, along with a higher 2026 outlook, are notable for shareholders.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "Cencora raised its 2026 EPS outlook, supported by strengthening specialty businesses.",
+          "source": "Zacks"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p22"
+        },
+        {
+          "text": "There is exceptional analyst dispersion, indicating diverse views.",
+          "source": "p91"
+        },
+        {
+          "text": "Some investors have noted slowed earnings momentum.",
+          "source": "Insider Monkey"
+        }
+      ],
+      "data_gap": false
     },
     "ITW": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "The company demonstrates exceptional quality metrics (ROE/margin) and exceptional low volatility.",
+          "source": "p95, p95"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p24"
+        },
+        {
+          "text": "Valuation is being questioned, with suggestions that it might be too rich.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "The stock has declined since its last earnings report.",
+          "source": "Zacks"
+        }
+      ],
+      "data_gap": false
     },
     "AMP": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "The company exhibits exceptional quality metrics (ROE/margin) and strong value (1/PE).",
+          "source": "p90, p89"
+        },
+        {
+          "text": "The stock may be substantially undervalued based on its earnings power, and potentially below fair value due to buyback-driven EPS growth.",
+          "source": "Simply Wall St., Simply Wall St."
+        },
+        {
+          "text": "Investors might be undervaluing Ameriprise Financial.",
+          "source": "Zacks"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p38"
+        }
+      ],
+      "data_gap": false
     },
     "MAS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "The company demonstrates exceptional quality metrics (ROE/margin) and strong value (1/PE).",
+          "source": "p95, p80"
+        },
+        {
+          "text": "Masco stock has seen a slight increase since its last earnings report.",
+          "source": "Zacks"
+        },
+        {
+          "text": "The stock appears inexpensive when compared to its fair value.",
+          "source": "Simply Wall St."
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p20"
+        }
+      ],
+      "data_gap": false
     },
     "MSI": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "The company exhibits exceptional quality metrics (ROE/margin) and strong low volatility.",
+          "source": "p95, p82"
+        },
+        {
+          "text": "Despite near-term margin pressure, the long-term thesis for Motorola Solutions is considered to hold.",
+          "source": "Insider Monkey"
+        },
+        {
+          "text": "The company's advanced security solutions have the potential to enhance safety in future events, and its completed D-Fend buyout could bolster growth prospects.",
+          "source": "Zacks, Zacks"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p25"
+        },
+        {
+          "text": "There is exceptional analyst dispersion, indicating varied perspectives.",
+          "source": "p94"
+        },
+        {
+          "text": "Value (1/PE) is weak.",
+          "source": "p31"
+        },
+        {
+          "text": "The company faces near-term margin pressure.",
+          "source": "Insider Monkey"
+        }
+      ],
+      "data_gap": false
     },
     "CINF": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "The company shows exceptional value (1/PE) and strong low volatility.",
+          "source": "p95, p88"
+        },
+        {
+          "text": "It has consistently raised dividends through two historic market crashes, indicating resilience.",
+          "source": "24/7 Wall St."
+        },
+        {
+          "text": "A director recently acquired a substantial amount of company shares, and the company has been described as an 'Underrated Dividend King'.",
+          "source": "Motley Fool, Insider Monkey"
+        },
+        {
+          "text": "The board has authorized a significant share repurchase program (53,000,000 shares).",
+          "source": "Simply Wall St."
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p29"
+        },
+        {
+          "text": "There is exceptional analyst dispersion.",
+          "source": "p95"
+        },
+        {
+          "text": "Questions have been raised about its fair valuation following a weaker quarter.",
+          "source": "Simply Wall St."
+        }
+      ],
+      "data_gap": false
     }
   }
 }
