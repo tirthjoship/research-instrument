@@ -1,29 +1,45 @@
 {
-  "as_of": "2026-09-03",
+  "as_of": "2026-09-04",
   "cases": {
     "ICICIBANK.NS": {
       "in_favor": [
         {
-          "text": "Value (1/PE) is Strong.",
+          "text": "The ticker demonstrates a strong value (1/PE) characteristic.",
           "source": "p84"
         },
         {
-          "text": "Lowvol is Exceptional.",
+          "text": "Its low volatility characteristic is exceptional.",
           "source": "p95"
         },
         {
-          "text": "Analyst dispersion is Exceptional.",
-          "source": "p95"
+          "text": "Asian Equities Traded in the US as American Depositary Receipts experienced a rise in Wednesday trading.",
+          "source": "MT Newswires"
+        },
+        {
+          "text": "Asian Equities Traded in the US as American Depositary Receipts rose in Tuesday trading.",
+          "source": "MT Newswires"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Weak.",
+          "text": "Momentum (12-1) for the ticker is weak.",
           "source": "p32"
         },
         {
-          "text": "Quality (ROE/margin) is Flat.",
+          "text": "Analyst dispersion is exceptional, indicating varied views.",
+          "source": "p95"
+        },
+        {
+          "text": "Quality (ROE/margin) remains flat.",
           "source": "p63"
+        },
+        {
+          "text": "Prudential is selling a 2% stake in ICICI Prudential AMC, valued at approximately $333 million.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Asian Equities Traded in the US as American Depositary Receipts started the week lower in Monday trading and headed slightly lower on Thursday.",
+          "source": "MT Newswires"
         }
       ],
       "data_gap": false
@@ -31,34 +47,38 @@
     "SHRIRAMFIN.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Exceptional.",
+          "text": "The ticker shows exceptional momentum (12-1).",
           "source": "p95"
         },
         {
-          "text": "Analyst dispersion is Strong.",
-          "source": "p84"
-        },
-        {
-          "text": "Value (1/PE) is Strong.",
+          "text": "It also demonstrates a strong value (1/PE) characteristic.",
           "source": "p89"
         },
         {
-          "text": "Q1 2027 earnings call highlighted robust profit growth.",
-          "source": "GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q1 2027 Earnings Call Highlights: Robust Profit Growth and ..."
+          "text": "Q1 2027 earnings call highlights indicate robust profit growth.",
+          "source": "GuruFocus.com"
         },
         {
-          "text": "The company anticipates lower borrowing costs following a profit surge.",
-          "source": "Reuters] India's Shriram Finance expects lower borrowing costs after profit surge"
+          "text": "Shriram Finance expects lower borrowing costs following a profit surge.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Q4 2026 earnings call highlights also reported robust profit growth.",
+          "source": "GuruFocus.com"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is Flat.",
+          "text": "Its low volatility characteristic is weak.",
+          "source": "p11"
+        },
+        {
+          "text": "Quality (ROE/margin) for the ticker is flat.",
           "source": "p74"
         },
         {
-          "text": "Lowvol is Weak.",
-          "source": "p11"
+          "text": "Analyst dispersion is strong, suggesting varied opinions.",
+          "source": "p84"
         }
       ],
       "data_gap": false
@@ -66,33 +86,33 @@
     "KOTAKBANK.NS": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is Strong.",
+          "text": "The ticker shows strong quality (ROE/margin).",
           "source": "p89"
         },
         {
-          "text": "Value (1/PE) is Strong.",
+          "text": "Its value (1/PE) characteristic is also strong.",
           "source": "p79"
         },
         {
-          "text": "Kotak Investment Banking appointed co-CEOs.",
-          "source": "Reuters] India's Kotak Investment Banking appoints co-CEOs"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted strong profit growth.",
-          "source": "GuruFocus.com] Kotak Mahindra Bank Ltd (BOM:500247) Q1 2027 Earnings Call Highlights: Strong Profit Growth ..."
+          "text": "Q1 2027 earnings call highlights reported strong profit growth.",
+          "source": "GuruFocus.com"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Weak.",
+          "text": "Momentum (12-1) for the ticker is weak.",
           "source": "p21"
         },
         {
-          "text": "Analyst dispersion is Flat.",
+          "text": "Kotak Investment Banking has appointed co-CEOs.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
           "source": "p58"
         },
         {
-          "text": "Lowvol is Flat.",
+          "text": "Low volatility is flat.",
           "source": "p74"
         }
       ],
@@ -101,26 +121,34 @@
     "SUNPHARMA.NS": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is Strong.",
+          "text": "The ticker exhibits strong quality (ROE/margin).",
           "source": "p79"
         },
         {
-          "text": "Lowvol is Exceptional.",
+          "text": "Its low volatility characteristic is exceptional.",
           "source": "p95"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
+          "text": "Value (1/PE) for the ticker is weak.",
+          "source": "p37"
+        },
+        {
+          "text": "Momentum (12-1) for the ticker is flat.",
           "source": "p74"
         },
         {
-          "text": "Analyst dispersion is Flat.",
+          "text": "Analyst dispersion is flat.",
           "source": "p68"
         },
         {
-          "text": "Value (1/PE) is Weak.",
-          "source": "p37"
+          "text": "Reports indicate that Trump is expanding drug pricing deals with 9 pharma companies, including mid-sized drugmakers, resulting in efforts for lower drug prices.",
+          "source": "Benzinga, Zacks, BioPharma Dive, Pharmaceutical Technology"
+        },
+        {
+          "text": "The White House's deal with mid-size drugmakers involves a $19.6 billion infusion in US plants aimed at lower drug prices.",
+          "source": "Stocktwits"
         }
       ],
       "data_gap": false
@@ -128,41 +156,41 @@
     "JSWSTEEL.NS": {
       "in_favor": [
         {
-          "text": "Value (1/PE) is Exceptional.",
+          "text": "The ticker exhibits exceptional value (1/PE).",
           "source": "p95"
         },
         {
-          "text": "Q1 2027 earnings call highlighted record sales and strategic initiatives.",
-          "source": "GuruFocus.com] JSW Steel Ltd (BOM:500228) Q1 2027 Earnings Call Highlights: Record Sales and Strategic ..."
+          "text": "Q1 2027 earnings call highlights reported record sales.",
+          "source": "GuruFocus.com"
         },
         {
-          "text": "The company surpassed profit expectations and posted a two-fold quarterly profit rise, driven by higher prices and price recovery.",
-          "source": "Reuters] India's JSW Steel beats profit view on higher prices"
+          "text": "JSW Steel beat profit expectations due to higher prices.",
+          "source": "Reuters"
         },
         {
-          "text": "Q4 2026 earnings call highlighted strong financial performance.",
-          "source": "GuruFocus.com] JSW Steel Ltd (BOM:500228) Q4 2026 Earnings Call Highlights: Strong Financial Performance Amid ..."
+          "text": "Q4 2026 earnings call highlights indicated strong financial performance.",
+          "source": "GuruFocus.com"
         },
         {
-          "text": "POSCO is deepening its India presence with a landmark steel plant deal with JSW.",
-          "source": "Zacks] POSCO Deepens India Push With JSW in Landmark Steel Plant Deal"
+          "text": "JSW Steel posted a two-fold quarterly profit rise driven by price recovery.",
+          "source": "Reuters"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
+          "text": "Quality (ROE/margin) for the ticker is flat.",
           "source": "p53"
         },
         {
-          "text": "Analyst dispersion is Flat.",
+          "text": "Momentum (12-1) for the ticker is flat.",
+          "source": "p53"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
           "source": "p47"
         },
         {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p53"
-        },
-        {
-          "text": "Lowvol is Flat.",
+          "text": "Low volatility is flat.",
           "source": "p58"
         }
       ],
@@ -171,38 +199,38 @@
     "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is Strong.",
-          "source": "p79"
-        },
-        {
-          "text": "Quality (ROE/margin) is Exceptional.",
+          "text": "The ticker demonstrates exceptional quality (ROE/margin).",
           "source": "p95"
         },
         {
-          "text": "The company reported higher profit driven by domestic demand.",
-          "source": "Reuters] India's Adani Ports posts higher profit on domestic demand"
+          "text": "Adani Ports reported higher profit driven by domestic demand.",
+          "source": "Reuters"
         },
         {
-          "text": "Plans to sell an India port stake to Swiss Shipping Group MSC for $1.40 billion.",
-          "source": "The Wall Street Journal] Adani Ports to Sell India Port Stake to Swiss Shipping Group MSC for $1.40B"
-        },
-        {
-          "text": "The company is to sell a 49% stake in an Indian port to MSC for $1.4 billion.",
-          "source": "Reuters] Adani Ports to sell 49% stake in Indian port to MSC for $1.4 billion"
+          "text": "Adani Ports is set to sell an India port stake to Swiss Shipping Group MSC for $1.4 billion.",
+          "source": "The Wall Street Journal, Reuters"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Weak.",
+          "text": "Momentum (12-1) for the ticker is weak.",
           "source": "p37"
         },
         {
-          "text": "Value (1/PE) is Flat.",
+          "text": "Its low volatility characteristic is weak.",
+          "source": "p21"
+        },
+        {
+          "text": "Analyst dispersion is strong, suggesting varied opinions.",
+          "source": "p79"
+        },
+        {
+          "text": "Value (1/PE) for the ticker is flat.",
           "source": "p63"
         },
         {
-          "text": "Lowvol is Weak.",
-          "source": "p21"
+          "text": "Reports indicate that India's Kerala state was not consulted regarding MSC's $1.4 billion port investment.",
+          "source": "Reuters"
         }
       ],
       "data_gap": false
@@ -210,38 +238,38 @@
     "HINDALCO.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Strong.",
+          "text": "The ticker exhibits strong momentum (12-1).",
           "source": "p84"
         },
         {
-          "text": "Value (1/PE) is Exceptional.",
+          "text": "Its value (1/PE) characteristic is exceptional.",
           "source": "p95"
         },
         {
           "text": "Hindustan Copper plans to supply Chilean copper concentrate to Hindalco.",
-          "source": "Reuters] India's Hindustan Copper plans to sell copper concentrate sourced from Chile to Hindalco, Adani, sources say"
+          "source": "Mining Technology, Reuters"
         },
         {
-          "text": "Q1 2027 earnings call highlighted record EBITDA.",
-          "source": "GuruFocus.com] Hindalco Industries Ltd (FRA:HID) (Q1 2027) Earnings Call Highlights: Record EBITDA and ..."
+          "text": "Q1 2027 earnings call highlights reported record EBITDA.",
+          "source": "GuruFocus.com"
         },
         {
-          "text": "The company posted a profit surge as metal prices strengthened.",
-          "source": "Reuters] India's Hindalco posts profit surge as metal prices strengthen"
+          "text": "Hindalco posted a profit surge as metal prices strengthened.",
+          "source": "Reuters"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p42"
-        },
-        {
-          "text": "Quality (ROE/margin) is Weak.",
+          "text": "Quality (ROE/margin) for the ticker is weak.",
           "source": "p16"
         },
         {
-          "text": "Lowvol is Weak.",
-          "source": "p26"
+          "text": "Its low volatility characteristic is weak.",
+          "source": "p32"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p42"
         }
       ],
       "data_gap": false
@@ -249,42 +277,42 @@
     "NESTLEIND.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Strong.",
+          "text": "The ticker exhibits strong momentum (12-1).",
           "source": "p79"
         },
         {
-          "text": "Lowvol is Strong.",
+          "text": "Its low volatility characteristic is strong.",
           "source": "p89"
         },
         {
-          "text": "The company's shares increased after strong demand contributed to a first-quarter profit rise.",
-          "source": "Reuters] Nestle India jumps after strong demand lifts first-quarter profit"
+          "text": "Nestle India experienced a jump in shares after strong demand contributed to first-quarter profit.",
+          "source": "Reuters"
         },
         {
-          "text": "Reported a 26% profit jump driven by strong demand.",
-          "source": "Reuters] Nestle India profit jumps 26% on strong demand, shares rise"
-        },
-        {
-          "text": "The FMCG sector, which includes Nestle India, is experiencing strong demand.",
-          "source": "Reuters] India's FMCG sector faces margin squeeze as costs spike amid strong demand, price hikes"
+          "text": "Nestle India's profit jumped 26% due to strong demand.",
+          "source": "Reuters"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p74"
-        },
-        {
-          "text": "Quality (ROE/margin) is Flat.",
+          "text": "Quality (ROE/margin) for the ticker is flat.",
           "source": "p58"
         },
         {
-          "text": "Value (1/PE) is Weak.",
+          "text": "Value (1/PE) for the ticker is weak.",
           "source": "p16"
         },
         {
-          "text": "The FMCG sector faces margin squeeze as costs rise, potentially leading to price increases.",
-          "source": "Reuters] India's FMCG sector faces margin squeeze as costs spike amid strong demand, price hikes"
+          "text": "Analyst dispersion is flat.",
+          "source": "p74"
+        },
+        {
+          "text": "The Indian FMCG sector is facing margin squeeze as costs spike, despite strong demand and price hikes.",
+          "source": "Reuters"
+        },
+        {
+          "text": "India's Tata Consumer has warned of additional price increases if costs remain volatile, indicating potential industry-wide cost pressures.",
+          "source": "Reuters"
         }
       ],
       "data_gap": false
@@ -292,33 +320,33 @@
     "BAJAJ-AUTO.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Strong.",
+          "text": "The ticker exhibits strong momentum (12-1).",
           "source": "p89"
         },
         {
-          "text": "Q1 2027 earnings call highlighted record growth and strategic expansions.",
-          "source": "GuruFocus.com] Bajaj Auto Ltd (BOM:532977) Q1 2027 Earnings Call Highlights: Record Growth and Strategic Expansions"
+          "text": "Analyst dispersion is weak, potentially indicating greater consensus among analysts.",
+          "source": "p32"
         },
         {
-          "text": "The company is deepening its electric vehicle efforts with motorcycle plans and Chetak expansion.",
-          "source": "Reuters] India's Bajaj Auto deepens EV push with motorcycle plans, Chetak expansion"
+          "text": "Q1 2027 earnings call highlights reported record growth and strategic expansions.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "Bajaj Auto is deepening its electric vehicle (EV) push with new motorcycle plans and Chetak expansion.",
+          "source": "Reuters"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is Weak.",
-          "source": "p32"
-        },
-        {
-          "text": "Quality (ROE/margin) is Flat.",
+          "text": "Quality (ROE/margin) for the ticker is flat.",
           "source": "p68"
         },
         {
-          "text": "Value (1/PE) is Flat.",
+          "text": "Value (1/PE) for the ticker is flat.",
           "source": "p68"
         },
         {
-          "text": "Lowvol is Flat.",
+          "text": "Low volatility for the ticker is flat.",
           "source": "p42"
         }
       ],
@@ -327,46 +355,38 @@
     "TITAN.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Exceptional.",
+          "text": "The ticker exhibits exceptional momentum (12-1).",
           "source": "p95"
         },
         {
-          "text": "Q1 FY27 earnings call highlighted strong growth despite customs duty challenges.",
-          "source": "GuruFocus.com] Titan Co Ltd (BOM:500114) (Q1 FY27) Earnings Call Highlights: Strong Growth Amidst Customs Duty ..."
+          "text": "Q1 FY27 earnings call highlights reported strong growth.",
+          "source": "GuruFocus.com"
         },
         {
-          "text": "The company's shares reached a record high due to strong fourth-quarter sales.",
-          "source": "Reuters] India's Titan hits record high on strong fourth-quarter sales"
+          "text": "Titan reached a record high driven by strong fourth-quarter sales and strong festive-quarter sales.",
+          "source": "Reuters"
         },
         {
-          "text": "Q3 2026 earnings call highlighted strategic acquisitions and market expansion.",
-          "source": "GuruFocus.com] Titan Co Ltd (BOM:500114) Q3 2026 Earnings Call Highlights: Strategic Acquisitions and Market ..."
-        },
-        {
-          "text": "Indian jewellers' stocks, including Titan, showed strength from robust festive-quarter sales.",
-          "source": "Reuters] Indian jewellers' stocks shine on strong festive-quarter sales; Titan hits record high"
+          "text": "Q3 2026 earnings call highlights mentioned strategic acquisitions and market expansions.",
+          "source": "GuruFocus.com"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p53"
-        },
-        {
-          "text": "Quality (ROE/margin) is Weak.",
+          "text": "Quality (ROE/margin) for the ticker is weak.",
           "source": "p21"
         },
         {
-          "text": "Value (1/PE) is Weak.",
+          "text": "Value (1/PE) for the ticker is weak.",
           "source": "p11"
         },
         {
-          "text": "Lowvol is Flat.",
-          "source": "p68"
+          "text": "India jewelry stocks have experienced losses as policy targets gold imports, potentially impacting Titan.",
+          "source": "BeInCrypto"
         },
         {
-          "text": "Indian jewelry stocks experienced a decline as the government focused on reducing gold imports.",
-          "source": "BeInCrypto] India Jewelry Stocks Lose 12% as Modi Targets $72 Billion In Gold Imports"
+          "text": "Q1 FY27 earnings call highlights noted strong growth occurred amidst customs duty challenges.",
+          "source": "GuruFocus.com"
         }
       ],
       "data_gap": false
