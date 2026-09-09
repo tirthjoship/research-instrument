@@ -1,41 +1,45 @@
 {
-  "as_of": "2026-09-08",
+  "as_of": "2026-09-09",
   "cases": {
     "SPG": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
+          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "source": "Facts"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p85"
+          "text": "The stock shows strong value based on 1/PE.",
+          "source": "Facts"
         },
         {
-          "text": "Lowvol is exceptional.",
-          "source": "p91"
+          "text": "The stock demonstrates exceptional low volatility.",
+          "source": "Facts"
+        },
+        {
+          "text": "The company's dividend structure has been a subject of analysis.",
+          "source": "GuruFocus.com Simon Property Group Inc's Dividend Analysis"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p39"
+          "text": "Momentum over 12-1 months is weak.",
+          "source": "Facts"
         },
         {
           "text": "Analyst dispersion is strong.",
-          "source": "p84"
+          "source": "Facts"
         },
         {
-          "text": "The stock is questioned for underperforming the Nasdaq.",
-          "source": "Is Simon Property Stock Underperforming the Nasdaq?"
+          "text": "The stock was down 3.5% since its last earnings report, prompting questions about a rebound.",
+          "source": "Zacks Simon Property (SPG) Down 3.5% Since Last Earnings Report: Can It Rebound?"
         },
         {
-          "text": "Simon Property Group, along with Nike, will no longer be part of a prestigious S&P index.",
-          "source": "Nike and This Retail Giant Will No Longer Be Part of This Prestigious S&P Index"
+          "text": "The stock is noted for underperforming the Nasdaq.",
+          "source": "Barchart Is Simon Property Stock Underperforming the Nasdaq?"
         },
         {
-          "text": "Simon Property Group was dropped from the S&P 100.",
-          "source": "Nike, Simon Property Group dropped from S&P 100"
+          "text": "The company will no longer be part of a prestigious S&P Index.",
+          "source": "Footwear News Nike and This Retail Giant Will No Longer Be Part of This Prestigious S&P Index"
         }
       ],
       "data_gap": false
@@ -43,116 +47,46 @@
     "HAS": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
+          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "source": "Facts"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p80"
+          "text": "The stock shows strong value based on 1/PE.",
+          "source": "Facts"
         },
         {
           "text": "The stock gained nearly 11% in 3 months.",
-          "source": "Hasbro Stock Gains Nearly 11% in 3 Months: Is More Growth Ahead?"
+          "source": "Zacks Hasbro Stock Gains Nearly 11% in 3 Months: Is More Growth Ahead?"
         },
         {
-          "text": "The stock appears reasonable on earnings while cash flow looks inexpensive.",
-          "source": "Hasbro (HAS) Stock Looks Reasonable On Earnings While Cash Flow Looks Cheap"
+          "text": "The stock looks reasonable on earnings, and cash flow appears inexpensive.",
+          "source": "Simply Wall St. Hasbro (HAS) Stock Looks Reasonable On Earnings While Cash Flow Looks Cheap"
         },
         {
-          "text": "Hasbro is expanding its Upper Deck Partnership.",
-          "source": "Hasbro (HAS) Expands Its Upper Deck Partnership, Is The Stock Fully Priced?"
+          "text": "Hasbro has expanded its partnership with Upper Deck.",
+          "source": "Simply Wall St. Hasbro (HAS) Expands Its Upper Deck Partnership, Is The Stock Fully Priced?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p55"
+          "text": "Momentum over 12-1 months is flat.",
+          "source": "Facts"
         },
         {
           "text": "Analyst dispersion is flat.",
-          "source": "p60"
+          "source": "Facts"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p42"
+          "text": "Low volatility is flat.",
+          "source": "Facts"
         },
         {
           "text": "The stock has seen a more significant dip than the broader market.",
-          "source": "Hasbro (HAS) Sees a More Significant Dip Than Broader Market: Some Facts to Know"
+          "source": "Zacks Hasbro (HAS) Sees a More Significant Dip Than Broader Market: Some Facts to Know"
         },
         {
-          "text": "There are questions regarding whether the stock is fully priced.",
-          "source": "Hasbro (HAS) Expands Its Upper Deck Partnership, Is The Stock Fully Priced?"
-        }
-      ],
-      "data_gap": false
-    },
-    "NTAP": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p87"
-        },
-        {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
-        },
-        {
-          "text": "The company's Q1 results showed a beat and raised guidance, focusing on AI storage growth.",
-          "source": "NetApp Q1 Beat and Raised Guidance Put AI Storage Growth in Focus"
-        },
-        {
-          "text": "The company is highlighted in Zacks Investment Ideas.",
-          "source": "Zacks Investment Ideas feature highlights: Ciena and NetApp"
-        },
-        {
-          "text": "The company was benchmarked in a Q2 Hardware & Infrastructure Stocks recap.",
-          "source": "Hardware & Infrastructure Stocks Q2 Recap: Benchmarking NetApp (NASDAQ:NTAP)"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "p85"
-        },
-        {
-          "text": "Value (1/PE) is flat.",
-          "source": "p49"
-        },
-        {
-          "text": "Lowvol is weak.",
-          "source": "p24"
-        }
-      ],
-      "data_gap": false
-    },
-    "CL": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
-        },
-        {
-          "text": "Lowvol is exceptional.",
-          "source": "p95"
-        },
-        {
-          "text": "Colgate-Palmolive could stabilize its US business in 2027.",
-          "source": "Colgate-Palmolive Could Stabilize US Business in 2027, RBC Says"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p37"
-        },
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "p86"
-        },
-        {
-          "text": "Value (1/PE) is weak.",
-          "source": "p32"
+          "text": "There are questions regarding whether the stock is fully priced after its partnership expansion.",
+          "source": "Simply Wall St. Hasbro (HAS) Expands Its Upper Deck Partnership, Is The Stock Fully Priced?"
         }
       ],
       "data_gap": false
@@ -160,132 +94,116 @@
     "TRGP": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is exceptional.",
-          "source": "p91"
+          "text": "Momentum over 12-1 months is exceptional.",
+          "source": "Facts"
         },
         {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p92"
+          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "source": "Facts"
         },
         {
-          "text": "The company is extending its growth runway with new Permian projects.",
-          "source": "Targa Resources Extends Growth Runway With New Permian Projects, RBC Says"
+          "text": "The company is extending its growth opportunities with new Permian projects.",
+          "source": "MT Newswires Targa Resources Extends Growth Runway With New Permian Projects, RBC Says"
         },
         {
-          "text": "A deal with ExxonMobil could extend its Permian growth runway.",
-          "source": "How Targa's ExxonMobil Deal Could Extend Its Permian Growth Runway"
+          "text": "A deal with ExxonMobil could extend the company's Permian growth opportunities.",
+          "source": "Zacks How Targa's ExxonMobil Deal Could Extend Its Permian Growth Runway"
         },
         {
-          "text": "The stock is positioned as a potential stronger energy consideration compared to ExxonMobil.",
-          "source": "Targa Resources (TRGP) vs. ExxonMobil (XOM): Which Stock Is the Better Energy Bet?"
+          "text": "Targa granted its new CFO a substantial long-term incentive package.",
+          "source": "CFO Dive Targa grants new CFO hefty long-term incentive"
         }
       ],
       "to_watch": [
         {
           "text": "Analyst dispersion is flat.",
-          "source": "p59"
+          "source": "Facts"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p46"
+          "text": "Value based on 1/PE is flat.",
+          "source": "Facts"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p43"
+          "text": "Low volatility is flat.",
+          "source": "Facts"
         },
         {
-          "text": "The company granted its new CFO a hefty long-term incentive.",
-          "source": "Targa grants new CFO hefty long-term incentive"
+          "text": "The stock is near a 52-week high, prompting discussion about potential profit-taking.",
+          "source": "Zacks Targa Resources' Stock Near 52-Week High: Time to Lock in Gains? (Revised)"
         },
         {
-          "text": "The stock is near its 52-week high, prompting questions about potential gain realization.",
-          "source": "Targa Resources' Stock Near 52-Week High: Time to Lock in Gains? (Revised)"
+          "text": "There is an ongoing discussion comparing TRGP with ExxonMobil as an energy sector consideration.",
+          "source": "Insider Monkey Targa Resources (TRGP) vs. ExxonMobil (XOM): Which Stock Is the Better Energy Bet?"
         }
       ],
       "data_gap": false
     },
-    "COR": {
+    "NTAP": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
+          "text": "Momentum over 12-1 months is strong.",
+          "source": "Facts"
         },
         {
-          "text": "The company was an outperformer in Q2 earnings among health insurance providers.",
-          "source": "Q2 Earnings Outperformers: Cencora (NYSE:COR) And The Rest Of The Health Insurance Providers Stocks"
+          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "source": "Facts"
         },
         {
-          "text": "Suggestions indicate reasons to retain the stock in a portfolio.",
-          "source": "Here's Why You Should Retain Cencora Stock in Your Portfolio for Now"
+          "text": "The company has an enhanced product strategy.",
+          "source": "Insider Monkey What Comes Next for NetApp (NTAP) After Enhanced Product Strategy and Record Earnings"
         },
         {
-          "text": "The stock was up 3.8% since its last earnings report.",
-          "source": "Cencora (COR) Up 3.8% Since Last Earnings Report: Can It Continue?"
-        },
-        {
-          "text": "Cencora launched Cell and Gene Therapy Enablement for Health Systems.",
-          "source": "Cencora Launches Cell and Gene Therapy Enablement for Health Systems"
+          "text": "The company reported record earnings.",
+          "source": "Insider Monkey What Comes Next for NetApp (NTAP) After Enhanced Product Strategy and Record Earnings"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p20"
+          "text": "Analyst dispersion is strong.",
+          "source": "Facts"
         },
         {
-          "text": "Analyst dispersion is exceptional, potentially indicating varied views.",
-          "source": "p91"
+          "text": "Value based on 1/PE is flat.",
+          "source": "Facts"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p56"
+          "text": "Low volatility is weak.",
+          "source": "Facts"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p69"
+          "text": "A Q1 2027 earnings call transcript indicates ongoing financial discussions.",
+          "source": "Motley Fool NetApp (NTAP) Q1 2027 Earnings Call Transcript"
         }
       ],
       "data_gap": false
     },
-    "ITW": {
+    "CL": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
+          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "source": "Facts"
         },
         {
-          "text": "Lowvol is exceptional.",
-          "source": "p95"
+          "text": "The stock demonstrates exceptional low volatility.",
+          "source": "Facts"
         },
         {
-          "text": "The company is noted for being cash-producing.",
-          "source": "3 Cash-Producing Stocks We\u2019re Skeptical Of"
-        },
-        {
-          "text": "A dividend update for Illinois Tool Works draws focus.",
-          "source": "Illinois Tool Works (ITW) Dividend Update Draws Focus, Is The Valuation Still Too Rich?"
+          "text": "RBC suggests Colgate-Palmolive could achieve stabilization in its US business by 2027.",
+          "source": "MT Newswires Colgate-Palmolive Could Stabilize US Business in 2027, RBC Says"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p23"
+          "text": "Momentum over 12-1 months is weak.",
+          "source": "Facts"
         },
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p61"
+          "text": "Analyst dispersion is strong.",
+          "source": "Facts"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p55"
-        },
-        {
-          "text": "The stock is questioned for underperforming the Nasdaq.",
-          "source": "Is Illinois Tool Works Stock Underperforming the Nasdaq?"
-        },
-        {
-          "text": "There is skepticism regarding some cash-producing stocks, including this one.",
-          "source": "3 Cash-Producing Stocks We\u2019re Skeptical Of"
+          "text": "Value based on 1/PE is weak.",
+          "source": "Facts"
         }
       ],
       "data_gap": false
@@ -293,65 +211,120 @@
     "AMP": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p90"
+          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "source": "Facts"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p88"
+          "text": "The stock shows strong value based on 1/PE.",
+          "source": "Facts"
         },
         {
-          "text": "The stock may be 50% undervalued based on its earnings power.",
-          "source": "Ameriprise (AMP) Stock May Be 50% Undervalued On Earnings Power"
+          "text": "There is an inquiry into whether finance stocks are performing less robustly than Ameriprise Financial this year.",
+          "source": "Zacks Are Finance Stocks Lagging Ameriprise Financial (AMP) This Year?"
+        },
+        {
+          "text": "There is a question regarding whether AMP is performing better than the financial sector.",
+          "source": "Barchart Ameriprise Stock: Is AMP Outperforming the Financial Sector?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p37"
+          "text": "Momentum over 12-1 months is weak.",
+          "source": "Facts"
         },
         {
           "text": "Analyst dispersion is flat.",
-          "source": "p70"
+          "source": "Facts"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p64"
+          "text": "Low volatility is flat.",
+          "source": "Facts"
+        },
+        {
+          "text": "AMP's standing is being evaluated against other stocks, such as PS, for value investors.",
+          "source": "Zacks AMP vs. PS: Which Stock Should Value Investors Buy Now?"
         }
       ],
       "data_gap": false
     },
-    "MAS": {
+    "COR": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "Facts"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p80"
+          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "source": "Facts"
         },
         {
-          "text": "The stock was up 0.9% since its last earnings report.",
-          "source": "Why Is Masco (MAS) Up 0.9% Since Last Earnings Report?"
+          "text": "Cencora was identified as a Q2 earnings outperformer among health insurance providers.",
+          "source": "StockStory Q2 Earnings Outperformers: Cencora (NYSE:COR) And The Rest Of The Health Insurance Providers Stocks"
         },
         {
-          "text": "The stock appears inexpensive relative to its fair value.",
-          "source": "Masco (MAS) Stock Looks Cheap Next To Its Fair Value"
+          "text": "The stock increased by 3.8% since its last earnings report.",
+          "source": "Zacks Cencora (COR) Up 3.8% Since Last Earnings Report: Can It Continue?"
+        },
+        {
+          "text": "There is commentary suggesting to hold Cencora stock in portfolios for the time being.",
+          "source": "Zacks Here's Why You Should Retain Cencora Stock in Your Portfolio for Now"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p19"
+          "text": "Momentum over 12-1 months is weak.",
+          "source": "Facts"
+        },
+        {
+          "text": "Value based on 1/PE is flat.",
+          "source": "Facts"
+        },
+        {
+          "text": "Low volatility is flat.",
+          "source": "Facts"
+        },
+        {
+          "text": "There is a question about whether Cencora stock is performing less robustly than the Dow.",
+          "source": "Barchart Is Cencora Stock Underperforming the Dow?"
+        },
+        {
+          "text": "There is a question regarding the continuation of the stock's recent gains.",
+          "source": "Zacks Cencora (COR) Up 3.8% Since Last Earnings Report: Can It Continue?"
+        }
+      ],
+      "data_gap": false
+    },
+    "ITW": {
+      "in_favor": [
+        {
+          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "source": "Facts"
+        },
+        {
+          "text": "The stock demonstrates exceptional low volatility.",
+          "source": "Facts"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum over 12-1 months is weak.",
+          "source": "Facts"
         },
         {
           "text": "Analyst dispersion is flat.",
-          "source": "p69"
+          "source": "Facts"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p44"
+          "text": "Value based on 1/PE is flat.",
+          "source": "Facts"
+        },
+        {
+          "text": "The stock is noted for underperforming the Nasdaq.",
+          "source": "Barchart Is Illinois Tool Works Stock Underperforming the Nasdaq?"
+        },
+        {
+          "text": "A dividend update brings focus to whether the valuation of Illinois Tool Works is still considered too rich.",
+          "source": "Simply Wall St. Illinois Tool Works (ITW) Dividend Update Draws Focus, Is The Valuation Still Too Rich?"
         }
       ],
       "data_gap": false
@@ -359,42 +332,85 @@
     "MSI": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is exceptional.",
-          "source": "p95"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "Facts"
         },
         {
-          "text": "Lowvol is strong.",
-          "source": "p82"
+          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "source": "Facts"
         },
         {
-          "text": "The stock is back in the spotlight.",
-          "source": "Why Motorola Solutions (MSI) Is Back In The Spotlight"
+          "text": "Low volatility is strong.",
+          "source": "Facts"
         },
         {
-          "text": "The long-term thesis for the company holds despite near-term margin pressure.",
-          "source": "Motorola Solutions (MSI) Faces Near-Term Margin Pressure, but the Long-Term Thesis Holds"
+          "text": "The long-term outlook for Motorola Solutions is considered to hold, despite facing near-term margin pressure.",
+          "source": "Insider Monkey Motorola Solutions (MSI) Faces Near-Term Margin Pressure, but the Long-Term Thesis Holds"
+        },
+        {
+          "text": "Motorola Solutions is drawing renewed attention.",
+          "source": "Simply Wall St. Why Motorola Solutions (MSI) Is Back In The Spotlight"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p24"
+          "text": "Momentum over 12-1 months is weak.",
+          "source": "Facts"
         },
         {
-          "text": "Analyst dispersion is exceptional, potentially indicating varied views.",
-          "source": "p94"
+          "text": "Value based on 1/PE is weak.",
+          "source": "Facts"
         },
         {
-          "text": "Value (1/PE) is weak.",
-          "source": "p30"
-        },
-        {
-          "text": "The stock is questioned for underperforming the Technology Sector.",
-          "source": "Motorola Solutions Stock: Is MSI Underperforming the Technology Sector?"
+          "text": "There is a question about whether MSI is performing less robustly than the technology sector.",
+          "source": "Barchart Motorola Solutions Stock: Is MSI Underperforming the Technology Sector?"
         },
         {
           "text": "The stock was down 0.4% since its last earnings report.",
-          "source": "Why Is Motorola (MSI) Down 0.4% Since Last Earnings Report?"
+          "source": "Zacks Why Is Motorola (MSI) Down 0.4% Since Last Earnings Report?"
+        },
+        {
+          "text": "The company faces near-term margin pressure.",
+          "source": "Insider Monkey Motorola Solutions (MSI) Faces Near-Term Margin Pressure, but the Long-Term Thesis Holds"
+        }
+      ],
+      "data_gap": false
+    },
+    "MAS": {
+      "in_favor": [
+        {
+          "text": "The company exhibits exceptional quality in ROE/margin.",
+          "source": "Facts"
+        },
+        {
+          "text": "The stock shows strong value based on 1/PE.",
+          "source": "Facts"
+        },
+        {
+          "text": "The stock increased by 0.9% since its last earnings report.",
+          "source": "Zacks Why Is Masco (MAS) Up 0.9% Since Last Earnings Report?"
+        },
+        {
+          "text": "Masco stock appears inexpensive when compared to its fair value.",
+          "source": "Simply Wall St. Masco (MAS) Stock Looks Cheap Next To Its Fair Value"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum over 12-1 months is weak.",
+          "source": "Facts"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "Facts"
+        },
+        {
+          "text": "Low volatility is flat.",
+          "source": "Facts"
+        },
+        {
+          "text": "There is an inquiry into the reasons behind the stock's 0.9% increase since its last earnings report.",
+          "source": "Zacks Why Is Masco (MAS) Up 0.9% Since Last Earnings Report?"
         }
       ],
       "data_gap": false
