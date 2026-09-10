@@ -1,40 +1,32 @@
 {
-  "as_of": "2026-09-09",
+  "as_of": "2026-09-10",
   "cases": {
     "ICICIBANK.NS": {
       "in_favor": [
         {
-          "text": "Strong value metrics.",
-          "source": "p89"
+          "text": "Value (1/PE) is Strong.",
+          "source": "p83"
         },
         {
-          "text": "Exceptional low volatility.",
+          "text": "Low volatility is Exceptional.",
           "source": "p94"
-        },
-        {
-          "text": "Asian Equities Traded in the US as American Depositary Receipts experienced rising trends on Wednesday and Tuesday.",
-          "source": "[MT Newswires] Asian Equities Traded in the US as American Depositary Receipts Rise in Wednesday Trading, [MT Newswires] Asian Equities Traded in the US as American Depositary Receipts Rise in Tuesday Trading"
         }
       ],
       "to_watch": [
         {
-          "text": "Weak momentum over the last 12-1 months.",
-          "source": "p28"
+          "text": "Momentum (12-1) is Weak.",
+          "source": "p33"
         },
         {
-          "text": "Strong analyst dispersion, indicating diverse views among analysts.",
+          "text": "Analyst dispersion is Strong.",
           "source": "p89"
         },
         {
-          "text": "Quality metrics (ROE/margin) are flat.",
-          "source": "p61"
+          "text": "Quality (ROE/margin) is Flat.",
+          "source": "p56"
         },
         {
-          "text": "Asian Equities Traded in the US as American Depositary Receipts experienced declines on Monday and Thursday.",
-          "source": "[MT Newswires] Asian Equities Traded in the US as American Depositary Receipts Start Week Lower in Monday Trading, [MT Newswires] Asian Equities Traded in the US as American Depositary Receipts Head Slightly Lower in Thursday Trading"
-        },
-        {
-          "text": "Prudential is selling a 2% stake in ICICI Prudential AMC, valued at approximately $333 million.",
+          "text": "Prudential plans to sell a 2% stake in ICICI Prudential AMC for approximately $333 million.",
           "source": "[Reuters] Prudential to sell 2% stake in ICICI Prudential AMC worth about $333 million"
         }
       ],
@@ -43,34 +35,65 @@
     "SHRIRAMFIN.NS": {
       "in_favor": [
         {
-          "text": "Exceptional momentum over the last 12-1 months.",
+          "text": "Momentum (12-1) is Exceptional.",
           "source": "p94"
         },
         {
-          "text": "Strong value metrics.",
-          "source": "p83"
+          "text": "Value (1/PE) is Strong.",
+          "source": "p78"
         },
         {
-          "text": "Earnings calls highlighted robust profit growth for both Q1 2027 and Q4 2026.",
-          "source": "[GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q1 2027 Earnings Call Highlights: Robust Profit Growth and ..., [GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q4 2026 Earnings Call Highlights: Robust Profit Growth and ..."
+          "text": "Q1 2027 earnings call highlighted robust profit growth.",
+          "source": "[GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q1 2027 Earnings Call Highlights: Robust Profit Growth and ..."
         },
         {
-          "text": "Expectations for lower borrowing costs following a profit surge.",
+          "text": "The company expects lower borrowing costs following a profit surge.",
           "source": "[Reuters] India's Shriram Finance expects lower borrowing costs after profit surge"
+        },
+        {
+          "text": "Q4 2026 earnings call highlighted robust profit growth.",
+          "source": "[GuruFocus.com] Shriram Finance Ltd (BOM:511218) Q4 2026 Earnings Call Highlights: Robust Profit Growth and ..."
         }
       ],
       "to_watch": [
         {
-          "text": "Strong analyst dispersion, suggesting varying expert opinions.",
+          "text": "Analyst dispersion is Strong.",
           "source": "p83"
         },
         {
-          "text": "Quality metrics (ROE/margin) are flat.",
+          "text": "Quality (ROE/margin) is Flat.",
           "source": "p72"
         },
         {
-          "text": "Weak low volatility.",
+          "text": "Low volatility is Weak.",
           "source": "p11"
+        }
+      ],
+      "data_gap": false
+    },
+    "SUNPHARMA.NS": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is Strong.",
+          "source": "p78"
+        },
+        {
+          "text": "Low volatility is Exceptional.",
+          "source": "p94"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is Flat.",
+          "source": "p72"
+        },
+        {
+          "text": "Analyst dispersion is Flat.",
+          "source": "p67"
+        },
+        {
+          "text": "Value (1/PE) is Weak.",
+          "source": "p39"
         }
       ],
       "data_gap": false
@@ -78,19 +101,11 @@
     "KOTAKBANK.NS": {
       "in_favor": [
         {
-          "text": "Strong quality metrics (ROE/margin).",
+          "text": "Quality (ROE/margin) is Strong.",
           "source": "p89"
         },
         {
-          "text": "Strong value metrics.",
-          "source": "p78"
-        },
-        {
-          "text": "Strong low volatility.",
-          "source": "p78"
-        },
-        {
-          "text": "The entity's investment banking arm appointed co-CEOs.",
+          "text": "Kotak Investment Banking has appointed co-CEOs.",
           "source": "[Reuters] India's Kotak Investment Banking appoints co-CEOs"
         },
         {
@@ -100,47 +115,20 @@
       ],
       "to_watch": [
         {
-          "text": "Weak momentum over the last 12-1 months.",
-          "source": "p17"
+          "text": "Momentum (12-1) is Weak.",
+          "source": "p22"
         },
         {
-          "text": "Analyst dispersion is flat.",
+          "text": "Analyst dispersion is Flat.",
           "source": "p56"
         },
         {
-          "text": "Four Indian private lenders, potentially including Kotak Mahindra Bank, are considering dollar debt before an RBI swap window deadline.",
-          "source": "[Reuters] Four Indian private lenders eye dollar debt before RBI swap window deadline, bankers say"
-        }
-      ],
-      "data_gap": false
-    },
-    "SUNPHARMA.NS": {
-      "in_favor": [
-        {
-          "text": "Strong quality metrics (ROE/margin).",
-          "source": "p78"
-        },
-        {
-          "text": "Exceptional low volatility.",
-          "source": "p94"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum over the last 12-1 months is flat.",
+          "text": "Value (1/PE) is Flat.",
           "source": "p72"
         },
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p67"
-        },
-        {
-          "text": "Weak value metrics.",
-          "source": "p39"
-        },
-        {
-          "text": "The broader pharmaceutical industry faces potential impacts from expanded drug pricing deals and Most Favored Nation (MFN) pushes by the Trump administration, involving mid-sized drugmakers.",
-          "source": "[Zacks] Here's How Trump's Drug Deals Are Likely to Impact Healthcare ETFs, [Benzinga] Trump Expands Drug Pricing Deals With 9 Pharma Companies, Bringing Total to 26 \u2014 RFK Jr. Details 'Very, Very Emotional' Conversations With President, [Zacks] Trump's MFN Push Goes Beyond Big Pharma, Adds 9 Mid-Sized Drugmakers, [BioPharma Dive] Mid-cap biotechs join Trump\u2019s latest round of drug pricing deals, [Pharmaceutical Technology] Trump lines up MFN deals with nine mid-size pharmas on drug pricing push"
+          "text": "Low volatility is Flat.",
+          "source": "p72"
         }
       ],
       "data_gap": false
@@ -148,7 +136,7 @@
     "JSWSTEEL.NS": {
       "in_favor": [
         {
-          "text": "Exceptional value metrics.",
+          "text": "Value (1/PE) is Exceptional.",
           "source": "p94"
         },
         {
@@ -156,104 +144,34 @@
           "source": "[GuruFocus.com] JSW Steel Ltd (BOM:500228) Q1 2027 Earnings Call Highlights: Record Sales and Strategic ..."
         },
         {
-          "text": "The entity's profit view was surpassed due to higher prices, with a two-fold quarterly profit rise noted on price recovery.",
-          "source": "[Reuters] India's JSW Steel beats profit view on higher prices, [Reuters] India's JSW Steel posts two-fold quarterly profit rise on price recovery"
+          "text": "The company exceeded profit expectations due to higher prices.",
+          "source": "[Reuters] India's JSW Steel beats profit view on higher prices"
         },
         {
-          "text": "Q4 2026 earnings call indicated strong financial performance.",
+          "text": "Q4 2026 earnings call highlighted strong financial performance.",
           "source": "[GuruFocus.com] JSW Steel Ltd (BOM:500228) Q4 2026 Earnings Call Highlights: Strong Financial Performance Amid ..."
         },
         {
-          "text": "A landmark steel plant deal with POSCO is deepening the latter's India presence.",
-          "source": "[Zacks] POSCO Deepens India Push With JSW in Landmark Steel Plant Deal"
+          "text": "The company posted a two-fold quarterly profit rise, driven by price recovery.",
+          "source": "[Reuters] India's JSW Steel posts two-fold quarterly profit rise on price recovery"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum over the last 12-1 months is flat.",
-          "source": "p50"
+          "text": "Momentum (12-1) is Flat.",
+          "source": "p56"
         },
         {
-          "text": "Analyst dispersion is flat.",
+          "text": "Analyst dispersion is Flat.",
           "source": "p44"
         },
         {
-          "text": "Quality metrics (ROE/margin) are flat.",
-          "source": "p50"
+          "text": "Quality (ROE/margin) is Flat.",
+          "source": "p44"
         },
         {
-          "text": "Low volatility is flat.",
-          "source": "p61"
-        }
-      ],
-      "data_gap": false
-    },
-    "ADANIPORTS.NS": {
-      "in_favor": [
-        {
-          "text": "Exceptional quality metrics (ROE/margin).",
-          "source": "p94"
-        },
-        {
-          "text": "Posted higher profit driven by domestic demand.",
-          "source": "[Reuters] India's Adani Ports posts higher profit on domestic demand"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Weak momentum over the last 12-1 months.",
-          "source": "p33"
-        },
-        {
-          "text": "Strong analyst dispersion, indicating diverse views among analysts.",
-          "source": "p78"
-        },
-        {
-          "text": "Value metrics (1/PE) are flat.",
-          "source": "p61"
-        },
-        {
-          "text": "Weak low volatility.",
-          "source": "p22"
-        },
-        {
-          "text": "Plans to sell a 49% stake in an Indian port to Swiss Shipping Group MSC for $1.4 billion, amidst claims that Kerala state was not consulted on MSC's investment.",
-          "source": "[The Wall Street Journal] Adani Ports to Sell India Port Stake to Swiss Shipping Group MSC for $1.40B, [Reuters] Adani Ports to sell 49% stake in Indian port to MSC for $1.4 billion, [Reuters] India's Kerala state not consulted on MSC's $1.4 billion port investment, chief minister says"
-        }
-      ],
-      "data_gap": false
-    },
-    "HINDALCO.NS": {
-      "in_favor": [
-        {
-          "text": "Strong momentum over the last 12-1 months.",
-          "source": "p83"
-        },
-        {
-          "text": "Weak analyst dispersion, suggesting a higher degree of consensus among analysts.",
-          "source": "p39"
-        },
-        {
-          "text": "Exceptional value metrics.",
-          "source": "p94"
-        },
-        {
-          "text": "Hindustan Copper plans to supply Chilean copper, indicating potential secure raw material sourcing.",
-          "source": "[Mining Technology] Hindustan Copper plans supply of Chilean copper to Hindalco and Adani, [Reuters] India's Hindustan Copper plans to sell copper concentrate sourced from Chile to Hindalco, Adani, sources say"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted record EBITDA and a profit surge due to strengthening metal prices.",
-          "source": "[GuruFocus.com] Hindalco Industries Ltd (FRA:HID) (Q1 2027) Earnings Call Highlights: Record EBITDA and ..., [Reuters] India's Hindalco posts profit surge as metal prices strengthen"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Weak quality metrics (ROE/margin).",
-          "source": "p17"
-        },
-        {
-          "text": "Weak low volatility.",
-          "source": "p28"
+          "text": "Low volatility is Flat.",
+          "source": "p56"
         }
       ],
       "data_gap": false
@@ -261,34 +179,104 @@
     "NESTLEIND.NS": {
       "in_favor": [
         {
-          "text": "Strong momentum over the last 12-1 months.",
+          "text": "Momentum (12-1) is Strong.",
           "source": "p78"
         },
         {
-          "text": "Strong low volatility.",
+          "text": "Low volatility is Strong.",
           "source": "p89"
         },
         {
-          "text": "First-quarter profit increased significantly (26%) due to strong demand.",
-          "source": "[Reuters] Nestle India jumps after strong demand lifts first-quarter profit, [Reuters] Nestle India profit jumps 26% on strong demand, shares rise"
+          "text": "The company's first-quarter profit was lifted by strong demand.",
+          "source": "[Reuters] Nestle India jumps after strong demand lifts first-quarter profit"
+        },
+        {
+          "text": "Profit increased by 26% due to strong demand.",
+          "source": "[Reuters] Nestle India profit jumps 26% on strong demand, shares rise"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is flat.",
+          "text": "Analyst dispersion is Flat.",
           "source": "p72"
         },
         {
-          "text": "Quality metrics (ROE/margin) are flat.",
-          "source": "p56"
+          "text": "Quality (ROE/margin) is Flat.",
+          "source": "p50"
         },
         {
-          "text": "Weak value metrics.",
+          "text": "Value (1/PE) is Weak.",
+          "source": "p17"
+        }
+      ],
+      "data_gap": false
+    },
+    "ADANIPORTS.NS": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is Exceptional.",
+          "source": "p94"
+        },
+        {
+          "text": "The company posted higher profit, driven by domestic demand.",
+          "source": "[Reuters] India's Adani Ports posts higher profit on domestic demand"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is Weak.",
+          "source": "p39"
+        },
+        {
+          "text": "Analyst dispersion is Strong.",
+          "source": "p78"
+        },
+        {
+          "text": "Value (1/PE) is Flat.",
+          "source": "p61"
+        },
+        {
+          "text": "Low volatility is Weak.",
+          "source": "p22"
+        },
+        {
+          "text": "Adani Ports plans to sell a 49% stake in an Indian port to Swiss Shipping Group MSC for $1.4 billion.",
+          "source": "[The Wall Street Journal] Adani Ports to Sell India Port Stake to Swiss Shipping Group MSC for $1.40B"
+        }
+      ],
+      "data_gap": false
+    },
+    "COALINDIA.NS": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is Weak.",
+          "source": "p28"
+        },
+        {
+          "text": "Value (1/PE) is Exceptional.",
+          "source": "p94"
+        },
+        {
+          "text": "Low volatility is Strong.",
+          "source": "p78"
+        },
+        {
+          "text": "The company plans a Singapore trading hub as part of its search for critical mineral assets.",
+          "source": "[Reuters] Coal India plans Singapore trading hub in hunt for critical mineral assets, sources say"
+        },
+        {
+          "text": "The company is considering the acquisition of Canada's Wealth Minerals unit for Chilean lithium assets.",
+          "source": "[Reuters] Coal India weighs buying Canada's Wealth Minerals unit for Chile lithium assets, sources say"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is Weak.",
           "source": "p17"
         },
         {
-          "text": "The broader FMCG sector is facing margin squeeze due to spiking costs amid strong demand, potentially leading to further price hikes.",
-          "source": "[Reuters] India's Tata Consumer warns of more price hikes if costs stay volatile, [Reuters] India's FMCG sector faces margin squeeze as costs spike amid strong demand, price hikes"
+          "text": "Quality (ROE/margin) is Flat.",
+          "source": "p67"
         }
       ],
       "data_gap": false
@@ -296,11 +284,11 @@
     "BAJAJ-AUTO.NS": {
       "in_favor": [
         {
-          "text": "Strong momentum over the last 12-1 months.",
+          "text": "Momentum (12-1) is Strong.",
           "source": "p89"
         },
         {
-          "text": "Weak analyst dispersion, indicating a higher degree of consensus among analysts.",
+          "text": "Analyst dispersion is Weak.",
           "source": "p33"
         },
         {
@@ -308,65 +296,57 @@
           "source": "[GuruFocus.com] Bajaj Auto Ltd (BOM:532977) Q1 2027 Earnings Call Highlights: Record Growth and Strategic Expansions"
         },
         {
-          "text": "Deepening its electric vehicle (EV) initiatives with motorcycle plans and Chetak expansion.",
+          "text": "The company is deepening its electric vehicle (EV) initiatives with motorcycle plans and Chetak expansion.",
           "source": "[Reuters] India's Bajaj Auto deepens EV push with motorcycle plans, Chetak expansion"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality metrics (ROE/margin) are flat.",
+          "text": "Quality (ROE/margin) is Flat.",
+          "source": "p61"
+        },
+        {
+          "text": "Value (1/PE) is Flat.",
           "source": "p67"
         },
         {
-          "text": "Value metrics (1/PE) are flat.",
-          "source": "p67"
-        },
-        {
-          "text": "Low volatility is flat.",
-          "source": "p44"
-        },
-        {
-          "text": "The Indian EV market is seeing increased activity and investment from other players, indicating a competitive landscape.",
-          "source": "[TechCrunch] Indian EV startup River raises $120M Series C to scale production, launch more models, [Reuters] India's Hero MotoCorp to invest about $104 million in Ather Energy"
+          "text": "Low volatility is Weak.",
+          "source": "p39"
         }
       ],
       "data_gap": false
     },
-    "TITAN.NS": {
+    "HINDALCO.NS": {
       "in_favor": [
         {
-          "text": "Exceptional momentum over the last 12-1 months.",
-          "source": "p94"
+          "text": "Momentum (12-1) is Strong.",
+          "source": "p83"
         },
         {
-          "text": "Strong growth reported in Q1 FY27 earnings call and via strategic acquisitions highlighted in Q3 2026 earnings.",
-          "source": "[GuruFocus.com] Titan Co Ltd (BOM:500114) (Q1 FY27) Earnings Call Highlights: Strong Growth Amidst Customs Duty ..., [GuruFocus.com] Titan Co Ltd (BOM:500114) Q3 2026 Earnings Call Highlights: Strategic Acquisitions and Market ..."
+          "text": "Analyst dispersion is Weak.",
+          "source": "p39"
         },
         {
-          "text": "Strong fourth-quarter and festive-quarter sales led to the stock reaching a record high.",
-          "source": "[Reuters] India's Titan hits record high on strong fourth-quarter sales, [Reuters] Indian jewellers' stocks shine on strong festive-quarter sales; Titan hits record high"
+          "text": "Value (1/PE) is Strong.",
+          "source": "p89"
+        },
+        {
+          "text": "Hindustan Copper plans to supply Chilean copper to Hindalco.",
+          "source": "[Mining Technology] Hindustan Copper plans supply of Chilean copper to Hindalco and Adani"
+        },
+        {
+          "text": "Hindustan Copper plans to sell copper concentrate sourced from Chile to Hindalco and Adani.",
+          "source": "[Reuters] India's Hindustan Copper plans to sell copper concentrate sourced from Chile to Hindalco, Adani, sources say"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p50"
+          "text": "Quality (ROE/margin) is Weak.",
+          "source": "p17"
         },
         {
-          "text": "Weak quality metrics (ROE/margin).",
-          "source": "p22"
-        },
-        {
-          "text": "Weak value metrics.",
-          "source": "p11"
-        },
-        {
-          "text": "Low volatility is flat.",
-          "source": "p72"
-        },
-        {
-          "text": "The jewelry sector faces potential impacts from government policies targeting gold imports, and ongoing customs duties.",
-          "source": "[BeInCrypto] India Jewelry Stocks Lose 12% as Modi Targets $72 Billion In Gold Imports, [GuruFocus.com] Titan Co Ltd (BOM:500114) (Q1 FY27) Earnings Call Highlights: Strong Growth Amidst Customs Duty ..."
+          "text": "Low volatility is Weak.",
+          "source": "p28"
         }
       ],
       "data_gap": false
