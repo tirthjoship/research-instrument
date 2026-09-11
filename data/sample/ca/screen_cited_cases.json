@@ -1,36 +1,40 @@
 {
-  "as_of": "2026-09-10",
+  "as_of": "2026-09-11",
   "cases": {
     "CNQ.TO": {
       "in_favor": [
         {
-          "text": "The company shows exceptional Quality (ROE/margin) and Value (1/PE) factors.",
-          "source": "p92"
+          "text": "The company exhibits strong momentum (12-1) and strong analyst dispersion.",
+          "source": "p87"
         },
         {
-          "text": "It has strong Momentum (12-1) and Analyst dispersion.",
-          "source": "p88"
+          "text": "Quality (ROE/margin) and value (1/PE) are both exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Energy stocks are noted for reaching new highs following U.S. actions in the Strait of Hormuz.",
+          "text": "The company's dividend analysis is a subject of discussion.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "The company is noted as an energy stock yielding 3%+ as oil prices are climbing.",
+          "source": "Zacks"
+        },
+        {
+          "text": "The broader environment suggests Brent oil is back above $100 and could continue to rise.",
           "source": "Barrons.com"
-        },
-        {
-          "text": "Oil prices are climbing, with Brent crude above $100 and potential for further increases.",
-          "source": "Barrons.com, Zacks"
         }
       ],
       "to_watch": [
         {
-          "text": "The Lowvol factor for the company is weak.",
-          "source": "p29"
+          "text": "Low volatility is weak.",
+          "source": "p30"
         },
         {
-          "text": "It is among the TSX stocks that investors will be watching next week.",
+          "text": "The company is identified as a TSX stock to be watched by investors.",
           "source": "Investing.com"
         },
         {
-          "text": "Dow Jones futures movement is noted in conjunction with oil price falls, indicating market sensitivity to oil price changes.",
+          "text": "Broader market conditions reflect Dow Jones futures rising while oil prices are falling.",
           "source": "Investor's Business Daily"
         }
       ],
@@ -39,25 +43,21 @@
     "SU.TO": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional Momentum (12-1), Analyst dispersion, and Value (1/PE) factors.",
-          "source": "p92"
+          "text": "The company shows exceptional momentum (12-1) and exceptional analyst dispersion.",
+          "source": "p91"
         },
         {
-          "text": "Imperial Oil, a peer, saw its stock rise 49% YTD.",
-          "source": "Zacks"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p91"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) and Lowvol factors are flat.",
-          "source": "p67, p42"
+          "text": "Quality (ROE/margin) and low volatility are flat.",
+          "source": "p65, p43"
         },
         {
-          "text": "It is among the TSX stocks that investors will be watching next week.",
-          "source": "Investing.com"
-        },
-        {
-          "text": "There are considerations about potential future oil market disruptions, as posed by the question of an 'oil catastrophe' in 2027.",
+          "text": "There is discussion about whether an oil catastrophe averted in 2026 could occur in 2027.",
           "source": "Barrons.com"
         }
       ],
@@ -66,34 +66,34 @@
     "CVE.TO": {
       "in_favor": [
         {
-          "text": "The company shows exceptional Momentum (12-1), and strong Analyst dispersion, Quality (ROE/margin), and Value (1/PE) factors.",
-          "source": "p92, p75, p88"
+          "text": "The company exhibits exceptional momentum (12-1) and strong value (1/PE).",
+          "source": "p91, p87"
         },
         {
-          "text": "Cenovus Energy's stock appears below fair value despite a 364% gain over five years.",
-          "source": "Simply Wall St."
+          "text": "An international manager is described as making significant allocations to the energy sector.",
+          "source": "Barrons.com"
+        },
+        {
+          "text": "The company is delivering strong guidance updates.",
+          "source": "MarketBeat"
         },
         {
           "text": "Its low-cost base and downstream integration are noted for offering resilience.",
           "source": "Zacks"
         },
         {
-          "text": "An international manager is noted to be taking substantial positions in the energy sector.",
-          "source": "Barrons.com"
-        },
-        {
-          "text": "There is a general call to observe companies delivering strong guidance updates.",
-          "source": "MarketBeat"
+          "text": "The stock is observed to appear below fair value despite a 364% gain over five years.",
+          "source": "Simply Wall St."
         }
       ],
       "to_watch": [
         {
-          "text": "The Lowvol factor for the company is weak.",
-          "source": "p21"
+          "text": "Analyst dispersion and quality (ROE/margin) are flat.",
+          "source": "p74"
         },
         {
-          "text": "For peer companies like Imperial Oil with significant year-to-date gains, there are considerations regarding holding positions or realizing profits.",
-          "source": "Zacks"
+          "text": "Low volatility is weak.",
+          "source": "p22"
         }
       ],
       "data_gap": false
@@ -101,30 +101,73 @@
     "CM.TO": {
       "in_favor": [
         {
-          "text": "The company has strong Analyst dispersion, Value (1/PE), and Lowvol factors.",
-          "source": "p83, p88"
+          "text": "The company exhibits strong analyst dispersion, strong value (1/PE), and strong low volatility.",
+          "source": "p83, p87"
         },
         {
-          "text": "CIBC reported beating its profit forecast, driven by growth in domestic banking.",
-          "source": "Proactive"
+          "text": "CIBC has committed $2 billion to support Canadian defence-related companies.",
+          "source": "Financial Post"
         },
         {
-          "text": "The company posted strong Q3 results and incorporated an AI voice feature into its board operations.",
+          "text": "The company posted a strong Q3 and has incorporated AI voice technology into its board.",
           "source": "Simply Wall St."
         },
         {
-          "text": "CIBC has allocated $2 billion to support the expansion of Canadian defence-related companies.",
+          "text": "CIBC exceeded profit forecasts, driven by growth in its domestic banking operations.",
+          "source": "Proactive"
+        },
+        {
+          "text": "Financial issues, including those relevant to the sector, are contributing to a rising TSX Index.",
+          "source": "MT Newswires"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) and quality (ROE/margin) are flat.",
+          "source": "p61, p52"
+        },
+        {
+          "text": "There is a discussion comparing CM with WF regarding which offers better value.",
+          "source": "Zacks"
+        }
+      ],
+      "data_gap": false
+    },
+    "TD.TO": {
+      "in_favor": [
+        {
+          "text": "The company exhibits strong momentum (12-1) and exceptional low volatility.",
+          "source": "p78, p91"
+        },
+        {
+          "text": "Toronto-Dominion Bank set a record Q3 profit.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "Banks, generally, are leveraging AI to improve loan recovery, reduce call center volumes, and enhance operational efficiency.",
           "source": "Financial Post"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) and Quality (ROE/margin) factors are flat.",
-          "source": "p62, p54"
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p30"
         },
         {
-          "text": "The company is being evaluated against other stocks as a potential value opportunity.",
-          "source": "Zacks"
+          "text": "Analyst dispersion and value (1/PE) are flat.",
+          "source": "p61, p57"
+        },
+        {
+          "text": "The company is noted among TSX stocks investors will be watching.",
+          "source": "Investing.com"
+        },
+        {
+          "text": "CIBC has adjusted price targets on five Canadian banks.",
+          "source": "MT Newswires"
+        },
+        {
+          "text": "Discussions exist regarding new workplace monitoring software and employee concerns.",
+          "source": "Financial Post"
         }
       ],
       "data_gap": false
@@ -132,29 +175,29 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "The company has strong Analyst dispersion and an exceptional Lowvol factor.",
-          "source": "p79, p92"
+          "text": "The company exhibits strong analyst dispersion and exceptional low volatility.",
+          "source": "p78, p91"
         },
         {
-          "text": "RBC reported exceeding profit estimates, with capital markets and wealth management segments performing well.",
+          "text": "RBC surpassed profit estimates, with strong performance in capital markets and wealth management.",
           "source": "Proactive"
         },
         {
-          "text": "Royal Bank achieved record earnings, with quarterly results from Canada's largest banks surpassing expectations.",
+          "text": "Royal Bank achieved record earnings, contributing to overall positive quarterly results from Canada\u2019s largest banks.",
           "source": "The Wall Street Journal"
         },
         {
-          "text": "Royal Bank of Canada is unifying its global transaction banking business.",
+          "text": "The company is unifying its global transaction banking business.",
           "source": "Simply Wall St."
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1), Quality (ROE/margin), and Value (1/PE) factors are flat.",
-          "source": "p54, p58, p50"
+          "text": "Momentum (12-1), quality (ROE/margin), and value (1/PE) are flat.",
+          "source": "p52, p57, p52"
         },
         {
-          "text": "CIBC has adjusted price targets for five Canadian banks, indicating ongoing analyst review in the sector.",
+          "text": "CIBC has adjusted price targets on five Canadian banks.",
           "source": "MT Newswires"
         }
       ],
@@ -163,64 +206,64 @@
     "GWO.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional Momentum (12-1) and a strong Lowvol factor.",
-          "source": "p92, p75"
+          "text": "The company shows exceptional momentum (12-1).",
+          "source": "p91"
         },
         {
-          "text": "It is recognized as a TSX dividend stock and has been considered among top dividend stocks.",
+          "text": "Great-West Lifeco reported higher earnings and announced a larger buyback.",
           "source": "Simply Wall St."
         },
         {
-          "text": "The company has reported higher earnings and a larger buyback program.",
+          "text": "The company is mentioned within discussions of TSX dividend stocks, including those yielding up to 6.9% and top stocks for consideration in May 2026.",
           "source": "Simply Wall St."
         }
       ],
       "to_watch": [
         {
-          "text": "The Analyst dispersion factor for the company is weak.",
-          "source": "p17"
+          "text": "Analyst dispersion is weak, as is value (1/PE).",
+          "source": "p17, p39"
         },
         {
-          "text": "Quality (ROE/margin) and Value (1/PE) factors are flat.",
-          "source": "p46, p42"
+          "text": "Quality (ROE/margin) and low volatility are flat.",
+          "source": "p43, p74"
         },
         {
-          "text": "There are questions regarding whether the stock is fully valued after its recent higher earnings and increased buyback activity.",
+          "text": "A question has been raised regarding whether the stock is fully priced after its higher earnings and bigger buyback.",
           "source": "Simply Wall St."
         }
       ],
       "data_gap": false
     },
-    "TD.TO": {
+    "BNS.TO": {
       "in_favor": [
         {
-          "text": "The company has strong Momentum (12-1) and an exceptional Lowvol factor.",
-          "source": "p79, p92"
+          "text": "The company demonstrates exceptional low volatility.",
+          "source": "p91"
         },
         {
-          "text": "Toronto-Dominion Bank achieved a record Q3 profit.",
-          "source": "Simply Wall St."
+          "text": "The bank's dividend is noted for compounding over 190 years.",
+          "source": "Motley Fool"
         },
         {
-          "text": "Banks are leveraging AI to improve loan recovery, reduce call center volumes, and enhance work efficiency.",
-          "source": "Financial Post"
+          "text": "Scotiabank, as a source, indicates an expectation for the Bank of Canada to resume rate hikes in December.",
+          "source": "MT Newswires"
         }
       ],
       "to_watch": [
         {
-          "text": "The Analyst dispersion and Quality (ROE/margin) factors are weak.",
-          "source": "p33"
+          "text": "Momentum (12-1), analyst dispersion, and value (1/PE) are flat.",
+          "source": "p57, p57, p70"
         },
         {
-          "text": "The Value (1/PE) factor is flat.",
-          "source": "p58"
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p26"
         },
         {
-          "text": "It is among the TSX stocks that investors will be watching next week.",
+          "text": "The company is listed among TSX stocks investors will be watching.",
           "source": "Investing.com"
         },
         {
-          "text": "CIBC has adjusted price targets for five Canadian banks, indicating ongoing analyst review in the sector.",
+          "text": "US equity investors are monitoring August inflation data and the elevated probability of a September Fed rate increase.",
           "source": "MT Newswires"
         }
       ],
@@ -229,92 +272,61 @@
     "QSR.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional Analyst dispersion and Quality (ROE/margin) factors.",
-          "source": "p92"
+          "text": "The company shows exceptional analyst dispersion and exceptional quality (ROE/margin).",
+          "source": "p91"
         },
         {
-          "text": "Franchise models are described as successful in the restaurant sector.",
+          "text": "Franchise models are highlighted as performing well within the restaurant stock sector.",
           "source": "MarketBeat"
         },
         {
-          "text": "Some restaurant stocks are highlighted as worth investigating.",
+          "text": "The company is noted in discussions about \"cash-producing stocks with promising prospects\" and \"restaurant stocks worth investigating.\"",
           "source": "StockStory"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) and Value (1/PE) factors are weak.",
-          "source": "p17, p38"
+          "text": "Momentum (12-1) and value (1/PE) are weak.",
+          "source": "p13, p35"
         },
         {
-          "text": "The Lowvol factor is flat.",
-          "source": "p50"
-        },
-        {
-          "text": "Challenges are noted in the broader restaurant stock landscape.",
-          "source": "StockStory"
+          "text": "Low volatility is flat.",
+          "source": "p52"
         }
       ],
       "data_gap": false
     },
-    "BNS.TO": {
+    "NA.TO": {
       "in_favor": [
         {
-          "text": "The company has an exceptional Lowvol factor.",
-          "source": "p92"
+          "text": "The company exhibits strong low volatility.",
+          "source": "p83"
         },
         {
-          "text": "Scotiabank anticipates the Bank of Canada will resume rate increases in December, which could influence the banking sector.",
-          "source": "MT Newswires"
-        },
-        {
-          "text": "The company has a 190-year history of compounding dividends.",
-          "source": "Motley Fool"
+          "text": "National Bank of Canada exceeded expectations.",
+          "source": "Simply Wall St., Financial Post"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1), Analyst dispersion, and Value (1/PE) factors are flat.",
-          "source": "p58, p62, p71"
+          "text": "Momentum (12-1), quality (ROE/margin), and value (1/PE) are flat.",
+          "source": "p65, p48, p61"
         },
         {
-          "text": "The Quality (ROE/margin) factor is weak.",
-          "source": "p25"
+          "text": "Analyst dispersion is weak.",
+          "source": "p30"
         },
         {
-          "text": "It is among the TSX stocks that investors will be watching next week.",
-          "source": "Investing.com"
-        },
-        {
-          "text": "Broader economic factors, such as inflation data and central bank rate increases, are a focus for investors.",
+          "text": "National Bank itself states that Canadian housing affordability is projected to worsen as mortgage rates rise.",
           "source": "MT Newswires"
-        }
-      ],
-      "data_gap": false
-    },
-    "CNR.TO": {
-      "in_favor": [
-        {
-          "text": "The company has a strong Quality (ROE/margin) factor.",
-          "source": "p79"
         },
         {
-          "text": "Canadian National reported a robust grain performance record in August.",
-          "source": "Zacks"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) and Value (1/PE) factors are weak.",
-          "source": "p38, p25"
+          "text": "A question is posed as to whether the stock is still undervalued, even after exceeding expectations.",
+          "source": "Simply Wall St."
         },
         {
-          "text": "Analyst dispersion and Lowvol factors are flat.",
-          "source": "p67, p62"
-        },
-        {
-          "text": "The concept of 'safety stocks' is noted to be evolving, with some built for a weaker dollar.",
-          "source": "MarketBeat"
+          "text": "CIBC adjusted price targets on five Canadian banks.",
+          "source": "MT Newswires"
         }
       ],
       "data_gap": false
