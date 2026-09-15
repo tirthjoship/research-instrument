@@ -1,41 +1,37 @@
 {
-  "as_of": "2026-09-11",
+  "as_of": "2026-09-15",
   "cases": {
     "CNQ.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong momentum (12-1) and strong analyst dispersion.",
-          "source": "p87"
+          "text": "The company demonstrates strong momentum (12-1).",
+          "source": "p88"
         },
         {
-          "text": "Quality (ROE/margin) and value (1/PE) are both exceptional.",
-          "source": "p91"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p92"
         },
         {
-          "text": "The company's dividend analysis is a subject of discussion.",
-          "source": "GuruFocus.com"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p92"
         },
         {
-          "text": "The company is noted as an energy stock yielding 3%+ as oil prices are climbing.",
-          "source": "Zacks"
+          "text": "Analyst dispersion is strong.",
+          "source": "p81"
         },
         {
-          "text": "The broader environment suggests Brent oil is back above $100 and could continue to rise.",
-          "source": "Barrons.com"
+          "text": "The company is part of a discussion regarding oil prices above $100 and strategies to engage with this trend.",
+          "source": "[Barrons.com] Brent Is Back Above $100 and Could Keep Rising. How to Play It."
         }
       ],
       "to_watch": [
         {
           "text": "Low volatility is weak.",
-          "source": "p30"
+          "source": "p31"
         },
         {
-          "text": "The company is identified as a TSX stock to be watched by investors.",
-          "source": "Investing.com"
-        },
-        {
-          "text": "Broader market conditions reflect Dow Jones futures rising while oil prices are falling.",
-          "source": "Investor's Business Daily"
+          "text": "General market conditions include reports of falling oil prices.",
+          "source": "[Investor's Business Daily] Dow Jones Futures Rise As Oil Prices Fall; Dell, Credo, Palo Alto Are Earnings Movers"
         }
       ],
       "data_gap": false
@@ -43,22 +39,38 @@
     "SU.TO": {
       "in_favor": [
         {
-          "text": "The company shows exceptional momentum (12-1) and exceptional analyst dispersion.",
-          "source": "p91"
+          "text": "The company demonstrates exceptional momentum (12-1).",
+          "source": "p92"
+        },
+        {
+          "text": "Analyst dispersion is strong.",
+          "source": "p85"
         },
         {
           "text": "Value (1/PE) is exceptional.",
-          "source": "p91"
+          "source": "p92"
+        },
+        {
+          "text": "The stock has experienced a 63% surge over the past year.",
+          "source": "[Zacks] Should You Buy Suncor Energy Stock After Its 63% Surge in a Year?"
+        },
+        {
+          "text": "The company is among TSX stocks attracting attention for the upcoming week.",
+          "source": "[Investing.com] Which TSX stocks investors will be watching next week?"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) and low volatility are flat.",
-          "source": "p65, p43"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p62"
         },
         {
-          "text": "There is discussion about whether an oil catastrophe averted in 2026 could occur in 2027.",
-          "source": "Barrons.com"
+          "text": "Low volatility is flat.",
+          "source": "p42"
+        },
+        {
+          "text": "The broader oil market faces questions regarding potential challenges in future years.",
+          "source": "[Barrons.com] An Oil Catastrophe Was Averted in 2026. What If It Comes in 2027?"
         }
       ],
       "data_gap": false
@@ -66,34 +78,42 @@
     "CVE.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional momentum (12-1) and strong value (1/PE).",
-          "source": "p91, p87"
+          "text": "The company demonstrates exceptional momentum (12-1).",
+          "source": "p92"
         },
         {
-          "text": "An international manager is described as making significant allocations to the energy sector.",
-          "source": "Barrons.com"
+          "text": "Value (1/PE) is strong.",
+          "source": "p88"
         },
         {
-          "text": "The company is delivering strong guidance updates.",
-          "source": "MarketBeat"
+          "text": "The company is noted for delivering strong guidance updates.",
+          "source": "[MarketBeat] Don't Miss These 3 Companies Delivering Strong Guidance Updates"
         },
         {
-          "text": "Its low-cost base and downstream integration are noted for offering resilience.",
-          "source": "Zacks"
+          "text": "Cenovus Energy's low-cost base and downstream integration are cited as offering resilience.",
+          "source": "[Zacks] How Cenovus' Low-Cost Base and Downstream Integration Offer Resilience"
         },
         {
-          "text": "The stock is observed to appear below fair value despite a 364% gain over five years.",
-          "source": "Simply Wall St."
+          "text": "Despite a 364% gain over five years, the stock is indicated to still appear below fair value.",
+          "source": "[Simply Wall St.] Cenovus Energy (TSX:CVE) Stock Still Looks Below Fair Value Despite 364% 5 Year Gain"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion and quality (ROE/margin) are flat.",
-          "source": "p74"
+          "text": "Analyst dispersion is flat.",
+          "source": "p69"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p73"
         },
         {
           "text": "Low volatility is weak.",
-          "source": "p22"
+          "source": "p23"
+        },
+        {
+          "text": "The company operates in the energy sector, a sector where a manager is placing significant investments.",
+          "source": "[Barrons.com] This International Manager Is Betting Big on Banks and Energy, but Not Tech"
         }
       ],
       "data_gap": false
@@ -101,170 +121,38 @@
     "CM.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong analyst dispersion, strong value (1/PE), and strong low volatility.",
-          "source": "p83, p87"
+          "text": "Analyst dispersion is strong.",
+          "source": "p77"
         },
         {
-          "text": "CIBC has committed $2 billion to support Canadian defence-related companies.",
-          "source": "Financial Post"
+          "text": "Value (1/PE) is strong.",
+          "source": "p85"
         },
         {
-          "text": "The company posted a strong Q3 and has incorporated AI voice technology into its board.",
-          "source": "Simply Wall St."
+          "text": "Low volatility is strong.",
+          "source": "p88"
         },
         {
-          "text": "CIBC exceeded profit forecasts, driven by growth in its domestic banking operations.",
-          "source": "Proactive"
+          "text": "CIBC committed $2 billion to support the growth of Canadian defence-related companies.",
+          "source": "[Financial Post] CIBC commits $2 billion to help Canadian defence-related companies grow"
         },
         {
-          "text": "Financial issues, including those relevant to the sector, are contributing to a rising TSX Index.",
-          "source": "MT Newswires"
+          "text": "The company posted strong Q3 results and is integrating AI voice technology into its board.",
+          "source": "[Simply Wall St.] Canadian Imperial Bank Of Commerce (TSX:CM) Posts Strong Q3 And Adds AI Voice To Board"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) and quality (ROE/margin) are flat.",
-          "source": "p61, p52"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p65"
         },
         {
-          "text": "There is a discussion comparing CM with WF regarding which offers better value.",
-          "source": "Zacks"
-        }
-      ],
-      "data_gap": false
-    },
-    "TD.TO": {
-      "in_favor": [
-        {
-          "text": "The company exhibits strong momentum (12-1) and exceptional low volatility.",
-          "source": "p78, p91"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p50"
         },
         {
-          "text": "Toronto-Dominion Bank set a record Q3 profit.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "Banks, generally, are leveraging AI to improve loan recovery, reduce call center volumes, and enhance operational efficiency.",
-          "source": "Financial Post"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p30"
-        },
-        {
-          "text": "Analyst dispersion and value (1/PE) are flat.",
-          "source": "p61, p57"
-        },
-        {
-          "text": "The company is noted among TSX stocks investors will be watching.",
-          "source": "Investing.com"
-        },
-        {
-          "text": "CIBC has adjusted price targets on five Canadian banks.",
-          "source": "MT Newswires"
-        },
-        {
-          "text": "Discussions exist regarding new workplace monitoring software and employee concerns.",
-          "source": "Financial Post"
-        }
-      ],
-      "data_gap": false
-    },
-    "RY.TO": {
-      "in_favor": [
-        {
-          "text": "The company exhibits strong analyst dispersion and exceptional low volatility.",
-          "source": "p78, p91"
-        },
-        {
-          "text": "RBC surpassed profit estimates, with strong performance in capital markets and wealth management.",
-          "source": "Proactive"
-        },
-        {
-          "text": "Royal Bank achieved record earnings, contributing to overall positive quarterly results from Canada\u2019s largest banks.",
-          "source": "The Wall Street Journal"
-        },
-        {
-          "text": "The company is unifying its global transaction banking business.",
-          "source": "Simply Wall St."
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1), quality (ROE/margin), and value (1/PE) are flat.",
-          "source": "p52, p57, p52"
-        },
-        {
-          "text": "CIBC has adjusted price targets on five Canadian banks.",
-          "source": "MT Newswires"
-        }
-      ],
-      "data_gap": false
-    },
-    "GWO.TO": {
-      "in_favor": [
-        {
-          "text": "The company shows exceptional momentum (12-1).",
-          "source": "p91"
-        },
-        {
-          "text": "Great-West Lifeco reported higher earnings and announced a larger buyback.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "The company is mentioned within discussions of TSX dividend stocks, including those yielding up to 6.9% and top stocks for consideration in May 2026.",
-          "source": "Simply Wall St."
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is weak, as is value (1/PE).",
-          "source": "p17, p39"
-        },
-        {
-          "text": "Quality (ROE/margin) and low volatility are flat.",
-          "source": "p43, p74"
-        },
-        {
-          "text": "A question has been raised regarding whether the stock is fully priced after its higher earnings and bigger buyback.",
-          "source": "Simply Wall St."
-        }
-      ],
-      "data_gap": false
-    },
-    "BNS.TO": {
-      "in_favor": [
-        {
-          "text": "The company demonstrates exceptional low volatility.",
-          "source": "p91"
-        },
-        {
-          "text": "The bank's dividend is noted for compounding over 190 years.",
-          "source": "Motley Fool"
-        },
-        {
-          "text": "Scotiabank, as a source, indicates an expectation for the Bank of Canada to resume rate hikes in December.",
-          "source": "MT Newswires"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1), analyst dispersion, and value (1/PE) are flat.",
-          "source": "p57, p57, p70"
-        },
-        {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p26"
-        },
-        {
-          "text": "The company is listed among TSX stocks investors will be watching.",
-          "source": "Investing.com"
-        },
-        {
-          "text": "US equity investors are monitoring August inflation data and the elevated probability of a September Fed rate increase.",
-          "source": "MT Newswires"
+          "text": "The company is subject to comparison as a value stock.",
+          "source": "[Zacks] WF or CM: Which Is the Better Value Stock Right Now?"
         }
       ],
       "data_gap": false
@@ -272,61 +160,241 @@
     "QSR.TO": {
       "in_favor": [
         {
-          "text": "The company shows exceptional analyst dispersion and exceptional quality (ROE/margin).",
-          "source": "p91"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p92"
         },
         {
-          "text": "Franchise models are highlighted as performing well within the restaurant stock sector.",
-          "source": "MarketBeat"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p92"
         },
         {
-          "text": "The company is noted in discussions about \"cash-producing stocks with promising prospects\" and \"restaurant stocks worth investigating.\"",
-          "source": "StockStory"
+          "text": "Franchise models, which are relevant to this company, are noted as succeeding in the restaurant stock sector.",
+          "source": "[MarketBeat] Why Franchise Models Are Winning the Restaurant Stock Divide"
+        },
+        {
+          "text": "The company is among those described as \"Cash-Producing Stocks with Promising Prospects\".",
+          "source": "[StockStory] 2 Cash-Producing Stocks with Promising Prospects and 1 We Brush Off"
+        },
+        {
+          "text": "The company is among \"Restaurant Stocks Worth Investigating\".",
+          "source": "[StockStory] 2 Restaurant Stocks Worth Investigating and 1 Facing Challenges"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) and value (1/PE) are weak.",
-          "source": "p13, p35"
+          "text": "Momentum (12-1) is weak.",
+          "source": "p27"
+        },
+        {
+          "text": "Value (1/PE) is weak.",
+          "source": "p35"
         },
         {
           "text": "Low volatility is flat.",
-          "source": "p52"
+          "source": "p58"
         }
       ],
       "data_gap": false
     },
-    "NA.TO": {
+    "RY.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits strong low volatility.",
-          "source": "p83"
+          "text": "Low volatility is exceptional.",
+          "source": "p92"
         },
         {
-          "text": "National Bank of Canada exceeded expectations.",
-          "source": "Simply Wall St., Financial Post"
+          "text": "Royal Bank's capital markets and wealth management segments performed well, and it beat profit estimates.",
+          "source": "[Proactive] RBC beats profit estimates as capital markets, wealth management shine"
+        },
+        {
+          "text": "The company achieved record earnings, and its quarterly results surpassed expectations among Canada's largest banks.",
+          "source": "[The Wall Street Journal] Royal Bank Notches Record Earnings as Quarterly Results From Canada\u2019s Biggest Banks Beat Expectations"
+        },
+        {
+          "text": "Royal Bank of Canada is unifying its global transaction banking business.",
+          "source": "[Simply Wall St.] Royal Bank Of Canada (TSX:RY) Unifies Its Global Transaction Banking Business"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1), quality (ROE/margin), and value (1/PE) are flat.",
-          "source": "p65, p48, p61"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p58"
         },
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p30"
+          "text": "Analyst dispersion is flat.",
+          "source": "p73"
         },
         {
-          "text": "National Bank itself states that Canadian housing affordability is projected to worsen as mortgage rates rise.",
-          "source": "MT Newswires"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p54"
         },
         {
-          "text": "A question is posed as to whether the stock is still undervalued, even after exceeding expectations.",
-          "source": "Simply Wall St."
+          "text": "Value (1/PE) is flat.",
+          "source": "p58"
         },
         {
-          "text": "CIBC adjusted price targets on five Canadian banks.",
-          "source": "MT Newswires"
+          "text": "Price targets for the company and other Canadian banks have been adjusted.",
+          "source": "[MT Newswires] CIBC Adjusts Price Targets on Five Canadian Banks"
+        }
+      ],
+      "data_gap": false
+    },
+    "TD.TO": {
+      "in_favor": [
+        {
+          "text": "The company demonstrates strong momentum (12-1).",
+          "source": "p81"
+        },
+        {
+          "text": "Low volatility is exceptional.",
+          "source": "p92"
+        },
+        {
+          "text": "TD Bank has committed CA$150 billion to boost the Canadian economy.",
+          "source": "[MT Newswires] TD Bank Outlines CA$150 Billion Commitment to Boost Canadian Economy"
+        },
+        {
+          "text": "The company has mobilized over $108 billion to fuel Canada's infrastructure.",
+          "source": "[The Wall Street Journal] TD Bank Mobilizes More than $108 Billion Commitment to Fuel Canada\u2019s Infrastructure"
+        },
+        {
+          "text": "Banks, including TD, report that AI is helping to recover unpaid loans, reduce call center volumes, and save workdays.",
+          "source": "[Financial Post] Banks say AI is allowing them to recover unpaid loans, cut call centre volumes and save workdays"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p54"
+        },
+        {
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p27"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p54"
+        },
+        {
+          "text": "The company is among TSX stocks attracting attention for the upcoming week.",
+          "source": "[Investing.com] Which TSX stocks investors will be watching next week?"
+        }
+      ],
+      "data_gap": false
+    },
+    "CNR.TO": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p77"
+        },
+        {
+          "text": "Canadian National reported a robust grain performance record in August.",
+          "source": "[Zacks] Canadian National Reports Robust Grain Performance Record in August"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p46"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p62"
+        },
+        {
+          "text": "Value (1/PE) is weak.",
+          "source": "p27"
+        },
+        {
+          "text": "Low volatility is flat.",
+          "source": "p69"
+        },
+        {
+          "text": "CN has filed anticipated requested conditions with the STB, indicating ongoing regulatory processes.",
+          "source": "[MT Newswires] CN Files Description of Anticipated Requested Conditions With STB"
+        }
+      ],
+      "data_gap": false
+    },
+    "BNS.TO": {
+      "in_favor": [
+        {
+          "text": "Low volatility is exceptional.",
+          "source": "p92"
+        },
+        {
+          "text": "Scotiabank, along with other banks, committed to deploying over $250 billion worth of capital domestically.",
+          "source": "[Financial Post] TD and Scotiabank join other banks in promising to deploy over $250 billion worth of capital at home"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p62"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p50"
+        },
+        {
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p23"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p73"
+        },
+        {
+          "text": "Scotiabank's assessment suggests the Bank of Canada may resume rate hikes in December.",
+          "source": "[MT Newswires] Bank of Canada Expected to Return to Rate Hikes in December, Says Scotiabank"
+        }
+      ],
+      "data_gap": false
+    },
+    "ATD.TO": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p92"
+        },
+        {
+          "text": "The company has been highlighted among \"The biggest winners\" in its Q1.",
+          "source": "[C-Store Dive] 3 Big Numbers: The biggest winners in Couche-Tard\u2019s Q1"
+        },
+        {
+          "text": "Merchandise growth for Couche-Tard is noted to continue into fiscal 2027.",
+          "source": "[C-Store Dive] Couche-Tard\u2019s merchandise growth keeps on rolling into fiscal 2027"
+        },
+        {
+          "text": "Alimentation Couche-Tard is considering a record \u017babka deal, with shareholders supporting its growth strategy.",
+          "source": "[MarketBeat] Alimentation Couche-Tard Eyes Record \u017babka Deal as Shareholders Back Growth Strategy"
+        },
+        {
+          "text": "Its dividend characteristics are subject to analysis.",
+          "source": "[GuruFocus.com] Alimentation Couche-Tard Inc's Dividend Analysis"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p15"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p65"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p65"
+        },
+        {
+          "text": "Low volatility is flat.",
+          "source": "p50"
+        },
+        {
+          "text": "Q1 earnings call highlights indicate areas for monitoring.",
+          "source": "[MarketBeat] Alimentation Couche-Tard Q1 Earnings Call Highlights"
         }
       ],
       "data_gap": false
