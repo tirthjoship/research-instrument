@@ -1,367 +1,40 @@
 {
-  "as_of": "2026-09-15",
+  "as_of": "2026-09-17",
   "cases": {
     "ICICIBANK.NS": {
-      "in_favor": [
-        {
-          "text": "Value (1/PE) is Strong (p89).",
-          "source": "Fact"
-        },
-        {
-          "text": "Lowvol is Exceptional (p94).",
-          "source": "Fact"
-        },
-        {
-          "text": "ICICI Prudential AMC received clearance to acquire up to 9.95% in four lenders, indicating potential institutional activity in the financial sector.",
-          "source": "Retail Banker International"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Weak (p28).",
-          "source": "Fact"
-        },
-        {
-          "text": "Analyst dispersion is Strong (p89), suggesting varied analytical perspectives.",
-          "source": "Fact"
-        },
-        {
-          "text": "Quality (ROE/margin) is Flat (p61).",
-          "source": "Fact"
-        }
-      ],
-      "data_gap": false
-    },
-    "SHRIRAMFIN.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Exceptional (p94).",
-          "source": "Fact"
-        },
-        {
-          "text": "Value (1/PE) is Strong (p83).",
-          "source": "Fact"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted robust profit growth.",
-          "source": "GuruFocus.com"
-        },
-        {
-          "text": "The company expects lower borrowing costs following a profit surge.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Q4 2026 earnings call also highlighted robust profit growth.",
-          "source": "GuruFocus.com"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is Strong (p83), suggesting varied analytical perspectives.",
-          "source": "Fact"
-        },
-        {
-          "text": "Quality (ROE/margin) is Flat (p72).",
-          "source": "Fact"
-        },
-        {
-          "text": "Lowvol is Weak (p11), indicating higher volatility.",
-          "source": "Fact"
-        }
-      ],
-      "data_gap": false
-    },
-    "SUNPHARMA.NS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is Strong (p78).",
-          "source": "Fact"
-        },
-        {
-          "text": "Lowvol is Exceptional (p94).",
-          "source": "Fact"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Flat (p72).",
-          "source": "Fact"
-        },
-        {
-          "text": "Analyst dispersion is Flat (p67).",
-          "source": "Fact"
-        },
-        {
-          "text": "Value (1/PE) is Weak (p39).",
-          "source": "Fact"
-        }
-      ],
-      "data_gap": false
-    },
-    "KOTAKBANK.NS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is Strong (p89).",
-          "source": "Fact"
-        },
-        {
-          "text": "Value (1/PE) is Strong (p78).",
-          "source": "Fact"
-        },
-        {
-          "text": "Lowvol is Strong (p78).",
-          "source": "Fact"
-        },
-        {
-          "text": "Kotak Investment Banking appointed co-CEOs.",
-          "source": "Reuters"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Weak (p17).",
-          "source": "Fact"
-        },
-        {
-          "text": "Analyst dispersion is Flat (p56).",
-          "source": "Fact"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "JSWSTEEL.NS": {
-      "in_favor": [
-        {
-          "text": "Value (1/PE) is Exceptional (p94).",
-          "source": "Fact"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted record sales and strategic initiatives.",
-          "source": "GuruFocus.com"
-        },
-        {
-          "text": "The company surpassed profit expectations due to higher prices.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Q4 2026 earnings call highlighted strong financial performance.",
-          "source": "GuruFocus.com"
-        },
-        {
-          "text": "The company reported a two-fold quarterly profit increase driven by price recovery.",
-          "source": "Reuters"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Flat (p50).",
-          "source": "Fact"
-        },
-        {
-          "text": "Analyst dispersion is Flat (p44).",
-          "source": "Fact"
-        },
-        {
-          "text": "Quality (ROE/margin) is Flat (p50).",
-          "source": "Fact"
-        },
-        {
-          "text": "Lowvol is Flat (p61).",
-          "source": "Fact"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "HINDALCO.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Strong (p83).",
-          "source": "Fact"
-        },
-        {
-          "text": "Analyst dispersion is Weak (p39), indicating more consensus.",
-          "source": "Fact"
-        },
-        {
-          "text": "Value (1/PE) is Exceptional (p94).",
-          "source": "Fact"
-        },
-        {
-          "text": "Hindustan Copper plans to supply Chilean copper concentrate to Hindalco.",
-          "source": "Mining Technology"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted record EBITDA.",
-          "source": "GuruFocus.com"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is Weak (p17).",
-          "source": "Fact"
-        },
-        {
-          "text": "Lowvol is Weak (p28), indicating higher volatility.",
-          "source": "Fact"
-        }
-      ],
-      "data_gap": false
+    "KOTAKBANK.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "NESTLEIND.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Strong (p78).",
-          "source": "Fact"
-        },
-        {
-          "text": "Lowvol is Strong (p89).",
-          "source": "Fact"
-        },
-        {
-          "text": "The company's first-quarter profit was lifted by strong demand.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Nestle India's profit rose 26% due to strong demand.",
-          "source": "Reuters"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is Flat (p72).",
-          "source": "Fact"
-        },
-        {
-          "text": "Quality (ROE/margin) is Flat (p56).",
-          "source": "Fact"
-        },
-        {
-          "text": "Value (1/PE) is Weak (p17).",
-          "source": "Fact"
-        }
-      ],
-      "data_gap": false
+    "GRASIM.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "ADANIPORTS.NS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is Exceptional (p94).",
-          "source": "Fact"
-        },
-        {
-          "text": "The company reported higher profit driven by domestic demand.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Adani Ports plans to sell a 49% stake in an Indian port to Swiss Shipping Group MSC for $1.4 billion.",
-          "source": "The Wall Street Journal"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is Weak (p33).",
-          "source": "Fact"
-        },
-        {
-          "text": "Analyst dispersion is Strong (p78), suggesting varied analytical perspectives.",
-          "source": "Fact"
-        },
-        {
-          "text": "Value (1/PE) is Flat (p61).",
-          "source": "Fact"
-        },
-        {
-          "text": "Lowvol is Weak (p22), indicating higher volatility.",
-          "source": "Fact"
-        },
-        {
-          "text": "Kerala state's chief minister stated that the state was not consulted on MSC's $1.4 billion port investment.",
-          "source": "Reuters"
-        }
-      ],
-      "data_gap": false
+    "BAJFINANCE.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "BAJAJ-AUTO.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Strong (p89).",
-          "source": "Fact"
-        },
-        {
-          "text": "Analyst dispersion is Weak (p33), indicating more consensus.",
-          "source": "Fact"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted record growth and strategic expansions.",
-          "source": "GuruFocus.com"
-        },
-        {
-          "text": "The company is deepening its electric vehicle (EV) initiatives, including motorcycle plans and Chetak expansion.",
-          "source": "Reuters"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is Flat (p67).",
-          "source": "Fact"
-        },
-        {
-          "text": "Value (1/PE) is Flat (p67).",
-          "source": "Fact"
-        },
-        {
-          "text": "Lowvol is Flat (p44).",
-          "source": "Fact"
-        }
-      ],
-      "data_gap": false
+    "ADANIENT.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "TITAN.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Exceptional (p94).",
-          "source": "Fact"
-        },
-        {
-          "text": "The company's stock reached a record high driven by strong fourth-quarter sales.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Q1 FY27 earnings call highlighted strong growth.",
-          "source": "GuruFocus.com"
-        },
-        {
-          "text": "Indian jewellers' stocks, including Titan, experienced appreciation due to strong festive-quarter sales.",
-          "source": "Reuters"
-        },
-        {
-          "text": "Q3 2026 earnings call highlighted strategic acquisitions.",
-          "source": "GuruFocus.com"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is Flat (p50).",
-          "source": "Fact"
-        },
-        {
-          "text": "Quality (ROE/margin) is Weak (p22).",
-          "source": "Fact"
-        },
-        {
-          "text": "Value (1/PE) is Weak (p11).",
-          "source": "Fact"
-        },
-        {
-          "text": "Lowvol is Flat (p72).",
-          "source": "Fact"
-        },
-        {
-          "text": "Indian jewelry stocks experienced a decline as a policy targets gold imports.",
-          "source": "BeInCrypto"
-        }
-      ],
-      "data_gap": false
+    "ETERNAL.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     }
   }
 }

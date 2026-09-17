@@ -1,391 +1,55 @@
 {
-  "as_of": "2026-09-15",
+  "as_of": "2026-09-16",
   "cases": {
     "CNQ.TO": {
-      "in_favor": [
-        {
-          "text": "The company exhibits strong momentum (12-1) (p88).",
-          "source": "p88"
-        },
-        {
-          "text": "Analyst dispersion is strong (p81).",
-          "source": "p81"
-        },
-        {
-          "text": "Quality metrics (ROE/margin) are exceptional (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "Value metrics (1/PE) are exceptional (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "It is featured in 'Top Research Reports' (Zacks).",
-          "source": "[Zacks] Top Research Reports for S&P Global, Cloudflare & Canadian Natural"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Low volatility is weak (p31).",
-          "source": "p31"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "SU.TO": {
-      "in_favor": [
-        {
-          "text": "The company demonstrates exceptional momentum (12-1) (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "Analyst dispersion is strong (p85).",
-          "source": "p85"
-        },
-        {
-          "text": "Value (1/PE) is strong (p88).",
-          "source": "p88"
-        },
-        {
-          "text": "It is listed among TSX stocks investors will be watching (Investing.com).",
-          "source": "[Investing.com] Which TSX stocks investors will be watching next week?"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is flat (p62).",
-          "source": "p62"
-        },
-        {
-          "text": "Low volatility is flat (p42).",
-          "source": "p42"
-        },
-        {
-          "text": "A query is raised regarding the stock's posture after a 63% surge in a year (Zacks).",
-          "source": "[Zacks] Should You Buy Suncor Energy Stock After Its 63% Surge in a Year?"
-        },
-        {
-          "text": "There are considerations about potential future oil sector challenges in 2027 (Barrons.com).",
-          "source": "[Barrons.com] An Oil Catastrophe Was Averted in 2026. What If It Comes in 2027?"
-        }
-      ],
-      "data_gap": false
-    },
-    "CM.TO": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is strong (p77).",
-          "source": "p77"
-        },
-        {
-          "text": "Value (1/PE) is strong (p85).",
-          "source": "p85"
-        },
-        {
-          "text": "Low volatility is strong (p88).",
-          "source": "p88"
-        },
-        {
-          "text": "The TSX index is rising on stronger financial issues (MT Newswires).",
-          "source": "[MT Newswires] TSX Closer: The Index Rises on Stronger Tech and Financial Issues"
-        },
-        {
-          "text": "CIBC has committed $2 billion to help Canadian defence-related companies grow (Financial Post).",
-          "source": "[Financial Post] CIBC commits $2 billion to help Canadian defence-related companies grow"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p65).",
-          "source": "p65"
-        },
-        {
-          "text": "Quality (ROE/margin) is flat (p50).",
-          "source": "p50"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "CVE.TO": {
-      "in_favor": [
-        {
-          "text": "The company has exceptional momentum (12-1) (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "Value (1/PE) is exceptional (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "An international manager is reportedly making significant allocations to the energy sector (Barrons.com).",
-          "source": "[Barrons.com] This International Manager Is Betting Big on Banks and Energy, but Not Tech"
-        },
-        {
-          "text": "It features a low-cost base and downstream integration, offering resilience (Zacks).",
-          "source": "[Zacks] How Cenovus' Low-Cost Base and Downstream Integration Offer Resilience"
-        },
-        {
-          "text": "It may be among companies delivering strong guidance updates (MarketBeat).",
-          "source": "[MarketBeat] Don't Miss These 3 Companies Delivering Strong Guidance Updates"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is flat (p69).",
-          "source": "p69"
-        },
-        {
-          "text": "Quality (ROE/margin) is flat (p73).",
-          "source": "p73"
-        },
-        {
-          "text": "Low volatility is weak (p23).",
-          "source": "p23"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "QSR.TO": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is exceptional (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "Quality (ROE/margin) is exceptional (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "Franchise models are noted for performing well within the restaurant stock sector (MarketBeat).",
-          "source": "[MarketBeat] Why Franchise Models Are Winning the Restaurant Stock Divide"
-        },
-        {
-          "text": "It is included in discussions of cash-producing stocks with promising prospects (StockStory).",
-          "source": "[StockStory] 2 Cash-Producing Stocks with Promising Prospects and 1 We Brush Off"
-        },
-        {
-          "text": "It is included in discussions of restaurant stocks worth investigating (StockStory).",
-          "source": "[StockStory] 2 Restaurant Stocks Worth Investigating and 1 Facing Challenges"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p27).",
-          "source": "p27"
-        },
-        {
-          "text": "Value (1/PE) is flat (p42).",
-          "source": "p42"
-        },
-        {
-          "text": "Low volatility is flat (p58).",
-          "source": "p58"
-        },
-        {
-          "text": "It is included in discussions that also mention stocks that are brushed off (StockStory).",
-          "source": "[StockStory] 2 Cash-Producing Stocks with Promising Prospects and 1 We Brush Off"
-        },
-        {
-          "text": "It is included in discussions that also mention stocks facing challenges (StockStory).",
-          "source": "[StockStory] 2 Restaurant Stocks Worth Investigating and 1 Facing Challenges"
-        }
-      ],
-      "data_gap": false
+    "CM.TO": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "RY.TO": {
-      "in_favor": [
-        {
-          "text": "Low volatility is exceptional (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "RBC exceeded profit estimates, with capital markets and wealth management performing well (Proactive).",
-          "source": "[Proactive] RBC beats profit estimates as capital markets, wealth management shine"
-        },
-        {
-          "text": "The company achieved record earnings as quarterly results from Canada\u2019s largest banks surpassed expectations (The Wall Street Journal).",
-          "source": "[The Wall Street Journal] Royal Bank Notches Record Earnings as Quarterly Results From Canada\u2019s Biggest Banks Beat Expectations"
-        },
-        {
-          "text": "Royal Bank of Canada is unifying its global transaction banking business (Simply Wall St.).",
-          "source": "[Simply Wall St.] Royal Bank Of Canada (TSX:RY) Unifies Its Global Transaction Banking Business"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p58).",
-          "source": "p58"
-        },
-        {
-          "text": "Analyst dispersion is flat (p73).",
-          "source": "p73"
-        },
-        {
-          "text": "Quality (ROE/margin) is flat (p54).",
-          "source": "p54"
-        },
-        {
-          "text": "Value (1/PE) is flat (p54).",
-          "source": "p54"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "QSR.TO": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "TD.TO": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is strong (p81).",
-          "source": "p81"
-        },
-        {
-          "text": "Low volatility is exceptional (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "It is considered a value option (Zacks).",
-          "source": "[Zacks] BBVA vs. TD: Which Stock Is the Better Value Option?"
-        },
-        {
-          "text": "The stock could be 20% undervalued based on its CA$150 billion commitment to Canada (Simply Wall St.).",
-          "source": "[Simply Wall St.] Toronto Dominion Bank (TSX:TD) Could Be 20% Undervalued On Its $150b Canada Push"
-        },
-        {
-          "text": "TD Bank outlined a CA$150 billion commitment to stimulate the Canadian economy (MT Newswires).",
-          "source": "[MT Newswires] TD Bank Outlines CA$150 Billion Commitment to Boost Canadian Economy"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is weak (p27).",
-          "source": "p27"
-        },
-        {
-          "text": "Analyst dispersion is flat (p54).",
-          "source": "p54"
-        },
-        {
-          "text": "Value (1/PE) is flat (p50).",
-          "source": "p50"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "CNR.TO": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is strong (p77).",
-          "source": "p77"
-        },
-        {
-          "text": "Canadian National reported a robust grain performance record in August (Zacks).",
-          "source": "[Zacks] Canadian National Reports Robust Grain Performance Record in August"
-        },
-        {
-          "text": "CN filed a description of anticipated requested conditions with the STB (MT Newswires).",
-          "source": "[MT Newswires] CN Files Description of Anticipated Requested Conditions With STB"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p46).",
-          "source": "p46"
-        },
-        {
-          "text": "Analyst dispersion is flat (p62).",
-          "source": "p62"
-        },
-        {
-          "text": "Value (1/PE) is weak (p31).",
-          "source": "p31"
-        },
-        {
-          "text": "Low volatility is flat (p69).",
-          "source": "p69"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "BNS.TO": {
-      "in_favor": [
-        {
-          "text": "Low volatility is exceptional (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "Scotiabank is noted for joining a spending initiative (Financial Post).",
-          "source": "[Financial Post] News of the day: TD and Scotiabank join spending spree, inflation rate stays steady, economists' reaction, too many apartments, stagflation risks and more"
-        },
-        {
-          "text": "Scotiabank, along with other banks, pledged to deploy over $250 billion worth of capital domestically (Financial Post).",
-          "source": "[Financial Post] TD and Scotiabank join other banks in promising to deploy over $250 billion worth of capital at home"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p62).",
-          "source": "p62"
-        },
-        {
-          "text": "Analyst dispersion is flat (p50).",
-          "source": "p50"
-        },
-        {
-          "text": "Quality (ROE/margin) is weak (p23).",
-          "source": "p23"
-        },
-        {
-          "text": "Value (1/PE) is flat (p65).",
-          "source": "p65"
-        },
-        {
-          "text": "Scotiabank expects the Bank of Canada to resume rate increases in December (MT Newswires).",
-          "source": "[MT Newswires] Bank of Canada Expected to Return to Rate Hikes in December, Says Scotiabank"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "ATD.TO": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is exceptional (p92).",
-          "source": "p92"
-        },
-        {
-          "text": "The company is recognized among the biggest benefactors in Q1 (C-Store Dive).",
-          "source": "[C-Store Dive] 3 Big Numbers: The biggest winners in Couche-Tard\u2019s Q1"
-        },
-        {
-          "text": "Merchandise growth is continuing into fiscal 2027 (C-Store Dive).",
-          "source": "[C-Store Dive] Couche-Tard\u2019s merchandise growth keeps on rolling into fiscal 2027"
-        },
-        {
-          "text": "Alimentation Couche-Tard is reportedly pursuing a record \u017babka deal, with shareholder support for its growth strategy (MarketBeat).",
-          "source": "[MarketBeat] Alimentation Couche-Tard Eyes Record \u017babka Deal as Shareholders Back Growth Strategy"
-        },
-        {
-          "text": "Dividend analysis for the company is available (GuruFocus.com).",
-          "source": "[GuruFocus.com] Alimentation Couche-Tard Inc's Dividend Analysis"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p15).",
-          "source": "p15"
-        },
-        {
-          "text": "Quality (ROE/margin) is flat (p65).",
-          "source": "p65"
-        },
-        {
-          "text": "Value (1/PE) is flat (p73).",
-          "source": "p73"
-        },
-        {
-          "text": "Low volatility is flat (p50).",
-          "source": "p50"
-        }
-      ],
-      "data_gap": false
+    "NA.TO": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     }
   }
 }
