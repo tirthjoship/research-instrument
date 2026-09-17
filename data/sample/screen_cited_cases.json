@@ -1,40 +1,44 @@
 {
-  "as_of": "2026-09-16",
+  "as_of": "2026-09-17",
   "cases": {
     "SPG": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACT: Quality (ROE/margin): Exceptional (p95)"
+          "text": "The company exhibits exceptional quality based on ROE/margin (p95).",
+          "source": "p95"
         },
         {
-          "text": "The company exhibits strong value based on 1/PE (p86).",
-          "source": "FACT: Value (1/PE): Strong (p86)"
+          "text": "Its value metric (1/PE) is strong (p87).",
+          "source": "p87"
         },
         {
-          "text": "The company has exceptional low volatility (p92).",
-          "source": "FACT: Lowvol: Exceptional (p92)"
+          "text": "The low volatility characteristic is exceptional (p92).",
+          "source": "p92"
         },
         {
-          "text": "Malls are currently ranking as the hottest commercial real estate sector and the top performer.",
-          "source": "[The Daily Upside] Shopping for Value? Malls Now Rank as Hottest Commercial Real Estate, [The Wall Street Journal] Malls Were Left for Dead. Now They Are the Top Performer in Commercial Real Estate."
+          "text": "Analyst dispersion is strong, indicating active coverage (p89).",
+          "source": "p89"
         },
         {
-          "text": "One retail REIT, implied to be SPG, has 'Crushed Its Peer Since' 2020, despite a dividend cut that year.",
-          "source": "[24/7 Wall St.] One Retail REIT Cut Its Dividend in 2020 but Crushed Its Peer Since. Which Is Roth Ready?"
+          "text": "Simon Property Group has experienced a leasing surge due to rising traffic, rents, and retail demand.",
+          "source": "[MarketBeat] Simon Property Group Sees Leasing Surge as Traffic, Rents and Retail Demand Rise"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p35).",
-          "source": "FACT: Momentum (12-1): Weak (p35)"
+          "text": "Momentum (12-1) is weak (p33).",
+          "source": "p33"
         },
         {
-          "text": "Strong analyst dispersion (p89) indicates a wide range of opinions among analysts.",
-          "source": "FACT: Analyst dispersion: Strong (p89)"
+          "text": "Market sentiment shows neutral sentiment (0.00) with only 1 mention in the last 30 days.",
+          "source": "Market sentiment"
         },
         {
-          "text": "Simon, implied to be SPG, is noted as 'Approaching End Of The Road With Struggling Suburban Boston Mall'.",
+          "text": "Simon Property Group plans to hand back the Square One Mall.",
+          "source": "[Simply Wall St.] Simon Property Group (SPG) Plans To Hand Back Square One Mall"
+        },
+        {
+          "text": "The company is approaching the end of its involvement with a struggling suburban Boston mall.",
           "source": "[Bisnow] Simon Approaching End Of The Road With Struggling Suburban Boston Mall"
         },
         {
@@ -48,142 +52,41 @@
       "in_favor": [
         {
           "text": "Momentum (12-1) is strong (p90).",
-          "source": "FACT: Momentum (12-1): Strong (p90)"
+          "source": "p90"
         },
         {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p92).",
-          "source": "FACT: Quality (ROE/margin): Exceptional (p92)"
+          "text": "Analyst dispersion is strong (p83).",
+          "source": "p83"
         },
         {
-          "text": "Targa Resources is extending its growth runway with new Permian projects.",
-          "source": "[MT Newswires] Targa Resources Extends Growth Runway With New Permian Projects, RBC Says"
+          "text": "Quality (ROE/margin) is exceptional (p93).",
+          "source": "p93"
         },
         {
-          "text": "Targa's deal with ExxonMobil could extend its Permian growth runway.",
-          "source": "[Zacks] How Targa's ExxonMobil Deal Could Extend Its Permian Growth Runway"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Strong analyst dispersion (p83) indicates a wide range of opinions among analysts.",
-          "source": "FACT: Analyst dispersion: Strong (p83)"
+          "text": "Targa Resources is extending its growth runway with new Permian projects, according to RBC, and through its ExxonMobil deal.",
+          "source": "[MT Newswires] Targa Resources Extends Growth Runway With New Permian Projects, RBC Says, [Zacks] How Targa's ExxonMobil Deal Could Extend Its Permian Growth Runway"
         },
         {
-          "text": "Value (1/PE) is flat (p47).",
-          "source": "FACT: Value (1/PE): Flat (p47)"
-        },
-        {
-          "text": "Low volatility is flat (p47).",
-          "source": "FACT: Lowvol: Flat (p47)"
-        },
-        {
-          "text": "Targa granted its new CFO a hefty long-term incentive.",
+          "text": "The company granted its new CFO a substantial long-term incentive.",
           "source": "[CFO Dive] Targa grants new CFO hefty long-term incentive"
         }
       ],
-      "data_gap": false
-    },
-    "HAS": {
-      "in_favor": [
-        {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACT: Quality (ROE/margin): Exceptional (p95)"
-        },
-        {
-          "text": "The company exhibits strong value based on 1/PE (p79).",
-          "source": "FACT: Value (1/PE): Strong (p79)"
-        },
-        {
-          "text": "Hasbro is noted as a Mid-Cap Stock with competitive advantages.",
-          "source": "[StockStory] 1 Mid-Cap Stock with Competitive Advantages and 2 That Underwhelm"
-        },
-        {
-          "text": "Hasbro is one of billionaire Ray Dalio\u2019s Bridgewater\u2019s 2 non-AI stock picks.",
-          "source": "[Insider Monkey] Billionaire Ray Dalio\u2019s Bridgewater\u2019s 2 Non-AI Stock Picks"
-        }
-      ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat (p50).",
-          "source": "FACT: Momentum (12-1): Flat (p50)"
+          "text": "The value metric (1/PE) is flat (p52).",
+          "source": "p52"
         },
         {
-          "text": "Analyst dispersion is flat (p61).",
-          "source": "FACT: Analyst dispersion: Flat (p61)"
+          "text": "Low volatility is flat (p48).",
+          "source": "p48"
         },
         {
-          "text": "Low volatility is flat (p44).",
-          "source": "FACT: Lowvol: Flat (p44)"
+          "text": "Analysis queries its performance compared to the S&P 500.",
+          "source": "[Barchart] Is Targa Resources Stock Outperforming the S&P 500?"
         },
         {
-          "text": "Hasbro registered a bigger fall and a more significant dip than the broader market.",
-          "source": "[Zacks] Hasbro (HAS) Registers a Bigger Fall Than the Market: Important Facts to Note, [Zacks] Hasbro (HAS) Sees a More Significant Dip Than Broader Market: Some Facts to Know"
-        },
-        {
-          "text": "An insider sold more than 5,000 shares valued at over $475,000.",
-          "source": "[Motley Fool] Insider Says Goodbye to More Than 5,000 Shares Valued at More Than $475,000"
-        }
-      ],
-      "data_gap": false
-    },
-    "NTAP": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is strong (p86).",
-          "source": "FACT: Momentum (12-1): Strong (p86)"
-        },
-        {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACT: Quality (ROE/margin): Exceptional (p95)"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Strong analyst dispersion (p86) indicates a wide range of opinions among analysts.",
-          "source": "FACT: Analyst dispersion: Strong (p86)"
-        },
-        {
-          "text": "Value (1/PE) is flat (p49).",
-          "source": "FACT: Value (1/PE): Flat (p49)"
-        },
-        {
-          "text": "Low volatility is weak (p25).",
-          "source": "FACT: Lowvol: Weak (p25)"
-        }
-      ],
-      "data_gap": false
-    },
-    "COR": {
-      "in_favor": [
-        {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACT: Quality (ROE/margin): Exceptional (p95)"
-        },
-        {
-          "text": "Cencora's Tech Chief states that AI is cutting some medical treatment decisions in half.",
-          "source": "[WSJ] Cencora Tech Chief: AI Is Cutting Some Medical Treatment Decisions in Half"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p20).",
-          "source": "FACT: Momentum (12-1): Weak (p20)"
-        },
-        {
-          "text": "Exceptional analyst dispersion (p92) indicates a wide range of opinions among analysts.",
-          "source": "FACT: Analyst dispersion: Exceptional (p92)"
-        },
-        {
-          "text": "Value (1/PE) is flat (p58).",
-          "source": "FACT: Value (1/PE): Flat (p58)"
-        },
-        {
-          "text": "Low volatility is flat (p70).",
-          "source": "FACT: Lowvol: Flat (p70)"
-        },
-        {
-          "text": "The managing of enterprise AI can present complexities.",
-          "source": "[WSJ] The Realities of Managing Enterprise AI"
+          "text": "Comparative assessment against ExxonMobil is a subject of discussion.",
+          "source": "[Insider Monkey] Targa Resources (TRGP) vs. ExxonMobil (XOM): Which Stock Is the Better Energy Bet?"
         }
       ],
       "data_gap": false
@@ -191,73 +94,81 @@
     "AMP": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p91).",
-          "source": "FACT: Quality (ROE/margin): Exceptional (p91)"
+          "text": "Quality (ROE/margin) is exceptional (p92).",
+          "source": "p92"
         },
         {
-          "text": "The company exhibits strong value based on 1/PE (p88).",
-          "source": "FACT: Value (1/PE): Strong (p88)"
+          "text": "The value metric (1/PE) is exceptional (p90).",
+          "source": "p90"
         },
         {
-          "text": "Ameriprise Financial is highlighted as a potential 'Large-Cap Stock to Own for Decades'.",
-          "source": "[StockStory] 1 Large-Cap Stock to Own for Decades and 2 We Turn Down"
+          "text": "Ameriprise Financial's stock is presented as a potential consideration for value investors.",
+          "source": "[Zacks] Should Value Investors Buy Ameriprise Financial (AMP) Stock?"
         },
         {
-          "text": "Ameriprise Financial is listed among S&P 500 stocks suggested for further research.",
-          "source": "[StockStory] 3 S&P 500 Stocks to Research Further"
+          "text": "Discussions are ongoing regarding whether finance stocks are lagging Ameriprise Financial this year.",
+          "source": "[Zacks] Are Finance Stocks Lagging Ameriprise Financial (AMP) This Year?"
+        },
+        {
+          "text": "The stock's performance relative to the financial sector is a topic of inquiry.",
+          "source": "[Barchart] Ameriprise Stock: Is AMP Outperforming the Financial Sector?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p34).",
-          "source": "FACT: Momentum (12-1): Weak (p34)"
+          "text": "Momentum (12-1) is weak (p32).",
+          "source": "p32"
         },
         {
-          "text": "Analyst dispersion is flat (p71).",
-          "source": "FACT: Analyst dispersion: Flat (p71)"
+          "text": "Analyst dispersion is flat (p73).",
+          "source": "p73"
         },
         {
           "text": "Low volatility is flat (p66).",
-          "source": "FACT: Lowvol: Flat (p66)"
+          "source": "p66"
+        },
+        {
+          "text": "Ameriprise Financial is listed among S&P 500 stocks for further research.",
+          "source": "[StockStory] 3 S&P 500 Stocks to Research Further"
+        },
+        {
+          "text": "The company is mentioned in an article distinguishing between a large-cap stock to hold for decades and others that are not favored.",
+          "source": "[StockStory] 1 Large-Cap Stock to Own for Decades and 2 We Turn Down"
         }
       ],
       "data_gap": false
     },
-    "ITW": {
+    "NTAP": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACT: Quality (ROE/margin): Exceptional (p95)"
+          "text": "Momentum (12-1) is strong (p85).",
+          "source": "p85"
         },
         {
-          "text": "The company has exceptional low volatility (p95).",
-          "source": "FACT: Lowvol: Exceptional (p95)"
+          "text": "Analyst dispersion is strong (p83).",
+          "source": "p83"
         },
         {
-          "text": "Illinois Tool exhibits strong prospects.",
-          "source": "[Zacks] Illinois Tool Exhibits Strong Prospects Despite Persisting Headwinds"
+          "text": "Quality (ROE/margin) is exceptional (p95).",
+          "source": "p95"
+        },
+        {
+          "text": "NetApp's partnership with the Buccaneers is explored for its potential to boost AI and cloud growth.",
+          "source": "[Zacks] Can NetApp's Buccaneers Partnership Boost Its AI and Cloud Growth?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p22).",
-          "source": "FACT: Momentum (12-1): Weak (p22)"
+          "text": "The value metric (1/PE) is flat (p50).",
+          "source": "p50"
         },
         {
-          "text": "Analyst dispersion is flat (p63).",
-          "source": "FACT: Analyst dispersion: Flat (p63)"
+          "text": "Low volatility is weak (p27).",
+          "source": "p27"
         },
         {
-          "text": "Value (1/PE) is flat (p55).",
-          "source": "FACT: Value (1/PE): Flat (p55)"
-        },
-        {
-          "text": "Illinois Tool is identified as a 'Cash-Producing Stock' within an article that expresses skepticism.",
-          "source": "[StockStory] 3 Cash-Producing Stocks We\u2019re Skeptical Of"
-        },
-        {
-          "text": "The valuation of Illinois Tool Works is questioned with 'Is The Valuation Still Too Rich?'.",
-          "source": "[Simply Wall St.] Illinois Tool Works (ITW) Dividend Update Draws Focus, Is The Valuation Still Too Rich?"
+          "text": "A question is raised about whether NetApp's record quarter represents a pull-forward from the rest of the year.",
+          "source": "[Trefis] Did NetApp Borrow Its Record Quarter From The Rest Of The Year?"
         }
       ],
       "data_gap": false
@@ -265,46 +176,42 @@
     "MSI": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACT: Quality (ROE/margin): Exceptional (p95)"
+          "text": "Analyst dispersion is exceptional (p94).",
+          "source": "p94"
         },
         {
-          "text": "The company exhibits strong low volatility (p84).",
-          "source": "FACT: Lowvol: Strong (p84)"
+          "text": "Quality (ROE/margin) is exceptional (p95).",
+          "source": "p95"
         },
         {
-          "text": "MSI is described as a profitable stock with competitive advantages.",
-          "source": "[StockStory] 2 Profitable Stocks with Competitive Advantages and 1 Facing Headwinds"
+          "text": "Low volatility is strong (p84).",
+          "source": "p84"
         },
         {
-          "text": "MSI secured a public safety contract in Louisiana, with the potential to fuel revenues.",
+          "text": "MSI has secured a public safety contract in Louisiana, with questions raised about its potential to fuel revenues.",
           "source": "[Zacks] MSI Secures Public Safety Contract in Louisiana: Will it Fuel Revenues?"
         },
         {
-          "text": "Motorola Solutions is noted as being 'Back In The Spotlight'.",
-          "source": "[Simply Wall St.] Why Motorola Solutions (MSI) Is Back In The Spotlight"
+          "text": "The company's dividend is a subject of analysis.",
+          "source": "[GuruFocus.com] Motorola Solutions Inc's Dividend Analysis"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p23).",
-          "source": "FACT: Momentum (12-1): Weak (p23)"
+          "text": "Momentum (12-1) is weak (p22).",
+          "source": "p22"
         },
         {
-          "text": "Exceptional analyst dispersion (p94) indicates a wide range of opinions among analysts.",
-          "source": "FACT: Analyst dispersion: Exceptional (p94)"
+          "text": "The value metric (1/PE) is weak (p34).",
+          "source": "p34"
         },
         {
-          "text": "Value (1/PE) is weak (p31).",
-          "source": "FACT: Value (1/PE): Weak (p31)"
-        },
-        {
-          "text": "MSI is mentioned in an article noting '1 Facing Headwinds', implying potential challenges.",
-          "source": "[StockStory] 2 Profitable Stocks with Competitive Advantages and 1 Facing Headwinds"
-        },
-        {
-          "text": "The Barchart article title asks if MSI is underperforming the technology sector, suggesting potential concerns.",
+          "text": "A question is raised about whether Motorola Solutions stock is underperforming the technology sector.",
           "source": "[Barchart] Motorola Solutions Stock: Is MSI Underperforming the Technology Sector?"
+        },
+        {
+          "text": "The company is mentioned in an article that discusses both profitable stocks with advantages and one facing headwinds, without specifying MSI's categorization.",
+          "source": "[StockStory] 2 Profitable Stocks with Competitive Advantages and 1 Facing Headwinds"
         }
       ],
       "data_gap": false
@@ -312,42 +219,42 @@
     "CINF": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional value based on 1/PE (p95).",
-          "source": "FACT: Value (1/PE): Exceptional (p95)"
+          "text": "Analyst dispersion is exceptional (p95).",
+          "source": "p95"
         },
         {
-          "text": "The company has exceptional low volatility (p91).",
-          "source": "FACT: Lowvol: Exceptional (p91)"
+          "text": "The value metric (1/PE) is exceptional (p95).",
+          "source": "p95"
         },
         {
-          "text": "CINF is identified as a 'Cash-Heavy Stock with Exciting Potential'.",
-          "source": "[StockStory] 2 Cash-Heavy Stocks with Exciting Potential and 1 We Question"
+          "text": "Low volatility is exceptional (p90).",
+          "source": "p90"
         },
         {
-          "text": "Cincinnati Financial is noted as a potential 'Great Choice'.",
+          "text": "Cincinnati Financial is noted as potentially being a great choice.",
           "source": "[Zacks] Cincinnati Financial (CINF) Could Be a Great Choice"
         },
         {
-          "text": "It is included in a portfolio designed to generate significant dividend income.",
-          "source": "[24/7 Wall St.] The Portfolio You Need to Generate $500 a Month in Dividend Income"
+          "text": "CINF is presented as a contender for a better value stock.",
+          "source": "[Zacks] ESNT or CINF: Which Is the Better Value Stock Right Now?"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p25).",
-          "source": "FACT: Momentum (12-1): Weak (p25)"
+          "text": "Momentum (12-1) is weak (p24).",
+          "source": "p24"
         },
         {
-          "text": "Exceptional analyst dispersion (p95) indicates a wide range of opinions among analysts.",
-          "source": "FACT: Analyst dispersion: Exceptional (p95)"
+          "text": "Quality (ROE/margin) is flat (p64).",
+          "source": "p64"
         },
         {
-          "text": "Quality based on ROE/margin is flat (p65).",
-          "source": "FACT: Quality (ROE/margin): Flat (p65)"
-        },
-        {
-          "text": "CINF is mentioned in an article noting '1 We Question', suggesting aspects warranting scrutiny.",
+          "text": "The company is discussed in an article that distinguishes between cash-heavy stocks with exciting potential and one that raises questions.",
           "source": "[StockStory] 2 Cash-Heavy Stocks with Exciting Potential and 1 We Question"
+        },
+        {
+          "text": "The company is mentioned in an article about generating dividend income.",
+          "source": "[24/7 Wall St.] The Portfolio You Need to Generate $500 a Month in Dividend Income"
         }
       ],
       "data_gap": false
@@ -355,38 +262,159 @@
     "MA": {
       "in_favor": [
         {
-          "text": "The company demonstrates exceptional quality based on ROE/margin (p95).",
-          "source": "FACT: Quality (ROE/margin): Exceptional (p95)"
+          "text": "Quality (ROE/margin) is exceptional (p95).",
+          "source": "p95"
         },
         {
-          "text": "The company has exceptional low volatility (p95).",
-          "source": "FACT: Lowvol: Exceptional (p95)"
+          "text": "Low volatility is exceptional (p95).",
+          "source": "p95"
         },
         {
-          "text": "Mastercard is involved as a validator in the launch of Circle's Arc Mainnet with other major entities.",
-          "source": "[decrypt] Circle Launches Arc Mainnet With BlackRock, DTCC and Visa as Validators, [Stocktwits] Circle Launches Arc With BlackRock And Visa A Day After The Senate Blocked CLARITY Act"
+          "text": "Mastercard is involved in agentic payment systems of the future.",
+          "source": "[Barrons.com] Mastercard Gets In on Agentic Payment Systems of the Future"
+        },
+        {
+          "text": "The company offers an AI payment tool that permits bots to shop without requiring approval.",
+          "source": "[Quartz] Mastercard AI payment tool lets bots shop without approval"
+        },
+        {
+          "text": "Mastercard has joined Visa in enabling AI bots for shopping.",
+          "source": "[The Wall Street Journal] Mastercard Joins Visa in Letting AI Bots Do Your Shopping"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak (p20).",
-          "source": "FACT: Momentum (12-1): Weak (p20)"
+          "text": "Momentum (12-1) is weak (p19).",
+          "source": "p19"
         },
         {
-          "text": "Analyst dispersion is flat (p63).",
-          "source": "FACT: Analyst dispersion: Flat (p63)"
+          "text": "Analyst dispersion is flat (p64).",
+          "source": "p64"
         },
         {
-          "text": "Value (1/PE) is flat (p41).",
-          "source": "FACT: Value (1/PE): Flat (p41)"
+          "text": "The value metric (1/PE) is flat (p45).",
+          "source": "p45"
+        }
+      ],
+      "data_gap": false
+    },
+    "GL": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong (p79).",
+          "source": "p79"
         },
         {
-          "text": "Mastercard is noted to 'slip' in connection with an announcement and due to AI payments trading exclusivity for scale.",
-          "source": "[TheStreet] Circle stock slips despite BlackRock, Mastercard, Visa announcement, [GuruFocus.com] Mastercard Slips as AI Payments Trade Exclusivity for Scale"
+          "text": "The value metric (1/PE) is exceptional (p94).",
+          "source": "p94"
         },
         {
-          "text": "There is an open question regarding whether Visa or Mastercard has more upside potential.",
-          "source": "[Zacks] Visa vs. Mastercard: Which Payment Stock Has More Upside?"
+          "text": "Low volatility is strong (p87).",
+          "source": "p87"
+        },
+        {
+          "text": "Globe Life's Co-CEOs have discussed the company's Texas strategy.",
+          "source": "[NYSE] Globe Life Co-CEOs Matt Darden + Frank Svoboda Discuss Company\u2019s Texas Strategy"
+        },
+        {
+          "text": "The importance of the Lone Star State to Globe Life was covered by its Co-CEOs during the NYSE Texas office opening.",
+          "source": "[NYSE] NYSE Texas Office Opening: Globe Life Co-CEOs Cover Lone Star State Importance"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat (p48).",
+          "source": "p48"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat (p63).",
+          "source": "p63"
+        },
+        {
+          "text": "Globe Life is included in a Q2 recap of life insurance stocks for benchmarking.",
+          "source": "[StockStory] Life Insurance Stocks Q2 Recap: Benchmarking Globe Life (NYSE:GL)"
+        },
+        {
+          "text": "The company is featured in an article titled \"3 Insurance Stocks We Keep Off Our Radar,\" which could imply a cautious view.",
+          "source": "[StockStory] 3 Insurance Stocks We Keep Off Our Radar"
+        }
+      ],
+      "data_gap": false
+    },
+    "AIZ": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is exceptional (p95).",
+          "source": "p95"
+        },
+        {
+          "text": "The value metric (1/PE) is strong (p89).",
+          "source": "p89"
+        },
+        {
+          "text": "Low volatility is strong (p81).",
+          "source": "p81"
+        },
+        {
+          "text": "Market sentiment shows mildly positive sentiment (0.41) with 140 mentions in the last 30 days.",
+          "source": "Market sentiment"
+        },
+        {
+          "text": "Assurant (AIZ) is a featured highlight on Zacks.com.",
+          "source": "[Zacks] Zacks.com featured highlights include Globus Medical, NetApp and Assurant"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat (p58).",
+          "source": "p58"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat (p58).",
+          "source": "p58"
+        }
+      ],
+      "data_gap": false
+    },
+    "DVA": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is exceptional (p94).",
+          "source": "p94"
+        },
+        {
+          "text": "The value metric (1/PE) is strong (p83).",
+          "source": "p83"
+        },
+        {
+          "text": "DaVita HealthCare is noted for advancing while the broader market declines, providing information for investors.",
+          "source": "[Zacks] DaVita HealthCare (DVA) Advances While Market Declines: Some Information for Investors"
+        },
+        {
+          "text": "Arguments are presented for retaining DaVita stock in a portfolio for the present time.",
+          "source": "[Zacks] Here's Why You Should Retain DaVita Stock in Your Portfolio for Now"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat (p60).",
+          "source": "p60"
+        },
+        {
+          "text": "Analyst dispersion is weak (p38).",
+          "source": "p38"
+        },
+        {
+          "text": "Low volatility is weak (p30).",
+          "source": "p30"
+        },
+        {
+          "text": "An article outlines reasons to consider an alternative to DVA.",
+          "source": "[StockStory] 3 Reasons to Sell DVA and 1 Stock to Buy Instead"
+        },
+        {
+          "text": "DaVita is included among stocks that some analysts consider risky.",
+          "source": "[StockStory] 3 of Wall Street\u2019s Favorite Stocks We Find Risky"
         }
       ],
       "data_gap": false
