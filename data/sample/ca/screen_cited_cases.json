@@ -1,33 +1,37 @@
 {
-  "as_of": "2026-09-17",
+  "as_of": "2026-09-18",
   "cases": {
     "CNQ.TO": {
       "in_favor": [
         {
-          "text": "Exceptional quality (ROE/margin).",
-          "source": "p92"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p87"
         },
         {
-          "text": "Exceptional value (1/PE).",
-          "source": "p92"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Strong momentum (12-1).",
-          "source": "p88"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Strong analyst dispersion.",
-          "source": "p80"
+          "text": "Information suggests the stock may represent a bargain based on cash flow.",
+          "source": "[Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Stock May Be A Bargain On Cash Flow"
         },
         {
-          "text": "Considered a potential bargain based on cash flow.",
-          "source": "Simply Wall St. - Canadian Natural Resources (TSX:CNQ) Stock May Be A Bargain On Cash Flow"
+          "text": "Cost reductions are noted to support its valuation.",
+          "source": "[Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Looks Fairly Valued As Cost Cuts Support Its Case"
         }
       ],
       "to_watch": [
         {
           "text": "Low volatility is weak.",
-          "source": "p36"
+          "source": "p30"
+        },
+        {
+          "text": "The company is mentioned in a list of stocks to consider for current attention.",
+          "source": "[Investor's Business Daily] These Are The 5 Best Stocks To Buy Or Watch Now"
         }
       ],
       "data_gap": false
@@ -35,77 +39,38 @@
     "SU.TO": {
       "in_favor": [
         {
-          "text": "Exceptional momentum (12-1).",
-          "source": "p92"
+          "text": "Momentum (12-1) is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Exceptional analyst dispersion.",
-          "source": "p92"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Strong value (1/PE).",
-          "source": "p88"
-        },
-        {
-          "text": "The stock has experienced a significant surge over the past year.",
-          "source": "Zacks - Should You Buy Suncor Energy Stock After Its 63% Surge in a Year?"
-        },
-        {
-          "text": "Included in a list of TSX stocks that investors will be observing.",
-          "source": "Investing.com - Which TSX stocks investors will be watching next week?"
+          "text": "Value (1/PE) is strong.",
+          "source": "p87"
         }
       ],
       "to_watch": [
         {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "p64"
+          "source": "p61"
         },
         {
           "text": "Low volatility is flat.",
-          "source": "p48"
+          "source": "p43"
         },
         {
-          "text": "Broader discussions mention potential future oil industry challenges.",
-          "source": "Barrons.com - An Oil Catastrophe Was Averted in 2026. What If It Comes in 2027?"
-        }
-      ],
-      "data_gap": false
-    },
-    "CVE.TO": {
-      "in_favor": [
-        {
-          "text": "Exceptional momentum (12-1).",
-          "source": "p92"
+          "text": "Its position warrants consideration following a 63% surge in a year.",
+          "source": "[Zacks] Should You Buy Suncor Energy Stock After Its 63% Surge in a Year?"
         },
         {
-          "text": "Exceptional value (1/PE).",
-          "source": "p92"
+          "text": "The company is among TSX stocks indicated for investor attention in the near term.",
+          "source": "[Investing.com] Which TSX stocks investors will be watching next week?"
         },
         {
-          "text": "Offers resilience due to its low-cost base and downstream integration.",
-          "source": "Zacks - How Cenovus' Low-Cost Base and Downstream Integration Offer Resilience"
-        },
-        {
-          "text": "Mentioned among companies delivering strong guidance updates.",
-          "source": "MarketBeat - Don't Miss These 3 Companies Delivering Strong Guidance Updates"
-        },
-        {
-          "text": "A subject of dividend analysis.",
-          "source": "GuruFocus.com - Cenovus Energy Inc's Dividend Analysis"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is flat.",
-          "source": "p68"
-        },
-        {
-          "text": "Quality (ROE/margin) is flat.",
-          "source": "p72"
-        },
-        {
-          "text": "Low volatility is weak.",
-          "source": "p28"
+          "text": "Industry concerns regarding potential future oil market disruptions are noted.",
+          "source": "[Barrons.com] An Oil Catastrophe Was Averted in 2026. What If It Comes in 2027?"
         }
       ],
       "data_gap": false
@@ -113,65 +78,77 @@
     "CM.TO": {
       "in_favor": [
         {
-          "text": "Strong analyst dispersion.",
-          "source": "p84"
+          "text": "Analyst dispersion is strong.",
+          "source": "p87"
         },
         {
-          "text": "Strong value (1/PE).",
-          "source": "p84"
+          "text": "Value (1/PE) is strong.",
+          "source": "p83"
         },
         {
-          "text": "Strong low volatility.",
-          "source": "p88"
+          "text": "Low volatility is strong.",
+          "source": "p87"
         },
         {
-          "text": "Reported strong Q3 results and is incorporating AI voice technology.",
-          "source": "Simply Wall St. - Canadian Imperial Bank Of Commerce (TSX:CM) Posts Strong Q3 And Adds AI Voice To Board"
+          "text": "The company reported strong Q3 results and is incorporating AI voice technology.",
+          "source": "[Simply Wall St.] Canadian Imperial Bank Of Commerce (TSX:CM) Posts Strong Q3 And Adds AI Voice To Board"
         },
         {
-          "text": "Its profit results exceeded forecasts due to domestic banking growth.",
-          "source": "Proactive - CIBC beats profit forecast on growth in domestic banking"
+          "text": "Profit forecasts were exceeded, driven by growth in domestic banking.",
+          "source": "[Proactive] CIBC beats profit forecast on growth in domestic banking"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "p64"
+          "source": "p65"
         },
         {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "p52"
+          "source": "p48"
         }
       ],
       "data_gap": false
     },
-    "QSR.TO": {
+    "CVE.TO": {
       "in_favor": [
         {
-          "text": "Exceptional analyst dispersion.",
-          "source": "p92"
+          "text": "Momentum (12-1) is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Exceptional quality (ROE/margin).",
-          "source": "p92"
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "The company is considered by an international manager who is concentrating investments in energy.",
+          "source": "[Barrons.com] This International Manager Is Betting Big on Banks and Energy, but Not Tech"
+        },
+        {
+          "text": "It is highlighted as one of three companies providing strong guidance updates.",
+          "source": "[MarketBeat] Don't Miss These 3 Companies Delivering Strong Guidance Updates"
+        },
+        {
+          "text": "Its low-cost base and downstream integration are noted for providing resilience.",
+          "source": "[Zacks] How Cenovus' Low-Cost Base and Downstream Integration Offer Resilience"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p20"
+          "text": "Analyst dispersion is flat.",
+          "source": "p70"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p48"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p70"
         },
         {
-          "text": "Low volatility is flat.",
-          "source": "p56"
+          "text": "Low volatility is weak.",
+          "source": "p22"
         },
         {
-          "text": "Discussions address the efforts required for Burger King to maintain its momentum.",
-          "source": "QSR - Can Burger King Sustain Momentum? It Starts with What\u2019s Still Left to Do"
+          "text": "The company's dividend structure is a subject of analysis.",
+          "source": "[GuruFocus.com] Cenovus Energy Inc's Dividend Analysis"
         }
       ],
       "data_gap": false
@@ -179,42 +156,77 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "Strong analyst dispersion.",
-          "source": "p76"
+          "text": "Analyst dispersion is strong.",
+          "source": "p78"
         },
         {
-          "text": "Exceptional low volatility.",
-          "source": "p92"
+          "text": "Low volatility is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Notched record earnings, with quarterly results for a major Canadian bank exceeding expectations.",
-          "source": "The Wall Street Journal - Royal Bank Notches Record Earnings as Quarterly Results From Canada\u2019s Biggest Banks Beat Expectations"
+          "text": "Profit estimates were exceeded, with strong performance in capital markets and wealth management.",
+          "source": "[Proactive] RBC beats profit estimates as capital markets, wealth management shine"
         },
         {
-          "text": "Profit estimates were exceeded due to robust performance in capital markets and wealth management.",
-          "source": "Proactive - RBC beats profit estimates as capital markets, wealth management shine"
-        },
-        {
-          "text": "Price targets for Canadian banks, including this one, are undergoing adjustments.",
-          "source": "MT Newswires - CIBC Adjusts Price Targets on Five Canadian Banks"
+          "text": "The company achieved record earnings, with quarterly results surpassing expectations among Canada's largest banks.",
+          "source": "[The Wall Street Journal] Royal Bank Notches Record Earnings as Quarterly Results From Canada\u2019s Biggest Banks Beat Expectations"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "p56"
+          "source": "p57"
         },
         {
           "text": "Quality (ROE/margin) is flat.",
-          "source": "p56"
+          "source": "p52"
         },
         {
           "text": "Value (1/PE) is flat.",
-          "source": "p56"
+          "source": "p57"
         },
         {
-          "text": "Questions are arising about its valuation after a significant appreciation.",
-          "source": "Simply Wall St. - Is Royal Bank Of Canada (TSX:RY) Fully Priced After A 168% Run?"
+          "text": "Its current valuation is being questioned following a 168% increase.",
+          "source": "[Simply Wall St.] Is Royal Bank Of Canada (TSX:RY) Fully Priced After A 168% Run?"
+        },
+        {
+          "text": "Price targets for Canadian banks, potentially including RY.TO, are being adjusted.",
+          "source": "[MT Newswires] CIBC Adjusts Price Targets on Five Canadian Banks"
+        }
+      ],
+      "data_gap": false
+    },
+    "QSR.TO": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p91"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p17"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p48"
+        },
+        {
+          "text": "Low volatility is flat.",
+          "source": "p52"
+        },
+        {
+          "text": "The broader restaurant stock sector is experiencing downturns, though some opportunities are being observed.",
+          "source": "[GuruFocus.com] Restaurant Stocks Are Tumbling. Here's Where Wall Street Sees Opportunity"
+        },
+        {
+          "text": "Competitive dynamics, including comparisons with McDonald's amid its slowing sales growth, are noted.",
+          "source": "[24/7 Wall St.] McDonald\u2019s Vs. Burger King Owner Restaurant Brands International: Understand This as McDonald\u2019s Sales Growth Slows"
         }
       ],
       "data_gap": false
@@ -222,42 +234,42 @@
     "TD.TO": {
       "in_favor": [
         {
-          "text": "Strong momentum (12-1).",
-          "source": "p80"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p83"
         },
         {
-          "text": "Exceptional low volatility.",
-          "source": "p92"
+          "text": "Low volatility is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Has committed CA$150 billion to bolster the Canadian economy.",
-          "source": "MT Newswires - TD Bank Outlines CA$150 Billion Commitment to Boost Canadian Economy"
+          "text": "The bank is potentially 20% undervalued due to its CA$150 billion commitment to Canada.",
+          "source": "[Simply Wall St.] Toronto Dominion Bank (TSX:TD) Could Be 20% Undervalued On Its $150b Canada Push"
         },
         {
-          "text": "An assessment suggests it could be 20% undervalued based on its substantial focus on Canada.",
-          "source": "Simply Wall St. - Toronto Dominion Bank (TSX:TD) Could Be 20% Undervalued On Its $150b Canada Push"
-        },
-        {
-          "text": "Being assessed in comparisons as a value option.",
-          "source": "Zacks - BBVA vs. TD: Which Stock Is the Better Value Option?"
+          "text": "A CA$150 billion commitment to enhance the Canadian economy has been outlined.",
+          "source": "[MT Newswires] TD Bank Outlines CA$150 Billion Commitment to Boost Canadian Economy"
         }
       ],
       "to_watch": [
         {
           "text": "Analyst dispersion is flat.",
-          "source": "p56"
+          "source": "p57"
         },
         {
           "text": "Quality (ROE/margin) is weak.",
-          "source": "p28"
+          "source": "p26"
         },
         {
           "text": "Value (1/PE) is flat.",
           "source": "p52"
         },
         {
-          "text": "The bank is targeting 100 U.S. branches while continuing anti-money laundering remediation efforts.",
-          "source": "MarketBeat - TD Bank Targets 100 U.S. Branches as AML Remediation Continues"
+          "text": "The bank is targeting 100 U.S. branches while ongoing AML remediation continues.",
+          "source": "[MarketBeat] TD Bank Targets 100 U.S. Branches as AML Remediation Continues"
+        },
+        {
+          "text": "The stock's value is being compared against other options.",
+          "source": "[Zacks] BBVA vs. TD: Which Stock Is the Better Value Option?"
         }
       ],
       "data_gap": false
@@ -265,38 +277,42 @@
     "CNR.TO": {
       "in_favor": [
         {
-          "text": "Strong quality (ROE/margin).",
-          "source": "p76"
+          "text": "Its outlook has been raised.",
+          "source": "[Simply Wall St.] Where Does Canadian National Railway (TSX:CNR) Value Sit After Raised Outlook?"
+        },
+        {
+          "text": "The company has renewed its pact with Amtrak.",
+          "source": "[Simply Wall St.] Canadian National Railway (TSX:CNR) Renews Amtrak Pact, Is The Stock Fully Valued?"
         },
         {
           "text": "An 8-year agreement with Amtrak has been established to enhance rail safety and reliability.",
-          "source": "Zacks - CNI, Amtrak Ink 8-Year Deal to Boost Rail Safety, Reliability"
+          "source": "[Zacks] CNI, Amtrak Ink 8-Year Deal to Boost Rail Safety, Reliability"
         },
         {
-          "text": "A deal was sealed with Amtrak concerning specific US passenger services.",
-          "source": "MT Newswires - CN Rail Seals Deal With Amtrak For Certain US Passenger Services"
-        },
-        {
-          "text": "A description of anticipated requested conditions has been filed with the STB.",
-          "source": "MT Newswires - CN Files Description of Anticipated Requested Conditions With STB"
+          "text": "A deal with Amtrak for specific US passenger services has been finalized.",
+          "source": "[MT Newswires] CN Rail Seals Deal With Amtrak For Certain US Passenger Services"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p40"
-        },
-        {
-          "text": "Analyst dispersion is flat.",
-          "source": "p64"
+          "text": "Momentum (12-1) is weak.",
+          "source": "p39"
         },
         {
           "text": "Value (1/PE) is weak.",
-          "source": "p28"
+          "source": "p26"
         },
         {
-          "text": "Low volatility is flat.",
-          "source": "p68"
+          "text": "Analyst dispersion is flat.",
+          "source": "p65"
+        },
+        {
+          "text": "The stock's valuation is being questioned despite recent positive developments.",
+          "source": "[Simply Wall St.] Canadian National Railway (TSX:CNR) Renews Amtrak Pact, Is The Stock Fully Valued?"
+        },
+        {
+          "text": "Filings outlining anticipated requested conditions have been submitted to the STB.",
+          "source": "[MT Newswires] CN Files Description of Anticipated Requested Conditions With STB"
         }
       ],
       "data_gap": false
@@ -304,22 +320,30 @@
     "BNS.TO": {
       "in_favor": [
         {
-          "text": "Exceptional low volatility.",
-          "source": "p92"
+          "text": "Low volatility is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Is among banks pledging to deploy over $250 billion in domestic capital.",
-          "source": "Financial Post - TD and Scotiabank join other banks in promising to deploy over $250 billion worth of capital at home"
+          "text": "The stock may be 28% undervalued following record Q3 results.",
+          "source": "[Simply Wall St.] Scotiabank (TSX:BNS) Stock May Be 28% Undervalued After Record Q3 Results"
         },
         {
-          "text": "Mentioned in news for joining a \"spending spree\" by banks.",
-          "source": "Financial Post - News of the day: TD and Scotiabank join spending spree, inflation rate stays steady, economists' reaction, too many apartments, stagflation risks and more"
+          "text": "The launch of a new Growth Institute is noted.",
+          "source": "[Simply Wall St.] Is Bank Of Nova Scotia (TSX:BNS) Fairly Valued Following Its New Growth Institute Launch?"
+        },
+        {
+          "text": "The company is part of a trend among banks committing to deploy over $250 billion in domestic capital.",
+          "source": "[Financial Post] TD and Scotiabank join other banks in promising to deploy over $250 billion worth of capital at home"
+        },
+        {
+          "text": "Scotiabank, along with TD, is noted for joining a 'spending spree' implying investment.",
+          "source": "[Financial Post] News of the day: TD and Scotiabank join spending spree, inflation rate stays steady, economists' reaction, too many apartments, stagflation risks and more"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is flat.",
-          "source": "p60"
+          "source": "p61"
         },
         {
           "text": "Analyst dispersion is flat.",
@@ -327,15 +351,15 @@
         },
         {
           "text": "Quality (ROE/margin) is weak.",
-          "source": "p24"
+          "source": "p22"
         },
         {
           "text": "Value (1/PE) is flat.",
-          "source": "p72"
+          "source": "p65"
         },
         {
-          "text": "Scotiabank anticipates the Bank of Canada will resume rate increases in December.",
-          "source": "MT Newswires - Bank of Canada Expected to Return to Rate Hikes in December, Says Scotiabank"
+          "text": "Its current valuation is being examined following the introduction of its new Growth Institute.",
+          "source": "[Simply Wall St.] Is Bank Of Nova Scotia (TSX:BNS) Fairly Valued Following Its New Growth Institute Launch?"
         }
       ],
       "data_gap": false
@@ -343,42 +367,46 @@
     "GWO.TO": {
       "in_favor": [
         {
-          "text": "Exceptional momentum (12-1).",
-          "source": "p92"
+          "text": "Momentum (12-1) is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Strong low volatility.",
-          "source": "p76"
+          "text": "Higher earnings and a larger share buyback program are noted.",
+          "source": "[Simply Wall St.] Is Great West Lifeco (TSX:GWO) Fully Priced After Higher Earnings And A Bigger Buyback?"
         },
         {
-          "text": "Insights are available from the Q2 earnings call.",
-          "source": "MarketBeat - Great-West Lifeco Q2 Earnings Call Highlights"
+          "text": "The company's Q2 earnings call highlights suggest positive developments.",
+          "source": "[MarketBeat] Great-West Lifeco Q2 Earnings Call Highlights"
         },
         {
-          "text": "Listed among TSX dividend stocks, including those yielding up to 6.9%.",
-          "source": "Simply Wall St. - 3 TSX Dividend Stocks Yielding Up To 6.9%"
+          "text": "The company is identified as a TSX dividend stock offering a yield up to 6.9%.",
+          "source": "[Simply Wall St.] 3 TSX Dividend Stocks Yielding Up To 6.9%"
         },
         {
-          "text": "Appears on lists of top TSX dividend stocks to consider.",
-          "source": "Simply Wall St. - Top TSX Dividend Stocks To Consider In May 2026"
+          "text": "The company is listed among top TSX dividend stocks for consideration.",
+          "source": "[Simply Wall St.] Top TSX Dividend Stocks To Consider In May 2026"
         }
       ],
       "to_watch": [
         {
           "text": "Analyst dispersion is weak.",
-          "source": "p16"
+          "source": "p13"
         },
         {
-          "text": "Quality (ROE/margin) is flat.",
-          "source": "p40"
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p39"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p40"
+          "text": "Value (1/PE) is weak.",
+          "source": "p39"
         },
         {
-          "text": "Following higher earnings and a larger share repurchase, its valuation is being assessed.",
-          "source": "Simply Wall St. - Is Great West Lifeco (TSX:GWO) Fully Priced After Higher Earnings And A Bigger Buyback?"
+          "text": "Low volatility is flat.",
+          "source": "p74"
+        },
+        {
+          "text": "Its current valuation is being assessed, with questions raised about it being fully priced after recent positive developments.",
+          "source": "[Simply Wall St.] Is Great West Lifeco (TSX:GWO) Fully Priced After Higher Earnings And A Bigger Buyback?"
         }
       ],
       "data_gap": false
