@@ -1,0 +1,55 @@
+{
+  "as_of": "2026-09-22",
+  "market": "us",
+  "universe_size": 512,
+  "top_n": 10,
+  "regime": "NEUTRAL",
+  "abstained": false,
+  "diagnostics": {
+    "scanned": 512,
+    "had_history": 491,
+    "above_trend": 1,
+    "cleared": 1
+  },
+  "candidates": [
+    {
+      "ticker": "AVB",
+      "composite": 0.0,
+      "trend_health": 0.8975810410999694,
+      "label": "RESEARCH_ONLY",
+      "why": "AVB: RESEARCH_ONLY. Price is 0.9 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.0,
+          "percentile": 0.0,
+          "contribution": 0.0
+        },
+        {
+          "name": "revision",
+          "value": 0.0,
+          "percentile": 0.0,
+          "contribution": 0.0
+        },
+        {
+          "name": "quality",
+          "value": 0.0,
+          "percentile": 0.0,
+          "contribution": 0.0
+        },
+        {
+          "name": "value",
+          "value": 0.0,
+          "percentile": 0.0,
+          "contribution": 0.0
+        },
+        {
+          "name": "lowvol",
+          "value": 0.0,
+          "percentile": 0.0,
+          "contribution": 0.0
+        }
+      ]
+    }
+  ]
+}
