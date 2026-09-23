@@ -1,365 +1,55 @@
 {
-  "as_of": "2026-09-18",
+  "as_of": "2026-09-22",
   "cases": {
-    "SUNPHARMA.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is strong (p89).",
-          "source": "p89"
-        },
-        {
-          "text": "Lowvol is strong (p89).",
-          "source": "p89"
-        },
-        {
-          "text": "Drug pricing deals initiated by the Trump administration are expanding to include more pharma companies, specifically mentioning mid-sized drugmakers.",
-          "source": "[Benzinga] Trump Expands Drug Pricing Deals With 9 Pharma Companies, Bringing Total to 26 \u2014 RFK Jr. Details 'Very, Very Emotional' Conversations With President"
-        },
-        {
-          "text": "The push for MFN deals from the Trump administration now includes nine mid-sized drugmakers.",
-          "source": "[Zacks] Trump's MFN Push Goes Beyond Big Pharma, Adds 9 Mid-Sized Drugmakers"
-        },
-        {
-          "text": "Mid-cap biotechs are joining the latest round of drug pricing deals under the Trump administration.",
-          "source": "[BioPharma Dive] Mid-cap biotechs join Trump\u2019s latest round of drug pricing deals"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is flat (p67).",
-          "source": "p67"
-        },
-        {
-          "text": "Value (1/PE) is flat (p67).",
-          "source": "p67"
-        },
-        {
-          "text": "There is strong analyst dispersion (p78), suggesting a wide range of analytical perspectives.",
-          "source": "p78"
-        }
-      ],
-      "data_gap": false
-    },
-    "KOTAKBANK.NS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is strong (p89).",
-          "source": "p89"
-        },
-        {
-          "text": "Value (1/PE) is strong (p89).",
-          "source": "p89"
-        },
-        {
-          "text": "Lowvol is strong (p78).",
-          "source": "p78"
-        },
-        {
-          "text": "ICICI Prudential AMC has received clearance to increase its holdings to up to 9.95% in four lenders.",
-          "source": "[Retail Banker International] ICICI Prudential AMC gets clearance to buy up to 9.95% of four lenders"
-        },
-        {
-          "text": "India's Kotak Investment Banking has appointed co-CEOs.",
-          "source": "[Reuters] India's Kotak Investment Banking appoints co-CEOs"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p33).",
-          "source": "p33"
-        },
-        {
-          "text": "Four Indian private lenders are reportedly considering dollar debt before a specific RBI swap window deadline.",
-          "source": "[Reuters] Four Indian private lenders eye dollar debt before RBI swap window deadline, bankers say"
-        }
-      ],
-      "data_gap": false
+    "BAJAJ-AUTO.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "ADANIPORTS.NS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is strong (p89).",
-          "source": "p89"
-        },
-        {
-          "text": "Value (1/PE) is strong (p89).",
-          "source": "p89"
-        },
-        {
-          "text": "The company has posted higher profit, driven by domestic demand.",
-          "source": "[Reuters] India's Adani Ports posts higher profit on domestic demand"
-        },
-        {
-          "text": "Adani Ports is set to sell a 49% stake in an Indian port to Swiss Shipping Group MSC for $1.4 billion.",
-          "source": "[The Wall Street Journal] Adani Ports to Sell India Port Stake to Swiss Shipping Group MSC for $1.40B"
-        },
-        {
-          "text": "The company will sell a 49% stake in an Indian port to MSC for $1.4 billion.",
-          "source": "[Reuters] Adani Ports to sell 49% stake in Indian port to MSC for $1.4 billion"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p44).",
-          "source": "p44"
-        },
-        {
-          "text": "Analyst dispersion is strong (p89), indicating a wide range of analytical perspectives.",
-          "source": "p89"
-        },
-        {
-          "text": "Lowvol is flat (p44).",
-          "source": "p44"
-        },
-        {
-          "text": "India's Kerala state chief minister stated that the state was not consulted on MSC's $1.4 billion port investment.",
-          "source": "[Reuters] India's Kerala state not consulted on MSC's $1.4 billion port investment, chief minister says"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "HINDALCO.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "GRASIM.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "EICHERMOT.NS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is strong (p78).",
-          "source": "p78"
-        },
-        {
-          "text": "Value (1/PE) is strong (p78).",
-          "source": "p78"
-        },
-        {
-          "text": "Q1 2027 earnings call highlights indicate record revenue and strategic developments.",
-          "source": "[GuruFocus.com] Eicher Motors Ltd (BOM:505200) Q1 2027 Earnings Call Highlights: Record Revenue and Strategic ..."
-        },
-        {
-          "text": "The company exceeded first-quarter profit forecasts and observes steady demand.",
-          "source": "[Reuters] India's Eicher Motors beats first-quarter profit forecast, sees steady demand"
-        },
-        {
-          "text": "Eicher Motors has consistently exceeded quarterly profit estimates due to strong sales.",
-          "source": "[Reuters] India's Eicher Motors beats quarterly profit estimates on strong sales"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p56).",
-          "source": "p56"
-        },
-        {
-          "text": "Lowvol is flat (p56).",
-          "source": "p56"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "TITAN.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is strong (p89).",
-          "source": "p89"
-        },
-        {
-          "text": "Q1 FY27 earnings call highlights indicate strong growth.",
-          "source": "[GuruFocus.com] Titan Co Ltd (BOM:500114) (Q1 FY27) Earnings Call Highlights: Strong Growth Amidst Customs Duty ..."
-        },
-        {
-          "text": "The company's stock reached a record high driven by strong fourth-quarter sales.",
-          "source": "[Reuters] India's Titan hits record high on strong fourth-quarter sales"
-        },
-        {
-          "text": "Strategic acquisitions and market expansion were highlighted in Q3 2026 earnings.",
-          "source": "[GuruFocus.com] Titan Co Ltd (BOM:500114) Q3 2026 Earnings Call Highlights: Strategic Acquisitions and Market ..."
-        },
-        {
-          "text": "Indian jewellers' stocks, including Titan, experienced positive performance from strong festive-quarter sales.",
-          "source": "[Reuters] Indian jewellers' stocks shine on strong festive-quarter sales; Titan hits record high"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is weak (p22).",
-          "source": "p22"
-        },
-        {
-          "text": "Value (1/PE) is weak (p22).",
-          "source": "p22"
-        },
-        {
-          "text": "The company's Q1 FY27 growth occurred amidst customs duty changes.",
-          "source": "[GuruFocus.com] Titan Co Ltd (BOM:500114) (Q1 FY27) Earnings Call Highlights: Strong Growth Amidst Customs Duty ..."
-        },
-        {
-          "text": "Indian jewelry stocks experienced a 12% decline as the government targeted gold imports.",
-          "source": "[BeInCrypto] India Jewelry Stocks Lose 12% as Modi Targets $72 Billion In Gold Imports"
-        }
-      ],
-      "data_gap": false
+    "BAJFINANCE.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "CIPLA.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "APOLLOHOSP.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is strong (p78).",
-          "source": "p78"
-        },
-        {
-          "text": "Lowvol is strong (p89).",
-          "source": "p89"
-        },
-        {
-          "text": "Analyst dispersion is weak (p11), suggesting a relatively uniform analytical perspective.",
-          "source": "p11"
-        },
-        {
-          "text": "Q1 2027 earnings call highlights indicate surging revenue.",
-          "source": "[GuruFocus.com] Apollo Hospitals Enterprise Ltd (BOM:508869) (Q1 2027) Earnings Call Highlights: Revenue Surges ..."
-        },
-        {
-          "text": "The company exceeded quarterly profit expectations due to demand for complex care.",
-          "source": "[Reuters] India's Apollo Hospitals beats quarterly profit on demand for complex care"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is flat (p44).",
-          "source": "p44"
-        },
-        {
-          "text": "Value (1/PE) is flat (p44).",
-          "source": "p44"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "ADANIENT.NS": {
-      "in_favor": [
-        {
-          "text": "Q1 2027 earnings call highlights indicate strategic growth.",
-          "source": "[GuruFocus.com] Adani Enterprises Ltd (BOM:512599) Q1 2027 Earnings Call Highlights: Strategic Growth Amidst ..."
-        },
-        {
-          "text": "Adani Airport Holdings successfully raised Rs98.25bn from global funds.",
-          "source": "[Investment Monitor] Adani Airport Holdings raises Rs98.25bn from global funds"
-        },
-        {
-          "text": "Adani data centers are a focus point in EQT's reported plans for a $50bn India investment.",
-          "source": "[Investment Monitor] EQT eyes $50bn India bet, Adani data centres in focus \u2013 report"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p67).",
-          "source": "p67"
-        },
-        {
-          "text": "Analyst dispersion is strong (p89), indicating varying analytical views.",
-          "source": "p89"
-        },
-        {
-          "text": "Quality (ROE/margin) is weak (p33).",
-          "source": "p33"
-        },
-        {
-          "text": "Value (1/PE) is flat (p56).",
-          "source": "p56"
-        },
-        {
-          "text": "Lowvol is weak (p0).",
-          "source": "p0"
-        }
-      ],
-      "data_gap": false
-    },
-    "MAXHEALTH.NS": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is weak (p22), suggesting a relatively uniform analytical perspective.",
-          "source": "p22"
-        },
-        {
-          "text": "Q1 2027 earnings call highlights indicate surging revenue.",
-          "source": "[GuruFocus.com] Max Healthcare Institute Ltd (BOM:543220) (Q1 2027) Earnings Call Highlights: Revenue Surges ..."
-        },
-        {
-          "text": "The company reported a rise in quarterly profit, supported by strong demand.",
-          "source": "[Reuters] India's Max Healthcare posts quarterly profit rise on strong demand"
-        },
-        {
-          "text": "Strong revenue was also a highlight from the Q4 2026 earnings call.",
-          "source": "[GuruFocus.com] Max Healthcare Institute Ltd (BOM:543220) Q4 2026 Earnings Call Highlights: Strong Revenue ..."
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p0).",
-          "source": "p0"
-        },
-        {
-          "text": "Quality (ROE/margin) is flat (p56).",
-          "source": "p56"
-        },
-        {
-          "text": "Value (1/PE) is weak (p33).",
-          "source": "p33"
-        },
-        {
-          "text": "Lowvol is weak (p22).",
-          "source": "p22"
-        }
-      ],
-      "data_gap": false
-    },
-    "INDIGO.NS": {
       "in_favor": [],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p11).",
-          "source": "p11"
-        },
-        {
-          "text": "Analyst dispersion is weak (p33), which, in the context of other weak indicators, may imply a consensus on a challenging outlook.",
-          "source": "p33"
-        },
-        {
-          "text": "Quality (ROE/margin) is weak (p0).",
-          "source": "p0"
-        },
-        {
-          "text": "Value (1/PE) is weak (p0).",
-          "source": "p0"
-        },
-        {
-          "text": "Lowvol is weak (p33).",
-          "source": "p33"
-        }
-      ],
-      "data_gap": false
+      "to_watch": [],
+      "data_gap": true
     },
     "ETERNAL.NS": {
       "in_favor": [],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p22).",
-          "source": "p22"
-        },
-        {
-          "text": "Analyst dispersion is weak (p0), suggesting a consistent analytical view, potentially reflecting the weak overall indicators.",
-          "source": "p0"
-        },
-        {
-          "text": "Quality (ROE/margin) is weak (p11).",
-          "source": "p11"
-        },
-        {
-          "text": "Value (1/PE) is weak (p11).",
-          "source": "p11"
-        },
-        {
-          "text": "Lowvol is weak (p11).",
-          "source": "p11"
-        }
-      ],
-      "data_gap": false
+      "to_watch": [],
+      "data_gap": true
     }
   }
 }
