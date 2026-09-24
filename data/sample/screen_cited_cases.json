@@ -1,344 +1,300 @@
 {
-  "as_of": "2026-09-22",
+  "as_of": "2026-09-23",
   "cases": {
-    "SPG": {
+    "WDC": {
       "in_favor": [
         {
-          "text": "The company shows exceptional quality in ROE/margin (p95) and strong value with its 1/PE ratio (p86).",
-          "source": "Facts"
+          "text": "The company exhibits exceptional momentum (12-1) (p92).",
+          "source": "facts"
         },
         {
-          "text": "It exhibits exceptional low volatility (p93) and exceptional analyst dispersion (p90).",
-          "source": "Facts"
+          "text": "It demonstrates exceptional quality as measured by ROE/margin (p93).",
+          "source": "facts"
         },
         {
-          "text": "Simon Property Group raised its outlook again.",
-          "source": "Insider Monkey"
+          "text": "A price target for SanDisk, a related entity, reportedly generated positive sentiment across memory stocks (24/7 Wall St.).",
+          "source": "[24/7 Wall St.] A $2,400 Price Target on SanDisk Just Lit a Fire Under Every Memory Stock"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is weak (p37).",
+          "source": "facts"
         },
         {
-          "text": "The company is experiencing a leasing surge, with rising traffic, rents, and retail demand.",
-          "source": "MarketBeat"
+          "text": "The low volatility characteristic is weak (p23).",
+          "source": "facts"
+        },
+        {
+          "text": "Holding SanDisk stock might be amplifying an existing risk (Trefis).",
+          "source": "[Trefis] Is SanDisk Stock Amplifying A Risk You Already Own?"
+        }
+      ],
+      "data_gap": false
+    },
+    "VZ": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is exceptional (p93).",
+          "source": "facts"
+        },
+        {
+          "text": "The valuation (1/PE) is exceptional (p93).",
+          "source": "facts"
+        },
+        {
+          "text": "It exhibits exceptional low volatility (p92).",
+          "source": "facts"
+        },
+        {
+          "text": "Verizon has launched a $70 million free AI training program (Quartz).",
+          "source": "[Quartz] Verizon launches $70 million free AI training program"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak (p27).",
+          "source": "facts"
+        },
+        {
+          "text": "Quality (ROE/margin) is weak (p30).",
+          "source": "facts"
+        },
+        {
+          "text": "There is a question regarding whether the company's growth phase is complete (Trefis).",
+          "source": "[Trefis] Is Verizon Stock Cheap, Or Just Done Growing?"
+        },
+        {
+          "text": "The company plans to discontinue a phone service that customers currently rely on (TheStreet).",
+          "source": "[TheStreet] Verizon plans to discontinue a phone service customers rely on"
+        }
+      ],
+      "data_gap": false
+    },
+    "BAC": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is exceptional (p93).",
+          "source": "facts"
+        },
+        {
+          "text": "The valuation (1/PE) is strong (p89).",
+          "source": "facts"
+        },
+        {
+          "text": "The low volatility characteristic is exceptional (p92).",
+          "source": "facts"
+        },
+        {
+          "text": "A hawkish Federal Reserve stance is seen as beneficial for the bank (24/7 Wall St.).",
+          "source": "[24/7 Wall St.] A Hawkish Fed Is Bad News for Borrowers. It\u2019s Good News for This Bank."
+        },
+        {
+          "text": "Bank of America intends to double its AI budget next year (Banking Dive).",
+          "source": "[Banking Dive] Bank of America plans to double AI budget next year"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality (ROE/margin) is weak (p19).",
+          "source": "facts"
+        },
+        {
+          "text": "Market sentiment has been neutral with a slightly negative score of -0.12 based on 154 mentions in the last 30 days (facts).",
+          "source": "facts"
+        }
+      ],
+      "data_gap": false
+    },
+    "GOOG": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong (p81).",
+          "source": "facts"
+        },
+        {
+          "text": "Quality (ROE/margin) is strong (p78).",
+          "source": "facts"
+        },
+        {
+          "text": "The valuation (1/PE) is strong (p81).",
+          "source": "facts"
+        },
+        {
+          "text": "Its position within 'Big Tech' is considered crucial for future AI growth, with YouTube reportedly presenting a significant challenge for a competitor (Yahoo Finance Video, Yahoo Finance).",
+          "source": "[Yahoo Finance Video] Netflix has a big YouTube problem \u2014 and it's only getting worse"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock has experienced a dip greater than the broader market (Zacks).",
+          "source": "[Zacks] Alphabet Inc. (GOOG) Dips More Than Broader Market: What You Should Know"
+        }
+      ],
+      "data_gap": false
+    },
+    "GOOGL": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong (p78).",
+          "source": "facts"
+        },
+        {
+          "text": "Quality (ROE/margin) is strong (p78).",
+          "source": "facts"
+        },
+        {
+          "text": "The valuation (1/PE) is strong (p78).",
+          "source": "facts"
+        },
+        {
+          "text": "Its position within 'Big Tech' is considered crucial for future AI growth, with YouTube reportedly presenting a significant challenge for a competitor (Yahoo Finance Video, Yahoo Finance).",
+          "source": "[Yahoo Finance Video] Netflix has a big YouTube problem \u2014 and it's only getting worse"
+        },
+        {
+          "text": "The earnings outlook for the company remains upbeat (Zacks).",
+          "source": "[Zacks] Earnings Outlook Remains Upbeat: A Closer Look"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock registered a larger fall than the broader market (Zacks).",
+          "source": "[Zacks] Alphabet (GOOGL) Registers a Bigger Fall Than the Market: Important Facts to Note"
+        }
+      ],
+      "data_gap": false
+    },
+    "AAPL": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is exceptional (p93).",
+          "source": "facts"
+        },
+        {
+          "text": "The low volatility characteristic is strong (p85).",
+          "source": "facts"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The valuation (1/PE) is weak (p33).",
+          "source": "facts"
+        }
+      ],
+      "data_gap": false
+    },
+    "JPM": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong (p85).",
+          "source": "facts"
+        },
+        {
+          "text": "The valuation (1/PE) is strong (p85).",
+          "source": "facts"
+        },
+        {
+          "text": "The low volatility characteristic is exceptional (p92).",
+          "source": "facts"
+        },
+        {
+          "text": "JPMorgan has an India expansion plan (Zacks).",
+          "source": "[Zacks] JPMorgan's India Expansion Plan: What It Means and Why It Matters"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak (p23).",
+          "source": "facts"
+        },
+        {
+          "text": "CEO Jamie Dimon has noted the potential for AI spending to reach $1 trillion by 2027, with a warning about its potential to slightly increase inflation (Benzinga).",
+          "source": "[Benzinga] Jamie Dimon Says AI Spending Could Hit $1 Trillion in 2027 But JPMorgan CEO Warns it Could Add 'Little Bit' to Inflation: 'That\u2019s Like 1% Increase to GDP...'"
+        }
+      ],
+      "data_gap": false
+    },
+    "CSCO": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong (p89).",
+          "source": "facts"
+        },
+        {
+          "text": "The low volatility characteristic is strong (p77).",
+          "source": "facts"
+        },
+        {
+          "text": "The company is involved in building an AI-ready campus with its switches (GuruFocus.com).",
+          "source": "[GuruFocus.com] Cisco Slips 0.3% as 1,000 Switches Build an AI-Ready Campus"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock is considered expensive by some analyses (Trefis).",
+          "source": "[Trefis] Cisco Stock Looks Expensive Until You Price The Year It Already Guided"
+        },
+        {
+          "text": "Piper Sandler has cut its price target, citing fears of growth peaking (Quartz, TIKR).",
+          "source": "[Quartz] Piper Sandler cuts Cisco price target to $125 on growth peak fears"
+        },
+        {
+          "text": "The stock has experienced a fall due to growth concerns (TIKR).",
+          "source": "[TIKR] Cisco Stock Falls as Piper Sandler Cuts Price Target Over Growth Concerns"
+        }
+      ],
+      "data_gap": false
+    },
+    "NVDA": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is exceptional (p93).",
+          "source": "facts"
+        },
+        {
+          "text": "Discussions around AI and tech concentration include references to \"Nvidia windfalls\" (Yahoo Finance Video).",
+          "source": "[Yahoo Finance Video] The AI panic, tech concentration, and Nvidia windfalls"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak (p38).",
+          "source": "facts"
+        },
+        {
+          "text": "Analyst dispersion is weak (p22).",
+          "source": "facts"
+        }
+      ],
+      "data_gap": false
+    },
+    "SCHW": {
+      "in_favor": [
+        {
+          "text": "The low volatility characteristic is strong (p88).",
+          "source": "facts"
+        },
+        {
+          "text": "Interest rate hikes, previously a concern, are now noted as potentially beneficial for the company (TIKR).",
+          "source": "[TIKR] Charles Schwab Stock Fell 6% on AI Fears. The Rate Hike Everyone Feared Actually Helps It"
         }
       ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is weak (p31).",
-          "source": "Facts"
+          "source": "facts"
         },
         {
-          "text": "Market sentiment shows neutral buzz with only 1 mention in the last 30 days.",
-          "source": "Facts"
+          "text": "Concerns and worries are reportedly being triggered in brokerage stocks, including Charles Schwab, by Meta's Muse AI agent (Barrons.com, Investor's Business Daily, Zacks).",
+          "source": "[Barrons.com] Meta\u2019s Muse AI Agent Triggers Worries About Brokerage Stocks"
         },
         {
-          "text": "Simon Property Group plans to hand back Square One Mall.",
-          "source": "Simply Wall St."
+          "text": "The stock experienced a 6% fall due to AI fears (TIKR).",
+          "source": "[TIKR] Charles Schwab Stock Fell 6% on AI Fears. The Rate Hike Everyone Feared Actually Helps It"
         },
         {
-          "text": "The company is approaching the end of the road with a struggling suburban Boston mall.",
-          "source": "Bisnow"
-        }
-      ],
-      "data_gap": false
-    },
-    "TRGP": {
-      "in_favor": [
-        {
-          "text": "The company exhibits strong momentum (12-1) (p89) and strong analyst dispersion (p88).",
-          "source": "Facts"
-        },
-        {
-          "text": "Quality (ROE/margin) is exceptional (p93).",
-          "source": "Facts"
-        },
-        {
-          "text": "Targa Resources received a fresh vote of confidence from TD Cowen.",
-          "source": "Insider Monkey"
-        },
-        {
-          "text": "The company set a record quarter and subsequently raised its bar.",
-          "source": "Insider Monkey"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Value (1/PE) is flat (p53).",
-          "source": "Facts"
-        },
-        {
-          "text": "Low volatility is flat (p50).",
-          "source": "Facts"
-        },
-        {
-          "text": "Energy stocks experienced a fall pre-bell on a Tuesday.",
-          "source": "MT Newswires"
-        }
-      ],
-      "data_gap": false
-    },
-    "AMP": {
-      "in_favor": [
-        {
-          "text": "The company demonstrates exceptional quality (ROE/margin) (p91) and exceptional value (1/PE) (p91).",
-          "source": "Facts"
-        },
-        {
-          "text": "Financial stocks are benefiting from higher cash yields and money market demand.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "Ameriprise stock could be a bargain after its 119% run.",
-          "source": "Simply Wall St."
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p30).",
-          "source": "Facts"
-        },
-        {
-          "text": "Analyst dispersion is flat (p73) and low volatility is flat (p68).",
-          "source": "Facts"
-        },
-        {
-          "text": "Ameriprise Financial stock traded down.",
-          "source": "StockStory"
-        },
-        {
-          "text": "An $8.1 billion team departed Ameriprise to launch an RIA.",
-          "source": "Barrons.com"
-        }
-      ],
-      "data_gap": false
-    },
-    "NTAP": {
-      "in_favor": [
-        {
-          "text": "The company has strong momentum (12-1) (p85) and strong analyst dispersion (p84).",
-          "source": "Facts"
-        },
-        {
-          "text": "Quality (ROE/margin) is exceptional (p95).",
-          "source": "Facts"
-        },
-        {
-          "text": "NetApp just deepened its VMware cloud integration.",
-          "source": "Insider Monkey"
-        },
-        {
-          "text": "The company might be well poised for a surge.",
-          "source": "Zacks"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Value (1/PE) is flat (p52).",
-          "source": "Facts"
-        },
-        {
-          "text": "Low volatility is weak (p28).",
-          "source": "Facts"
-        }
-      ],
-      "data_gap": false
-    },
-    "MSI": {
-      "in_favor": [
-        {
-          "text": "The company shows exceptional analyst dispersion (p95), exceptional quality (ROE/margin) (p95), and strong low volatility (p86).",
-          "source": "Facts"
-        },
-        {
-          "text": "Motorola Solutions is powering essential communications for first responders.",
-          "source": "Insider Monkey"
-        },
-        {
-          "text": "The company fits into Louisiana's statewide public safety overhaul.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "Motorola Solutions is focusing on defense, drone security growth, and AI-powered public safety.",
-          "source": "MarketBeat"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p21).",
-          "source": "Facts"
-        },
-        {
-          "text": "Value (1/PE) is weak (p34).",
-          "source": "Facts"
-        }
-      ],
-      "data_gap": false
-    },
-    "AIZ": {
-      "in_favor": [
-        {
-          "text": "The company exhibits exceptional analyst dispersion (p95), strong value (1/PE) (p90), and strong low volatility (p83).",
-          "source": "Facts"
-        },
-        {
-          "text": "Market sentiment shows mildly positive sentiment (0.40) with 150 mentions in the last 30 days.",
-          "source": "Facts"
-        },
-        {
-          "text": "Assurant is highlighted as an investment idea.",
-          "source": "Zacks"
-        },
-        {
-          "text": "Multi-line insurance stocks may benefit as interest rates stay higher.",
-          "source": "Zacks"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p57).",
-          "source": "Facts"
-        },
-        {
-          "text": "Quality (ROE/margin) is flat (p57).",
-          "source": "Facts"
-        },
-        {
-          "text": "Assurant stock trades near fair value after a 94% run.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "There is skepticism regarding some low-volatility stocks, including Assurant.",
-          "source": "StockStory"
-        }
-      ],
-      "data_gap": false
-    },
-    "GL": {
-      "in_favor": [
-        {
-          "text": "The company shows strong analyst dispersion (p78), exceptional value (1/PE) (p94), and strong low volatility (p89).",
-          "source": "Facts"
-        },
-        {
-          "text": "Globe Life may still be undervalued following its Bermuda reinsurance plan.",
-          "source": "Simply Wall St."
-        },
-        {
-          "text": "The stock is noted to be performing well compared to its industry and trades at a discount.",
-          "source": "Zacks"
-        },
-        {
-          "text": "Company co-CEOs are discussing the company's Texas strategy and the importance of the Lone Star State.",
-          "source": "NYSE"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p46).",
-          "source": "Facts"
-        },
-        {
-          "text": "Quality (ROE/margin) is flat (p62).",
-          "source": "Facts"
-        }
-      ],
-      "data_gap": false
-    },
-    "MA": {
-      "in_favor": [
-        {
-          "text": "The company exhibits exceptional quality (ROE/margin) (p95) and exceptional low volatility (p95).",
-          "source": "Facts"
-        },
-        {
-          "text": "SoFi's stablecoin has gone live across Mastercard's network.",
-          "source": "GuruFocus.com"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p18).",
-          "source": "Facts"
-        },
-        {
-          "text": "Analyst dispersion is flat (p64) and value (1/PE) is flat (p47).",
-          "source": "Facts"
-        },
-        {
-          "text": "MasterCard stock recently moved down by 1.90%.",
-          "source": "Zacks"
-        },
-        {
-          "text": "The Fed's vice chair is working to ensure banks protect themselves from AI risks, which could affect the financial sector.",
-          "source": "Yahoo Finance Video"
-        }
-      ],
-      "data_gap": false
-    },
-    "USB": {
-      "in_favor": [
-        {
-          "text": "The company shows exceptional analyst dispersion (p95), exceptional value (1/PE) (p94), and strong low volatility (p79).",
-          "source": "Facts"
-        },
-        {
-          "text": "U.S. Bancorp is eyeing a strong Q3 as net interest income and fee revenues gain momentum.",
-          "source": "Zacks"
-        },
-        {
-          "text": "U.S. Bancorp delivered another dividend increase.",
-          "source": "Insider Monkey"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p52).",
-          "source": "Facts"
-        },
-        {
-          "text": "Quality (ROE/margin) is weak (p38).",
-          "source": "Facts"
-        }
-      ],
-      "data_gap": false
-    },
-    "DVA": {
-      "in_favor": [
-        {
-          "text": "The company shows exceptional quality (ROE/margin) (p94) and strong value (1/PE) (p82).",
-          "source": "Facts"
-        },
-        {
-          "text": "DaVita is identified as a surging stock that does not need the AI boom for continued positive movement.",
-          "source": "MarketBeat"
-        },
-        {
-          "text": "The stock advanced while the broader market declined, showing resilience.",
-          "source": "Zacks"
-        },
-        {
-          "text": "A positive outlook suggests retaining DaVita stock in a portfolio.",
-          "source": "Zacks"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is flat (p59).",
-          "source": "Facts"
-        },
-        {
-          "text": "Analyst dispersion is flat (p40).",
-          "source": "Facts"
-        },
-        {
-          "text": "Low volatility is weak (p32).",
-          "source": "Facts"
-        },
-        {
-          "text": "Reasons have been presented to consider a negative position on DVA.",
-          "source": "StockStory"
-        },
-        {
-          "text": "DaVita is identified as one of Wall Street\u2019s favorite stocks that some find risky.",
-          "source": "StockStory"
+          "text": "A \"sell signal\" was reportedly triggered for Schwab (Investor's Business Daily).",
+          "source": "[Investor's Business Daily] How Meta's Muse, Vanguard AI Threat Triggered Schwab Sell Signal"
         }
       ],
       "data_gap": false

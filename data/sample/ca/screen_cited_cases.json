@@ -1,126 +1,37 @@
 {
-  "as_of": "2026-09-22",
+  "as_of": "2026-09-23",
   "cases": {
-    "CNQ.TO": {
-      "in_favor": [
-        {
-          "text": "The company shows Strong Momentum (12-1), Exceptional Quality (ROE/margin), and Exceptional Value (1/PE).",
-          "source": "Facts"
-        },
-        {
-          "text": "The Canadian E&P industry is gaining momentum, which includes this company.",
-          "source": "[Zacks] Canadian E&P Industry Gains Momentum: 3 Stocks in Focus"
-        },
-        {
-          "text": "It is recognized as a Canadian dividend stock with yields over 3%.",
-          "source": "[Simply Wall St.] 3 Canadian Dividend Stocks With Yields Over 3%"
-        },
-        {
-          "text": "Canadian Natural Resources stock may be a bargain based on cash flow.",
-          "source": "[Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Stock May Be A Bargain On Cash Flow"
-        },
-        {
-          "text": "Cost cuts are supporting its case, indicating it looks fairly valued.",
-          "source": "[Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Looks Fairly Valued As Cost Cuts Support Its Case"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Low volatility is weak.",
-          "source": "Facts"
-        },
-        {
-          "text": "Analyst dispersion is strong, suggesting a wider range of opinions.",
-          "source": "Facts"
-        },
-        {
-          "text": "The stock is considered fairly valued, which could imply limited near-term upside.",
-          "source": "[Simply Wall St.] Canadian Natural Resources (TSX:CNQ) Looks Fairly Valued As Cost Cuts Support Its Case"
-        }
-      ],
-      "data_gap": false
-    },
     "SU.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits Exceptional Momentum (12-1) and Strong Value (1/PE).",
-          "source": "Facts"
+          "text": "The stock exhibits exceptional momentum (12-1).",
+          "source": "p93"
         },
         {
-          "text": "Suncor Energy stock has experienced a 63% surge in a year.",
+          "text": "The company demonstrates strong quality based on ROE/margin metrics.",
+          "source": "p86"
+        },
+        {
+          "text": "The stock presents exceptional value based on its 1/PE ratio.",
+          "source": "p93"
+        },
+        {
+          "text": "The stock experienced a 63% surge over the past year.",
           "source": "[Zacks] Should You Buy Suncor Energy Stock After Its 63% Surge in a Year?"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) and Low volatility are flat.",
-          "source": "Facts"
+          "text": "There is strong analyst dispersion regarding the stock, suggesting varying viewpoints.",
+          "source": "p86"
         },
         {
-          "text": "Analyst dispersion is Exceptional, indicating varied perspectives on the company.",
-          "source": "Facts"
+          "text": "The stock is noted as one that investors will be watching.",
+          "source": "[Investing.com] Which TSX stocks investors will be watching next week?"
         },
         {
-          "text": "There is a consideration of whether to hold the stock or lock in profits after its significant surge.",
-          "source": "[Zacks] Should You Buy Suncor Energy Stock After Its 63% Surge in a Year?"
-        }
-      ],
-      "data_gap": false
-    },
-    "CVE.TO": {
-      "in_favor": [
-        {
-          "text": "The company demonstrates Exceptional Momentum (12-1), Strong Quality (ROE/margin), and Exceptional Value (1/PE).",
-          "source": "Facts"
-        },
-        {
-          "text": "Cenovus Energy's low-cost base and downstream integration contribute to resilience.",
-          "source": "[Zacks] How Cenovus' Low-Cost Base and Downstream Integration Offer Resilience"
-        },
-        {
-          "text": "A dividend analysis is available for Cenovus Energy Inc.",
-          "source": "[GuruFocus.com] Cenovus Energy Inc's Dividend Analysis"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Low volatility is weak.",
-          "source": "Facts"
-        },
-        {
-          "text": "Analyst dispersion is flat.",
-          "source": "Facts"
-        }
-      ],
-      "data_gap": false
-    },
-    "CM.TO": {
-      "in_favor": [
-        {
-          "text": "The company displays Strong Value (1/PE) and Strong Low volatility.",
-          "source": "Facts"
-        },
-        {
-          "text": "CIBC has committed $2 billion to support Canadian defense-related companies.",
-          "source": "[Financial Post] CIBC commits $2 billion to help Canadian defence-related companies grow"
-        },
-        {
-          "text": "The financial sector, including CIBC, showed strength as the broader TSX index rose.",
-          "source": "[MT Newswires] TSX Closer: The Index Rises on Stronger Tech and Financial Issues"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) and Quality (ROE/margin) are flat.",
-          "source": "Facts"
-        },
-        {
-          "text": "Analyst dispersion is strong, indicating a range of views on the company.",
-          "source": "Facts"
-        },
-        {
-          "text": "Following new bond deals, the company is viewed as having modest upside.",
-          "source": "[Simply Wall St.] Canadian Imperial Bank Of Commerce (TSX:CM) Following New Bond Deals Has Modest Upside In View"
+          "text": "A potential 'Oil Catastrophe' in 2027 is a broader industry consideration.",
+          "source": "[Barrons.com] An Oil Catastrophe Was Averted in 2026. What If It Comes in 2027?"
         }
       ],
       "data_gap": false
@@ -128,29 +39,29 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "The company exhibits Exceptional Low volatility.",
-          "source": "Facts"
+          "text": "The stock exhibits exceptional low volatility.",
+          "source": "p93"
         },
         {
-          "text": "Royal Bank of Canada has highlighted an 18% ROE, HSBC synergies, and U.S. growth.",
+          "text": "Canadian banks, including Royal Bank of Canada, are looking to accept and develop tokenized deposits.",
+          "source": "[CryptoProwl] Canada's Banks To Accept Tokenized Deposits"
+        },
+        {
+          "text": "The company highlights an 18% ROE, synergies with HSBC, and U.S. growth initiatives.",
           "source": "[MarketBeat] Royal Bank of Canada Highlights 18% ROE, HSBC Synergies and U.S. Growth"
         },
         {
-          "text": "The financial sector, including Royal Bank of Canada, contributed to the TSX index closing higher.",
-          "source": "[MT Newswires] TSX Closer: Index Closes Higher as Technology, Healthcare and Base Metals Lead Gains"
+          "text": "Canada's largest banks, including Royal Bank of Canada, are looking to develop tokenized deposits.",
+          "source": "[MT Newswires] Canada's Largest Banks Look to Develop Tokenized Deposits"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1), Quality (ROE/margin), and Value (1/PE) are flat.",
-          "source": "Facts"
+          "text": "There is strong analyst dispersion, indicating a range of views on the stock.",
+          "source": "p79"
         },
         {
-          "text": "Analyst dispersion is strong, suggesting varied perspectives.",
-          "source": "Facts"
-        },
-        {
-          "text": "A question is raised regarding whether the stock is fully priced after a 168% run.",
+          "text": "The stock may be fully priced following a 168% run.",
           "source": "[Simply Wall St.] Is Royal Bank Of Canada (TSX:RY) Fully Priced After A 168% Run?"
         }
       ],
@@ -159,73 +70,34 @@
     "TD.TO": {
       "in_favor": [
         {
-          "text": "The company shows Strong Momentum (12-1) and Exceptional Low volatility.",
-          "source": "Facts"
+          "text": "The stock shows strong momentum (12-1).",
+          "source": "p79"
         },
         {
-          "text": "TD Bank is targeting 100 U.S. branches.",
+          "text": "The stock exhibits exceptional low volatility.",
+          "source": "p93"
+        },
+        {
+          "text": "Canadian banks, including TD Bank, are looking to accept and develop tokenized deposits.",
+          "source": "[CryptoProwl] Canada's Banks To Accept Tokenized Deposits"
+        },
+        {
+          "text": "TD Bank is targeting 100 U.S. branches for expansion.",
           "source": "[MarketBeat] TD Bank Targets 100 U.S. Branches as AML Remediation Continues"
         },
         {
-          "text": "The financial sector contributed to the TSX index closing higher.",
-          "source": "[MT Newswires] TSX Closer: Index Closes Higher as Technology, Healthcare and Base Metals Lead Gains"
+          "text": "Canada's largest banks, including TD Bank, are looking to develop tokenized deposits.",
+          "source": "[MT Newswires] Canada's Largest Banks Look to Develop Tokenized Deposits"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "Facts"
+          "text": "The company's quality (ROE/margin) metrics are weak.",
+          "source": "p29"
         },
         {
-          "text": "Value (1/PE) and Analyst dispersion are flat.",
-          "source": "Facts"
-        },
-        {
-          "text": "AML remediation for TD Bank is ongoing.",
+          "text": "AML remediation efforts are continuing.",
           "source": "[MarketBeat] TD Bank Targets 100 U.S. Branches as AML Remediation Continues"
-        },
-        {
-          "text": "The company is part of a comparison to determine a better value option.",
-          "source": "[Zacks] BBVA vs. TD: Which Stock Is the Better Value Option?"
-        }
-      ],
-      "data_gap": false
-    },
-    "CNR.TO": {
-      "in_favor": [
-        {
-          "text": "The company has Strong Quality (ROE/margin).",
-          "source": "Facts"
-        },
-        {
-          "text": "Canadian National Railway is exploring Mexico growth through a Union Pacific deal.",
-          "source": "[MarketBeat] Canadian National Railway Eyes Mexico Growth With Union Pacific Deal"
-        },
-        {
-          "text": "The company has a raised outlook.",
-          "source": "[Simply Wall St.] Where Does Canadian National Railway (TSX:CNR) Value Sit After Raised Outlook?"
-        },
-        {
-          "text": "Canadian National Railway has renewed its Amtrak pact.",
-          "source": "[Simply Wall St.] Canadian National Railway (TSX:CNR) Renews Amtrak Pact, Is The Stock Fully Valued?"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) and Value (1/PE) are weak.",
-          "source": "Facts"
-        },
-        {
-          "text": "Analyst dispersion and Low volatility are flat.",
-          "source": "Facts"
-        },
-        {
-          "text": "A question is raised about whether the stock is fully valued.",
-          "source": "[Simply Wall St.] Canadian National Railway (TSX:CNR) Renews Amtrak Pact, Is The Stock Fully Valued?"
-        },
-        {
-          "text": "Diesel price shock is a factor for freight stocks.",
-          "source": "[Simply Wall St.] Diesel Price Shock Has Freight Stocks Like J.B. Hunt In Focus"
         }
       ],
       "data_gap": false
@@ -233,65 +105,30 @@
     "GWO.TO": {
       "in_favor": [
         {
-          "text": "The company displays Exceptional Momentum (12-1).",
-          "source": "Facts"
+          "text": "The stock demonstrates exceptional momentum (12-1).",
+          "source": "p93"
         },
         {
-          "text": "Great West Lifeco has reported higher earnings and a larger buyback.",
+          "text": "Analyst dispersion is weak, suggesting a higher degree of consensus among analysts.",
+          "source": "p14"
+        },
+        {
+          "text": "The stock shows strong low volatility.",
+          "source": "p79"
+        },
+        {
+          "text": "The company reported higher earnings and announced a bigger buyback.",
           "source": "[Simply Wall St.] Is Great West Lifeco (TSX:GWO) Fully Priced After Higher Earnings And A Bigger Buyback?"
         },
         {
-          "text": "The company's Q2 earnings call highlights are available.",
+          "text": "Highlights from Great-West Lifeco's Q2 earnings call are noted.",
           "source": "[MarketBeat] Great-West Lifeco Q2 Earnings Call Highlights"
-        },
-        {
-          "text": "Great-West Lifeco is listed among TSX dividend stocks, with some yielding up to 6.9%.",
-          "source": "[Simply Wall St.] 3 TSX Dividend Stocks Yielding Up To 6.9%"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "Facts"
-        },
-        {
-          "text": "Quality (ROE/margin), Value (1/PE), and Low volatility are flat.",
-          "source": "Facts"
-        },
-        {
-          "text": "A question is raised about whether the stock is fully priced.",
+          "text": "The stock may be fully priced after higher earnings and a bigger buyback.",
           "source": "[Simply Wall St.] Is Great West Lifeco (TSX:GWO) Fully Priced After Higher Earnings And A Bigger Buyback?"
-        }
-      ],
-      "data_gap": false
-    },
-    "BNS.TO": {
-      "in_favor": [
-        {
-          "text": "The company exhibits Exceptional Low volatility.",
-          "source": "Facts"
-        },
-        {
-          "text": "Bank of Nova Scotia observes commercial growth as its digital and fee strategy gains traction.",
-          "source": "[MarketBeat] Bank of Nova Scotia Sees Commercial Growth as Digital, Fee Strategy Gains Traction"
-        },
-        {
-          "text": "Scotiabank stock may be 28% undervalued following record Q3 results.",
-          "source": "[Simply Wall St.] Scotiabank (TSX:BNS) Stock May Be 28% Undervalued After Record Q3 Results"
-        },
-        {
-          "text": "The financial sector contributed to the TSX index closing higher.",
-          "source": "[MT Newswires] TSX Closer: Index Closes Higher as Technology, Healthcare and Base Metals Lead Gains"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1), Analyst dispersion, and Value (1/PE) are flat.",
-          "source": "Facts"
-        },
-        {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "Facts"
         }
       ],
       "data_gap": false
@@ -299,30 +136,197 @@
     "NA.TO": {
       "in_favor": [
         {
-          "text": "The company shows Strong Low volatility.",
-          "source": "Facts"
+          "text": "Analyst dispersion is weak, suggesting a higher degree of consensus among analysts.",
+          "source": "p29"
         },
         {
-          "text": "National Bank of Canada is focused on commercial growth stemming from a CWB deal and a succession wave.",
+          "text": "The stock exhibits strong value based on its 1/PE ratio.",
+          "source": "p79"
+        },
+        {
+          "text": "The stock shows strong low volatility.",
+          "source": "p86"
+        },
+        {
+          "text": "Canadian banks, including National Bank of Canada, are looking to accept and develop tokenized deposits.",
+          "source": "[CryptoProwl] Canada's Banks To Accept Tokenized Deposits"
+        },
+        {
+          "text": "National Bank of Canada is eyeing commercial growth from a CWB deal.",
           "source": "[MarketBeat] National Bank of Canada Eyes Commercial Growth From CWB Deal, Succession Wave"
-        },
-        {
-          "text": "The financial sector contributed to the TSX index closing higher.",
-          "source": "[MT Newswires] TSX Closer: Index Closes Higher as Technology, Healthcare and Base Metals Lead Gains"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1), Quality (ROE/margin), and Value (1/PE) are flat.",
-          "source": "Facts"
+          "text": "Despite a 165% run, there is consideration of whether the stock is still undervalued.",
+          "source": "[Simply Wall St.] Is National Bank Of Canada (TSX:NA) Still Undervalued After A 165% Run?"
         },
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "Facts"
+          "text": "The company is undergoing a 'succession wave', which implies leadership changes.",
+          "source": "[MarketBeat] National Bank of Canada Eyes Commercial Growth From CWB Deal, Succession Wave"
+        }
+      ],
+      "data_gap": false
+    },
+    "SLF.TO": {
+      "in_favor": [
+        {
+          "text": "The company pledged C$75 billion in private capital for a Canadian infrastructure push.",
+          "source": "[The Wall Street Journal] BMO, Sun Life Pledge C$75 Billion Private Capital for Canadian Infrastructure Push"
         },
         {
-          "text": "Canadian housing affordability is projected to worsen due to rising mortgage rates, as reported by National Bank itself.",
-          "source": "[MT Newswires] Canadian Housing Affordability Set to Deteriorate as Mortgage Rates Rise, National Bank Says"
+          "text": "The company is building a new US reinsurance venture.",
+          "source": "[Simply Wall St.] What Is Sun Life Financial (TSX:SLF) Building With Its New US Reinsurance Venture?"
+        },
+        {
+          "text": "Sun Life teamed up with Wilton Re to expand reinsurance and asset management activities.",
+          "source": "[Zacks] Sun Life-Wilton Re Team Up to Expand Reinsurance, Asset Management"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock shows weak momentum (12-1).",
+          "source": "p29"
+        },
+        {
+          "text": "The company's quality (ROE/margin) metrics are weak.",
+          "source": "p36"
+        },
+        {
+          "text": "The stock appears to be above fair value as its 115% run continues.",
+          "source": "[Simply Wall St.] Sun Life (TSX:SLF) Stock Looks Above Fair Value As 115% Run Continues"
+        },
+        {
+          "text": "The stock looks fairly valued as its 108% run ages, suggesting a potential plateau.",
+          "source": "[Simply Wall St.] Sun Life Financial (TSX:SLF) Stock Looks Fairly Valued As 108% Run Ages"
+        }
+      ],
+      "data_gap": false
+    },
+    "NTR.TO": {
+      "in_favor": [
+        {
+          "text": "The stock exhibits exceptional value based on its 1/PE ratio.",
+          "source": "p93"
+        },
+        {
+          "text": "The stock gained 17% in the past month.",
+          "source": "[Zacks] Nutrien Gains 17% in the Past Month: What's Driving the Stock?"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock shows weak momentum (12-1).",
+          "source": "p21"
+        },
+        {
+          "text": "Analyst dispersion is exceptional, indicating significant disagreement among analysts.",
+          "source": "p93"
+        },
+        {
+          "text": "The company's quality (ROE/margin) metrics are weak.",
+          "source": "p21"
+        },
+        {
+          "text": "The stock exhibits weak low volatility.",
+          "source": "p36"
+        },
+        {
+          "text": "Fertilizer stocks, including Nutrien, fell due to news of a potential potash deal from Belarus.",
+          "source": "[The Wall Street Journal] Trump Deal for Potash From Belarus Sends Fertilizer Stocks Down"
+        }
+      ],
+      "data_gap": false
+    },
+    "IMO.TO": {
+      "in_favor": [
+        {
+          "text": "The company demonstrates strong quality based on ROE/margin metrics.",
+          "source": "p79"
+        },
+        {
+          "text": "The stock rose 49% year-to-date.",
+          "source": "[Zacks] Imperial Oil Stock Rises 49% YTD: Time to Hold or Lock in Profits?"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock exhibits weak value based on its 1/PE ratio.",
+          "source": "p36"
+        },
+        {
+          "text": "Canadian oil producers are targeting late 2027 for a Pathways carbon capture decision, introducing future planning considerations.",
+          "source": "[Reuters] Canada's oil producers target late 2027 for Pathways carbon capture decision"
+        }
+      ],
+      "data_gap": false
+    },
+    "MFC.TO": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is weak, suggesting a higher degree of consensus among analysts.",
+          "source": "p21"
+        },
+        {
+          "text": "The stock exhibits strong value based on its 1/PE ratio.",
+          "source": "p86"
+        },
+        {
+          "text": "The company underwent a leadership refresh and launched new funds.",
+          "source": "[Simply Wall St.] Manulife Financial (TSX:MFC) On Its Leadership Refresh And Why Valuation Is Back In Focus"
+        },
+        {
+          "text": "The stock appears about right as earnings face a premium, and looks reasonable after a strong five-year run.",
+          "source": "[Simply Wall St.] Manulife (TSX:MFC) Stock Looks About Right As Earnings Face A Premium"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Valuation is back in focus, suggesting scrutiny on its pricing.",
+          "source": "[Simply Wall St.] Manulife Financial (TSX:MFC) On Its Leadership Refresh And Why Valuation Is Back In Focus"
+        },
+        {
+          "text": "Earnings are noted to face a premium, indicating high expectations.",
+          "source": "[Simply Wall St.] Manulife (TSX:MFC) Stock Looks About Right As Earnings Face A Premium"
+        },
+        {
+          "text": "The stock has experienced a strong five-year run, which may lead to considerations about its future trajectory.",
+          "source": "[Simply Wall St.] Manulife (TSX:MFC) Stock Looks Reasonable After A Strong Five Year Run"
+        }
+      ],
+      "data_gap": false
+    },
+    "WPM.TO": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is weak, suggesting a higher degree of consensus among analysts.",
+          "source": "p36"
+        },
+        {
+          "text": "The company demonstrates exceptional quality based on ROE/margin metrics.",
+          "source": "p93"
+        },
+        {
+          "text": "Silver stocks, including those in precious metals, are noted for turning high margins into dividends for shareholders.",
+          "source": "[Motley Fool] Silver Stocks Are Turning High Margins Into Dividends for Shareholders. 1 Precious Metals Stock to Buy Right Right."
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The stock shows weak momentum (12-1).",
+          "source": "p36"
+        },
+        {
+          "text": "The stock exhibits weak value based on its 1/PE ratio.",
+          "source": "p29"
+        },
+        {
+          "text": "The stock exhibits weak low volatility.",
+          "source": "p21"
+        },
+        {
+          "text": "The stock may be overvalued as its 316% run continues.",
+          "source": "[Simply Wall St.] Wheaton Precious Metals (TSX:WPM) Stock May Be Overvalued As Its 316% Run Continues"
         }
       ],
       "data_gap": false

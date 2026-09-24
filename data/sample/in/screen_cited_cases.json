@@ -1,55 +1,322 @@
 {
-  "as_of": "2026-09-22",
+  "as_of": "2026-09-24",
   "cases": {
-    "BAJAJ-AUTO.NS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+    "SHRIRAMFIN.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is Exceptional (p90).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Quality (ROE/margin) is Strong (p80).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE) is Exceptional (p90).",
+          "source": "FACTS"
+        },
+        {
+          "text": "The company expects lower borrowing costs after a profit surge.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Q1 2027 and Q4 2026 earnings calls highlighted robust profit growth.",
+          "source": "GuruFocus.com"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Lowvol is Weak (p20).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Analyst dispersion is Strong (p80), indicating varied opinions among analysts.",
+          "source": "FACTS"
+        }
+      ],
+      "data_gap": false
     },
     "ADANIPORTS.NS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is Exceptional (p90).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE) is Strong (p80).",
+          "source": "FACTS"
+        },
+        {
+          "text": "The company posted higher profit based on domestic demand.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Adani Ports plans to sell an India port stake to Swiss Shipping Group MSC for $1.40 billion.",
+          "source": "The Wall Street Journal"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is Flat (p40).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Adani Ports stock is in focus due to shifting cargo routes.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "India's Kerala state reported not being consulted on MSC's $1.4 billion port investment.",
+          "source": "Reuters"
+        }
+      ],
+      "data_gap": false
     },
     "HINDALCO.NS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is Strong (p80).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE) is Exceptional (p90).",
+          "source": "FACTS"
+        },
+        {
+          "text": "The company posted a profit surge as metal prices strengthened.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Q1 2027 earnings call highlighted record EBITDA.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "Hindustan Copper plans to supply Chilean copper to Hindalco.",
+          "source": "Mining Technology, Reuters"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality (ROE/margin) is Weak (p30).",
+          "source": "FACTS"
+        }
+      ],
+      "data_gap": false
+    },
+    "TITAN.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is Exceptional (p90).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol is Exceptional (p90).",
+          "source": "FACTS"
+        },
+        {
+          "text": "The company achieved a record high on strong fourth-quarter sales.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Indian jewellers' stocks, including Titan, experienced strong festive-quarter sales.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Q1 FY27 earnings call highlighted strong growth amidst customs duty adjustments.",
+          "source": "GuruFocus.com"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality (ROE/margin) is Flat (p40).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE) is Weak (p20).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Indian jewelry stocks experienced losses as a result of government actions targeting gold imports.",
+          "source": "BeInCrypto"
+        }
+      ],
+      "data_gap": false
     },
     "GRASIM.NS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
-    },
-    "EICHERMOT.NS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "Lowvol is Strong (p80).",
+          "source": "FACTS"
+        },
+        {
+          "text": "The company moved to a first-quarter profit as its core business improved.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Q1 2027 earnings call highlighted record revenue.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "Aditya Birla Renewables, part of the same group, secured a $1.6 billion loan for the Sprng Energy deal.",
+          "source": "Energy Monitor"
+        },
+        {
+          "text": "Shell agreed to sell Sprng Energy for $1.8 billion to Aditya Birla Renewables.",
+          "source": "Power Technology"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is Exceptional (p90), suggesting high disagreement among analysts.",
+          "source": "FACTS"
+        },
+        {
+          "text": "Quality (ROE/margin) is Weak (p20).",
+          "source": "FACTS"
+        }
+      ],
+      "data_gap": false
     },
     "BAJFINANCE.NS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
-    },
-    "CIPLA.NS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is Weak (p20), suggesting low disagreement among analysts.",
+          "source": "FACTS"
+        },
+        {
+          "text": "Quality (ROE/margin) is Exceptional (p90).",
+          "source": "FACTS"
+        },
+        {
+          "text": "The company reached a record high on strong loan growth and asset quality.",
+          "source": "Reuters"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is Weak (p30).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Indian shares opened lower, with financials generally experiencing downward pressure.",
+          "source": "Reuters"
+        }
+      ],
+      "data_gap": false
     },
     "APOLLOHOSP.NS": {
-      "in_favor": [],
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is Weak (p10), indicating very low disagreement among analysts.",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol is Exceptional (p90).",
+          "source": "FACTS"
+        },
+        {
+          "text": "The company surpassed quarterly profit expectations due to demand for complex care.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Q1 2027 earnings call highlighted surging revenue.",
+          "source": "GuruFocus.com"
+        }
+      ],
       "to_watch": [],
-      "data_gap": true
+      "data_gap": false
     },
     "ADANIENT.NS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+      "in_favor": [
+        {
+          "text": "Q1 2027 earnings call highlighted strategic growth.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "Adani Airport Holdings, part of the group, raised Rs98.25 billion from global funds.",
+          "source": "Investment Monitor"
+        },
+        {
+          "text": "Adani data centers are in focus as EQT considers a $50 billion India investment.",
+          "source": "Investment Monitor"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is Exceptional (p90), suggesting high disagreement among analysts.",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol is Weak (p0).",
+          "source": "FACTS"
+        },
+        {
+          "text": "The company posted a quarterly loss due to a US settlement charge.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Adani Energy, part of the group, reportedly plans another share sale by early next fiscal.",
+          "source": "Reuters"
+        }
+      ],
+      "data_gap": false
     },
-    "ETERNAL.NS": {
-      "in_favor": [],
-      "to_watch": [],
-      "data_gap": true
+    "MAXHEALTH.NS": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is Weak (p30), suggesting low disagreement among analysts.",
+          "source": "FACTS"
+        },
+        {
+          "text": "The company posted a quarterly profit rise on strong demand.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Q1 2027 earnings call highlighted surging revenue.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "Q4 2026 earnings call highlighted strong revenue.",
+          "source": "GuruFocus.com"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is Weak (p0).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE) is Weak (p30).",
+          "source": "FACTS"
+        }
+      ],
+      "data_gap": false
+    },
+    "INDIGO.NS": {
+      "in_favor": [
+        {
+          "text": "Lower oil prices are easing cost pressure for airline stocks.",
+          "source": "Simply Wall St."
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is Weak (p10).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Quality (ROE/margin) is Weak (p0).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Value (1/PE) is Weak (p0).",
+          "source": "FACTS"
+        },
+        {
+          "text": "Lowvol is Weak (p30).",
+          "source": "FACTS"
+        }
+      ],
+      "data_gap": false
     }
   }
 }
