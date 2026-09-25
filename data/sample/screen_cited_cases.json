@@ -1,303 +1,55 @@
 {
-  "as_of": "2026-09-23",
+  "as_of": "2026-09-24",
   "cases": {
-    "WDC": {
-      "in_favor": [
-        {
-          "text": "The company exhibits exceptional momentum (12-1) (p92).",
-          "source": "facts"
-        },
-        {
-          "text": "It demonstrates exceptional quality as measured by ROE/margin (p93).",
-          "source": "facts"
-        },
-        {
-          "text": "A price target for SanDisk, a related entity, reportedly generated positive sentiment across memory stocks (24/7 Wall St.).",
-          "source": "[24/7 Wall St.] A $2,400 Price Target on SanDisk Just Lit a Fire Under Every Memory Stock"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is weak (p37).",
-          "source": "facts"
-        },
-        {
-          "text": "The low volatility characteristic is weak (p23).",
-          "source": "facts"
-        },
-        {
-          "text": "Holding SanDisk stock might be amplifying an existing risk (Trefis).",
-          "source": "[Trefis] Is SanDisk Stock Amplifying A Risk You Already Own?"
-        }
-      ],
-      "data_gap": false
+    "AMP": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "VZ": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is exceptional (p93).",
-          "source": "facts"
-        },
-        {
-          "text": "The valuation (1/PE) is exceptional (p93).",
-          "source": "facts"
-        },
-        {
-          "text": "It exhibits exceptional low volatility (p92).",
-          "source": "facts"
-        },
-        {
-          "text": "Verizon has launched a $70 million free AI training program (Quartz).",
-          "source": "[Quartz] Verizon launches $70 million free AI training program"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p27).",
-          "source": "facts"
-        },
-        {
-          "text": "Quality (ROE/margin) is weak (p30).",
-          "source": "facts"
-        },
-        {
-          "text": "There is a question regarding whether the company's growth phase is complete (Trefis).",
-          "source": "[Trefis] Is Verizon Stock Cheap, Or Just Done Growing?"
-        },
-        {
-          "text": "The company plans to discontinue a phone service that customers currently rely on (TheStreet).",
-          "source": "[TheStreet] Verizon plans to discontinue a phone service customers rely on"
-        }
-      ],
-      "data_gap": false
+    "AIZ": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "ALL": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "CF": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "APA": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "CB": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "BAC": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is exceptional (p93).",
-          "source": "facts"
-        },
-        {
-          "text": "The valuation (1/PE) is strong (p89).",
-          "source": "facts"
-        },
-        {
-          "text": "The low volatility characteristic is exceptional (p92).",
-          "source": "facts"
-        },
-        {
-          "text": "A hawkish Federal Reserve stance is seen as beneficial for the bank (24/7 Wall St.).",
-          "source": "[24/7 Wall St.] A Hawkish Fed Is Bad News for Borrowers. It\u2019s Good News for This Bank."
-        },
-        {
-          "text": "Bank of America intends to double its AI budget next year (Banking Dive).",
-          "source": "[Banking Dive] Bank of America plans to double AI budget next year"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is weak (p19).",
-          "source": "facts"
-        },
-        {
-          "text": "Market sentiment has been neutral with a slightly negative score of -0.12 based on 154 mentions in the last 30 days (facts).",
-          "source": "facts"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "GOOG": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is strong (p81).",
-          "source": "facts"
-        },
-        {
-          "text": "Quality (ROE/margin) is strong (p78).",
-          "source": "facts"
-        },
-        {
-          "text": "The valuation (1/PE) is strong (p81).",
-          "source": "facts"
-        },
-        {
-          "text": "Its position within 'Big Tech' is considered crucial for future AI growth, with YouTube reportedly presenting a significant challenge for a competitor (Yahoo Finance Video, Yahoo Finance).",
-          "source": "[Yahoo Finance Video] Netflix has a big YouTube problem \u2014 and it's only getting worse"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The stock has experienced a dip greater than the broader market (Zacks).",
-          "source": "[Zacks] Alphabet Inc. (GOOG) Dips More Than Broader Market: What You Should Know"
-        }
-      ],
-      "data_gap": false
+    "BMY": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "GOOGL": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is strong (p78).",
-          "source": "facts"
-        },
-        {
-          "text": "Quality (ROE/margin) is strong (p78).",
-          "source": "facts"
-        },
-        {
-          "text": "The valuation (1/PE) is strong (p78).",
-          "source": "facts"
-        },
-        {
-          "text": "Its position within 'Big Tech' is considered crucial for future AI growth, with YouTube reportedly presenting a significant challenge for a competitor (Yahoo Finance Video, Yahoo Finance).",
-          "source": "[Yahoo Finance Video] Netflix has a big YouTube problem \u2014 and it's only getting worse"
-        },
-        {
-          "text": "The earnings outlook for the company remains upbeat (Zacks).",
-          "source": "[Zacks] Earnings Outlook Remains Upbeat: A Closer Look"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The stock registered a larger fall than the broader market (Zacks).",
-          "source": "[Zacks] Alphabet (GOOGL) Registers a Bigger Fall Than the Market: Important Facts to Note"
-        }
-      ],
-      "data_gap": false
+    "ADP": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "AAPL": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is exceptional (p93).",
-          "source": "facts"
-        },
-        {
-          "text": "The low volatility characteristic is strong (p85).",
-          "source": "facts"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The valuation (1/PE) is weak (p33).",
-          "source": "facts"
-        }
-      ],
-      "data_gap": false
-    },
-    "JPM": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is strong (p85).",
-          "source": "facts"
-        },
-        {
-          "text": "The valuation (1/PE) is strong (p85).",
-          "source": "facts"
-        },
-        {
-          "text": "The low volatility characteristic is exceptional (p92).",
-          "source": "facts"
-        },
-        {
-          "text": "JPMorgan has an India expansion plan (Zacks).",
-          "source": "[Zacks] JPMorgan's India Expansion Plan: What It Means and Why It Matters"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p23).",
-          "source": "facts"
-        },
-        {
-          "text": "CEO Jamie Dimon has noted the potential for AI spending to reach $1 trillion by 2027, with a warning about its potential to slightly increase inflation (Benzinga).",
-          "source": "[Benzinga] Jamie Dimon Says AI Spending Could Hit $1 Trillion in 2027 But JPMorgan CEO Warns it Could Add 'Little Bit' to Inflation: 'That\u2019s Like 1% Increase to GDP...'"
-        }
-      ],
-      "data_gap": false
-    },
-    "CSCO": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is strong (p89).",
-          "source": "facts"
-        },
-        {
-          "text": "The low volatility characteristic is strong (p77).",
-          "source": "facts"
-        },
-        {
-          "text": "The company is involved in building an AI-ready campus with its switches (GuruFocus.com).",
-          "source": "[GuruFocus.com] Cisco Slips 0.3% as 1,000 Switches Build an AI-Ready Campus"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The stock is considered expensive by some analyses (Trefis).",
-          "source": "[Trefis] Cisco Stock Looks Expensive Until You Price The Year It Already Guided"
-        },
-        {
-          "text": "Piper Sandler has cut its price target, citing fears of growth peaking (Quartz, TIKR).",
-          "source": "[Quartz] Piper Sandler cuts Cisco price target to $125 on growth peak fears"
-        },
-        {
-          "text": "The stock has experienced a fall due to growth concerns (TIKR).",
-          "source": "[TIKR] Cisco Stock Falls as Piper Sandler Cuts Price Target Over Growth Concerns"
-        }
-      ],
-      "data_gap": false
-    },
-    "NVDA": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is exceptional (p93).",
-          "source": "facts"
-        },
-        {
-          "text": "Discussions around AI and tech concentration include references to \"Nvidia windfalls\" (Yahoo Finance Video).",
-          "source": "[Yahoo Finance Video] The AI panic, tech concentration, and Nvidia windfalls"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p38).",
-          "source": "facts"
-        },
-        {
-          "text": "Analyst dispersion is weak (p22).",
-          "source": "facts"
-        }
-      ],
-      "data_gap": false
-    },
-    "SCHW": {
-      "in_favor": [
-        {
-          "text": "The low volatility characteristic is strong (p88).",
-          "source": "facts"
-        },
-        {
-          "text": "Interest rate hikes, previously a concern, are now noted as potentially beneficial for the company (TIKR).",
-          "source": "[TIKR] Charles Schwab Stock Fell 6% on AI Fears. The Rate Hike Everyone Feared Actually Helps It"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p31).",
-          "source": "facts"
-        },
-        {
-          "text": "Concerns and worries are reportedly being triggered in brokerage stocks, including Charles Schwab, by Meta's Muse AI agent (Barrons.com, Investor's Business Daily, Zacks).",
-          "source": "[Barrons.com] Meta\u2019s Muse AI Agent Triggers Worries About Brokerage Stocks"
-        },
-        {
-          "text": "The stock experienced a 6% fall due to AI fears (TIKR).",
-          "source": "[TIKR] Charles Schwab Stock Fell 6% on AI Fears. The Rate Hike Everyone Feared Actually Helps It"
-        },
-        {
-          "text": "A \"sell signal\" was reportedly triggered for Schwab (Investor's Business Daily).",
-          "source": "[Investor's Business Daily] How Meta's Muse, Vanguard AI Threat Triggered Schwab Sell Signal"
-        }
-      ],
-      "data_gap": false
+    "AMGN": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     }
   }
 }
