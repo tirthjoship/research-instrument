@@ -1,327 +1,45 @@
 {
-  "as_of": "2026-09-25",
+  "as_of": "2026-09-26",
   "cases": {
-    "KOTAKBANK.NS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is strong (p82).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE) is exceptional (p91).",
-          "source": "FACTS"
-        },
-        {
-          "text": "ICICI Prudential AMC has clearance to acquire stakes in four lenders, potentially including Kotakbank.",
-          "source": "[Retail Banker International] ICICI Prudential AMC gets clearance to buy up to 9.95% of four lenders"
-        },
-        {
-          "text": "Four Indian private lenders are exploring dollar debt options before an RBI swap window deadline.",
-          "source": "[Reuters] Four Indian private lenders eye dollar debt before RBI swap window deadline, bankers say"
-        },
-        {
-          "text": "Kotak Investment Banking has appointed co-CEOs.",
-          "source": "[Reuters] India's Kotak Investment Banking appoints co-CEOs"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p27).",
-          "source": "FACTS"
-        }
-      ],
-      "data_gap": false
-    },
-    "SUNPHARMA.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is strong (p82).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Analyst dispersion is strong (p82).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Low volatility is exceptional (p91).",
-          "source": "FACTS"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is flat (p73).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE) is flat (p45).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Trump's drug deals and MFN push are likely to impact healthcare ETFs and drug pricing.",
-          "source": "[Zacks] Here's How Trump's Drug Deals Are Likely to Impact Healthcare ETFs"
-        },
-        {
-          "text": "Trump expanded drug pricing deals with 9 pharma companies.",
-          "source": "[Benzinga] Trump Expands Drug Pricing Deals With 9 Pharma Companies, Bringing Total to 26 \u2014 RFK Jr. Details 'Very, Very Emotional' Conversations With President"
-        },
-        {
-          "text": "Trump's MFN push extends to mid-sized drugmakers, including a focus on drug pricing deals.",
-          "source": "[Zacks] Trump's MFN Push Goes Beyond Big Pharma, Adds 9 Mid-Sized Drugmakers"
-        }
-      ],
-      "data_gap": false
-    },
-    "HINDALCO.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is exceptional (p91).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE) is exceptional (p91).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Hindustan Copper plans to supply Chilean copper to Hindalco.",
-          "source": "[Mining Technology] Hindustan Copper plans supply of Chilean copper to Hindalco and Adani"
-        },
-        {
-          "text": "The company reported a record EBITDA in Q1 2027.",
-          "source": "[GuruFocus.com] Hindalco Industries Ltd (FRA:HID) (Q1 2027) Earnings Call Highlights: Record EBITDA and ..."
-        },
-        {
-          "text": "The company posted a profit surge as metal prices strengthened.",
-          "source": "[Reuters] India's Hindalco posts profit surge as metal prices strengthen"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is weak (p18).",
-          "source": "FACTS"
-        }
-      ],
-      "data_gap": false
-    },
-    "ADANIPORTS.NS": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is exceptional (p91).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Quality (ROE/margin) is exceptional (p91).",
-          "source": "FACTS"
-        },
-        {
-          "text": "The company posted higher profit due to domestic demand.",
-          "source": "[Reuters] India's Adani Ports posts higher profit on domestic demand"
-        },
-        {
-          "text": "Adani Ports plans to sell an India Port Stake to Swiss Shipping Group MSC for $1.40B.",
-          "source": "[The Wall Street Journal] Adani Ports to Sell India Port Stake to Swiss Shipping Group MSC for $1.40B"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Low volatility is weak (p27).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Adani Ports stock is in focus as cargo routes shift.",
-          "source": "[Simply Wall St.] Adani Ports Stock And Gulf Port Shares In Focus As Cargo Routes Shift"
-        },
-        {
-          "text": "Kerala state reported not being consulted on MSC's $1.4 billion port investment.",
-          "source": "[Reuters] India's Kerala state not consulted on MSC's $1.4 billion port investment, chief minister says"
-        }
-      ],
-      "data_gap": false
+    "JSWSTEEL.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "TITAN.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is exceptional (p91).",
-          "source": "FACTS"
-        },
-        {
-          "text": "The company reported strong growth in Q1 FY27.",
-          "source": "[GuruFocus.com] Titan Co Ltd (BOM:500114) (Q1 FY27) Earnings Call Highlights: Strong Growth Amidst Customs Duty ..."
-        },
-        {
-          "text": "The stock hit a record high on strong fourth-quarter sales.",
-          "source": "[Reuters] India's Titan hits record high on strong fourth-quarter sales"
-        },
-        {
-          "text": "Q3 2026 earnings call highlighted strategic acquisitions.",
-          "source": "[GuruFocus.com] Titan Co Ltd (BOM:500114) Q3 2026 Earnings Call Highlights: Strategic Acquisitions and Market ..."
-        },
-        {
-          "text": "Indian jewellers' stocks, including Titan, showed strength on strong festive-quarter sales, with Titan reaching a record high.",
-          "source": "[Reuters] Indian jewellers' stocks shine on strong festive-quarter sales; Titan hits record high"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is weak (p27).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE) is weak (p18).",
-          "source": "FACTS"
-        },
-        {
-          "text": "India jewelry stocks experienced losses as a result of Modi's targets for gold imports.",
-          "source": "[BeInCrypto] India Jewelry Stocks Lose 12% as Modi Targets $72 Billion In Gold Imports"
-        }
-      ],
-      "data_gap": false
-    },
-    "BAJFINANCE.NS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is exceptional (p91).",
-          "source": "FACTS"
-        },
-        {
-          "text": "The company's stock reached a record high driven by strong loan growth and asset quality.",
-          "source": "[Reuters] India's Bajaj Finance hits record high on strong loan growth, asset quality"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p36).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Analyst dispersion is weak (p27).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Low volatility is weak (p36).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Indian shares experienced an opening lower, impacted by financials.",
-          "source": "[Reuters] Indian shares open lower weighed down by financials, higher oil"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "CIPLA.NS": {
-      "in_favor": [
-        {
-          "text": "Low volatility is strong (p82).",
-          "source": "FACTS"
-        },
-        {
-          "text": "The company had a strong start in Q1 2027 with record revenue.",
-          "source": "[GuruFocus.com] Cipla Ltd (BOM:500087) Q1 2027 Earnings Call Highlights: Strong Start with Record Revenue ..."
-        },
-        {
-          "text": "Full Year 2026 earnings highlights showed strong India growth.",
-          "source": "[GuruFocus.com] Cipla Ltd (BOM:500087) Full Year 2026 Earnings Call Highlights: Strong India Growth and ..."
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak (p9).",
-          "source": "FACTS"
-        },
-        {
-          "text": "The company posted another profit decline.",
-          "source": "[Reuters] India's Cipla posts another profit decline, names insider Dinesh Jain CFO"
-        },
-        {
-          "text": "Cipla named insider Dinesh Jain as CFO.",
-          "source": "[Reuters] India's Cipla posts another profit decline, names insider Dinesh Jain CFO"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "TECHM.NS": {
-      "in_favor": [
-        {
-          "text": "Value (1/PE) is strong (p82).",
-          "source": "FACTS"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is weak (p18).",
-          "source": "FACTS"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
     "APOLLOHOSP.NS": {
-      "in_favor": [
-        {
-          "text": "Low volatility is exceptional (p91).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted surging revenue.",
-          "source": "[GuruFocus.com] Apollo Hospitals Enterprise Ltd (BOM:508869) (Q1 2027) Earnings Call Highlights: Revenue Surges ..."
-        },
-        {
-          "text": "The company exceeded quarterly profit expectations due to demand for complex care.",
-          "source": "[Reuters] India's Apollo Hospitals beats quarterly profit on demand for complex care"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is weak (p9).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE) is weak (p27).",
-          "source": "FACTS"
-        }
-      ],
-      "data_gap": false
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     },
-    "ADANIENT.NS": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is exceptional (p91).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Q1 2027 earnings call highlighted strategic growth.",
-          "source": "[GuruFocus.com] Adani Enterprises Ltd (BOM:512599) Q1 2027 Earnings Call Highlights: Strategic Growth Amidst ..."
-        },
-        {
-          "text": "Adani data centres are a focus of EQT's potential $50bn India investment.",
-          "source": "[Investment Monitor] EQT eyes $50bn India bet, Adani data centres in focus \u2013 report"
-        },
-        {
-          "text": "Adani Airport Holdings raised Rs98.25bn from global funds.",
-          "source": "[Investment Monitor] Adani Airport Holdings raises Rs98.25bn from global funds"
-        },
-        {
-          "text": "Adani Energy plans another share sale by early next fiscal year.",
-          "source": "[Reuters] India's Adani Energy plans another share sale by early next fiscal, sources say"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is weak (p36).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Value (1/PE) is weak (p36).",
-          "source": "FACTS"
-        },
-        {
-          "text": "Low volatility is weak (p0).",
-          "source": "FACTS"
-        },
-        {
-          "text": "The company posted a quarterly loss due to a US settlement charge.",
-          "source": "[Reuters] India's Adani Enterprises posts quarterly loss on US settlement charge"
-        }
-      ],
-      "data_gap": false
+    "BAJFINANCE.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "INDIGO.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
+    },
+    "ETERNAL.NS": {
+      "in_favor": [],
+      "to_watch": [],
+      "data_gap": true
     }
   }
 }

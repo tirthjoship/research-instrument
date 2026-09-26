@@ -1,0 +1,15 @@
+{
+  "as_of": "2026-09-26",
+  "market": "us",
+  "universe_size": 512,
+  "top_n": 10,
+  "regime": "NEUTRAL",
+  "abstained": false,
+  "diagnostics": {
+    "scanned": 512,
+    "had_history": 490,
+    "above_trend": 0,
+    "cleared": 0
+  },
+  "candidates": []
+}
