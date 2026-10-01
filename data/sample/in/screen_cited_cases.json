@@ -1,25 +1,84 @@
 {
-  "as_of": "2026-09-30",
+  "as_of": "2026-10-01",
   "cases": {
     "KOTAKBANK.NS": {
       "in_favor": [
         {
-          "text": "The company shows strong Quality (ROE/margin).",
-          "source": "p88"
+          "text": "Quality, measured by ROE/margin, is strong (p89).",
+          "source": "p89"
         },
         {
-          "text": "The company exhibits strong Value (1/PE).",
-          "source": "p88"
+          "text": "Value, measured by 1/PE, is strong (p89).",
+          "source": "p89"
         },
         {
-          "text": "The company displays strong Lowvol characteristics.",
-          "source": "p88"
+          "text": "Low volatility is strong (p78).",
+          "source": "p78"
+        },
+        {
+          "text": "Analyst dispersion is flat (p67).",
+          "source": "p67"
+        },
+        {
+          "text": "Kotak Investment Banking appointed co-CEOs.",
+          "source": "Reuters"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p38"
+          "text": "Momentum (12-1) is weak (p22).",
+          "source": "p22"
+        },
+        {
+          "text": "Four Indian private lenders are considering dollar debt ahead of an RBI swap window deadline.",
+          "source": "Reuters"
+        }
+      ],
+      "data_gap": false
+    },
+    "BAJAJ-AUTO.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is strong (p89).",
+          "source": "p89"
+        },
+        {
+          "text": "Value, measured by 1/PE, is strong (p78).",
+          "source": "p78"
+        },
+        {
+          "text": "Analyst dispersion is weak (p33).",
+          "source": "p33"
+        },
+        {
+          "text": "The Q1 2027 earnings call highlighted record growth and strategic expansions.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "Bajaj Auto is expanding its EV focus with motorcycle plans and Chetak expansion.",
+          "source": "Reuters"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality (ROE/margin) is flat (p67).",
+          "source": "p67"
+        },
+        {
+          "text": "Low volatility is flat (p44).",
+          "source": "p44"
+        },
+        {
+          "text": "The EV market sees competition from Bain Capital-backed Dhoot Transmission, which is betting on the India EV shift.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Indian EV startup River raised $120M to scale production and launch more models.",
+          "source": "TechCrunch"
+        },
+        {
+          "text": "Hero MotoCorp is investing about $104 million in Ather Energy, signaling further competition in the EV segment.",
+          "source": "Reuters"
         }
       ],
       "data_gap": false
@@ -27,40 +86,69 @@
     "SUNPHARMA.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p88"
+          "text": "Momentum (12-1) is strong (p78).",
+          "source": "p78"
         },
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "p75"
+          "text": "Quality, measured by ROE/margin, is strong (p78).",
+          "source": "p78"
         },
         {
-          "text": "The company shows strong Quality (ROE/margin).",
-          "source": "p75"
+          "text": "Low volatility is strong (p89).",
+          "source": "p89"
         },
         {
-          "text": "The company displays strong Lowvol characteristics.",
-          "source": "p88"
+          "text": "Value (1/PE) is flat (p56).",
+          "source": "p56"
         }
       ],
-      "to_watch": [],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is strong (p78).",
+          "source": "p78"
+        }
+      ],
       "data_gap": false
     },
     "JSWSTEEL.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p75"
+          "text": "Value (1/PE) is strong (p89).",
+          "source": "p89"
         },
         {
-          "text": "The company exhibits strong Value (1/PE).",
-          "source": "p88"
+          "text": "The Q1 2027 earnings call highlighted record sales and strategic initiatives.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "JSW Steel exceeded profit expectations due to higher prices and posted a two-fold quarterly profit increase driven by price recovery.",
+          "source": "Reuters"
+        },
+        {
+          "text": "The Q4 2026 earnings call showed strong financial performance.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "POSCO is deepening its India presence with JSW in a landmark steel plant deal.",
+          "source": "Zacks"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p25"
+          "text": "Momentum (12-1) is flat (p56).",
+          "source": "p56"
+        },
+        {
+          "text": "Analyst dispersion is flat (p44).",
+          "source": "p44"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat (p56).",
+          "source": "p56"
+        },
+        {
+          "text": "Low volatility is flat (p56).",
+          "source": "p56"
         }
       ],
       "data_gap": false
@@ -68,22 +156,42 @@
     "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "p88"
+          "text": "Quality, measured by ROE/margin, is strong (p89).",
+          "source": "p89"
         },
         {
-          "text": "The company shows strong Quality (ROE/margin).",
-          "source": "p88"
+          "text": "Value (1/PE) is flat (p67).",
+          "source": "p67"
         },
         {
-          "text": "The company exhibits strong Value (1/PE).",
-          "source": "p75"
+          "text": "Adani Ports recorded higher profit due to domestic demand.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Adani Ports is set to sell a 49% stake in an Indian port to MSC for $1.4 billion.",
+          "source": "Reuters"
         }
       ],
       "to_watch": [
         {
-          "text": "The company displays weak Lowvol characteristics.",
-          "source": "p38"
+          "text": "Momentum (12-1) is weak (p33).",
+          "source": "p33"
+        },
+        {
+          "text": "Analyst dispersion is strong (p89).",
+          "source": "p89"
+        },
+        {
+          "text": "Low volatility is weak (p33).",
+          "source": "p33"
+        },
+        {
+          "text": "Adani Ports shares are in focus as cargo routes shift.",
+          "source": "Simply Wall St."
+        },
+        {
+          "text": "India's Kerala state chief minister stated they were not consulted on MSC's $1.4 billion port investment.",
+          "source": "Reuters"
         }
       ],
       "data_gap": false
@@ -91,37 +199,77 @@
     "TITAN.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p88"
+          "text": "Momentum (12-1) is strong (p89).",
+          "source": "p89"
+        },
+        {
+          "text": "Analyst dispersion is flat (p56).",
+          "source": "p56"
+        },
+        {
+          "text": "The Q1 FY27 earnings call highlighted strong growth amidst customs duty considerations.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "Titan reached a record high driven by strong Q4 sales and strong festive-quarter sales, contributing to jewellers' stock performance.",
+          "source": "Reuters"
+        },
+        {
+          "text": "The Q3 2026 earnings call discussed strategic acquisitions and market advancements.",
+          "source": "GuruFocus.com"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p38"
+          "text": "Quality (ROE/margin) is weak (p22).",
+          "source": "p22"
         },
         {
-          "text": "The company shows weak Quality (ROE/margin).",
-          "source": "p25"
+          "text": "Value (1/PE) is weak (p22).",
+          "source": "p22"
         },
         {
-          "text": "The company exhibits weak Value (1/PE).",
-          "source": "p25"
+          "text": "Low volatility is flat (p67).",
+          "source": "p67"
+        },
+        {
+          "text": "Indian jewelry stocks experienced a 12% decline as Modi targets $72 billion in gold imports.",
+          "source": "BeInCrypto"
         }
       ],
       "data_gap": false
     },
-    "DRREDDY.NS": {
+    "APOLLOHOSP.NS": {
       "in_favor": [
         {
-          "text": "The company displays strong Lowvol characteristics.",
-          "source": "p75"
+          "text": "Low volatility is strong (p89).",
+          "source": "p89"
+        },
+        {
+          "text": "Analyst dispersion is weak (p11).",
+          "source": "p11"
+        },
+        {
+          "text": "Momentum (12-1) is flat (p67).",
+          "source": "p67"
+        },
+        {
+          "text": "The Q1 2027 earnings call highlighted surging revenue.",
+          "source": "GuruFocus.com"
+        },
+        {
+          "text": "Apollo Hospitals exceeded quarterly profit expectations due to demand for complex care.",
+          "source": "Reuters"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p12"
+          "text": "Value (1/PE) is weak (p33).",
+          "source": "p33"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat (p44).",
+          "source": "p44"
         }
       ],
       "data_gap": false
@@ -129,74 +277,104 @@
     "ADANIENT.NS": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "p88"
+          "text": "Momentum (12-1) is flat (p44).",
+          "source": "p44"
+        },
+        {
+          "text": "Value (1/PE) is flat (p44).",
+          "source": "p44"
+        },
+        {
+          "text": "EQT is reportedly considering a $50bn India investment, with Adani data centers in focus.",
+          "source": "Investment Monitor"
+        },
+        {
+          "text": "Adani Airport Holdings secured Rs98.25bn from global funds.",
+          "source": "Investment Monitor"
+        },
+        {
+          "text": "The Q1 2027 earnings call highlighted strategic growth.",
+          "source": "GuruFocus.com"
         }
       ],
       "to_watch": [
         {
-          "text": "The company shows weak Quality (ROE/margin).",
-          "source": "p38"
+          "text": "Analyst dispersion is strong (p89).",
+          "source": "p89"
         },
         {
-          "text": "The company exhibits weak Value (1/PE).",
-          "source": "p38"
+          "text": "Quality (ROE/margin) is weak (p33).",
+          "source": "p33"
         },
         {
-          "text": "The company displays weak Lowvol characteristics.",
+          "text": "Low volatility is weak (p0).",
           "source": "p0"
+        },
+        {
+          "text": "Adani Energy reportedly plans another share sale early next fiscal year.",
+          "source": "Reuters"
+        },
+        {
+          "text": "Adani Enterprises posted a quarterly loss due to a US settlement charge.",
+          "source": "Reuters"
         }
       ],
       "data_gap": false
     },
     "INDIGO.NS": {
-      "in_favor": [],
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is weak (p22).",
+          "source": "p22"
+        },
+        {
+          "text": "Lower oil prices are easing cost pressure for airline stocks.",
+          "source": "Simply Wall St."
+        }
+      ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
+          "text": "Momentum (12-1) is weak (p0).",
           "source": "p0"
         },
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p12"
-        },
-        {
-          "text": "The company shows weak Quality (ROE/margin).",
+          "text": "Quality (ROE/margin) is weak (p0).",
           "source": "p0"
         },
         {
-          "text": "The company exhibits weak Value (1/PE).",
+          "text": "Value (1/PE) is weak (p0).",
           "source": "p0"
         },
         {
-          "text": "The company displays weak Lowvol characteristics.",
-          "source": "p25"
+          "text": "Low volatility is weak (p22).",
+          "source": "p22"
         }
       ],
       "data_gap": false
     },
     "ETERNAL.NS": {
-      "in_favor": [],
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is weak (p0).",
+          "source": "p0"
+        }
+      ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p25"
+          "text": "Momentum (12-1) is weak (p11).",
+          "source": "p11"
         },
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p0"
+          "text": "Quality (ROE/margin) is weak (p11).",
+          "source": "p11"
         },
         {
-          "text": "The company shows weak Quality (ROE/margin).",
-          "source": "p12"
+          "text": "Value (1/PE) is weak (p11).",
+          "source": "p11"
         },
         {
-          "text": "The company exhibits weak Value (1/PE).",
-          "source": "p12"
-        },
-        {
-          "text": "The company displays weak Lowvol characteristics.",
-          "source": "p12"
+          "text": "Low volatility is weak (p11).",
+          "source": "p11"
         }
       ],
       "data_gap": false

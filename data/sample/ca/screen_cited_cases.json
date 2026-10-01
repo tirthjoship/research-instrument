@@ -1,29 +1,37 @@
 {
-  "as_of": "2026-09-30",
+  "as_of": "2026-10-01",
   "cases": {
     "CNQ.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Strong.",
-          "source": "p87"
+          "text": "The company exhibits strong momentum (12-1).",
+          "source": "p86"
         },
         {
-          "text": "Analyst dispersion is Strong.",
-          "source": "p83"
+          "text": "Its quality (ROE/margin) is exceptional.",
+          "source": "p90"
         },
         {
-          "text": "Quality (ROE/margin) is Exceptional.",
-          "source": "p91"
+          "text": "Its value (1/PE) is exceptional.",
+          "source": "p90"
         },
         {
-          "text": "Value (1/PE) is Exceptional.",
-          "source": "p91"
+          "text": "Identified as an \"Energy Giant in Canada\" undergoing an awakening.",
+          "source": "[The Wall Street Journal] U.S. Pressure Is Awakening an Energy Giant in Canada"
+        },
+        {
+          "text": "Included in a positive industry outlook and a focus stock as the Canadian E&P industry gains momentum.",
+          "source": "[Zacks] Canadian E&P Industry Gains Momentum: 3 Stocks in Focus"
         }
       ],
       "to_watch": [
         {
-          "text": "Lowvol is Weak.",
-          "source": "p35"
+          "text": "The company exhibits weak low volatility.",
+          "source": "p29"
+        },
+        {
+          "text": "There is strong analyst dispersion.",
+          "source": "p81"
         }
       ],
       "data_gap": false
@@ -31,53 +39,42 @@
     "SU.TO": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Exceptional.",
-          "source": "p91"
+          "text": "The company exhibits exceptional momentum (12-1).",
+          "source": "p90"
         },
         {
-          "text": "Analyst dispersion is Strong.",
-          "source": "p87"
+          "text": "Its value (1/PE) is exceptional.",
+          "source": "p90"
         },
         {
-          "text": "Value (1/PE) is Exceptional.",
-          "source": "p91"
+          "text": "Its 50% rally may not be over, suggesting continued upward movement.",
+          "source": "[Barrons.com] Why Suncor\u2019s 50% Rally May Not Be Over"
+        },
+        {
+          "text": "The broader energy market may see increased demand, potentially benefiting the company.",
+          "source": "[24/7 Wall St.] Why Your Energy Bill Is About to Skyrocket $1,465 a Year Higher \u2014 Unless This Happens"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p70"
+          "text": "There is strong analyst dispersion.",
+          "source": "p86"
         },
         {
-          "text": "Lowvol is Flat.",
-          "source": "p48"
-        }
-      ],
-      "data_gap": false
-    },
-    "CVE.TO": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Exceptional.",
-          "source": "p91"
+          "text": "Its quality (ROE/margin) is flat.",
+          "source": "p71"
         },
         {
-          "text": "Quality (ROE/margin) is Strong.",
-          "source": "p78"
+          "text": "Its low volatility is flat.",
+          "source": "p43"
         },
         {
-          "text": "Value (1/PE) is Exceptional.",
-          "source": "p91"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p65"
+          "text": "Identified as an undervalued stock to watch.",
+          "source": "[Simply Wall St.] Pan American Silver And 2 Canadian Undervalued Stocks To Watch"
         },
         {
-          "text": "Lowvol is Weak.",
-          "source": "p26"
+          "text": "Questions are raised about its valuation following a 63% surge in a year.",
+          "source": "[Zacks] Should You Buy Suncor Energy Stock After Its 63% Surge in a Year?"
         }
       ],
       "data_gap": false
@@ -85,26 +82,73 @@
     "CM.TO": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is Exceptional.",
-          "source": "p91"
+          "text": "Its value (1/PE) is strong.",
+          "source": "p81"
         },
         {
-          "text": "Value (1/PE) is Strong.",
-          "source": "p83"
+          "text": "Its low volatility is strong.",
+          "source": "p86"
         },
         {
-          "text": "Lowvol is Strong.",
-          "source": "p87"
+          "text": "The company's dividend is analyzed, indicating its status as a dividend-paying entity.",
+          "source": "[GuruFocus.com] Canadian Imperial Bank of Commerce's Dividend Analysis"
+        },
+        {
+          "text": "Canadian banks, including CIBC, are expected to accept tokenized deposits.",
+          "source": "[CryptoProwl] Canada's Banks To Accept Tokenized Deposits"
+        },
+        {
+          "text": "Following new bond deals, it shows modest upside.",
+          "source": "[Simply Wall St.] Canadian Imperial Bank Of Commerce (TSX:CM) Following New Bond Deals Has Modest Upside In View"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p61"
+          "text": "The company exhibits flat momentum (12-1).",
+          "source": "p62"
         },
         {
-          "text": "Quality (ROE/margin) is Flat.",
+          "text": "There is exceptional analyst dispersion.",
+          "source": "p90"
+        },
+        {
+          "text": "Its quality (ROE/margin) is flat.",
           "source": "p57"
+        }
+      ],
+      "data_gap": false
+    },
+    "CVE.TO": {
+      "in_favor": [
+        {
+          "text": "The company exhibits exceptional momentum (12-1).",
+          "source": "p90"
+        },
+        {
+          "text": "Its quality (ROE/margin) is strong.",
+          "source": "p81"
+        },
+        {
+          "text": "Its value (1/PE) is exceptional.",
+          "source": "p90"
+        },
+        {
+          "text": "Identified as a \"Best Value Stock\" and a \"New Strong Stock\".",
+          "source": "[Zacks] New Strong Buy Stocks for September 29th"
+        },
+        {
+          "text": "Could be 4% below fair value following a recent pullback.",
+          "source": "[Simply Wall St.] Cenovus Energy (TSX:CVE) Could Be 4% Below Fair Value Following Its Recent Pullback"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Its analyst dispersion is flat.",
+          "source": "p62"
+        },
+        {
+          "text": "The company exhibits weak low volatility.",
+          "source": "p19"
         }
       ],
       "data_gap": false
@@ -112,53 +156,34 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is Strong.",
-          "source": "p78"
+          "text": "Its low volatility is exceptional.",
+          "source": "p90"
         },
         {
-          "text": "Lowvol is Exceptional.",
-          "source": "p91"
+          "text": "Investors are reacting to the company balancing new debt issuance with a dividend hike.",
+          "source": "[Simply Wall St.] How Investors Are Reacting To Royal Bank of Canada (TSX:RY) Balancing New Debt Issuance With Dividend Hike"
+        },
+        {
+          "text": "Canada's largest banks, including Royal Bank of Canada, are looking to develop tokenized deposits.",
+          "source": "[MT Newswires] Canada's Largest Banks Look to Develop Tokenized Deposits"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
+          "text": "The company exhibits flat momentum (12-1).",
           "source": "p52"
         },
         {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p61"
+          "text": "There is strong analyst dispersion.",
+          "source": "p76"
         },
         {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p61"
-        }
-      ],
-      "data_gap": false
-    },
-    "TD.TO": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Strong.",
-          "source": "p78"
+          "text": "Its quality (ROE/margin) is flat.",
+          "source": "p62"
         },
         {
-          "text": "Lowvol is Exceptional.",
-          "source": "p91"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p61"
-        },
-        {
-          "text": "Quality (ROE/margin) is Weak.",
-          "source": "p30"
-        },
-        {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p52"
+          "text": "Its value (1/PE) is flat.",
+          "source": "p62"
         }
       ],
       "data_gap": false
@@ -166,26 +191,81 @@
     "CNR.TO": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is Strong.",
-          "source": "p83"
+          "text": "Its quality (ROE/margin) is strong.",
+          "source": "p86"
+        },
+        {
+          "text": "The company announced a 2026-2027 Winter Operations Plan.",
+          "source": "[Zacks] Canadian National Announces 2026-2027 Winter Operations Plan"
+        },
+        {
+          "text": "Identified as a dividend-paying stock from the railroad industry.",
+          "source": "[Zacks] 3 Dividend-Paying Stocks From the Railroad Industry You May Count On"
+        },
+        {
+          "text": "The company backs its full-year outlook, driven by grain and productivity growth.",
+          "source": "[MarketBeat] Canadian National Railway Backs Full-Year Outlook as Grain and Productivity Drive Growth"
+        },
+        {
+          "text": "The company launched its first grain unit train from an expanded Illinois TGM Facility.",
+          "source": "[Zacks] CNI Launches First Grain Unit Train From Expanded Illinois TGM Facility"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Weak.",
-          "source": "p39"
+          "text": "The company exhibits weak momentum (12-1).",
+          "source": "p38"
         },
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p74"
+          "text": "Its analyst dispersion is flat.",
+          "source": "p71"
         },
         {
-          "text": "Value (1/PE) is Weak.",
-          "source": "p30"
+          "text": "Its value (1/PE) is weak.",
+          "source": "p29"
         },
         {
-          "text": "Lowvol is Flat.",
-          "source": "p65"
+          "text": "Its low volatility is flat.",
+          "source": "p62"
+        }
+      ],
+      "data_gap": false
+    },
+    "TD.TO": {
+      "in_favor": [
+        {
+          "text": "The company exhibits strong momentum (12-1).",
+          "source": "p76"
+        },
+        {
+          "text": "Its low volatility is exceptional.",
+          "source": "p90"
+        },
+        {
+          "text": "The bank unveiled a new $10B share buyback program.",
+          "source": "[Proactive] TD Bank unveils new $10B share buyback"
+        },
+        {
+          "text": "The stock may be 19% undervalued after record earnings.",
+          "source": "[Simply Wall St.] TD Bank (TSX:TD) Stock May Be 19% Undervalued After Record Earnings"
+        },
+        {
+          "text": "Canadian banks, including TD Bank, are expected to accept tokenized deposits.",
+          "source": "[CryptoProwl] Canada's Banks To Accept Tokenized Deposits"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Its analyst dispersion is flat.",
+          "source": "p57"
+        },
+        {
+          "text": "Its quality (ROE/margin) is weak.",
+          "source": "p29"
+        },
+        {
+          "text": "Its value (1/PE) is flat.",
+          "source": "p57"
         }
       ],
       "data_gap": false
@@ -193,53 +273,34 @@
     "BNS.TO": {
       "in_favor": [
         {
-          "text": "Lowvol is Exceptional.",
-          "source": "p91"
+          "text": "Its low volatility is exceptional.",
+          "source": "p90"
+        },
+        {
+          "text": "The Bank of Nova Scotia sees commercial growth as its digital and fee strategy gains traction.",
+          "source": "[MarketBeat] Bank of Nova Scotia Sees Commercial Growth as Digital, Fee Strategy Gains Traction"
+        },
+        {
+          "text": "Canadian banks, including the Bank of Nova Scotia, are looking to develop tokenized deposits.",
+          "source": "[MT Newswires] Canada's Largest Banks Look to Develop Tokenized Deposits"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
+          "text": "The company exhibits flat momentum (12-1).",
           "source": "p57"
         },
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p57"
+          "text": "Its analyst dispersion is flat.",
+          "source": "p52"
         },
         {
-          "text": "Quality (ROE/margin) is Weak.",
-          "source": "p26"
+          "text": "Its quality (ROE/margin) is weak.",
+          "source": "p24"
         },
         {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p70"
-        }
-      ],
-      "data_gap": false
-    },
-    "GWO.TO": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Exceptional.",
-          "source": "p91"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is Weak.",
-          "source": "p13"
-        },
-        {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p43"
-        },
-        {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p48"
-        },
-        {
-          "text": "Lowvol is Flat.",
-          "source": "p74"
+          "text": "Its value (1/PE) is flat.",
+          "source": "p71"
         }
       ],
       "data_gap": false
@@ -247,26 +308,81 @@
     "NA.TO": {
       "in_favor": [
         {
-          "text": "Lowvol is Strong.",
-          "source": "p83"
+          "text": "There is weak analyst dispersion, suggesting greater consensus among analysts.",
+          "source": "p24"
+        },
+        {
+          "text": "Its low volatility is strong.",
+          "source": "p81"
+        },
+        {
+          "text": "The company's dividend is analyzed, indicating its status as a dividend-paying entity.",
+          "source": "[GuruFocus.com] National Bank of Canada's Dividend Analysis"
+        },
+        {
+          "text": "Canadian banks, including National Bank of Canada, are expected to accept tokenized deposits.",
+          "source": "[CryptoProwl] Canada's Banks To Accept Tokenized Deposits"
+        },
+        {
+          "text": "The company provides insights on the economic outlook.",
+          "source": "[Bloomberg] National Bank of Canada on the Economic Outlook"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p65"
+          "text": "The company exhibits flat momentum (12-1).",
+          "source": "p67"
         },
         {
-          "text": "Analyst dispersion is Weak.",
-          "source": "p26"
-        },
-        {
-          "text": "Quality (ROE/margin) is Flat.",
+          "text": "Its quality (ROE/margin) is flat.",
           "source": "p48"
         },
         {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p65"
+          "text": "Its value (1/PE) is flat.",
+          "source": "p67"
+        },
+        {
+          "text": "Questions are raised about its valuation after a 165% run.",
+          "source": "[Simply Wall St.] Is National Bank Of Canada (TSX:NA) Still Undervalued After A 165% Run?"
+        }
+      ],
+      "data_gap": false
+    },
+    "GWO.TO": {
+      "in_favor": [
+        {
+          "text": "The company exhibits exceptional momentum (12-1).",
+          "source": "p90"
+        },
+        {
+          "text": "There is weak analyst dispersion, suggesting greater consensus among analysts.",
+          "source": "p10"
+        },
+        {
+          "text": "Highlights from its Q2 Earnings Call suggest notable performance.",
+          "source": "[MarketBeat] Great-West Lifeco Q2 Earnings Call Highlights"
+        },
+        {
+          "text": "Identified as one of 3 TSX dividend stocks yielding up to 6.9%.",
+          "source": "[Simply Wall St.] 3 TSX Dividend Stocks Yielding Up To 6.9%"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Its quality (ROE/margin) is flat.",
+          "source": "p43"
+        },
+        {
+          "text": "Its value (1/PE) is flat.",
+          "source": "p48"
+        },
+        {
+          "text": "Its low volatility is flat.",
+          "source": "p71"
+        },
+        {
+          "text": "Its valuation is being assessed, questioning if it's fully priced after higher earnings and a larger buyback.",
+          "source": "[Simply Wall St.] Is Great West Lifeco (TSX:GWO) Fully Priced After Higher Earnings And A Bigger Buyback?"
         }
       ],
       "data_gap": false
