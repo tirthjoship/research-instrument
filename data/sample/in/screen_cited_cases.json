@@ -1,18 +1,18 @@
 {
-  "as_of": "2026-10-02",
+  "as_of": "2026-10-03",
   "cases": {
     "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "The company shows strong momentum (12-1).",
+          "text": "The momentum (12-1) for ADANIPORTS.NS is strong.",
           "source": "p86"
         },
         {
-          "text": "There is strong analyst dispersion.",
+          "text": "Analyst dispersion for ADANIPORTS.NS is strong.",
           "source": "p86"
         },
         {
-          "text": "The company exhibits strong quality based on ROE/margin.",
+          "text": "Quality (ROE/margin) for ADANIPORTS.NS is strong.",
           "source": "p86"
         }
       ],
@@ -22,21 +22,21 @@
     "KOTAKBANK.NS": {
       "in_favor": [
         {
-          "text": "The company demonstrates strong quality (ROE/margin).",
+          "text": "Quality (ROE/margin) for KOTAKBANK.NS is strong.",
           "source": "p86"
         },
         {
-          "text": "There is strong value (1/PE).",
+          "text": "Value (1/PE) for KOTAKBANK.NS is strong.",
           "source": "p86"
         },
         {
-          "text": "The company has a strong low volatility profile.",
+          "text": "Lowvol for KOTAKBANK.NS is strong.",
           "source": "p86"
         }
       ],
       "to_watch": [
         {
-          "text": "The company shows weak momentum (12-1).",
+          "text": "The momentum (12-1) for KOTAKBANK.NS is weak.",
           "source": "p14"
         }
       ],
@@ -45,17 +45,17 @@
     "TITAN.NS": {
       "in_favor": [
         {
-          "text": "The company shows strong momentum (12-1).",
+          "text": "The momentum (12-1) for TITAN.NS is strong.",
           "source": "p86"
         }
       ],
       "to_watch": [
         {
-          "text": "The company exhibits weak quality based on ROE/margin.",
+          "text": "Quality (ROE/margin) for TITAN.NS is weak.",
           "source": "p29"
         },
         {
-          "text": "There is weak value (1/PE).",
+          "text": "Value (1/PE) for TITAN.NS is weak.",
           "source": "p29"
         }
       ],
@@ -64,13 +64,13 @@
     "TECHM.NS": {
       "in_favor": [
         {
-          "text": "There is strong value (1/PE).",
+          "text": "Value (1/PE) for TECHM.NS is strong.",
           "source": "p86"
         }
       ],
       "to_watch": [
         {
-          "text": "There is weak analyst dispersion.",
+          "text": "Analyst dispersion for TECHM.NS is weak.",
           "source": "p29"
         }
       ],
@@ -79,13 +79,13 @@
     "ADANIENT.NS": {
       "in_favor": [
         {
-          "text": "There is strong analyst dispersion.",
+          "text": "Analyst dispersion for ADANIENT.NS is strong.",
           "source": "p86"
         }
       ],
       "to_watch": [
         {
-          "text": "The company has a weak low volatility profile.",
+          "text": "Lowvol for ADANIENT.NS is weak.",
           "source": "p0"
         }
       ],
@@ -94,13 +94,13 @@
     "APOLLOHOSP.NS": {
       "in_favor": [
         {
-          "text": "The company has a strong low volatility profile.",
+          "text": "Lowvol for APOLLOHOSP.NS is strong.",
           "source": "p86"
         }
       ],
       "to_watch": [
         {
-          "text": "There is weak analyst dispersion.",
+          "text": "Analyst dispersion for APOLLOHOSP.NS is weak.",
           "source": "p14"
         }
       ],
@@ -110,19 +110,19 @@
       "in_favor": [],
       "to_watch": [
         {
-          "text": "The company shows weak momentum (12-1).",
+          "text": "The momentum (12-1) for INDIGO.NS is weak.",
           "source": "p0"
         },
         {
-          "text": "The company exhibits weak quality based on ROE/margin.",
+          "text": "Quality (ROE/margin) for INDIGO.NS is weak.",
           "source": "p0"
         },
         {
-          "text": "There is weak value (1/PE).",
+          "text": "Value (1/PE) for INDIGO.NS is weak.",
           "source": "p0"
         },
         {
-          "text": "The company has a weak low volatility profile.",
+          "text": "Lowvol for INDIGO.NS is weak.",
           "source": "p29"
         }
       ],
@@ -132,23 +132,23 @@
       "in_favor": [],
       "to_watch": [
         {
-          "text": "The company shows weak momentum (12-1).",
+          "text": "The momentum (12-1) for ETERNAL.NS is weak.",
           "source": "p29"
         },
         {
-          "text": "There is weak analyst dispersion.",
+          "text": "Analyst dispersion for ETERNAL.NS is weak.",
           "source": "p0"
         },
         {
-          "text": "The company exhibits weak quality based on ROE/margin.",
+          "text": "Quality (ROE/margin) for ETERNAL.NS is weak.",
           "source": "p14"
         },
         {
-          "text": "There is weak value (1/PE).",
+          "text": "Value (1/PE) for ETERNAL.NS is weak.",
           "source": "p14"
         },
         {
-          "text": "The company has a weak low volatility profile.",
+          "text": "Lowvol for ETERNAL.NS is weak.",
           "source": "p14"
         }
       ],
