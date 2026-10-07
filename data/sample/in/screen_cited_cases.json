@@ -1,25 +1,29 @@
 {
-  "as_of": "2026-10-06",
+  "as_of": "2026-10-07",
   "cases": {
-    "ADANIPORTS.NS": {
+    "KOTAKBANK.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p80"
+          "text": "Quality based on ROE/margin is strong.",
+          "source": "p75"
         },
         {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p80"
+          "text": "Value as measured by 1/PE is strong.",
+          "source": "p75"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p80"
+          "text": "The low volatility factor is strong.",
+          "source": "p75"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is strong, indicating varying opinions.",
-          "source": "p80"
+          "text": "Momentum (12-1) is weak.",
+          "source": "p25"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p50"
         }
       ],
       "data_gap": false
@@ -28,61 +32,78 @@
       "in_favor": [
         {
           "text": "Momentum (12-1) is strong.",
-          "source": "p80"
+          "source": "p75"
         },
         {
-          "text": "Low volatility is strong.",
-          "source": "p80"
+          "text": "The low volatility factor is strong.",
+          "source": "p75"
         }
       ],
-      "to_watch": [],
-      "data_gap": false
-    },
-    "TECHM.NS": {
-      "in_favor": [
+      "to_watch": [
         {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p80"
+          "text": "Analyst dispersion is weak.",
+          "source": "p25"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p80"
+          "text": "Quality based on ROE/margin is weak.",
+          "source": "p25"
         },
         {
-          "text": "Low volatility is strong.",
-          "source": "p80"
+          "text": "Value as measured by 1/PE is flat.",
+          "source": "p50"
         }
       ],
-      "to_watch": [],
       "data_gap": false
     },
     "ADANIENT.NS": {
-      "in_favor": [],
-      "to_watch": [
+      "in_favor": [
         {
-          "text": "Analyst dispersion is strong, indicating varying opinions.",
-          "source": "p80"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p75"
         },
         {
-          "text": "Low volatility is weak.",
-          "source": "p0"
+          "text": "Analyst dispersion is strong.",
+          "source": "p75"
+        },
+        {
+          "text": "Value as measured by 1/PE is strong.",
+          "source": "p75"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality based on ROE/margin is flat.",
+          "source": "p50"
+        },
+        {
+          "text": "The low volatility factor is weak.",
+          "source": "p25"
         }
       ],
       "data_gap": false
     },
-    "INDIGO.NS": {
-      "in_favor": [],
+    "TRENT.NS": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong.",
+          "source": "p75"
+        },
+        {
+          "text": "Quality based on ROE/margin is strong.",
+          "source": "p75"
+        }
+      ],
       "to_watch": [
         {
           "text": "Momentum (12-1) is weak.",
           "source": "p0"
         },
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p0"
+          "text": "Value as measured by 1/PE is weak.",
+          "source": "p25"
         },
         {
-          "text": "Value (1/PE) is weak.",
+          "text": "The low volatility factor is weak.",
           "source": "p0"
         }
       ],
@@ -92,20 +113,24 @@
       "in_favor": [],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p20"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p50"
         },
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p20"
+          "text": "Analyst dispersion is weak.",
+          "source": "p0"
         },
         {
-          "text": "Value (1/PE) is weak.",
-          "source": "p20"
+          "text": "Quality based on ROE/margin is weak.",
+          "source": "p0"
         },
         {
-          "text": "Low volatility is weak.",
-          "source": "p20"
+          "text": "Value as measured by 1/PE is weak.",
+          "source": "p0"
+        },
+        {
+          "text": "The low volatility factor is flat.",
+          "source": "p50"
         }
       ],
       "data_gap": false
