@@ -1,249 +1,29 @@
 {
-  "as_of": "2026-10-07",
+  "as_of": "2026-10-09",
   "cases": {
     "TRGP": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional momentum over the last 12 months.",
+          "text": "Momentum (12-1) is exceptional.",
           "source": "p91"
         },
         {
-          "text": "The company shows exceptional quality based on ROE and margin metrics.",
-          "source": "p91"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "There is exceptional dispersion among analyst views, indicating higher uncertainty.",
-          "source": "p92"
-        },
-        {
-          "text": "The company's value, based on the inverse of its Price-to-Earnings ratio, is flat.",
-          "source": "p57"
-        },
-        {
-          "text": "The low volatility characteristic of the company is flat.",
-          "source": "p53"
-        }
-      ],
-      "data_gap": false
-    },
-    "AMP": {
-      "in_favor": [
-        {
-          "text": "The company demonstrates strong quality based on ROE and margin metrics.",
-          "source": "p89"
-        },
-        {
-          "text": "The company exhibits exceptional value based on the inverse of its Price-to-Earnings ratio.",
-          "source": "p94"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The company's momentum over the last 12 months is weak.",
-          "source": "p23"
-        },
-        {
-          "text": "There is strong dispersion among analyst views, indicating higher uncertainty.",
-          "source": "p84"
-        },
-        {
-          "text": "The low volatility characteristic of the company is flat.",
-          "source": "p70"
-        }
-      ],
-      "data_gap": false
-    },
-    "NTAP": {
-      "in_favor": [
-        {
-          "text": "The company exhibits exceptional momentum over the last 12 months.",
-          "source": "p93"
-        },
-        {
-          "text": "The company shows exceptional quality based on ROE and margin metrics.",
-          "source": "p95"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "There is strong dispersion among analyst views, indicating higher uncertainty.",
-          "source": "p79"
-        },
-        {
-          "text": "The company's value, based on the inverse of its Price-to-Earnings ratio, is flat.",
-          "source": "p46"
-        },
-        {
-          "text": "The low volatility characteristic of the company is weak.",
-          "source": "p28"
-        }
-      ],
-      "data_gap": false
-    },
-    "GL": {
-      "in_favor": [
-        {
-          "text": "The company exhibits exceptional value based on the inverse of its Price-to-Earnings ratio.",
-          "source": "p95"
-        },
-        {
-          "text": "The low volatility characteristic of the company is exceptional.",
-          "source": "p91"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The company's momentum over the last 12 months is flat.",
-          "source": "p52"
-        },
-        {
-          "text": "There is strong dispersion among analyst views, indicating higher uncertainty.",
+          "text": "Analyst dispersion is strong.",
           "source": "p88"
         },
         {
-          "text": "The company's quality, based on ROE and margin metrics, is flat.",
-          "source": "p55"
-        }
-      ],
-      "data_gap": false
-    },
-    "HAS": {
-      "in_favor": [
-        {
-          "text": "The company shows exceptional quality based on ROE and margin metrics.",
-          "source": "p95"
-        },
-        {
-          "text": "The company exhibits strong value based on the inverse of its Price-to-Earnings ratio.",
-          "source": "p81"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The company's momentum over the last 12 months is weak.",
-          "source": "p33"
-        },
-        {
-          "text": "Analyst dispersion is flat, indicating a lack of strong consensus.",
-          "source": "p64"
-        },
-        {
-          "text": "The low volatility characteristic of the company is flat.",
-          "source": "p49"
-        }
-      ],
-      "data_gap": false
-    },
-    "DVA": {
-      "in_favor": [
-        {
-          "text": "The company exhibits strong momentum over the last 12 months.",
-          "source": "p81"
-        },
-        {
-          "text": "The company shows exceptional quality based on ROE and margin metrics.",
-          "source": "p93"
-        },
-        {
-          "text": "The company exhibits strong value based on the inverse of its Price-to-Earnings ratio.",
-          "source": "p85"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is flat, indicating a lack of strong consensus.",
-          "source": "p42"
-        },
-        {
-          "text": "The low volatility characteristic of the company is weak.",
-          "source": "p33"
-        }
-      ],
-      "data_gap": false
-    },
-    "MSI": {
-      "in_favor": [
-        {
-          "text": "The company shows exceptional quality based on ROE and margin metrics.",
-          "source": "p95"
-        },
-        {
-          "text": "The low volatility characteristic of the company is strong.",
-          "source": "p86"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The company's momentum over the last 12 months is weak.",
-          "source": "p25"
-        },
-        {
-          "text": "There is exceptional dispersion among analyst views, indicating higher uncertainty.",
-          "source": "p95"
-        },
-        {
-          "text": "The company's value, based on the inverse of its Price-to-Earnings ratio, is weak.",
-          "source": "p39"
-        }
-      ],
-      "data_gap": false
-    },
-    "AIZ": {
-      "in_favor": [
-        {
-          "text": "The company exhibits exceptional value based on the inverse of its Price-to-Earnings ratio.",
-          "source": "p93"
-        },
-        {
-          "text": "The low volatility characteristic of the company is strong.",
-          "source": "p84"
-        },
-        {
-          "text": "Recent market sentiment shows a mildly positive tone, with 147 mentions in the last 30 days.",
-          "source": "0.24, 147 mentions in the last 30d"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "The company's momentum over the last 12 months is flat.",
-          "source": "p49"
-        },
-        {
-          "text": "There is exceptional dispersion among analyst views, indicating higher uncertainty.",
-          "source": "p95"
-        },
-        {
-          "text": "The company's quality, based on ROE and margin metrics, is flat.",
-          "source": "p50"
-        }
-      ],
-      "data_gap": false
-    },
-    "EOG": {
-      "in_favor": [
-        {
-          "text": "The company exhibits exceptional value based on the inverse of its Price-to-Earnings ratio.",
+          "text": "Quality (ROE/margin) is exceptional.",
           "source": "p95"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's momentum over the last 12 months is flat.",
-          "source": "p59"
+          "text": "Value (1/PE) is flat.",
+          "source": "p53"
         },
         {
-          "text": "There is strong dispersion among analyst views, indicating higher uncertainty.",
-          "source": "p77"
-        },
-        {
-          "text": "The company's quality, based on ROE and margin metrics, is flat.",
-          "source": "p59"
-        },
-        {
-          "text": "The low volatility characteristic of the company is flat.",
-          "source": "p63"
+          "text": "Lowvol is flat.",
+          "source": "p54"
         }
       ],
       "data_gap": false
@@ -251,26 +31,246 @@
     "PGR": {
       "in_favor": [
         {
-          "text": "The company exhibits exceptional value based on the inverse of its Price-to-Earnings ratio.",
+          "text": "Analyst dispersion is strong.",
+          "source": "p83"
+        },
+        {
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p79"
+        },
+        {
+          "text": "Value (1/PE) is exceptional.",
           "source": "p95"
         },
         {
-          "text": "The low volatility characteristic of the company is strong.",
-          "source": "p79"
+          "text": "Lowvol is strong.",
+          "source": "p76"
         }
       ],
       "to_watch": [
         {
-          "text": "The company's momentum over the last 12 months is weak.",
-          "source": "p12"
+          "text": "Momentum (12-1) is weak.",
+          "source": "p21"
+        }
+      ],
+      "data_gap": false
+    },
+    "NTAP": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is exceptional.",
+          "source": "p92"
         },
         {
-          "text": "There is strong dispersion among analyst views, indicating higher uncertainty.",
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p95"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p68"
+        },
+        {
+          "text": "Value (1/PE) is weak.",
+          "source": "p38"
+        },
+        {
+          "text": "Lowvol is weak.",
+          "source": "p29"
+        }
+      ],
+      "data_gap": false
+    },
+    "TRV": {
+      "in_favor": [
+        {
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p95"
+        },
+        {
+          "text": "Lowvol is exceptional.",
+          "source": "p92"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p72"
+        },
+        {
+          "text": "Analyst dispersion is weak.",
+          "source": "p36"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p71"
+        }
+      ],
+      "data_gap": false
+    },
+    "MSI": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p95"
+        },
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p95"
+        },
+        {
+          "text": "Lowvol is strong.",
+          "source": "p87"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p41"
+        },
+        {
+          "text": "Value (1/PE) is weak.",
+          "source": "p31"
+        }
+      ],
+      "data_gap": false
+    },
+    "VRSN": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p94"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p55"
+        },
+        {
+          "text": "Value (1/PE) is weak.",
+          "source": "p40"
+        },
+        {
+          "text": "Lowvol is flat.",
+          "source": "p71"
+        }
+      ],
+      "data_gap": false
+    },
+    "TROW": {
+      "in_favor": [
+        {
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p95"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p24"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p74"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p50"
+        },
+        {
+          "text": "Lowvol is flat.",
+          "source": "p72"
+        }
+      ],
+      "data_gap": false
+    },
+    "V": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p95"
+        },
+        {
+          "text": "Lowvol is exceptional.",
+          "source": "p95"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p31"
+        },
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p55"
+        },
+        {
+          "text": "Value (1/PE) is flat.",
+          "source": "p41"
+        },
+        {
+          "text": "Market sentiment shows recent neutral sentiment (0.02) with 175 mentions in the last 30 days.",
+          "source": "Market sentiment"
+        }
+      ],
+      "data_gap": false
+    },
+    "TGT": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is strong.",
+          "source": "p87"
+        },
+        {
+          "text": "Value (1/PE) is strong.",
+          "source": "p87"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is flat.",
+          "source": "p51"
+        },
+        {
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p69"
+        },
+        {
+          "text": "Lowvol is flat.",
+          "source": "p45"
+        }
+      ],
+      "data_gap": false
+    },
+    "PRU": {
+      "in_favor": [
+        {
+          "text": "Value (1/PE) is exceptional.",
+          "source": "p95"
+        },
+        {
+          "text": "Lowvol is strong.",
           "source": "p82"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p40"
         },
         {
-          "text": "The company's quality, based on ROE and margin metrics, is flat.",
-          "source": "p75"
+          "text": "Analyst dispersion is flat.",
+          "source": "p62"
+        },
+        {
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p26"
         }
       ],
       "data_gap": false

@@ -1,113 +1,136 @@
 {
-  "as_of": "2026-10-08",
+  "as_of": "2026-10-09",
   "cases": {
-    "ICICIBANK.NS": {
+    "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "The valuation based on the inverse of Price-to-Earnings (1/PE) is strong.",
+          "text": "The company exhibits strong momentum (12-1).",
           "source": "p75"
         },
         {
-          "text": "The low volatility factor is strong.",
+          "text": "Quality metrics (ROE/margin) are strong.",
+          "source": "p75"
+        },
+        {
+          "text": "The company shows strong value based on 1/PE.",
+          "source": "p75"
+        },
+        {
+          "text": "It demonstrates strong low volatility characteristics.",
           "source": "p75"
         }
       ],
       "to_watch": [
         {
-          "text": "The 12-1 momentum factor is weak.",
-          "source": "p25"
-        },
-        {
-          "text": "Analyst dispersion is strong, suggesting a wide range of opinions among analysts.",
-          "source": "p75"
+          "text": "Analyst dispersion is flat.",
+          "source": "p50"
         }
       ],
-      "data_gap": false
-    },
-    "ADANIPORTS.NS": {
-      "in_favor": [
-        {
-          "text": "The 12-1 momentum factor is strong.",
-          "source": "p75"
-        },
-        {
-          "text": "Analyst dispersion is weak, indicating higher consensus among analysts.",
-          "source": "p25"
-        },
-        {
-          "text": "Quality, as measured by ROE/margin, is strong.",
-          "source": "p75"
-        }
-      ],
-      "to_watch": [],
       "data_gap": false
     },
     "KOTAKBANK.NS": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is weak, indicating a high level of consensus among analysts.",
-          "source": "p0"
-        },
-        {
-          "text": "Quality, as measured by ROE/margin, is strong.",
+          "text": "Quality metrics (ROE/margin) are strong.",
           "source": "p75"
         },
         {
-          "text": "The valuation based on the inverse of Price-to-Earnings (1/PE) is strong.",
+          "text": "The company shows strong value based on 1/PE.",
           "source": "p75"
         },
         {
-          "text": "The low volatility factor is strong.",
-          "source": "p75"
-        }
-      ],
-      "to_watch": [],
-      "data_gap": false
-    },
-    "ADANIENT.NS": {
-      "in_favor": [
-        {
-          "text": "The 12-1 momentum factor is strong.",
+          "text": "It demonstrates strong low volatility characteristics.",
           "source": "p75"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is strong, suggesting a wide range of opinions among analysts.",
-          "source": "p75"
-        },
-        {
-          "text": "Quality, as measured by ROE/margin, is weak.",
-          "source": "p0"
-        },
-        {
-          "text": "The valuation based on the inverse of Price-to-Earnings (1/PE) is weak.",
+          "text": "The company exhibits weak momentum (12-1).",
           "source": "p25"
         },
         {
-          "text": "The low volatility factor is weak.",
+          "text": "Analyst dispersion is weak.",
+          "source": "p25"
+        }
+      ],
+      "data_gap": false
+    },
+    "ADANIENT.NS": {
+      "in_favor": [
+        {
+          "text": "The company exhibits strong momentum (12-1).",
+          "source": "p75"
+        },
+        {
+          "text": "Analyst dispersion is strong.",
+          "source": "p75"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality metrics (ROE/margin) are weak.",
+          "source": "p25"
+        },
+        {
+          "text": "Value based on 1/PE is flat.",
+          "source": "p50"
+        },
+        {
+          "text": "It demonstrates weak low volatility characteristics.",
           "source": "p25"
         }
       ],
       "data_gap": false
     },
     "TRENT.NS": {
-      "in_favor": [],
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong.",
+          "source": "p75"
+        }
+      ],
       "to_watch": [
         {
-          "text": "The 12-1 momentum factor is weak.",
+          "text": "The company exhibits weak momentum (12-1).",
           "source": "p0"
         },
         {
-          "text": "Quality, as measured by ROE/margin, is weak.",
+          "text": "Quality metrics (ROE/margin) are flat.",
+          "source": "p50"
+        },
+        {
+          "text": "Value based on 1/PE is weak.",
           "source": "p25"
         },
         {
-          "text": "The valuation based on the inverse of Price-to-Earnings (1/PE) is weak.",
+          "text": "It demonstrates weak low volatility characteristics.",
+          "source": "p0"
+        }
+      ],
+      "data_gap": false
+    },
+    "ETERNAL.NS": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1) is flat.",
+          "source": "p50"
+        },
+        {
+          "text": "Low volatility characteristics are flat.",
+          "source": "p50"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Analyst dispersion is weak.",
           "source": "p0"
         },
         {
-          "text": "The low volatility factor is weak.",
+          "text": "Quality metrics (ROE/margin) are weak.",
+          "source": "p0"
+        },
+        {
+          "text": "Value based on 1/PE is weak.",
           "source": "p0"
         }
       ],
