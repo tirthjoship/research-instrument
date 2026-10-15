@@ -1,28 +1,28 @@
 {
-  "as_of": "2026-10-14",
+  "as_of": "2026-10-15",
   "cases": {
     "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "Momentum over a 12-month period is strong.",
-          "source": "p89"
+          "text": "The momentum (12-1) factor for this ticker is Strong.",
+          "source": "p83"
         },
         {
-          "text": "Quality, as indicated by ROE/margin, is strong.",
-          "source": "p89"
+          "text": "Analyst dispersion for this ticker is Strong.",
+          "source": "p83"
+        },
+        {
+          "text": "The quality (ROE/margin) factor for this ticker is Strong.",
+          "source": "p83"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is flat.",
+          "text": "The value (1/PE) factor for this ticker is Flat.",
           "source": "p67"
         },
         {
-          "text": "Value, based on 1/PE, is flat.",
-          "source": "p56"
-        },
-        {
-          "text": "Low volatility is weak.",
+          "text": "The low volatility factor for this ticker is Weak.",
           "source": "p33"
         }
       ],
@@ -31,80 +31,26 @@
     "KOTAKBANK.NS": {
       "in_favor": [
         {
-          "text": "Quality, as indicated by ROE/margin, is strong.",
-          "source": "p78"
+          "text": "The quality (ROE/margin) factor for this ticker is Strong.",
+          "source": "p83"
         },
         {
-          "text": "Value, based on 1/PE, is strong.",
-          "source": "p89"
+          "text": "The value (1/PE) factor for this ticker is Strong.",
+          "source": "p83"
         },
         {
-          "text": "Low volatility is strong.",
-          "source": "p89"
+          "text": "The low volatility factor for this ticker is Strong.",
+          "source": "p83"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum over a 12-month period is weak.",
+          "text": "The momentum (12-1) factor for this ticker is Weak.",
+          "source": "p0"
+        },
+        {
+          "text": "Analyst dispersion for this ticker is Weak.",
           "source": "p33"
-        },
-        {
-          "text": "Analyst dispersion is flat.",
-          "source": "p44"
-        }
-      ],
-      "data_gap": false
-    },
-    "ICICIBANK.NS": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "p89"
-        },
-        {
-          "text": "Value, based on 1/PE, is strong.",
-          "source": "p89"
-        },
-        {
-          "text": "Low volatility is strong.",
-          "source": "p89"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum over a 12-month period is weak.",
-          "source": "p22"
-        },
-        {
-          "text": "Quality, as indicated by ROE/margin, is flat.",
-          "source": "p56"
-        }
-      ],
-      "data_gap": false
-    },
-    "BAJAJ-AUTO.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum over a 12-month period is strong.",
-          "source": "p78"
-        },
-        {
-          "text": "Value, based on 1/PE, is strong.",
-          "source": "p78"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is weak.",
-          "source": "p33"
-        },
-        {
-          "text": "Quality, as indicated by ROE/margin, is flat.",
-          "source": "p67"
-        },
-        {
-          "text": "Low volatility is flat.",
-          "source": "p67"
         }
       ],
       "data_gap": false
@@ -112,79 +58,80 @@
     "TITAN.NS": {
       "in_favor": [
         {
-          "text": "Momentum over a 12-month period is strong.",
-          "source": "p89"
-        },
-        {
-          "text": "Low volatility is strong.",
-          "source": "p78"
+          "text": "The momentum (12-1) factor for this ticker is Strong.",
+          "source": "p83"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p56"
+          "text": "Analyst dispersion for this ticker is Flat.",
+          "source": "p50"
         },
         {
-          "text": "Quality, as indicated by ROE/margin, is weak.",
-          "source": "p11"
+          "text": "The quality (ROE/margin) factor for this ticker is Weak.",
+          "source": "p17"
         },
         {
-          "text": "Value, based on 1/PE, is weak.",
-          "source": "p22"
+          "text": "The value (1/PE) factor for this ticker is Weak.",
+          "source": "p33"
+        },
+        {
+          "text": "The low volatility factor for this ticker is Flat.",
+          "source": "p67"
         }
       ],
       "data_gap": false
     },
-    "BAJFINANCE.NS": {
+    "NESTLEIND.NS": {
       "in_favor": [
         {
-          "text": "Quality, as indicated by ROE/margin, is strong.",
-          "source": "p89"
+          "text": "The low volatility factor for this ticker is Strong.",
+          "source": "p83"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum over a 12-month period is weak.",
-          "source": "p11"
+          "text": "The momentum (12-1) factor for this ticker is Weak.",
+          "source": "p33"
         },
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p22"
+          "text": "Analyst dispersion for this ticker is Flat.",
+          "source": "p67"
         },
         {
-          "text": "Value, based on 1/PE, is flat.",
-          "source": "p44"
+          "text": "The quality (ROE/margin) factor for this ticker is Flat.",
+          "source": "p67"
         },
         {
-          "text": "Low volatility is flat.",
-          "source": "p44"
+          "text": "The value (1/PE) factor for this ticker is Weak.",
+          "source": "p17"
         }
       ],
       "data_gap": false
     },
     "TECHM.NS": {
-      "in_favor": [],
+      "in_favor": [
+        {
+          "text": "The value (1/PE) factor for this ticker is Strong.",
+          "source": "p83"
+        }
+      ],
       "to_watch": [
         {
-          "text": "Momentum over a 12-month period is flat.",
-          "source": "p56"
+          "text": "The momentum (12-1) factor for this ticker is Flat.",
+          "source": "p50"
         },
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p11"
+          "text": "Analyst dispersion for this ticker is Weak.",
+          "source": "p17"
         },
         {
-          "text": "Quality, as indicated by ROE/margin, is flat.",
-          "source": "p44"
+          "text": "The quality (ROE/margin) factor for this ticker is Flat.",
+          "source": "p50"
         },
         {
-          "text": "Value, based on 1/PE, is flat.",
-          "source": "p67"
-        },
-        {
-          "text": "Low volatility is flat.",
-          "source": "p56"
+          "text": "The low volatility factor for this ticker is Flat.",
+          "source": "p50"
         }
       ],
       "data_gap": false
@@ -192,52 +139,25 @@
     "ADANIENT.NS": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "p89"
+          "text": "Analyst dispersion for this ticker is Strong.",
+          "source": "p83"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum over a 12-month period is flat.",
+          "text": "The momentum (12-1) factor for this ticker is Flat.",
           "source": "p67"
         },
         {
-          "text": "Quality, as indicated by ROE/margin, is weak.",
-          "source": "p22"
-        },
-        {
-          "text": "Value, based on 1/PE, is weak.",
+          "text": "The quality (ROE/margin) factor for this ticker is Weak.",
           "source": "p33"
         },
         {
-          "text": "Low volatility is weak.",
-          "source": "p11"
-        }
-      ],
-      "data_gap": false
-    },
-    "TRENT.NS": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "p78"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum over a 12-month period is weak.",
-          "source": "p0"
+          "text": "The value (1/PE) factor for this ticker is Flat.",
+          "source": "p50"
         },
         {
-          "text": "Quality, as indicated by ROE/margin, is weak.",
-          "source": "p33"
-        },
-        {
-          "text": "Value, based on 1/PE, is weak.",
-          "source": "p11"
-        },
-        {
-          "text": "Low volatility is weak.",
+          "text": "The low volatility factor for this ticker is Weak.",
           "source": "p0"
         }
       ],
@@ -247,24 +167,24 @@
       "in_favor": [],
       "to_watch": [
         {
-          "text": "Momentum over a 12-month period is flat.",
-          "source": "p44"
+          "text": "The momentum (12-1) factor for this ticker is Weak.",
+          "source": "p17"
         },
         {
-          "text": "Analyst dispersion is weak.",
+          "text": "Analyst dispersion for this ticker is Weak.",
           "source": "p0"
         },
         {
-          "text": "Quality, as indicated by ROE/margin, is weak.",
+          "text": "The quality (ROE/margin) factor for this ticker is Weak.",
           "source": "p0"
         },
         {
-          "text": "Value, based on 1/PE, is weak.",
+          "text": "The value (1/PE) factor for this ticker is Weak.",
           "source": "p0"
         },
         {
-          "text": "Low volatility is weak.",
-          "source": "p22"
+          "text": "The low volatility factor for this ticker is Weak.",
+          "source": "p17"
         }
       ],
       "data_gap": false
