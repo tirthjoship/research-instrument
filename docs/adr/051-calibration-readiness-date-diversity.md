@@ -1,4 +1,4 @@
-# ADR-051: Calibration-Readiness — Date-Diversity Precondition for the ADR-048 Gate
+# ADR-051: Calibration-Readiness: Date-Diversity Precondition for the ADR-048 Gate
 
 **Date:** 2026-06-09
 **Status:** Accepted
@@ -9,9 +9,9 @@
 
 The ADR-048 discipline REDUCE-flag forward gate is the project's terminal bet. On
 2026-06-09 its forward log held 132 rows ALL dated 2026-06-08 (46 REDUCE). Two flaws
-threatened it: (1) no automated logging — the documented launchd plist runs
+threatened it: (1) no automated logging, the documented launchd plist runs
 `daily-cycle` (opportunity loop), which never appends discipline verdicts; (2) a
-single-`as_of` confound — all REDUCE flags would resolve over one identical market
+single-`as_of` confound, all REDUCE flags would resolve over one identical market
 window, so the pooled down-rate would ride on that one month's direction, not on
 whether the flags discriminate. A confounded PROCEED and a confounded KILL are
 equally worthless.
@@ -42,7 +42,7 @@ readiness view, and a symmetric `diversity_label` guard wired into
 
 ## Consequences
 
-- The gate can only return PROCEED/KILL on a non-confounded sample — the result, either
+- The gate can only return PROCEED/KILL on a non-confounded sample, the result, either
   way, becomes trustworthy.
 - If diversity is still insufficient at the resolution date, the honest outcome is
   INCONCLUSIVE_THIN_DATES, and the discipline tool ships as decision-support without a

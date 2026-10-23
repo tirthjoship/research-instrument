@@ -1,4 +1,4 @@
-# ADR-030: Event-Causal Learning Architecture — Gemini Classification + Empirical Impact + Exponential Decay
+# ADR-030: Event-Causal Learning Architecture: Gemini Classification + Empirical Impact + Exponential Decay
 
 **Status:** Accepted (2026-06-02)
 
@@ -11,10 +11,10 @@
 Use Google Gemini API free tier (15 RPM, 1.5M tokens/day, zero cost) for structured event classification of news headlines. Temperature=0 for determinism. `google-generativeai` package.
 
 **Rejected alternatives:**
-- Local LLM (Ollama) — heavy dependency, mediocre quality at 7-8B, not reproducible without a local GPU setup
-- Claude API — costs money, no free tier at sufficient volume
-- Google AI Mode (search bar) — consumer feature, not an API, can't call programmatically
-- Rule-based only — less impressive for portfolio, misses ambiguous events
+- Local LLM (Ollama), heavy dependency, mediocre quality at 7-8B, not reproducible without a local GPU setup
+- Claude API, costs money, no free tier at sufficient volume
+- Google AI Mode (search bar), consumer feature, not an API, can't call programmatically
+- Rule-based only, less impressive for portfolio, misses ambiguous events
 
 ### 2. Event Categories: 10 Types (Option A)
 
@@ -65,15 +65,15 @@ Two parameters per event_category × sector pair: `magnitude` and `half_life`. F
 ## Consequences
 
 **Positive:**
-- Novel feature layer — event-causal impact with learned decay is not standard in financial ML
+- Novel feature layer, event-causal impact with learned decay is not standard in financial ML
 - Free (Gemini free tier)
-- Empirically grounded — impact table built from real data
-- Interpretable — "tariffs have 8-day half-life on energy"
+- Empirically grounded, impact table built from real data
+- Interpretable, "tariffs have 8-day half-life on energy"
 
 **Negative:**
 - Gemini API dependency (external service)
 - Classification quality depends on model (may need prompt tuning)
-- Sparse events per category — some categories may have <50 historical examples
+- Sparse events per category, some categories may have <50 historical examples
 - Decay fit may be noisy with few data points
 
 **Risks:**

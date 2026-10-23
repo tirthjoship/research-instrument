@@ -1,4 +1,4 @@
-# Scheduling — Daily Opportunity Cycle
+# Scheduling: Daily Opportunity Cycle
 
 The daily opportunity cycle (`scan-opportunities → resolve-calls → weekly backfill`) runs locally
 via macOS **launchd**. Scheduling is intentionally local rather than cloud-hosted: ADR-007 chose
@@ -42,7 +42,7 @@ Save the file below as `~/Library/LaunchAgents/com.example.research-instrument.d
 
     <!-- Run at 08:00 local machine time (pre-market, ~30 min before US open)
          DST caveat: launchd uses LOCAL time, not UTC. When the machine observes
-         EDT (UTC-4, Mar–Nov) this fires at 12:00 UTC; under EST (UTC-5, Nov–Mar)
+         EDT (UTC-4, Mar-Nov) this fires at 12:00 UTC; under EST (UTC-5, Nov-Mar)
          it fires at 13:00 UTC. Adjust Hour if you want a fixed UTC anchor. -->
     <key>StartCalendarInterval</key>
     <dict>
@@ -52,7 +52,7 @@ Save the file below as `~/Library/LaunchAgents/com.example.research-instrument.d
         <integer>0</integer>
     </dict>
 
-    <!-- Log files — directory must exist; create with:
+    <!-- Log files: directory must exist; create with:
          mkdir -p data/reports  (relative to WorkingDirectory above) -->
     <key>StandardOutPath</key>
     <string>/path/to/research-instrument/data/reports/daily_cycle.log</string>
@@ -131,10 +131,10 @@ launchctl unload -w ~/Library/LaunchAgents/com.example.research-instrument.daily
 
 ## Reddit credentials
 
-Reddit credentials are **optional** — the daily cycle falls back to RSS-only sentiment if they are
+Reddit credentials are **optional**: the daily cycle falls back to RSS-only sentiment if they are
 absent. To supply them, choose one of two approaches:
 
-**Option A — plist EnvironmentVariables block (recommended for scheduled jobs)**
+**Option A, plist EnvironmentVariables block (recommended for scheduled jobs)**
 
 Edit the `EnvironmentVariables` dict in the plist directly (as shown above). Values are stored in
 plaintext in `~/Library/LaunchAgents/`, which launchd owns and reads before forking the process.
@@ -144,7 +144,7 @@ Set file permissions to `600`:
 chmod 600 ~/Library/LaunchAgents/com.example.research-instrument.daily-cycle.plist
 ```
 
-**Option B — sourced `.env` file**
+**Option B, sourced `.env` file**
 
 Copy `.env.example` to `.env` in the repo root and fill in the Reddit values. Then wrap the
 `daily-cycle` invocation in a shell script that sources `.env` first, and point `ProgramArguments`
@@ -152,7 +152,7 @@ at that script instead of the Python interpreter directly.
 
 ---
 
-## Live APIs — not run in CI
+## Live APIs: not run in CI
 
 The daily cycle calls live external APIs:
 
@@ -175,7 +175,7 @@ launchd will **not** fire a scheduled job while the Mac is asleep or the lid is 
 direct consequence of the ADR-007 local-scheduler decision: a cloud runner would sidestep the
 problem, but cloud runners cannot reach the local SQLite file, so we accept the trade-off.
 
-**Mitigation — wrap the job in `caffeinate`:**
+**Mitigation, wrap the job in `caffeinate`:**
 
 Replace the `ProgramArguments` in the plist with:
 
@@ -193,10 +193,10 @@ Replace the `ProgramArguments` in the plist with:
 
 `caffeinate -i` holds a system-sleep assertion for the lifetime of the child process. launchd
 launches `caffeinate`, which keeps the machine awake just long enough to complete the daily cycle,
-then releases the assertion and lets the system sleep normally. No external tool is required —
+then releases the assertion and lets the system sleep normally. No external tool is required,
 `/usr/bin/caffeinate` ships with macOS.
 
-**Alternative — Energy Saver / `pmset`:**
+**Alternative, Energy Saver / `pmset`:**
 
 If you prefer a schedule-based approach rather than per-job wrapping, you can use `pmset` to
 schedule a wake window around 08:00:
@@ -211,7 +211,7 @@ because it is scoped to the daily-cycle process and requires no `sudo`.
 
 **Honest caveat:** if the machine is powered off (not just sleeping), neither approach helps.
 The daily cycle will simply be skipped for that day. This is acceptable for a local research
-tool — see ADR-007 for the rationale behind the local-scheduler decision.
+tool, see ADR-007 for the rationale behind the local-scheduler decision.
 
 ---
 
@@ -224,7 +224,7 @@ gitignored files (`data/personal/discipline_log.jsonl` for the dated flags,
 (`data/personal/holdings_risk_cron.log`). Nothing personal is committed.
 
 The plist is installed at `~/Library/LaunchAgents/com.example.research-instrument.holdings-risk-daily.plist`. It runs
-**weekdays (Mon–Fri) at 13:30 local** — ~30 min after the US close (16:00 ET) so yfinance has the
+**weekdays (Mon-Fri) at 13:30 local**: ~30 min after the US close (16:00 ET) so yfinance has the
 day's final daily bar. Weekends are skipped so Friday's close is not re-logged on Sat/Sun.
 
 ```bash
@@ -242,7 +242,7 @@ It reuses the same `caffeinate -i` sleep handling and the same powered-off cavea
 cycle above.
 
 **Calibration caveat (ADR-048):** daily re-logging produces *overlapping* 21-day windows for a
-name that stays broken — the gate's `n ≥ 30` is a nominal count of REDUCE observations, not 30
+name that stays broken, the gate's `n ≥ 30` is a nominal count of REDUCE observations, not 30
 independent events (consecutive days are autocorrelated). For a personal decision-support tool this
 is acceptable; the gate is a trust signal, not a publishable significance test. If a cleaner read is
 wanted later, de-duplicate to one flag per name per non-overlapping window before scoring.
@@ -288,14 +288,14 @@ Load: `launchctl load -w ~/Library/LaunchAgents/com.example.research-instrument.
 **Laptop sleep:** launchd will not fire while asleep. Keep the machine awake at the
 scheduled time (`caffeinate -i` during a known-awake window) or run `pmset schedule
 wake` before 18:00. Verify the cron is alive with
-`python -m application.cli discipline-calibration-status` — the "last logged … days
+`python -m application.cli discipline-calibration-status`: the "last logged … days
 ago" line is your dead-cron detector.
 
-## Discipline WEEKLY review (Saturdays) — log + resolve + readiness (ADR-048/051)
+## Discipline WEEKLY review (Saturdays): log + resolve + readiness (ADR-048/051)
 
 Preferred cadence over the bare daily logger: a single Saturday job that (1) logs the
 week's snapshot, (2) forward-scores any flags whose 21-day horizon elapsed, and (3)
-prints readiness — so each Saturday you see how the week's flagged names reacted and
+prints readiness, so each Saturday you see how the week's flagged names reacted and
 whether the approach needs revision. Runs `scripts/discipline_weekly_review.sh`
 (appends a dated block to `data/reports/discipline_weekly_review.log`). Save as
 `~/Library/LaunchAgents/com.example.research-instrument.discipline-weekly.plist`:
@@ -336,7 +336,7 @@ Load: `launchctl load -w ~/Library/LaunchAgents/com.example.research-instrument.
 
 **Diversity note:** weekly-only logging banks ~1 as_of date per Saturday. With the
 existing 2026-06-08/09 snapshots already logged, Saturdays 2026-06-13 and 2026-06-20
-give ≥3 distinct dates spanning ≥10 days — enough to clear the ADR-051 date-diversity
+give ≥3 distinct dates spanning ≥10 days, enough to clear the ADR-051 date-diversity
 precondition before a mid-July resolution. If a Saturday is missed (laptop asleep), run
 `scripts/discipline_weekly_review.sh` manually so the date isn't skipped.
 
@@ -348,12 +348,12 @@ ADR-007 chose local SQLite as the persistence layer to keep the project self-con
 cloud infrastructure costs during the research phase. A direct consequence is that scheduling must
 also be local: a cloud cron runner (GitHub Actions scheduled workflow, AWS EventBridge, etc.) cannot
 read or write the SQLite file on this machine. launchd is therefore not a separate architectural
-choice — it is the scheduling mechanism implied by ADR-007. If the project ever migrates to a
+choice, it is the scheduling mechanism implied by ADR-007. If the project ever migrates to a
 hosted database, the scheduling decision should be revisited (see docs/adr/ for the relevant ADR).
 
 ---
 
-## Corroboration WEEKLY resolution (Sundays) — SP5 / ADR-064
+## Corroboration WEEKLY resolution (Sundays): SP5 / ADR-064
 
 Resolves STRONG-tier snapshots ≥21d old, accrues `GateSample` records to
 `data/corroboration_samples.jsonl`, and evaluates Hypothesis #9 gate when n ≥ 30.

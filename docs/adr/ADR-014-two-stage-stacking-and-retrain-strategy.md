@@ -33,8 +33,8 @@ Stage 2: Sentiment Blending Model (revised 2026-05-30)
 
 **Why stacking over joint training:**
 - Stage 1 preserves 2-3 years of learned technical patterns
-- Stage 2 only learns marginal lift of sentiment — simpler task, needs less data
-- 15 effective features in Stage 2 (not 59) — healthy ratio with 360-600 initial rows
+- Stage 2 only learns marginal lift of sentiment, simpler task, needs less data
+- 15 effective features in Stage 2 (not 59), healthy ratio with 360-600 initial rows
 - Clean ablation: Stage 1 alone vs Stage 1+2 = exact sentiment contribution
 - Standard ML technique (Wolpert 1992 stacked generalization)
 
@@ -82,10 +82,10 @@ Produces 12 weekly windows × 30-50 tickers = 360-600 rows with sentiment featur
 - Documented as limitation in evaluation output
 
 ## Alternatives Considered
-- **Joint training on all 66 features** — throws away pretrained knowledge, overfits on small sentiment dataset. Rejected.
-- **Separate models (no stacking)** — lose information flow between technical and sentiment signals. Rejected.
-- **4-week half-life** — too aggressive, overfits to noise. Rejected as default (kept as tuning option).
-- **No warm-start (full retrain weekly)** — expensive, forgets recent fine-grained patterns. Rejected for Stage 2.
+- **Joint training on all 66 features**: throws away pretrained knowledge, overfits on small sentiment dataset. Rejected.
+- **Separate models (no stacking)**: lose information flow between technical and sentiment signals. Rejected.
+- **4-week half-life**: too aggressive, overfits to noise. Rejected as default (kept as tuning option).
+- **No warm-start (full retrain weekly)**: expensive, forgets recent fine-grained patterns. Rejected for Stage 2.
 
 ## Consequences
 **Positive:**
@@ -97,9 +97,9 @@ Produces 12 weekly windows × 30-50 tickers = 360-600 rows with sentiment featur
 
 **Negative:**
 - Two-stage adds architectural complexity.
-- Stage 2 predictions depend on Stage 1 quality — error propagation risk.
-- Mitigated: Stage 1 is trained on 3,000+ rows with walk-forward validation — stable.
-- 90-day backfill has known noise — documented, not hidden.
+- Stage 2 predictions depend on Stage 1 quality, error propagation risk.
+- Mitigated: Stage 1 is trained on 3,000+ rows with walk-forward validation, stable.
+- 90-day backfill has known noise, documented, not hidden.
 
 ## Phase 3B Update (2026-05-30)
 
@@ -107,7 +107,7 @@ Produces 12 weekly windows × 30-50 tickers = 360-600 rows with sentiment featur
 
 1. **Feature count revised:** Stage 2 uses 15 features (1 stage1_pred + 14 sentiment), down from 27. Original 25 sentiment features reduced to 14 after removing redundancies and adding source reliability features.
 
-2. **Stage 2 model:** XGBoost only (not full ensemble). Rationale: Stage 2's job is learning sentiment-technical interactions, not ensemble diversity — that's Stage 1's job.
+2. **Stage 2 model:** XGBoost only (not full ensemble). Rationale: Stage 2's job is learning sentiment-technical interactions, not ensemble diversity, that's Stage 1's job.
 
 3. **Source reliability integration (ADR-021):** `source_weighted_sentiment` feature = sentiment_score × source_accuracy. This allows Stage 2 to learn that high-reliability bearish sentiment + bullish technicals = strong short signal (the core thesis interaction).
 

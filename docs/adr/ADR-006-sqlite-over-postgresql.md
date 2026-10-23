@@ -11,9 +11,9 @@ Need persistent storage for weekly recommendations, accuracy records, and watchl
 SQLite for Phase 3. Single file, zero setup, handles years of weekly data.
 
 ## Alternatives Considered
-- **PostgreSQL** — needs server, overkill for solo project.
-- **DuckDB** — analytics-oriented but less standard for app storage.
-- **Flat files (JSON/CSV)** — no query capability, poor for accuracy lookups.
+- **PostgreSQL**: needs server, overkill for solo project.
+- **DuckDB**: analytics-oriented but less standard for app storage.
+- **Flat files (JSON/CSV)**: no query capability, poor for accuracy lookups.
 
 ## Consequences
 **Positive:**

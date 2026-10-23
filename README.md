@@ -47,7 +47,7 @@ pass/fail bar was locked in writing before any data was examined). Results:
 
 | Question | Answer | How we know |
 |---|---|---|
-| Does community conviction predict returns? | No | Pre-registered out-of-sample backtest, 2006–2024 ([ADR-039](docs/adr/039-conviction-validation-findings.md)) |
+| Does community conviction predict returns? | No | Pre-registered out-of-sample backtest, 2006-2024 ([ADR-039](docs/adr/039-conviction-validation-findings.md)) |
 | Do conviction sub-dimensions carry signal? | No | Dimension-by-dimension IC audit ([ADR-043](docs/adr/043-conviction-dims-dead-divergence-led-surfacing.md)) |
 | Does sentiment-vs-price divergence predict returns? | No | Cross-sectional IC, clean 430-ticker universe ([ADR-044](docs/adr/044-divergence-ic-verdict.md)) |
 | Do momentum exits beat buy-and-hold? | No | Sharpe-difference bootstrap, CI spans zero ([ADR-046](docs/adr/046-momentum-discipline-phase1-verdict.md)) |
@@ -110,7 +110,7 @@ A description of today, never a forecast.
 **Trust**: the credibility wall: the full record of hypotheses tested with their
 pre-registered thresholds and mechanically-executed kill decisions, the four rules
 the project holds itself to, and a plain-English glossary. The underlying decisions
-are archived in `docs/adr/` (ADRs 039–053); the portfolio-fit verdict's
+are archived in `docs/adr/` (ADRs 039-053); the portfolio-fit verdict's
 honest-boundary design is recorded in [ADR-054](docs/adr/054-portfolio-fit-verdict.md).
 
 The discipline forward-calibration gate (ADR-048) resolves in mid-July 2026 and will
@@ -279,7 +279,7 @@ hypothesis was that when news sentiment and stock prices disagree (one bullish, 
 other falling), that divergence predicts which way the price would resolve. A
 reasonable idea. It was wrong.
 
-Seven independent tests were run across 18 years of price history (2006–2024), each
+Seven independent tests were run across 18 years of price history (2006-2024), each
 with the exact pass/fail bar written down and locked before the data was examined.
 Conviction signals: no edge. Sentiment divergence: no edge. Momentum exits: no edge
 (the confidence interval on the improvement straddled zero, meaning the observed

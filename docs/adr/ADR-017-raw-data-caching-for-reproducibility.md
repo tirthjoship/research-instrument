@@ -50,9 +50,9 @@ class CachingAdapter:
 ~50MB/week across all sources. ~2.5GB/year. Trivial for local disk.
 
 ## Alternatives Considered
-- **No caching** — non-reproducible pipeline. Can't debug, audit, or replay. Rejected.
-- **Database caching (SQLite/Postgres)** — overengineered for raw response storage. Rejected for Phase 3, reconsider if query patterns emerge.
-- **Cache only yfinance** — other sources equally non-deterministic. Rejected.
+- **No caching**: non-reproducible pipeline. Can't debug, audit, or replay. Rejected.
+- **Database caching (SQLite/Postgres)**: overengineered for raw response storage. Rejected for Phase 3, reconsider if query patterns emerge.
+- **Cache only yfinance**: other sources equally non-deterministic. Rejected.
 
 ## Consequences
 **Positive:**
