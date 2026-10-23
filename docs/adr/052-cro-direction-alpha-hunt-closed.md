@@ -32,7 +32,7 @@ Three independent honest assessments now agree. The convergence is the finding: 
 - **Unit A — Portfolio Risk pillar (CRO):** macro-beta scrubber → cluster exposure caps → fold into the weekly brief + fix the stale screen universe.
 - **Unit B — insider sub-$1B IC falsification** (pre-registered, killable).
 - **Unit C — behavior plumbing:** anti-overtrade throttle (ChatGPT C4) + cash-buffer/deployment policy (ChatGPT C6), folded into the discipline engine.
-- **Background (no build):** the weekly-Saturday discipline job (`com.tirthjoshi.stockrec.discipline-weekly`, ADR-048/051) accrues the forward gate sample; the gate resolves ~mid-July and decides whether the *holds* side is validated.
+- **Background (no build):** the weekly-Saturday discipline job (ADR-048/051) accrues the forward gate sample; the gate resolves ~mid-July and decides whether the *holds* side is validated.
 
 Rationale: deterministic value before the speculative swing (A is useful regardless of B's outcome); dependencies respected (cockpit fold needs the pillar); the edge question (B) resolves *after* value is banked, so a likely KILL is closure, not loss.
 

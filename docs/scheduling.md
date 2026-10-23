@@ -10,11 +10,11 @@ that decision (see [ADR-007 deviation note](#adr-007-deviation-note) below).
 
 ## launchd plist
 
-Save the file below as `~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cycle.plist`.
+Save the file below as `~/Library/LaunchAgents/com.example.research-instrument.daily-cycle.plist`.
 
 > **Before saving**, replace `/PATH/TO/venv/bin/python` with the path to the Python interpreter
 > inside your activated virtual environment. Run `which python` with the environment active to get
-> the correct path (e.g. `/Users/tirthjoshi/miniconda3/envs/multi-modal-stock-ml/bin/python`).
+> the correct path (e.g. `/path/to/venv/bin/python`).
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -25,7 +25,7 @@ Save the file below as `~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cyc
 
     <!-- Job identity -->
     <key>Label</key>
-    <string>com.tirthjoshi.stockrec.daily-cycle</string>
+    <string>com.example.research-instrument.daily-cycle</string>
 
     <!-- Command to run -->
     <key>ProgramArguments</key>
@@ -38,7 +38,7 @@ Save the file below as `~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cyc
 
     <!-- Working directory (must match the repo root) -->
     <key>WorkingDirectory</key>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument</string>
+    <string>/path/to/research-instrument</string>
 
     <!-- Run at 08:00 local machine time (pre-market, ~30 min before US open)
          DST caveat: launchd uses LOCAL time, not UTC. When the machine observes
@@ -55,9 +55,9 @@ Save the file below as `~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cyc
     <!-- Log files — directory must exist; create with:
          mkdir -p data/reports  (relative to WorkingDirectory above) -->
     <key>StandardOutPath</key>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/daily_cycle.log</string>
+    <string>/path/to/research-instrument/data/reports/daily_cycle.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/daily_cycle.log</string>
+    <string>/path/to/research-instrument/data/reports/daily_cycle.log</string>
 
     <!-- Environment variables
          Reddit credentials are optional. Remove the three Reddit keys entirely
@@ -88,19 +88,19 @@ Save the file below as `~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cyc
 ### 1. Ensure the log directory exists
 
 ```bash
-mkdir -p "/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports"
+mkdir -p "/path/to/research-instrument/data/reports"
 ```
 
 ### 2. Copy the plist to LaunchAgents
 
 ```bash
-cp com.tirthjoshi.stockrec.daily-cycle.plist ~/Library/LaunchAgents/
+cp com.example.research-instrument.daily-cycle.plist ~/Library/LaunchAgents/
 ```
 
 ### 3. Load and enable the job
 
 ```bash
-launchctl load -w ~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cycle.plist
+launchctl load -w ~/Library/LaunchAgents/com.example.research-instrument.daily-cycle.plist
 ```
 
 The `-w` flag removes the disabled key (if present) so the job persists across reboots.
@@ -110,21 +110,21 @@ The `-w` flag removes the disabled key (if present) so the job persists across r
 ```bash
 launchctl list | grep stockrec
 # Expected output (PID is - when not currently running):
-# -    0    com.tirthjoshi.stockrec.daily-cycle
+# -    0    com.example.research-instrument.daily-cycle
 ```
 
 ### 5. Trigger a one-off run immediately (optional smoke test)
 
 ```bash
-launchctl start com.tirthjoshi.stockrec.daily-cycle
+launchctl start com.example.research-instrument.daily-cycle
 # Then tail the log:
-tail -f "/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/daily_cycle.log"
+tail -f "/path/to/research-instrument/data/reports/daily_cycle.log"
 ```
 
 ### Unload (disable scheduling)
 
 ```bash
-launchctl unload -w ~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cycle.plist
+launchctl unload -w ~/Library/LaunchAgents/com.example.research-instrument.daily-cycle.plist
 ```
 
 ---
@@ -141,7 +141,7 @@ plaintext in `~/Library/LaunchAgents/`, which launchd owns and reads before fork
 Set file permissions to `600`:
 
 ```bash
-chmod 600 ~/Library/LaunchAgents/com.tirthjoshi.stockrec.daily-cycle.plist
+chmod 600 ~/Library/LaunchAgents/com.example.research-instrument.daily-cycle.plist
 ```
 
 **Option B — sourced `.env` file**
@@ -223,19 +223,19 @@ gitignored files (`data/personal/discipline_log.jsonl` for the dated flags,
 `data/personal/holdings_risk_detail.txt` for the per-ticker table) and a masked stdout cron log
 (`data/personal/holdings_risk_cron.log`). Nothing personal is committed.
 
-The plist is installed at `~/Library/LaunchAgents/com.tirthjoshi.holdings-risk-daily.plist`. It runs
+The plist is installed at `~/Library/LaunchAgents/com.example.research-instrument.holdings-risk-daily.plist`. It runs
 **weekdays (Mon–Fri) at 13:30 local** — ~30 min after the US close (16:00 ET) so yfinance has the
 day's final daily bar. Weekends are skipped so Friday's close is not re-logged on Sat/Sun.
 
 ```bash
 # Already installed + loaded this session. To reload after edits:
-launchctl unload ~/Library/LaunchAgents/com.tirthjoshi.holdings-risk-daily.plist
-launchctl load -w ~/Library/LaunchAgents/com.tirthjoshi.holdings-risk-daily.plist
+launchctl unload ~/Library/LaunchAgents/com.example.research-instrument.holdings-risk-daily.plist
+launchctl load -w ~/Library/LaunchAgents/com.example.research-instrument.holdings-risk-daily.plist
 launchctl list | grep holdings-risk            # confirm loaded (exit code 0)
 # Run once now to test:
-launchctl start com.tirthjoshi.holdings-risk-daily
+launchctl start com.example.research-instrument.holdings-risk-daily
 # Stop scheduling:
-launchctl unload -w ~/Library/LaunchAgents/com.tirthjoshi.holdings-risk-daily.plist
+launchctl unload -w ~/Library/LaunchAgents/com.example.research-instrument.holdings-risk-daily.plist
 ```
 
 It reuses the same `caffeinate -i` sleep handling and the same powered-off caveat as the daily
@@ -254,7 +254,7 @@ wanted later, de-duplicate to one flag per name per non-overlapping window befor
 The opportunity `daily-cycle` plist above does NOT log discipline verdicts. For the
 ADR-048 REDUCE-flag forward gate you must run `holdings-risk` itself daily so the
 forward log accrues date-diverse `as_of` snapshots. Save as
-`~/Library/LaunchAgents/com.tirthjoshi.stockrec.discipline-daily.plist`:
+`~/Library/LaunchAgents/com.example.research-instrument.discipline-daily.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -262,11 +262,11 @@ forward log accrues date-diverse `as_of` snapshots. Save as
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>Label</key><string>com.tirthjoshi.stockrec.discipline-daily</string>
+  <key>Label</key><string>com.example.research-instrument.discipline-daily</string>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/scripts/discipline_daily.sh</string>
+    <string>/path/to/research-instrument/scripts/discipline_daily.sh</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
@@ -276,14 +276,14 @@ forward log accrues date-diverse `as_of` snapshots. Save as
   <key>StartCalendarInterval</key>
   <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
   <key>StandardOutPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/discipline_daily.log</string>
+  <string>/path/to/research-instrument/data/reports/discipline_daily.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/discipline_daily.log</string>
+  <string>/path/to/research-instrument/data/reports/discipline_daily.log</string>
 </dict>
 </plist>
 ```
 
-Load: `launchctl load -w ~/Library/LaunchAgents/com.tirthjoshi.stockrec.discipline-daily.plist`
+Load: `launchctl load -w ~/Library/LaunchAgents/com.example.research-instrument.discipline-daily.plist`
 
 **Laptop sleep:** launchd will not fire while asleep. Keep the machine awake at the
 scheduled time (`caffeinate -i` during a known-awake window) or run `pmset schedule
@@ -298,7 +298,7 @@ week's snapshot, (2) forward-scores any flags whose 21-day horizon elapsed, and 
 prints readiness — so each Saturday you see how the week's flagged names reacted and
 whether the approach needs revision. Runs `scripts/discipline_weekly_review.sh`
 (appends a dated block to `data/reports/discipline_weekly_review.log`). Save as
-`~/Library/LaunchAgents/com.tirthjoshi.stockrec.discipline-weekly.plist`:
+`~/Library/LaunchAgents/com.example.research-instrument.discipline-weekly.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -306,11 +306,11 @@ whether the approach needs revision. Runs `scripts/discipline_weekly_review.sh`
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>Label</key><string>com.tirthjoshi.stockrec.discipline-weekly</string>
+  <key>Label</key><string>com.example.research-instrument.discipline-weekly</string>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/scripts/discipline_weekly_review.sh</string>
+    <string>/path/to/research-instrument/scripts/discipline_weekly_review.sh</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
@@ -324,14 +324,14 @@ whether the approach needs revision. Runs `scripts/discipline_weekly_review.sh`
     <key>Minute</key><integer>0</integer>
   </dict>
   <key>StandardOutPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/discipline_weekly_review.log</string>
+  <string>/path/to/research-instrument/data/reports/discipline_weekly_review.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/discipline_weekly_review.log</string>
+  <string>/path/to/research-instrument/data/reports/discipline_weekly_review.log</string>
 </dict>
 </plist>
 ```
 
-Load: `launchctl load -w ~/Library/LaunchAgents/com.tirthjoshi.stockrec.discipline-weekly.plist`
+Load: `launchctl load -w ~/Library/LaunchAgents/com.example.research-instrument.discipline-weekly.plist`
 (launchd Weekday 6 = Saturday). Smoke-test once now: `bash scripts/discipline_weekly_review.sh`.
 
 **Diversity note:** weekly-only logging banks ~1 as_of date per Saturday. With the
@@ -363,7 +363,7 @@ Gate parameters are permanently locked (see ADR-064). Permanent KILL if gate fai
 > each week. If scheduling manually, run `stockrec corroborate` first.
 
 Save the plist below as
-`~/Library/LaunchAgents/com.tirthjoshi.stockrec.corroboration-weekly.plist`:
+`~/Library/LaunchAgents/com.example.research-instrument.corroboration-weekly.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -372,11 +372,11 @@ Save the plist below as
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.tirthjoshi.stockrec.corroboration-weekly</string>
+  <string>com.example.research-instrument.corroboration-weekly</string>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/scripts/corroboration_weekly_resolve.sh</string>
+    <string>/path/to/research-instrument/scripts/corroboration_weekly_resolve.sh</string>
   </array>
   <key>StartCalendarInterval</key>
   <dict>
@@ -385,9 +385,9 @@ Save the plist below as
     <key>Minute</key><integer>0</integer>
   </dict>
   <key>StandardOutPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/corroboration_weekly_resolve.log</string>
+  <string>/path/to/research-instrument/data/reports/corroboration_weekly_resolve.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/tirthjoshi/My Data Science Projects/ML_Portfolio_Projects/research-instrument/data/reports/corroboration_weekly_resolve.log</string>
+  <string>/path/to/research-instrument/data/reports/corroboration_weekly_resolve.log</string>
   <key>RunAtLoad</key><false/>
 </dict>
 </plist>
@@ -395,8 +395,8 @@ Save the plist below as
 
 Load and verify:
 ```bash
-cp com.tirthjoshi.stockrec.corroboration-weekly.plist ~/Library/LaunchAgents/
-launchctl load -w ~/Library/LaunchAgents/com.tirthjoshi.stockrec.corroboration-weekly.plist
+cp com.example.research-instrument.corroboration-weekly.plist ~/Library/LaunchAgents/
+launchctl load -w ~/Library/LaunchAgents/com.example.research-instrument.corroboration-weekly.plist
 launchctl list | grep corroboration-weekly
 ```
 
