@@ -25,17 +25,17 @@ caption block.
 
 `NewsContext` mirrors `AnalystPanel`'s shape (ADR-055): items sorted
 newest-first, `data_gap=True` when no headlines exist for the window, and
-attribution by source only, headlines are never re-framed as a
+attribution by source only; headlines are never re-framed as a
 forward-looking claim.
 
 ## Consequences
 
 **Positive:** A tested-and-falsified signal (ADR-044) cannot quietly
 re-enter the dashboard's persuasive surface just because it's still
-useful as descriptive context, the label travels with the data
+useful as descriptive context; the label travels with the data
 everywhere it's shown, not just in the one place the test was run.
 
-**Negative:** None identified, this is the direct, mechanical
+**Negative:** None identified: this is the direct, mechanical
 consequence of taking ADR-044's falsification seriously rather than
 quietly continuing to imply predictive value in the UI after the
 backing signal was killed.

@@ -36,7 +36,7 @@ This framing is grounded in the findings below. Given a "credible-null-with-a-wh
 
 - **No statistically significant edge in any cohort** (all p > 0.13). Not tradeable as-is.
 - A **faint, non-significant positive lean** overall (56.1%, p=0.13): "something, maybe", not nothing, not a proven edge.
-- The **small/mid-cap hypothesis was not supported**, it underperformed SPY (−0.52 excess Sharpe) despite survivorship bias in the small-cap list that should have flattered it. Any faint signal lives in large-caps.
+- The **small/mid-cap hypothesis was not supported**: it underperformed SPY (−0.52 excess Sharpe) despite survivorship bias in the small-cap list that should have flattered it. Any faint signal lives in large-caps.
 - Top-decile sample sizes remain **modest** (61 / 35 / 98).
 - **Caveats:** only 2 of 8 conviction dimensions are historically reconstructable (smart-money + analyst); the other 6 (events, sentiment, fundamentals, ml_direction, signal_agreement, temporal_freshness) were held at neutral to avoid look-ahead bias, **and analyst firm-accuracy weighting was inactive** (empty firm-score map). So the validated quantity is the **smart-money + analyst slice, not the full conviction engine**. Small-cap list has survivorship bias.
 
@@ -44,9 +44,9 @@ This framing is grounded in the findings below. Given a "credible-null-with-a-wh
 
 - The system abstains (no pick surfaced) when no signal clears the conviction bar, rather than generating low-confidence picks.
 - **Next directions (to be decided next session):**
-  - Densify signal and add statistical power, more signal sources, longer history, more tickers.
+  - Densify signal and add statistical power: more signal sources, longer history, more tickers.
   - Forward-track the event + sentiment-spike layer via existing outcome-tracking infrastructure; these signals cannot be cleanly backtested historically, but live outcomes can accumulate evidence over time.
-  - Do not chase small-caps, the data does not support that hypothesis; focus on large-caps where the faint signal resides.
+  - Do not chase small-caps: the data does not support that hypothesis; focus on large-caps where the faint signal resides.
 - The fabricated `accuracy - 0.5` returns metric is permanently removed. Any future return metric must compute real Sharpe vs SPY from actual position-level returns.
 - ADR-038 validation infrastructure (`precision_metrics.py`, `conviction_backtest.py`) is the protected baseline for all future conviction claims.
 
@@ -81,8 +81,8 @@ Re-ran under the corrected methodology, then added F1 (concentration) + F2 (movi
 
 **Findings:**
 
-- **In-sample the large-cap edge is robust** (bootstrap p=0.0005, CI floor +1.4%) and **broad**, top-3 dates contribute only 43.5% of gains, so it is NOT a few-lucky-months artifact. The sign-test "failure" (only 56% of dates positive) reflects a positive-expectancy, asymmetric-payoff profile (wins bigger than losses), not noise.
-- **Out-of-sample the edge does NOT survive.** It halves (+2.5pp, mean +1.96%) and loses significance, the bootstrap CI now spans zero (p=0.063), t-test borderline (0.052). The 2023-26 strength was **partly bull-regime inflation**; the OOS window includes the 2020 crash and 2022 bear.
+- **In-sample the large-cap edge is robust** (bootstrap p=0.0005, CI floor +1.4%) and **broad**: top-3 dates contribute only 43.5% of gains, so it is NOT a few-lucky-months artifact. The sign-test "failure" (only 56% of dates positive) reflects a positive-expectancy, asymmetric-payoff profile (wins bigger than losses), not noise.
+- **Out-of-sample the edge does NOT survive.** It halves (+2.5pp, mean +1.96%) and loses significance: the bootstrap CI now spans zero (p=0.063), t-test borderline (0.052). The 2023-26 strength was **partly bull-regime inflation**; the OOS window includes the 2020 crash and 2022 bear.
 - **Small/mid-cap is negative OOS** (−10pp edge): definitively dead.
 - The absolute +3.58%/3wk in-sample (~44% annualized) is an **optimistic upper bound** inflated by current-ticker survivorship (the 40 "large-caps" are today's winners) and one bull regime. The survivorship-robuster measure is the within-universe ranking edge (`edge_over_base`), which also weakens OOS.
 

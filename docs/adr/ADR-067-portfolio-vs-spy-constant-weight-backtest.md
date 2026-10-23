@@ -16,7 +16,7 @@ series" discipline (see the sparkline component's "no projection" comment,
 and the RESEARCH_ONLY/attribution labeling used everywhere else in the
 dashboard).
 
-The natural fix, anchor the chart to each position's real purchase date,
+The natural fix: anchor the chart to each position's real purchase date,
 turned out not to be buildable: the uploaded holdings CSV format this project
 reads (`application/holdings_reader.py::read_holdings()`) has no trade/purchase
 date column at all (verified against the actual broker export header:
@@ -51,7 +51,7 @@ fabricated stand-in presented as if it were real.
 ## Consequences
 
 **Positive:**
-- No fabricated data point survives anywhere in the chart, every plotted
+- No fabricated data point survives anywhere in the chart: every plotted
   value is computed from a real historical close, for a real currently-held
   ticker, on a real calendar date.
 - Consistent with this project's existing corpus of "attribution, not
@@ -61,7 +61,7 @@ fabricated stand-in presented as if it were real.
   history, and discloses partial coverage when some do.
 
 **Negative:**
-- Still not a literal trade-by-trade performance history, a user who bought
+- Still not a literal trade-by-trade performance history: a user who bought
   a position last week and one three years ago sees them both weighted
   identically at "today's weight" across the whole window, which is a real
   simplification with a real cost to precision. This is disclosed in the UI

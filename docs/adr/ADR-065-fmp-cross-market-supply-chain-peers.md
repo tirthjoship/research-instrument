@@ -7,7 +7,7 @@
 ## Context
 
 ADR-027's hybrid supply-chain resolver (`adapters/visualization/analysis/supply_chain_resolver.py`)
-scores two candidate sources per ticker, every YAML group it appears in
+scores two candidate sources per ticker: every YAML group it appears in
 (`config/relationships/supply_chain.yaml`) and a curated industry/sector peer
 pool (`loaders.INDUSTRY_PEERS` / `SECTOR_PEERS`), against measured co-movement,
 picking whichever clears `MIN_MEMBERS` (4) and `MIN_COMOVEMENT` (0.4).
@@ -32,7 +32,7 @@ Live-verified for all 3 markets this project covers before building anything:
 | Canada | `RY.TO` | Real peers, already `.TO`-suffixed (`BMO.TO`, `BNS.TO`, ...) |
 | India | `FORCEMOT.NS` | Real peers, already `.NS`/`.BO`-suffixed |
 
-No translation layer needed, FMP returns tickers already in the exact suffix
+No translation layer needed: FMP returns tickers already in the exact suffix
 format yfinance expects for each market.
 
 Peers are cached in a new `supply_chain_peers_cache` SQLite table (24h TTL,
@@ -76,7 +76,7 @@ cover non-US markets correctly as a separate source.
 - **Scraping Screener.in for India-specific peer groupings**: `robots.txt`
   permits it, but the Terms of Service has an ambiguous "no public display of
   materials" clause a public Cloud dashboard could plausibly violate.
-  Rejected once FMP proved sufficient without that risk, keeps ADR-062's "no
+  Rejected once FMP proved sufficient without that risk; keeps ADR-062's "no
   scraping that violates ToS" principle intact rather than weakening it.
 
 ## Consequences
@@ -90,16 +90,16 @@ cover non-US markets correctly as a separate source.
   that had been latent (never exercised for non-US tickers) since ADR-027.
 
 **Negative:**
-- New external dependency (`FINANCIAL_MODELING_PREP_API_KEY`), a missing or
+- New external dependency (`FINANCIAL_MODELING_PREP_API_KEY`): a missing or
   invalid key degrades to an empty candidate (honest gap, per `FMPAdapter`
   never raising), not a crash, but does need adding to Streamlit Cloud's app
   secrets as a manual post-merge step, same as `GEMINI_API_KEY` before it.
 - A ticker's FMP-suggested peers are similarity-by-sector/market-cap, not
-  guaranteed tight correlation, some tickers will still land on DATA-GAP if
+  guaranteed tight correlation; some tickers will still land on DATA-GAP if
   their real peers don't move together tightly enough (`FORCEMOT.NS` itself
   is one such case, confirmed live: co-movement 0.076 against its own FMP
   peers). This is the resolver working correctly, not a shortfall of this
-  decision, a low-correlation "group" would be actively misleading to show.
+  decision: a low-correlation "group" would be actively misleading to show.
 
 ## Confirmed unsolved by three independent providers (not this ADR's scope)
 

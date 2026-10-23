@@ -20,6 +20,6 @@ Add outcome tracking with three components:
 
 - Users see which signals work (hit rate, avg return per signal)
 - Report card provides actionable guidance ("reduce ml_direction weight")
-- Bootstrap prevents cold-start problem, system has data from day one
+- Bootstrap prevents cold-start problem: system has data from day one
 - Dashboard evolves: Positions → Outcome Tracker, Model Confidence → System Intelligence
 - Phase 9 (adaptive learning) builds on this outcome data for automatic weight adjustment

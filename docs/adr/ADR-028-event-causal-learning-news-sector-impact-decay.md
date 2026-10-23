@@ -8,7 +8,7 @@
 
 Market-moving events (Fed rate decisions, tariff announcements, geopolitical events, earnings surprises, FDA approvals) follow recognizable patterns: a specific event category reliably moves a specific sector in a predictable direction, with an impact that peaks quickly and decays over days to weeks.
 
-The current system treats all news as undifferentiated sentiment (positive/negative score). It cannot distinguish between a Fed rate hike (bad for growth tech, good for banks, 7-day decay) and a tariff announcement (bad for supply-chain-exposed industrials, 14-day decay with escalation risk). These distinctions are where the real alpha lies, the user missed several sector rotation opportunities because the sentiment layer lacked this causal structure.
+The current system treats all news as undifferentiated sentiment (positive/negative score). It cannot distinguish between a Fed rate hike (bad for growth tech, good for banks, 7-day decay) and a tariff announcement (bad for supply-chain-exposed industrials, 14-day decay with escalation risk). These distinctions are where the real alpha lies: the user missed several sector rotation opportunities because the sentiment layer lacked this causal structure.
 
 Standard NLP sentiment scores react to events but don't explain them. A sentence like "Fed raises rates by 50bps" scores neutral on Flan-T5 (factual, not opinionated), but has a very specific and predictable sector impact.
 
@@ -56,7 +56,7 @@ Build an event-causal layer with three components: event taxonomy, LLM-based eve
 ### Impact model updating
 - After each event, measure actual vs predicted sector impact at T+1, T+3, T+7
 - Update impact model with new observation (rolling window, older observations down-weighted)
-- This is the "learning" component, the model improves as it observes more events
+- This is the "learning" component: the model improves as it observes more events
 
 ## Alternatives Considered
 
@@ -78,7 +78,7 @@ Build an event-causal layer with three components: event taxonomy, LLM-based eve
 **Negative:**
 - Flan-T5 zero-shot accuracy on 10-category classification is unknown without evaluation. A confusion matrix study is required before trusting high-confidence classifications
 - Historical impact model trained on 2018-2025 data assumes regime stationarity: the same event type has the same sector impact across different macro regimes. This is empirically false (rate hikes in a zero-rate environment differ from hikes in an already-tight environment). Mitigated by storing confidence intervals and flagging low-n-observations categories
-- `impact_model.json` must be versioned, model drift as new events update parameters must be trackable
+- `impact_model.json` must be versioned: model drift as new events update parameters must be trackable
 - Daily scan latency increases: event classification adds ~0.5s/article for Flan-T5 inference (same as sentiment scoring). Acceptable within the 2.5-minute daily scan budget
 
 ## Superseded By

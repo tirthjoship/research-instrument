@@ -5,9 +5,9 @@
 **Deciders:** Tirth Joshi
 
 ## Context
-Original plan: keyword scorer first, upgrade to Flan-T5 later if keyword plateaus. Risk identified during design review: keyword scoring may be too crude to detect real sentiment, causing a false negative on the divergence thesis. If divergence appears to have no signal, it's ambiguous, thesis problem or scorer problem?
+Original plan: keyword scorer first, upgrade to Flan-T5 later if keyword plateaus. Risk identified during design review: keyword scoring may be too crude to detect real sentiment, causing a false negative on the divergence thesis. If divergence appears to have no signal, it's ambiguous: thesis problem or scorer problem?
 
-VanEck BUZZ ETF comparison showed that even sophisticated NLP on 15M data points monthly fails to beat S&P 500 risk-adjusted. The signal quality isn't the only variable, how you use it (divergence vs popularity) matters. But we need to isolate variables.
+VanEck BUZZ ETF comparison showed that even sophisticated NLP on 15M data points monthly fails to beat S&P 500 risk-adjusted. The signal quality isn't the only variable: how you use it (divergence vs popularity) matters. But we need to isolate variables.
 
 ## Decision
 Run keyword scorer AND Flan-T5 zero-shot (no fine-tuning) in parallel from Phase 3B launch. Both score the same texts. Both produce divergence signals. Compare divergence signal quality from each.
@@ -38,9 +38,9 @@ ADR-005's ladder structure remains valid. This ADR moves Step 2 (Flan-T5) to run
 
 **Implementation refined during grilling session:**
 
-Both scorers produce a `sentiment_agreement` feature (1.0 if both agree on direction, 0.0 if they disagree). This meta-feature itself is predictive, high agreement = higher confidence in sentiment signal.
+Both scorers produce a `sentiment_agreement` feature (1.0 if both agree on direction, 0.0 if they disagree). This meta-feature itself is predictive: high agreement = higher confidence in sentiment signal.
 
-**Sources:** RSS feeds (6 publishers) + Reddit (PRAW, pending API approval). Google CSE and StockTwits deferred, tight rate limits and unstable API respectively.
+**Sources:** RSS feeds (6 publishers) + Reddit (PRAW, pending API approval). Google CSE and StockTwits deferred: tight rate limits and unstable API respectively.
 
 **Scoring flow per article:**
 1. RSS adapter extracts article text + ticker mentions

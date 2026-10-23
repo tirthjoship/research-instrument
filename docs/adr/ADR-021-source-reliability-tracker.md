@@ -6,7 +6,7 @@
 
 ## Context
 
-Phase 3B adds sentiment from multiple sources (RSS publishers, Reddit). Not all sources are equally reliable, a Reuters article and a Reddit shitpost carry different signal quality. Without tracking which sources are directionally accurate, the model treats all sentiment equally, diluting signal from reliable sources with noise from unreliable ones.
+Phase 3B adds sentiment from multiple sources (RSS publishers, Reddit). Not all sources are equally reliable: a Reuters article and a Reddit shitpost carry different signal quality. Without tracking which sources are directionally accurate, the model treats all sentiment equally, diluting signal from reliable sources with noise from unreliable ones.
 
 The BUZZ ETF failure (VanEck, see ADR-011 context) showed that raw buzz aggregation doesn't work. Source quality differentiation is a potential edge.
 
@@ -85,7 +85,7 @@ source_reliability (
 
 **Negative:**
 - Needs 10+ outcomes per source before accuracy is meaningful (~2-3 months)
-- Initial period uses uninformative prior (0.5), no benefit until data accumulates
+- Initial period uses uninformative prior (0.5): no benefit until data accumulates
 - Accepted: tracker is baked in from day one specifically to accumulate data early
 
 ## Superseded By

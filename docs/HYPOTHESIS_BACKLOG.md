@@ -3,7 +3,7 @@
 > ADR-052 closed backtest-driven alpha hunting permanently. This backlog is the ONLY
 > sanctioned path for future predictive ideas: an idea may graduate to code ONLY
 > after every field below is filled in and committed BEFORE any data is examined.
-> Forward evidence (gate, adherence, screen IC) accrues regardless, read it before
+> Forward evidence (gate, adherence, screen IC) accrues regardless; read it before
 > proposing anything here.
 
 ## Entry bar (all fields mandatory, committed before code)
@@ -32,16 +32,16 @@
 - **Data cost:** SEC EDGAR filing text (free, point-in-time) + yfinance prices. One-time historical
   fetch ≈ 512 names × ~40 quarterly filings @ 1 req/s ≈ hours; cached so the gate run is fast/re-runnable.
 - **Universe decision (2026-06-27):** static current 512-name S&P500 ∪ NASDAQ-100 snapshot
-  (`config/tickers/*.txt`), survivor-biased ON PURPOSE per ADR-057 (bias favours finding an edge, so a
+  (`config/tickers/*.txt`): survivor-biased ON PURPOSE per ADR-057 (bias favours finding an edge, so a
   null is the stronger conclusion; a PASS would need a point-in-time follow-up before belief).
 - **Conflict check:** distinct channel (filing linguistics), a NEW pre-registered hypothesis, not a
   backtest re-run of a killed signal; within ADR-052 scope.
 
 **Rig + wiring (promoted from `research/2026-06-27-lazy-prices-verdict-run-wiring.md` so we don't re-research):**
-- Use case `application/lazy_prices_backtest.py`, injected callables `similarity_fn` /
+- Use case `application/lazy_prices_backtest.py`: injected callables `similarity_fn` /
   `forward_return_fn` (excess vs SPY) / `universe_fn`; verdict tree LOCKED.
 - Signal `domain/filing_textchange_service.py::textchange_similarity` (None = drop, never impute).
-- Filing text `adapters/data/sec_filing_text_adapter.py`, `list_filings(ticker, cik, as_of)` (PIT) +
+- Filing text `adapters/data/sec_filing_text_adapter.py`: `list_filings(ticker, cik, as_of)` (PIT) +
   `fetch_sections` (HARDENED 2026-06-27: bs4/lxml, inline-XBRL unwrap, TOC-defeating item splitter).
 - Reuse for the callables: `forward_return_fn` = `compute_forward_return(ticker,t,63) −
   compute_forward_return(SPY,t,63)` (`application/price_returns.py`; pattern lives at
@@ -50,8 +50,8 @@
 - Runner: a `lazy-prices` CLI command modelled on `application/cli/backtest_commands.py` (inline adapter
   wiring + price cache, quarterly cohort gen, report → `data/reports/lazy_prices_ic_63d_<date>.json`).
 - **Status (2026-06-27):** rig + hardened extraction + full runner all on develop, and a live
-  60-name smoke **validated the whole pipe** (after two fixes, full SEC filing-history pagination
-  and class-share ticker normalization, coverage 63%→**89.5%**, **40/40 cohorts**, all guards
+  60-name smoke **validated the whole pipe** (after two fixes: full SEC filing-history pagination
+  and class-share ticker normalization; coverage 63%→**89.5%**, **40/40 cohorts**, all guards
   cleared, verdict INCONCLUSIVE on the slice). **Methodologically complete; ready for the
   supervised full run.** Remaining: one-time live full-universe fetch + ONE gate run → ADR-058.
 
@@ -61,12 +61,12 @@
 - **Hypothesis:** realized execution cost on sub-$1B names is materially below the
   assumed 150 bps, enough to flip Unit B's net verdict.
 - **Preconditions if ever revived:** Unit B INCONCLUSIVE with gross CI_low > 0
-  (NOT met, final verdict was INCONCLUSIVE_THIN_COVERAGE → practical KILL);
+  (NOT met: final verdict was INCONCLUSIVE_THIN_COVERAGE → practical KILL);
   pre-registered order budget and plan; measured cost < gross edge required.
-- **Status:** PARKED. Preconditions currently fail, listed for honesty, not intent.
+- **Status:** PARKED. Preconditions currently fail; listed for honesty, not intent.
 
 ### Correlation-vs-book fit input (deferred from fit verdict, 2026-06-11)
-- **Hypothesis:** none, this is descriptive arithmetic (pairwise return correlation
+- **Hypothesis:** none: this is descriptive arithmetic (pairwise return correlation
   of a candidate vs current holdings), not a predictive claim.
 - **Why parked:** medium build cost vs weekend wrap deadline; needs price-history
   fan-out per holding.

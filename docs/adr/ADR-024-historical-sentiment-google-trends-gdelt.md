@@ -18,7 +18,7 @@ Two free sources cover this gap:
 
 Use **pytrends** (Google Trends unofficial API) for historical search volume as a proxy for retail buzz. Use **GDELT** for historical news sentiment via tone scores. Together these provide 5+ years of historical sentiment for backtest alignment.
 
-Live pipeline continues to use the RSS + NewsAPI feed (ADR-022) for forward-looking signals. Historical sources are used only during backtest data preparation, they are not in the hot path.
+Live pipeline continues to use the RSS + NewsAPI feed (ADR-022) for forward-looking signals. Historical sources are used only during backtest data preparation; they are not in the hot path.
 
 Architecture:
 - `adapters/data/google_trends_adapter.py`: implements `SentimentPort` for historical data. Wraps pytrends with rate-limit backoff (Trends blocks after ~10 req/hr).
@@ -39,16 +39,16 @@ Google Trends caveat: relative search volume (0-100 normalized within the query)
 ## Consequences
 
 **Positive:**
-- Enables the actual combined thesis backtest from Phase 3A spec, technical + sentiment vs technical-only
+- Enables the actual combined thesis backtest from Phase 3A spec: technical + sentiment vs technical-only
 - pytrends is free and covers 5+ years with daily granularity
 - GDELT is free, comprehensive, and continuously updated
 - Both sources store into `historical_sentiment` SQLite, same schema as `buzz_signals`, no new query patterns needed
 
 **Negative:**
-- pytrends is an unofficial API, can break without notice, has strict rate limits (~10 req/hr)
+- pytrends is an unofficial API: can break without notice, has strict rate limits (~10 req/hr)
 - GDELT CSV downloads are large (~100MB/month), requiring a one-time batch ingestion job
-- Google Trends normalization (0-100 relative) makes cross-ticker comparisons unreliable without z-scoring, this must be enforced in the FundamentalFeatureEngineer or a dedicated normalization step
-- GDELT tone scores are noisy, not trained on financial text. Flan-T5 (ADR-004) remains the production scorer; GDELT tone is a historical proxy, not a replacement
+- Google Trends normalization (0-100 relative) makes cross-ticker comparisons unreliable without z-scoring: this must be enforced in the FundamentalFeatureEngineer or a dedicated normalization step
+- GDELT tone scores are noisy: not trained on financial text. Flan-T5 (ADR-004) remains the production scorer; GDELT tone is a historical proxy, not a replacement
 
 ## Superseded By
 None

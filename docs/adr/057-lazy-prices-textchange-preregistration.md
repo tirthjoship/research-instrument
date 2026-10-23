@@ -55,7 +55,7 @@ purpose**: this *favours* finding an edge, so a null result is the stronger conc
 choice to maximise cohort count (~40 vs ~10) and thus tighten the IC confidence interval; the
 #1 kill-mode is a CI that spans zero, and few cohorts guarantee a wide CI.
 
-**Horizon, PRIMARY 63 trading days (one quarter).** This DEVIATES from the project's default
+**Horizon: PRIMARY 63 trading days (one quarter).** This DEVIATES from the project's default
 21-day horizon, justified: Lazy Prices documents *no* announcement effect and returns that
 accrue over months. Testing it at 21 days would mis-specify the signal. 126d and 252d are
 SECONDARY/exploratory and do not move the gate. Forward return is name return − SPY over the

@@ -8,7 +8,7 @@
 Needed a testable investment thesis. Considered sector rotation, earnings surprise, sentiment-price lag alone, and cross-modal divergence alone.
 
 ## Decision
-Combined sentiment-price lag (A) with cross-modal divergence (B). A feeds into B naturally, you need lag measurement before you can detect divergence.
+Combined sentiment-price lag (A) with cross-modal divergence (B). A feeds into B naturally: you need lag measurement before you can detect divergence.
 
 ## Alternatives Considered
 - **(C) Sector rotation**: harder to explain concisely, needs broad coverage.

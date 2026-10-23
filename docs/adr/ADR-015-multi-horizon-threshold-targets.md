@@ -27,7 +27,7 @@ Predict return magnitude across three horizons. Classify predictions as actionab
 | Predicted magnitude vs threshold | Class |
 |----------------------------------|-------|
 | Above positive threshold | Bullish (actionable buy signal) |
-| Within ±threshold | Neutral (no action, signal is noise) |
+| Within ±threshold | Neutral (no action: signal is noise) |
 | Below negative threshold | Bearish (actionable sell/avoid signal) |
 
 ### Grading logic (combines horizons)

@@ -8,7 +8,7 @@
 
 Phase 3A used 40 hardcoded S&P 500 mega-caps as the ticker universe. This was sufficient for proving out the technical feature pipeline but is too narrow for the sentiment-driven discovery thesis (ADR-002). The RSS daily scan (ADR-022) regularly surfaces tickers like AMD, PLTR, SMCI, and RIVN that fall outside the top-40, but without pre-trained technical history cached via ADR-017, those tickers produce cold-start failures during weekly tournament.
 
-The gap: buzz-discovered tickers need technical history to be ranked. If the universe is too small, sentiment discovery is decorative, it finds signals that can't be acted on.
+The gap: buzz-discovered tickers need technical history to be ranked. If the universe is too small, sentiment discovery is decorative; it finds signals that can't be acted on.
 
 ## Decision
 
@@ -37,7 +37,7 @@ Pre-training re-runs weekly (Saturday) to catch index reconstitutions. ADR-017 c
 - Pre-training once weekly amortizes yfinance cost across the full universe upfront
 
 **Negative:**
-- Pre-training wall-clock time increases from ~25 min (40 tickers) to ~3 hours (350 tickers) on first run, acceptable as a one-time cost with ADR-017 caching cutting subsequent runs to minutes
+- Pre-training wall-clock time increases from ~25 min (40 tickers) to ~3 hours (350 tickers) on first run: acceptable as a one-time cost with ADR-017 caching cutting subsequent runs to minutes
 - Excluded list requires periodic human review as new tickers join indices
 - Universe files must be kept in sync with actual index constituents, a maintenance burden
 

@@ -134,7 +134,7 @@ launchctl unload -w ~/Library/LaunchAgents/com.example.research-instrument.daily
 Reddit credentials are **optional**: the daily cycle falls back to RSS-only sentiment if they are
 absent. To supply them, choose one of two approaches:
 
-**Option A, plist EnvironmentVariables block (recommended for scheduled jobs)**
+**Option A: plist EnvironmentVariables block (recommended for scheduled jobs)**
 
 Edit the `EnvironmentVariables` dict in the plist directly (as shown above). Values are stored in
 plaintext in `~/Library/LaunchAgents/`, which launchd owns and reads before forking the process.
@@ -144,7 +144,7 @@ Set file permissions to `600`:
 chmod 600 ~/Library/LaunchAgents/com.example.research-instrument.daily-cycle.plist
 ```
 
-**Option B, sourced `.env` file**
+**Option B: sourced `.env` file**
 
 Copy `.env.example` to `.env` in the repo root and fill in the Reddit values. Then wrap the
 `daily-cycle` invocation in a shell script that sources `.env` first, and point `ProgramArguments`
@@ -175,7 +175,7 @@ launchd will **not** fire a scheduled job while the Mac is asleep or the lid is 
 direct consequence of the ADR-007 local-scheduler decision: a cloud runner would sidestep the
 problem, but cloud runners cannot reach the local SQLite file, so we accept the trade-off.
 
-**Mitigation, wrap the job in `caffeinate`:**
+**Mitigation: wrap the job in `caffeinate`:**
 
 Replace the `ProgramArguments` in the plist with:
 
@@ -196,7 +196,7 @@ launches `caffeinate`, which keeps the machine awake just long enough to complet
 then releases the assertion and lets the system sleep normally. No external tool is required,
 `/usr/bin/caffeinate` ships with macOS.
 
-**Alternative, Energy Saver / `pmset`:**
+**Alternative: Energy Saver / `pmset`:**
 
 If you prefer a schedule-based approach rather than per-job wrapping, you can use `pmset` to
 schedule a wake window around 08:00:
@@ -348,7 +348,7 @@ ADR-007 chose local SQLite as the persistence layer to keep the project self-con
 cloud infrastructure costs during the research phase. A direct consequence is that scheduling must
 also be local: a cloud cron runner (GitHub Actions scheduled workflow, AWS EventBridge, etc.) cannot
 read or write the SQLite file on this machine. launchd is therefore not a separate architectural
-choice, it is the scheduling mechanism implied by ADR-007. If the project ever migrates to a
+choice; it is the scheduling mechanism implied by ADR-007. If the project ever migrates to a
 hosted database, the scheduling decision should be revisited (see docs/adr/ for the relevant ADR).
 
 ---

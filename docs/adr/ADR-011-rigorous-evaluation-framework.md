@@ -7,11 +7,11 @@
 ## Context
 Original evaluation: Sharpe ratio, directional accuracy, precision/recall, SPY benchmark. This is better than most portfolio projects but missing critical rigor:
 
-1. No statistical significance testing, can't distinguish skill from luck
-2. Single train/test split, can overfit to specific market regime
-3. No transaction costs, inflated return estimates
-4. No regime decomposition, hidden beta exposure
-5. No drawdown tracking, risk profile invisible
+1. No statistical significance testing: can't distinguish skill from luck
+2. Single train/test split: can overfit to specific market regime
+3. No transaction costs: inflated return estimates
+4. No regime decomposition: hidden beta exposure
+5. No drawdown tracking: risk profile invisible
 
 VanEck BUZZ ETF comparison showed that impressive-looking returns (42% 1-year) can mask poor risk-adjusted performance (1.65 beta). Our evaluation must be more honest.
 
@@ -59,7 +59,7 @@ Three variants run on identical folds and tickers:
 2. **Technical + sentiment**: Stage 2 with sentiment features, no source weighting
 3. **Technical + sentiment + source weights**: Stage 2 full (source reliability-weighted sentiment)
 
-Purpose: isolate what drives any observed lift. If variant 3 beats 2 beats 1, source reliability tracking adds value. If 2 ≈ 3, source weighting is noise. If 1 ≈ 2 ≈ 3, sentiment adds nothing, thesis falsified.
+Purpose: isolate what drives any observed lift. If variant 3 beats 2 beats 1, source reliability tracking adds value. If 2 ≈ 3, source weighting is noise. If 1 ≈ 2 ≈ 3, sentiment adds nothing: thesis falsified.
 
 **Success threshold:** Sentiment must add ≥ 2% directional accuracy over Phase 3A's ~50% baseline. Below that, improvement is indistinguishable from noise given sample sizes.
 

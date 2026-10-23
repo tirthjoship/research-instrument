@@ -35,7 +35,7 @@ divergence, insider clusters, momentum-exits, …). The lesson from those kills:
 - **Coverage / survivorship** problems killed others, so we stay on a liquid universe.
 
 Lazy Prices is attractive precisely because it dodges those failure modes:
-1. It is an **independent information channel**, filing *language*, not price/sentiment/analyst
+1. It is an **independent information channel**: filing *language*, not price/sentiment/analyst
    data. Independent signals are what actually add value when combined (Fundamental Law of Active
    Management).
 2. It is **slow-moving and low-turnover** (quarterly), so costs don't eat it alive.
@@ -49,7 +49,7 @@ and a PASS only earns the right to *forward-track*, never a claim of alpha.
 
 The core is one object, `LazyPricesBacktestUseCase`
 ([`application/lazy_prices_backtest.py`](../../application/lazy_prices_backtest.py)). It stays
-"pure", it doesn't know about the SEC, yfinance, or files. Instead you **inject three functions**
+"pure"; it doesn't know about the SEC, yfinance, or files. Instead you **inject three functions**
 ("callables"), and it orchestrates them. Think of it as an engine with three fuel lines:
 
 | Callable you inject | Plain-English job | Returns |
@@ -66,7 +66,7 @@ The engine then, for each quarter ("cohort") from 2015 to 2024:
 4. also simulates a **tradeable long/short basket net of costs**.
 
 Finally it applies a **locked decision tree** (the gates) and emits a verdict. The gates were
-fixed *before any data was seen* and **must not be tuned**, that's what makes it a real test and
+fixed *before any data was seen* and **must not be tuned**; that's what makes it a real test and
 not a fishing expedition. The exact numbers live in ADR-057; in words:
 
 - **Primary gate:** the IC must be both economically meaningful (`mean_ic ≥ 0.02`) and
@@ -100,9 +100,9 @@ descriptions below are where each callable's data comes from.
 Stages 0-1 are ordinary engineering you can do freely. Stages 2-3 are the **supervised**,
 **irreversible** part, do not run them solo.
 
-- **Stage 0, DONE.** Pre-registration (ADR-057), the backtest engine, the similarity service, and
+- **Stage 0: DONE.** Pre-registration (ADR-057), the backtest engine, the similarity service, and
   the hardened filing-text extraction are all on `develop` and tested.
-- **Stage 1, BUILD + SMOKE-VALIDATED: DONE (2026-06-27).** Landed on `develop`: the ticker→CIK
+- **Stage 1: BUILD + SMOKE-VALIDATED: DONE (2026-06-27).** Landed on `develop`: the ticker→CIK
   resolver (`adapters/data/sec_cik_resolver.py`), the three callables + cohort/pairing helpers
   (`application/lazy_prices_runner.py`), and the `lazy-prices` CLI command
   (`application/cli/backtest_commands.py`), wires the adapters, disk-caches filing text + filing
@@ -116,14 +116,14 @@ Stages 0-1 are ordinary engineering you can do freely. Stages 2-3 are the **supe
     runs, it just doesn't hit PASS on a 60-name slice, as expected). The IC/basket numbers on a
     smoke are noise and are deliberately not interpreted (ADR-057: no peeking/tuning).
   - **→ The rig is methodologically complete and ready for the supervised full run (Stage 2).**
-- **Stage 2, ONE-TIME FETCH (supervised).** Run a cached download of ~512 names × ~40 quarterly
+- **Stage 2: ONE-TIME FETCH (supervised).** Run a cached download of ~512 names × ~40 quarterly
   filings. The SEC rate-limits to ~1 request/second, so this takes **hours**. Cache it on disk so
-  the actual run is fast and repeatable. *Kick this off knowingly, it's a long network job.*
-- **Stage 3, RUN THE GATE ONCE (supervised).** Execute the backtest a single time. Write the
+  the actual run is fast and repeatable. *Kick this off knowingly: it's a long network job.*
+- **Stage 3: RUN THE GATE ONCE (supervised).** Execute the backtest a single time. Write the
   result to `data/reports/lazy_prices_ic_63d_<date>.json`. **Do not re-run to get a nicer number,
   and do not touch the thresholds**: ADR-057 allows exactly one re-run and only to fix a genuine
   validity bug, with thresholds unchanged.
-- **Stage 4, RECORD THE VERDICT.** Write ADR-058 with the outcome, **whatever it is**. A null is a
+- **Stage 4: RECORD THE VERDICT.** Write ADR-058 with the outcome, **whatever it is**. A null is a
   real, publishable result here (see §6). On a PASS, the next step is forward-tracking, not trading.
 
 ## 6. The discipline that keeps this honest (read before Stage 2)

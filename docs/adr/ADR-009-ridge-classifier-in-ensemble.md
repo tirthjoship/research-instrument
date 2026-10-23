@@ -5,7 +5,7 @@
 **Deciders:** Tirth Joshi
 
 ## Context
-Original ensemble: XGBoost + LightGBM averaged. Both are gradient boosting (same model family). They agree on 90%+ of predictions and disagree on exactly the hard cases where neither is reliable. This is not genuine ensemble diversity, it's the same algorithm twice with different implementations.
+Original ensemble: XGBoost + LightGBM averaged. Both are gradient boosting (same model family). They agree on 90%+ of predictions and disagree on exactly the hard cases where neither is reliable. This is not genuine ensemble diversity; it's the same algorithm twice with different implementations.
 
 ## Decision
 Phase 3 ensemble: XGBoost + LightGBM + Ridge Classifier. Three models, two families (tree-based + linear). Weighted average by recent accuracy.

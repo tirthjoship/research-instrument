@@ -33,7 +33,7 @@ CLI stdout content, not just the JSON report file.
 
 **Positive:** No code path can produce a "looks good" terminal summary
 that hides the confidence bounds or the look-ahead-bias caveat behind a
-JSON file most users won't open, the honest picture is unavoidable at
+JSON file most users won't open; the honest picture is unavoidable at
 the point of use.
 
 **Negative:** Verbose stdout for a command that might be run frequently

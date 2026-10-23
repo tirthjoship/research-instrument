@@ -14,16 +14,16 @@ The signal under test (`intensity_divergence_raw`, ADR-041): attention accelerat
 
 - **Primary horizon:** 1 month (21 trading days).
 - **Gate:** mean rank-IC bootstrap CI excludes 0, positive, AND |mean IC| ≥ 0.02.
-- **Universe:** broad ~518 (S&P 500 + NASDAQ-100), survivor-biased (a deliberately *flattering* sample, if the signal can't survive here, it's dead).
+- **Universe:** broad ~518 (S&P 500 + NASDAQ-100), survivor-biased (a deliberately *flattering* sample: if the signal can't survive here, it's dead).
 - **Secondary horizons:** 1w (5d), 3m (63d), **exploratory only**, do not move the gate.
 
 ### Why this is the only honest validation path
 
-The conviction backtest (ADR-039) failed OOS; forward-tracking is slow. A cross-sectional IC on point-in-time data can *cheaply falsify*: a non-positive IC on a survivor-biased sample kills the signal outright; a positive IC merely earns the right to forward-track (it is **not** itself proof of tradeable edge, costs, turnover, capacity unmodeled).
+The conviction backtest (ADR-039) failed OOS; forward-tracking is slow. A cross-sectional IC on point-in-time data can *cheaply falsify*: a non-positive IC on a survivor-biased sample kills the signal outright; a positive IC merely earns the right to forward-track (it is **not** itself proof of tradeable edge: costs, turnover, capacity unmodeled).
 
 ### Data integrity (the hard part: Phase 3.5)
 
-The first live attempt was invalid: Wikipedia attention covered only **1.5% (8/518)** of the universe, unmapped tickers queried the raw symbol as an article title and got noise stubs. Fixing this took five hardening passes (R1-R5): 429 backoff + `SourceThrottledError` (throttle ≠ empty), an OpenSearch article resolver with view-volume validation, a resolved-map merge, a throttle-≠-rejection fix, and yfinance legal-suffix normalization (raw-first/cleaned-fallback so "Apple Inc." stays the company, "AbbVie Inc." → "AbbVie"). Final coverage: **430/518 (83%)**, 1.4M attention rows. The remaining ~88 are delisted/acquired (ATVI, SIVB, PXD, SPLK…) or deep name-mismatches. The test ran on clean, broadly-covered data.
+The first live attempt was invalid: Wikipedia attention covered only **1.5% (8/518)** of the universe: unmapped tickers queried the raw symbol as an article title and got noise stubs. Fixing this took five hardening passes (R1-R5): 429 backoff + `SourceThrottledError` (throttle ≠ empty), an OpenSearch article resolver with view-volume validation, a resolved-map merge, a throttle-≠-rejection fix, and yfinance legal-suffix normalization (raw-first/cleaned-fallback so "Apple Inc." stays the company, "AbbVie Inc." → "AbbVie"). Final coverage: **430/518 (83%)**, 1.4M attention rows. The remaining ~88 are delisted/acquired (ATVI, SIVB, PXD, SPLK…) or deep name-mismatches. The test ran on clean, broadly-covered data.
 
 ## Decision
 
@@ -54,10 +54,10 @@ The signal is falsified **even on a survivor-biased sample** that should have fl
 
 ### What this means for the project
 
-Three independent honest tests now agree: conviction has no OOS edge (ADR-039), conviction dimensions are dead/degenerate on the spine (ADR-043), and intensity-divergence has no cross-sectional IC (this ADR). The product thesis "surface a tradeable edge from public attention/conviction signals" is **not supported by evidence.** The defensible product is what the engine already is: an honest evidence-aggregator that **abstains** when signals are absent, plus a rigorous, reusable validation harness. The next move is a decision for Tirth, pivot to a different primary signal, reframe as a research/monitoring tool, or stop adding signals and harden the abstention product.
+Three independent honest tests now agree: conviction has no OOS edge (ADR-039), conviction dimensions are dead/degenerate on the spine (ADR-043), and intensity-divergence has no cross-sectional IC (this ADR). The product thesis "surface a tradeable edge from public attention/conviction signals" is **not supported by evidence.** The defensible product is what the engine already is: an honest evidence-aggregator that **abstains** when signals are absent, plus a rigorous, reusable validation harness. The next move is a decision for Tirth: pivot to a different primary signal, reframe as a research/monitoring tool, or stop adding signals and harden the abstention product.
 
 ## Related
 
-- ADR-039, no OOS conviction edge (evidence-first + abstention)
-- ADR-041, Honest Opportunity Engine (the divergence signal definition)
-- ADR-043, conviction dims dead → divergence-led surfacing (the hypothesis this test falsifies)
+- ADR-039: no OOS conviction edge (evidence-first + abstention)
+- ADR-041: Honest Opportunity Engine (the divergence signal definition)
+- ADR-043: conviction dims dead → divergence-led surfacing (the hypothesis this test falsifies)

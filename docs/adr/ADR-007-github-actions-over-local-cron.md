@@ -24,7 +24,7 @@ GitHub Actions with Sunday cron schedule + workflow_dispatch for manual testing.
 - No machine dependency.
 
 **Negative:**
-- Cron accuracy, GitHub Actions can delay up to 15-60 minutes (acceptable for Sunday night run).
+- Cron accuracy: GitHub Actions can delay up to 15-60 minutes (acceptable for Sunday night run).
 - API keys in GitHub Secrets (secure but one more config step).
 - Free tier budget is tight if pipeline grows.
 

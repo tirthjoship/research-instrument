@@ -23,5 +23,5 @@ Reframe from direction prediction to opportunity surfacing with conviction scori
 - Direction prediction becomes one input signal, not the system's purpose
 - Dashboard evolves: Command Center → Opportunity Feed
 - Future phases add outcome tracking (Phase 8) and adaptive learning (Phase 9)
-- The "honest data scientist" narrative strengthens, acknowledging limitations and reframing around genuine value
+- The "honest data scientist" narrative strengthens: acknowledging limitations and reframing around genuine value
 - SEC EDGAR adapter adds 2 new free data sources with no API key required

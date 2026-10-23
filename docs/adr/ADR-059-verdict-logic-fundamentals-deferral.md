@@ -23,13 +23,13 @@ honesty stance. It deserves a grill + ADR + measured rule comparison, which this
 
 ### What grounded the decision (verified, not assumed)
 
-1. **v1 is unproven, it cannot have cleared its own gate.** `data/personal/discipline_log.jsonl` holds
+1. **v1 is unproven: it cannot have cleared its own gate.** `data/personal/discipline_log.jsonl` holds
    231 REDUCE flags dated **2026-06-08 → 2026-06-15**. The ADR-048 gate resolves REDUCE at a **21-trading-day**
    horizon and requires **n ≥ 30 resolved** flags (plus down_rate ≥ 55%, brier ≤ 0.45). As of 2026-06-16 the
    earliest flag is ~8 calendar days old → **0 flags are resolvable yet**. The first resolves ~July 2026;
    n ≥ 30 later still. The in-sample 58% down-rate is survivor-biased, "a report card, not proof" (ADR-048).
 
-2. **Industry/academic norms (web-checked 2026-06-16), our foundations are mainstream, not idiosyncratic:**
+2. **Industry/academic norms (web-checked 2026-06-16): our foundations are mainstream, not idiosyncratic:**
    - **Measurement-first is the field standard.** Real out-of-sample returns average ~26% below in-sample,
      dropping a further ~58% post-publication (Bailey & López de Prado, *Deflated Sharpe Ratio*; PBO;
      walk-forward as the validation gold standard). Our gate is appropriately cautious, not purist.
@@ -37,7 +37,7 @@ honesty stance. It deserves a grill + ADR + measured rule comparison, which this
      dollar-neutral composites, cross-sectional ranking). So the constraint is **how**, not **whether**:
      a measured composite, which *requires a resolved baseline first*.
    - **Disposition effect** is the most-documented bias (sell winners early, hold losers too long), and
-     willpower / "but it's a good company" does **not** fix it, only mechanical rules do. Disciplined
+     willpower / "but it's a good company" does **not** fix it; only mechanical rules do. Disciplined
      practice uses weakening fundamentals as an **additional exit trigger**, never as a reason to rescue a
      loser through a stop breach.
 
@@ -46,13 +46,13 @@ honesty stance. It deserves a grill + ADR + measured rule comparison, which this
 **1. Fundamentals stay attributed evidence (the 5 RAG squares). The verdict remains trend-break rule v1.**
 No fundamentals are folded into `grade_position` now. Rationale: the disciplined way to integrate is a
 **measured composite**, and lift cannot be computed against a baseline with 0 resolved flags. This is not
-"fundamentals don't belong", it is "integrate them the disciplined way, which needs the baseline first."
+"fundamentals don't belong"; it is "integrate them the disciplined way, which needs the baseline first."
 
 **2. Revisit only after v1's forward gate resolves (PROCEED or KILL).** If v1 PROCEEDs, fundamentals become a
 **candidate modifier**, treated as a new rule measured against v1 via the same forward-gate discipline
 (ADR-048/051). The live rule is never swapped without beating v1, the standard that killed ADR-039/043/044/046.
 
-**3. Locked design principle for any future extension, the asymmetric (caution-only) veto:**
+**3. Locked design principle for any future extension: the asymmetric (caution-only) veto:**
    - Fundamentals may **push toward caution**: downgrade an optimistic verdict (e.g. `ADD_OK → REVIEW/HOLD`)
      or reinforce an exit. This is industry-normal and anti-disposition-aligned.
    - Fundamentals may **never rescue** a name from a trend-driven `REDUCE`. Using "good fundamentals" to soften

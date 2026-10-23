@@ -5,7 +5,7 @@
 
 ## Context
 
-An ML model that "beats the market" means nothing on its own, the real
+An ML model that "beats the market" means nothing on its own; the real
 question is whether it beats trivial, non-ML selection rules. Without a
 naive baseline, a positive backtest result could just be capturing a
 well-known factor (momentum, low-volatility) that a two-line ranking rule
@@ -33,7 +33,7 @@ common failure mode of a model appearing to work because it rediscovered
 momentum.
 
 **Negative:** `BaselineRanker` has no call sites outside its own test file
-today, it's a manual research tool invoked during evaluation runs, not
+today; it's a manual research tool invoked during evaluation runs, not
 wired into any automated CI gate. A future ADR should decide whether
 baseline comparison should be a hard gate on new model claims rather than
 a discretionary check.

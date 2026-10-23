@@ -7,7 +7,7 @@
 
 ## Context
 
-The Risk-tab factor chart ("What's driving it") currently fits **4 factors**, `config/markets/us.yaml`
+The Risk-tab factor chart ("What's driving it") currently fits **4 factors**: `config/markets/us.yaml`
 `macro_beta.factors: [SPY, TLT, UUP, XLE]` (market / rates / dollar / energy). Tirth wants more factors to
 better characterize what drives the book ("4 is too little to know"). The v8 mockup illustrated 9.
 
@@ -16,7 +16,7 @@ IWD). This ADR records why that approach is rejected and what the correct expans
 
 ### Why long-only ETF proxies are rejected
 
-IWF (growth), MTUM (momentum), IWM (size), IWD (value) are all ~80% correlated with SPY, they are long the
+IWF (growth), MTUM (momentum), IWM (size), IWD (value) are all ~80% correlated with SPY; they are long the
 market plus a tilt. Regressing the book on SPY + these overlapping long-only ETFs is severe multicollinearity:
 betas become unstable and uninterpretable, bootstrap whiskers blow out, and the VIF>5 callout fires on
 *everything by construction*. The user would "see 9 factors" where half the numbers are noise, **less**
@@ -48,7 +48,7 @@ proxies. The R03 UI work (DOMINANT badge, READ line, subtitles, dormant VIF call
 ## Consequences
 
 - Honesty preserved: we don't paint 9 bars that lie. The tab shows what the config genuinely fits.
-- The expansion is documented, not silently deferred, this ADR is the spec for the next focused effort.
+- The expansion is documented, not silently deferred: this ADR is the spec for the next focused effort.
 - Re-entry: a dedicated session, methodology review (`ds-methodology-review`) → ADR for the chosen factor
   set + data source + PIT scheme → build (data adapter, config, weekly-brief) → real-beta eyeball.
 
@@ -75,7 +75,7 @@ Built on `feat/risk-tab-fixes`. Final factor set: **`[SPY, SMB, HML, MOM, RMW, C
   fixed universe); a **"beyond the market" tilts line** separating the expected SPY market core from the
   distinctive tilts (so SPY-dominance reads as normal, not as the whole story).
 - **Open (user-approved, future measured effort):** expand the FIXED universe further with theory-justified
-  factors (credit/HYG, term spread, commodities), same measured process, NOT dynamic/adaptive selection
+  factors (credit/HYG, term spread, commodities): same measured process, NOT dynamic/adaptive selection
   (selecting factors post-hoc by significance = data-dredging; rejected). SPY structurally dominating a
   long-only equity book is expected and correct, not a defect.
 

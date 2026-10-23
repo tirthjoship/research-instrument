@@ -18,9 +18,9 @@ The honest reading: abstention was the engine truthfully telling us it could not
 
 ## Decision
 
-Build **Leg-2 Sub-Project A, the Honest Opportunity Engine ("make the engine see honestly")**. Seven decisions:
+Build **Leg-2 Sub-Project A: the Honest Opportunity Engine ("make the engine see honestly")**. Seven decisions:
 
-1. **Retire the dead source.** StockTwits is deprecated and dropped from the pipeline, the public API returns 403 on every ticker. No effort spent reviving a locked-down source.
+1. **Retire the dead source.** StockTwits is deprecated and dropped from the pipeline: the public API returns 403 on every ticker. No effort spent reviving a locked-down source.
 
 2. **Keyless-first source strategy with a pluggable Reddit.** Ship four keyless sources requiring no API key or per-call cost: **GDELT** (throttle-fixed), **Google Trends** (`pytrends`, installed), **Google News per-ticker RSS** (new), **Wikipedia pageviews** (new). **Reddit (PRAW)** is built as a pluggable adapter that activates only when credentials exist and is a logged no-op otherwise. This keeps the daily cycle free to run and never blocks on a missing key.
 
@@ -28,9 +28,9 @@ Build **Leg-2 Sub-Project A, the Honest Opportunity Engine ("make the engine see
 
 4. **Blend two honest accelerations into one divergence score.** `blended_divergence_score()` combines **event-acceleration** (recent-vs-base-rate event counts from news/social) and **intensity-acceleration** (recent-vs-base mean level from search/pageviews). Both ratios are scale-free, so GT's 0-100 index and Wikipedia's raw counts need no normalization. Weights adapt to available data: when one shape is absent, the present shape gets weight 1.0 (no zero-padding a missing signal); when both are absent, the score is neutral 5.0 (the unchanged honest abstain path).
 
-5. **Honest archive backfill seeds the base window.** `BackfillHistoryUseCase` pulls genuinely archived attention per universe ticker, GDELT article timestamps (new `get_historical_buzz`), Google Trends weekly history, Wikipedia daily history, using each source's **real recorded date**, never a synthetic or reconstructed timestamp. It is append-only, deduped on `(ticker, source, ts)`, per-ticker failure-isolated, and idempotent. Reddit and Google News are excluded precisely because they lack an honest archive (live-only).
+5. **Honest archive backfill seeds the base window.** `BackfillHistoryUseCase` pulls genuinely archived attention per universe ticker: GDELT article timestamps (new `get_historical_buzz`), Google Trends weekly history, Wikipedia daily history, using each source's **real recorded date**, never a synthetic or reconstructed timestamp. It is append-only, deduped on `(ticker, source, ts)`, per-ticker failure-isolated, and idempotent. Reddit and Google News are excluded precisely because they lack an honest archive (live-only).
 
-6. **Compute all-but-one conviction dimension in bulk scan, cached and flag-on-failure.** `ConvictionSignalCache` wires `analyst_signal` live (yfinance analyst-rating events) behind a 24h TTL cache (compute-on-miss). On fetch failure a dimension falls to an honest neutral 5.0 **with a logged flag row**, never a silent pin. `event_signal` remains held at neutral 5.0 in bulk scan, the Gemini event path needs a `NewsHeadlinePort` (AlphaVantage) + `GEMINI_API_KEY` per ticker, deferred to avoid per-ticker API cost/keys; the cache extension point exists for it. Conviction now reflects **7 of 8** dimensions in bulk scan (up from 6).
+6. **Compute all-but-one conviction dimension in bulk scan, cached and flag-on-failure.** `ConvictionSignalCache` wires `analyst_signal` live (yfinance analyst-rating events) behind a 24h TTL cache (compute-on-miss). On fetch failure a dimension falls to an honest neutral 5.0 **with a logged flag row**, never a silent pin. `event_signal` remains held at neutral 5.0 in bulk scan: the Gemini event path needs a `NewsHeadlinePort` (AlphaVantage) + `GEMINI_API_KEY` per ticker, deferred to avoid per-ticker API cost/keys; the cache extension point exists for it. Conviction now reflects **7 of 8** dimensions in bulk scan (up from 6).
 
 7. **Log the full candidate distribution; calibrate the bar from data; schedule locally.** `OpportunityScanUseCase` writes **every** candidate's scores (conviction, divergence, per-dim sub-scores, a `surfaced` flag) to `scan_candidates` *before* the surface/abstain cut; only above-bar calls are forward-tracked, preserving honest abstention. `scan-opportunities --show-all` prints the ranked distribution so `cmin`/`dmin` are calibrated from the observed spread, not hand-tuned. A new idempotent `daily-cycle` command chains scan → resolve → conditional weekly backfill, scheduled via a local **launchd** plist (`docs/scheduling.md`).
 
@@ -46,8 +46,8 @@ Build **Leg-2 Sub-Project A, the Honest Opportunity Engine ("make the engine see
 
 **Positive:**
 
-- The engine can finally **see mid-cap attention**, per-ticker Google News RSS + Wikipedia pageviews + GDELT history surface ASTS/RKLB/OKLO-class buzz that mega-cap-only RSS never wrote.
-- Divergence is computed from a **populated base window** from day one, the cold-start max-pin artifact is solved, honestly.
+- The engine can finally **see mid-cap attention**: per-ticker Google News RSS + Wikipedia pageviews + GDELT history surface ASTS/RKLB/OKLO-class buzz that mega-cap-only RSS never wrote.
+- Divergence is computed from a **populated base window** from day one; the cold-start max-pin artifact is solved, honestly.
 - Conviction reflects **7 of 8** dimensions in bulk scan (was 6); thresholds are **empirically calibrated** from the logged distribution rather than guessed.
 - The **full candidate distribution** is persisted every scan, the raw feed for bar-discrimination analysis (do above-bar names outperform below-bar?) and for Sub-Project B's eval harness.
 - Source isolation, exponential backoff, and flag-on-failure mean **one dead/throttled source never crashes a scan**; the daily cycle tolerates partial source failure.
@@ -55,8 +55,8 @@ Build **Leg-2 Sub-Project A, the Honest Opportunity Engine ("make the engine see
 **Limitations & risks (do not oversell):**
 
 - **This is not proven alpha.** Sub-Project A improves *surfacing coverage and honesty*, not demonstrated predictive edge. ADR-039 found **no statistically significant out-of-sample edge** in the backtestable slice; that finding stands.
-- **The backfill is leakage-free for forward-tracking but is NOT a backtest.** It seeds the divergence base window from honest archive timestamps used only to compute a base-rate window. It must never be presented as evidence of predictive skill, only forward-tracked live outcomes (1w/1m/3m vs SPY + NDX) accrue honest evidence.
+- **The backfill is leakage-free for forward-tracking but is NOT a backtest.** It seeds the divergence base window from honest archive timestamps used only to compute a base-rate window. It must never be presented as evidence of predictive skill: only forward-tracked live outcomes (1w/1m/3m vs SPY + NDX) accrue honest evidence.
 - **One dimension is still held neutral.** `event_signal` stays at 5.0 in bulk scan (per-ticker Gemini cost/keys deferred); conviction is 7/8, not 8/8.
-- **Live sources are rate-limited.** GDELT and Google Trends throttle (429); backoff turns a 429 into a wait, but the daily cycle may legitimately abstain under heavy rate-limiting. `cmin`/`dmin` calibration (a local live diagnostic) can itself abstain when sources are throttled, that is a valid outcome, not a bug.
+- **Live sources are rate-limited.** GDELT and Google Trends throttle (429); backoff turns a 429 into a wait, but the daily cycle may legitimately abstain under heavy rate-limiting. `cmin`/`dmin` calibration (a local live diagnostic) can itself abstain when sources are throttled; that is a valid outcome, not a bug.
 - **Scheduling deviates from ADR-007.** Local launchd, not cloud cron, because the DB and creds are local. The user must wire the trigger on their own machine.
 - StockTwits removal is a breaking change for any caller still importing it; it is retired from the pipeline.

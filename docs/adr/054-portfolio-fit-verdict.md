@@ -34,11 +34,11 @@ TREND_STATE, DATA_GAP), with plain-English messages. Implemented as:
 - `domain/fit.py`: pure verdict logic (stdlib only), with a hard **vocabulary
   invariant**: the output may never contain buy/sell/winner/conviction/predict/
   alpha/outperform. This is enforced by a Hypothesis property test, not a
-  convention, drift fails CI.
+  convention; drift fails CI.
 - `application/fit_use_case.py`: gathers inputs from EXISTING artifacts (latest
   `screen_<date>.json`, `brief_summary.json` macro block, holdings CSV) and an
   injected single-ticker beta function. No new ports, no new adapters.
-- Stock Analysis tab, renders one card under the RESEARCH ONLY banner, memoized in
+- Stock Analysis tab: renders one card under the RESEARCH ONLY banner, memoized in
   session_state so the live beta fetch runs once per analyzed ticker, not per rerun.
 
 Design constraints honored:

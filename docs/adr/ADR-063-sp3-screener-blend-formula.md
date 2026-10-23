@@ -40,5 +40,5 @@ When no corroboration snapshot exists within the staleness window (7 days), `fac
 
 - All screener output clearly shows both `factor_percentile` and `convergence_tier` alongside `blended_percentile` so users can see the basis.
 - Equal-weight is a conservative, defensible choice: it makes no claim about which signal is more predictive.
-- When SP5 validates (or kills) the corroboration signal, the blend weight can be updated with IC evidence, at that point an ADR amendment is required.
-- Tickers with no corroboration snapshot are not penalised, they rank on factor alone, labelled `factor_only=True`.
+- When SP5 validates (or kills) the corroboration signal, the blend weight can be updated with IC evidence; at that point an ADR amendment is required.
+- Tickers with no corroboration snapshot are not penalised; they rank on factor alone, labelled `factor_only=True`.

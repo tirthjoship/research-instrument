@@ -20,7 +20,7 @@ Three-step ladder: (1) Keyword baseline → (2) Flan-T5 fine-tuned → (3) Claud
 - Cheapest approach first.
 
 **Negative:**
-- Keyword baseline is crude, may confuse "crashed but buy the dip" scenarios.
+- Keyword baseline is crude: may confuse "crashed but buy the dip" scenarios.
 - Accepted: Flan-T5 upgrade path addresses this.
 
 ## Superseded By

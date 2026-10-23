@@ -6,7 +6,7 @@
 
 ## Context
 
-The current system generates weekly buy recommendations (Top 15 picks, graded Strong Buy through Hold). It has no concept of what the user currently owns, which means it cannot generate sell signals. A recommendation engine without sell logic is incomplete, knowing when to exit a position is as important as knowing when to enter.
+The current system generates weekly buy recommendations (Top 15 picks, graded Strong Buy through Hold). It has no concept of what the user currently owns, which means it cannot generate sell signals. A recommendation engine without sell logic is incomplete: knowing when to exit a position is as important as knowing when to enter.
 
 The 5-tier grading system (ADR-001) already defines "May Sell" and "Immediate Sell" grades, but these are computed relative to the ranked list. Without knowing which tickers the user holds, the system cannot flag "you own NVDA and here is a sell signal specific to your holding."
 
@@ -60,14 +60,14 @@ Output stored in `sell_signals` SQLite table and surfaced in the weekly report.
 
 **Positive:**
 - Completes the full buy-hold-sell loop the project thesis requires
-- SQLite is already the persistence layer, no new infrastructure
+- SQLite is already the persistence layer: no new infrastructure
 - Manual CLI entry is frictionless for a personal portfolio tool
 - Stop-loss tracking prevents the system from generating silent holds on losing positions
 - Cross-asset contagion sell signals (from ADR-027 graph) create a unique differentiated signal not available in standard recommendation tools
 
 **Negative:**
 - Manual entry means holdings can drift out of sync with reality (user buys/sells without updating CLI)
-- No real-time price feed, sell signals are computed weekly, not intraday. A stock could gap down 20% before the next weekly run catches it
+- No real-time price feed: sell signals are computed weekly, not intraday. A stock could gap down 20% before the next weekly run catches it
 - Stop-loss monitoring is passive (weekly check), not active (live price alert). Deferred to Phase 5 with a lightweight daily price-check cron
 
 ## Superseded By

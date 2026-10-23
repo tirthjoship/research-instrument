@@ -11,7 +11,7 @@ Phases 5.0-5.5 were six consecutive dashboard redesigns in three days. They poli
 Three findings, verified in code, forced a pivot:
 
 1. **The conviction score (dashboard centerpiece) has never been backtested** against forward returns. Its weights (`domain/conviction.py:79-84`) are hand-set magic numbers.
-2. **The backtest fabricates its return metric:** `backtest_runner.py:98` is literally `model_excess_returns_per_fold = [a - 0.5 for a in accs]`, directional accuracy minus 0.5, relabeled as returns. `compute_sharpe_vs_spy` is defined but never called. This violates the project rule "Sharpe ratio, never accuracy alone".
+2. **The backtest fabricates its return metric:** `backtest_runner.py:98` is literally `model_excess_returns_per_fold = [a - 0.5 for a in accs]`: directional accuracy minus 0.5, relabeled as returns. `compute_sharpe_vs_spy` is defined but never called. This violates the project rule "Sharpe ratio, never accuracy alone".
 3. **The Phase 4D event engine is dormant, not missing.** `EventCategory`, `gemini_event_classifier.py`, `event_impact_analyzer.py`, and `config/events/sector_mapping.yaml` already model `geopolitical` and `labor_layoffs`. It just isn't fed live news or wired into conviction.
 
 Owner requirement: real-money use → **high precision, few false positives** ("winners only").

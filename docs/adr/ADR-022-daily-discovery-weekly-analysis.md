@@ -34,7 +34,7 @@ buzz_signals (
 )
 ```
 
-**Ticker discovery:** Tickers extracted from article text via regex + known S&P 500 ticker validation. No fixed universe, any mentioned ticker gets tracked.
+**Ticker discovery:** Tickers extracted from article text via regex + known S&P 500 ticker validation. No fixed universe: any mentioned ticker gets tracked.
 
 ### Weekly Analysis (full compute, 10-30 minutes)
 
@@ -59,8 +59,8 @@ buzz_signals (
 Phase 3B: **CLI-only** (manual invocation). Automation deferred to Phase 4 (ADR-007).
 
 Future (Phase 4):
-- Daily scan → `launchd` plist (local cron), needs MPS for Flan-T5
-- Weekly analysis → GitHub Actions scheduled workflow, reads pre-computed buzz_signals from SQLite
+- Daily scan → `launchd` plist (local cron): needs MPS for Flan-T5
+- Weekly analysis → GitHub Actions scheduled workflow: reads pre-computed buzz_signals from SQLite
 
 ## Alternatives Considered
 
@@ -74,11 +74,11 @@ Future (Phase 4):
 **Positive:**
 - Catches emerging tickers before weekly tournament, can "ride the wave"
 - Daily signals accumulate for richer weekly analysis (7 days of sentiment history)
-- Lightweight, daily scan doesn't touch yfinance, only RSS feeds
+- Lightweight: daily scan doesn't touch yfinance, only RSS feeds
 - Buzz acceleration surfaces stocks where buzz is **growing**, not just high
 
 **Negative:**
-- Two CLI commands instead of one, user must remember to run both
+- Two CLI commands instead of one: user must remember to run both
 - Daily scan without weekly analysis produces raw data but no recommendations
 - Accepted: Phase 4 automation eliminates manual burden
 

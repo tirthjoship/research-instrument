@@ -11,8 +11,8 @@ Markets move in clusters. Semiconductor equipment makers (AMAT, LRCX, KLAC) move
 The current feature matrix treats each ticker as independent. There is no mechanism to propagate a signal from a supply-chain leader to its downstream dependents, or to flag that a correlated cluster is breaking down.
 
 Two approaches exist to model relationships:
-- **Statistical**: rolling correlation matrix over price returns, discovers co-movement automatically
-- **Domain knowledge**: hand-coded supply chain graphs, encodes relationships that may not yet appear in price data (new contracts, emerging sectors)
+- **Statistical**: rolling correlation matrix over price returns: discovers co-movement automatically
+- **Domain knowledge**: hand-coded supply chain graphs; encodes relationships that may not yet appear in price data (new contracts, emerging sectors)
 
 Neither alone is sufficient. Pure statistics finds spurious correlations without domain knowledge to filter them. Pure manual encoding misses unknown or newly forming relationships.
 
@@ -77,8 +77,8 @@ Hybrid approach combining auto-discovered correlation clusters with human-review
 **Negative:**
 - 60-day rolling correlation matrix for 350 tickers = 350x350 matrix computed weekly. Computationally manageable (~seconds) but adds to weekly tournament runtime
 - Granger causality testing at scale (all pairs) requires multiple testing correction (Bonferroni or BH) to avoid false positives, must be implemented carefully
-- `supply_chain.yaml` maintenance is a permanent ongoing responsibility, stale entries (companies that changed business models) can create wrong signals
-- Lead-lag features are derived from the same price history used for technical features, correlation is not causation, and these features may reflect regime-specific patterns that don't generalize
+- `supply_chain.yaml` maintenance is a permanent ongoing responsibility: stale entries (companies that changed business models) can create wrong signals
+- Lead-lag features are derived from the same price history used for technical features: correlation is not causation, and these features may reflect regime-specific patterns that don't generalize
 
 ## Superseded By
 None

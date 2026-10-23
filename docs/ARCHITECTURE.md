@@ -117,7 +117,7 @@ tests/
 
 **Problem:** cold start on Home/Portfolio/Risk auto-loaded the operator's real
 `data/personal/holdings.csv` and `data/personal/brief_summary.json` whenever those
-files existed on the machine running the dashboard, a hosted public deploy would leak
+files existed on the machine running the dashboard; a hosted public deploy would leak
 real holdings to strangers.
 
 **Fix:** `adapters/visualization/book_context.py::resolve_ui_book_context()` is the
@@ -130,7 +130,7 @@ instead of hardcoded personal-path defaults.
 
 Uploads are session-only: `weekly_brief.py::_stage_csv_upload` stores the parsed book
 directly in `st.session_state` and rebuilds the brief into a `tempfile.mkdtemp()`
-directory, it no longer calls `holdings_syncer.save_and_sync_holdings()` (which writes
+directory; it no longer calls `holdings_syncer.save_and_sync_holdings()` (which writes
 `data/personal/holdings.csv`) on the public path. That function/its CLI dogfood callers
 are unchanged for local/offline use.
 
@@ -146,7 +146,7 @@ valid outside the public UI path.
 
 The core thesis (sentiment leads price) is under active test. Prediction models get
 killed when they fail pre-registered gates. Hexagonal architecture means each killed
-model is one adapter deletion, domain logic survives unchanged.
+model is one adapter deletion; domain logic survives unchanged.
 
 ### Why decompose cli.py and risk.py? (2026-06-17)
 
@@ -175,10 +175,10 @@ source module (`application.opportunity_scan_use_case`). Fixed 2026-06-18.
 
 | File | LOC | Notes |
 |---|---|---|
-| `adapters/visualization/components/styles.py` | 1524 | T2-3 deferred, CSS/style functions, split by component group |
+| `adapters/visualization/components/styles.py` | 1524 | T2-3 deferred: CSS/style functions, split by component group |
 | `adapters/visualization/stock_analyzer.py` | 1305 | Not yet scoped |
 | `adapters/visualization/tabs/research_candidates.py` | 1211 | Not yet scoped |
-| `adapters/data/sqlite_store.py` | 1093 | Not yet scoped, core persistence, higher risk |
+| `adapters/data/sqlite_store.py` | 1093 | Not yet scoped: core persistence, higher risk |
 | `adapters/visualization/tabs/stock_analysis.py` | 1055 | Not yet scoped |
 
 Priority order: `styles.py` (lowest risk, pure CSS), then `research_candidates.py` /

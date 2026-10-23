@@ -13,12 +13,12 @@ Thresholds were LOCKED via pre-registration before any run, with build and verif
 
 ## Methodology (LOCKED: pre-registered, unchanged after seeing data)
 
-- **Signal, strict cluster:** ≥3 distinct insiders (`RPTOWNERCIK`), each an open-market purchase (`TRANS_CODE='P'` AND `TRANS_ACQUIRED_DISP_CD='A'`, shares>0), within a rolling 30-day window. Excludes codes S/M/A(grant)/G/F/C/W, equity-swap, and `AFF10B5ONE` (10b5-1) filings. **Fires on the FILING date** (point-in-time; the cluster is only knowable once the 3rd Form-4 is public), never the transaction date.
+- **Signal: strict cluster:** ≥3 distinct insiders (`RPTOWNERCIK`), each an open-market purchase (`TRANS_CODE='P'` AND `TRANS_ACQUIRED_DISP_CD='A'`, shares>0), within a rolling 30-day window. Excludes codes S/M/A(grant)/G/F/C/W, equity-swap, and `AFF10B5ONE` (10b5-1) filings. **Fires on the FILING date** (point-in-time; the cluster is only knowable once the 3rd Form-4 is public), never the transaction date.
 - **Data:** SEC DERA "Insider Transactions" (Form 345) quarterly flat files, 2006q1→latest (verified live; new `sec_form345_dataset_adapter.py`). Forward prices + ADV via yfinance, delisting-aware.
-- **Gate, event-study abnormal return** (amended from rank-IC because the signal is binary; standard event study fits a binary event). For each bottom-tercile cluster event: `abn = name_21d_return − benchmark_21d_return`, benchmark = liquidity-matched ETF (bottom → **IWC**). Two legs, each a moving-block bootstrap (n=1000, seed=42, 95% CI):
+- **Gate: event-study abnormal return** (amended from rank-IC because the signal is binary; standard event study fits a binary event). For each bottom-tercile cluster event: `abn = name_21d_return − benchmark_21d_return`, benchmark = liquidity-matched ETF (bottom → **IWC**). Two legs, each a moving-block bootstrap (n=1000, seed=42, 95% CI):
   - **Leg 1 (information, gross):** `CI_low(gross_abn) > 0`.
   - **Leg 2 (tradeable, net):** `net_abn = gross_abn − 150bps`; `CI_low(net_abn) > 0`.
-- **Slippage (LOCKED):** round-trip per name by ADV tercile, bottom 150 / mid 75 / top 40 bps. **Liquidity (ADV) terciles replace market-cap terciles** (point-in-time, no shares-outstanding-history leakage; arguably truer to the capacity thesis, Caveat 1).
+- **Slippage (LOCKED):** round-trip per name by ADV tercile: bottom 150 / mid 75 / top 40 bps. **Liquidity (ADV) terciles replace market-cap terciles** (point-in-time, no shares-outstanding-history leakage; arguably truer to the capacity thesis, Caveat 1).
 - **Verdict (3-state, since `net ≤ gross`):** `net.CI_low>0` → **PASS** (RESEARCH_ONLY, needs independent re-validation); `gross.CI_low>0 & net.CI_low≤0` → **INCONCLUSIVE** (real info, killed by costs); `gross.CI_low≤0` → **KILL**.
 - **Guards (override):** bottom-tercile events < 100 → `INCONCLUSIVE_THIN_N`; bottom-tercile benchmarked-coverage < 80% → `INCONCLUSIVE_THIN_COVERAGE`.
 - **Primary test = bottom (least-liquid) tercile.** Mid/top descriptive only.
@@ -30,7 +30,7 @@ Two detection-validity bugs found in code review were fixed after the smoke run
 pre-registration honesty rules (this is validity repair, not threshold tuning;
 all gate thresholds remain locked):
 
-- **M1, joint-filing dedup.** One Form 4 filed jointly by N reporting owners was
+- **M1: joint-filing dedup.** One Form 4 filed jointly by N reporting owners was
   counted as N distinct insiders, so a single buy decision could fabricate a
   "cluster." Detection now requires ≥3 greedily-matched distinct
   (insider, accession) pairs. Expected effect: fewer fabricated events, so THIN_N
@@ -38,7 +38,7 @@ all gate thresholds remain locked):
   deduplication can shift a cluster's fire date, which moves the 30-day re-fire
   suppression window and can unmask a second, fully legitimate cluster the old
   rule had masked. Either direction is honest.
-- **M2, point-in-time terciles.** Tercile assignment pooled ADV across the full
+- **M2: point-in-time terciles.** Tercile assignment pooled ADV across the full
   sample and collided per ticker (all of a ticker's events took one ADV, the
   last record's). Binning is now per-event against the expanding distribution of
   events up to each fire date (`MIN_TERCILE_POPULATION = 30`, disclosure-only:
@@ -61,8 +61,8 @@ full-window result.
 | Unresolved (mostly delisted micro-caps) | 1342 |
 | **Bottom-tercile events (primary n)** | **1632** (≫ 100 power guard) |
 | Bottom-tercile benchmarked coverage | 100% |
-| **Leg 1, gross abnormal (mean / CI_low)** | **+1.62% / +0.41%** → PASS (real information) |
-| **Leg 2, net of 150bps (mean / CI_low)** | **+0.12% / −1.09%** → FAIL (not tradeable) |
+| **Leg 1: gross abnormal (mean / CI_low)** | **+1.62% / +0.41%** → PASS (real information) |
+| **Leg 2: net of 150bps (mean / CI_low)** | **+0.12% / −1.09%** → FAIL (not tradeable) |
 | **Verdict** | **INCONCLUSIVE** |
 
 **Reading:** sub-$1B insider clusters carry **real gross 21-day information** (~+1.6% abnormal vs IWC, CI clears zero) that **does not survive micro-cap slippage**. This is precisely the ADR-052 prediction. Survivorship works *in favor* of the edge (dropping delisted losers inflates the gross figure), yet Leg-2 still fails, so the "untradeable" conclusion is **robust under favorable bias.**
@@ -85,7 +85,7 @@ full-window result.
 **INCONCLUSIVE_THIN_COVERAGE → practical KILL (final).** Executed per the
 pre-committed decision tree (strategic wrap spec 2026-06-10 §2, locked BEFORE this
 result existed): the M1/M2 amendment consumed the one allowed remediation re-run;
-a still-thin result is final, **cannot validate ⇒ cannot ever trade.** Prediction
+a still-thin result is final: **cannot validate ⇒ cannot ever trade.** Prediction
 is permanently off the table (ADR-052 stands). Unit D stays parked (wrap spec §6).
 
 **Why coverage collapsed (honest reading):** 46.6% of all cluster events

@@ -32,5 +32,5 @@ India's analyst-consensus gap has no free-tier solution across three
 independent providers, surfaced honestly rather than backfilled with a
 weaker proxy).
 
-**Negative:** None identified, this is a labeling/provenance
+**Negative:** None identified: this is a labeling/provenance
 discipline, not a feature trade-off.

@@ -10,7 +10,7 @@
 | `make test-adapters` | Editing `adapters/` | <20s |
 | `make test-smoke` | Before every commit (cross-cutting sanity) | ~14s |
 | `make test-fast` | Cross-cutting change, unsure of scope | ~35s |
-| `make check` | Before PR only, full gate (lint + mypy + test-cov) | ~22 min |
+| `make check` | Before PR only: full gate (lint + mypy + test-cov) | ~22 min |
 
 **Never run `make check` during iterative edits.** It runs coverage which serialises
 output and dominates wall-clock. Reserve it for PR checkpoints.
@@ -25,7 +25,7 @@ Defined in `pyproject.toml` under `[tool.pytest.ini_options].markers`:
 
 | Marker | What it covers |
 |---|---|
-| `smoke` | Critical regression guard, ~264 tests, ~14s. Runs in CI on every push. |
+| `smoke` | Critical regression guard: ~264 tests, ~14s. Runs in CI on every push. |
 | `tab_risk` | Risk tab tests |
 | `tab_weekly_brief` | Weekly brief tab tests |
 | `tab_research` | Research candidates tab tests |
@@ -106,7 +106,7 @@ Quick reference:
 `make check` enforces `--cov-fail-under=90`. Current: **93%**.
 
 Coverage is measured over `domain/`, `adapters/`, `application/`. Test files and
-`scripts/` are excluded. Do not add tests purely to hit the number, meaningful
+`scripts/` are excluded. Do not add tests purely to hit the number: meaningful
 coverage comes from testing real behaviour paths, not line-touching.
 
 ---
@@ -119,5 +119,5 @@ edit (slow + token-heavy).
 
 The smoke suite gives a 14s sanity check that covers: all Hypothesis property tests,
 all port contract tests, and the critical weekly-brief / evidence-screen / discipline
-pipelines. It is not a substitute for `make check` at PR time, it is the between-edit
+pipelines. It is not a substitute for `make check` at PR time; it is the between-edit
 checkpoint.

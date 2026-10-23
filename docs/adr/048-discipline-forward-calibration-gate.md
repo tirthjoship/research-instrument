@@ -29,7 +29,7 @@ Two findings drive this ADR:
 
 2. **TRIM is mis-framed.** TRIM names went **+1.85%** (up), yet the original calibration scored
    TRIM as a "down" assertion (p=1.0), inflating the combined Brier to 0.551 (~coin-flip).
-   TRIM = "winner that breached its 3×ATR trailing stop", in an uptrend those typically resume
+   TRIM = "winner that breached its 3×ATR trailing stop": in an uptrend those typically resume
    up. TRIM is a **position-sizing / lock-gains** action, not a directional prediction.
 
 A separate caution from the same run: at the **index** level (`holdings-risk-calibrate SPY`),
@@ -55,14 +55,14 @@ The historical 58% is not the gate; the gate is out-of-sample on the real book g
 > **PROCEED bar (all three):** down_rate_on_reduce **≥ 55%** AND **brier ≤ 0.45** AND
 > **n (resolved REDUCE) ≥ 30**.
 > **KILL clause:** if, once n ≥ 30 has accrued, the bar is not met, the discipline-flag layer is
-> dropped honestly, same standard that killed ADR-039/043/044/046.
+> dropped honestly; same standard that killed ADR-039/043/044/046.
 > **Excluded from the gate:** TRIM, HOLD, ADD_OK, REVIEW (not down-calls).
 
 **3. No threshold tuning before the gate resolves.** The trend/ATR/Chandelier params stay FROZEN
 (ADR-046). Tuning them to improve the in-sample report card is the exact overfitting the Deflated
 Sharpe research (ADR-047 context) warns against. The gate judges the frozen rules.
 
-**4. Phase-2 (factor screening) stays gated** on a PROCEED here, it does not start on in-sample
+**4. Phase-2 (factor screening) stays gated** on a PROCEED here; it does not start on in-sample
 evidence.
 
 ## Consequences
@@ -72,6 +72,6 @@ evidence.
   not return."* That earns a forward test, not a build-out, not abandonment.
 - A daily scheduled `holdings-risk` run accrues the log; at ~4-6 weeks the gate has resolvable
   REDUCE flags and returns PROCEED or KILL.
-- Honest caveat: even a PROCEED means "REDUCE flags precede single-name drops out-of-sample", it is
+- Honest caveat: even a PROCEED means "REDUCE flags precede single-name drops out-of-sample": it is
   **not** proof the tool beats the user's behavior (that needs a logged trade baseline, deferred) nor
   that it beats buy-hold (ADR-046 already says it does not, risk-adjusted).

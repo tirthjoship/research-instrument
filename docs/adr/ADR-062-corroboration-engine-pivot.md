@@ -30,7 +30,7 @@ Build a **Corroboration Engine** (sub-project 1 of 5) and treat it as the projec
    `DirectionalView`. `convergence` is an evidence-strength label, **never** a return forecast.
 2. **Decouple search from LLM.** A free search API (Tavily→Brave→DDG) provides *real* citable URLs; an
    LLM (Gemini→Groq, via a self-updating `ModelRegistry`) only summarizes the text behind a verified
-   URL. The LLM never sources a citation, this removes the hallucinated-citation risk.
+   URL. The LLM never sources a citation; this removes the hallucinated-citation risk.
 3. **Validate forward-only.** Harvested recommendations cannot be backtested (no historical snapshot).
    Predictive validity is deferred to a pre-registered, forward-accruing Hypothesis #9 gate (sub-project
    5), mirroring ADR-048. RESEARCH_ONLY until/unless that gate passes. A limited, *labelled* historical
@@ -46,5 +46,5 @@ Build a **Corroboration Engine** (sub-project 1 of 5) and treat it as the projec
 - We stop spending effort reviving in-house return prediction; any revival must earn it through #9.
 - Free-tier only; no single-vendor lock-in; no scraping that violates ToS (scraping is best-effort/free).
 - Risk: corroboration may itself prove to have no forward edge (#9 could be the 9th null). That is an
-  acceptable, honest outcome, the engine is still a useful attributed decision-support instrument with
+  acceptable, honest outcome: the engine is still a useful attributed decision-support instrument with
   no predictive claim, and #9 settles the alpha question without self-deception.

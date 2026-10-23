@@ -22,5 +22,5 @@ Add adaptive intelligence with three mechanisms:
 - System gets smarter over time without manual tuning
 - Weight history provides full audit trail on System Intelligence tab
 - Learned rules are surfaced with confidence levels
-- Human can always override, manual weight adjustment takes precedence
+- Human can always override: manual weight adjustment takes precedence
 - Guardrails prevent wild swings (max 0.2 change per cycle)
