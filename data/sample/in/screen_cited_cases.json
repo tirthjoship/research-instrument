@@ -1,95 +1,66 @@
 {
-  "as_of": "2026-10-22",
+  "as_of": "2026-10-23",
   "cases": {
-    "ICICIBANK.NS": {
-      "in_favor": [
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "p86"
-        },
-        {
-          "text": "Value (1/PE) is strong.",
-          "source": "p86"
-        },
-        {
-          "text": "Low volatility is strong.",
-          "source": "p86"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p29"
-        }
-      ],
-      "data_gap": false
-    },
     "KOTAKBANK.NS": {
       "in_favor": [
         {
-          "text": "Low volatility is strong.",
-          "source": "p86"
+          "text": "Quality (ROE/margin) is strong (p83).",
+          "source": "Fact sheet"
         }
       ],
       "to_watch": [],
       "data_gap": false
     },
+    "ICICIBANK.NS": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong (p83).",
+          "source": "Fact sheet"
+        },
+        {
+          "text": "Value (1/PE) is strong (p83).",
+          "source": "Fact sheet"
+        },
+        {
+          "text": "Lowvol is strong (p83).",
+          "source": "Fact sheet"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak (p33).",
+          "source": "Fact sheet"
+        },
+        {
+          "text": "Quality (ROE/margin) is weak (p17).",
+          "source": "Fact sheet"
+        }
+      ],
+      "data_gap": false
+    },
     "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p86"
+          "text": "Momentum (12-1) is strong (p83).",
+          "source": "Fact sheet"
         },
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "p86"
+          "text": "Analyst dispersion is strong (p83).",
+          "source": "Fact sheet"
         },
         {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p86"
+          "text": "Quality (ROE/margin) is strong (p83).",
+          "source": "Fact sheet"
         }
       ],
       "to_watch": [
         {
-          "text": "Value (1/PE) is weak.",
-          "source": "p29"
+          "text": "Value (1/PE) is weak (p33).",
+          "source": "Fact sheet"
         },
         {
-          "text": "Low volatility is weak.",
-          "source": "p29"
-        }
-      ],
-      "data_gap": false
-    },
-    "TCS.NS": {
-      "in_favor": [
-        {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p86"
-        },
-        {
-          "text": "Value (1/PE) is strong.",
-          "source": "p86"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p14"
-        },
-        {
-          "text": "Analyst dispersion is weak.",
-          "source": "p29"
-        }
-      ],
-      "data_gap": false
-    },
-    "HCLTECH.NS": {
-      "in_favor": [],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p29"
+          "text": "Lowvol is weak (p17).",
+          "source": "Fact sheet"
         }
       ],
       "data_gap": false
@@ -97,36 +68,60 @@
     "TECHM.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p86"
+          "text": "Momentum (12-1) is strong (p83).",
+          "source": "Fact sheet"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p14"
+          "text": "Analyst dispersion is weak (p17).",
+          "source": "Fact sheet"
+        },
+        {
+          "text": "Quality (ROE/margin) is weak (p33).",
+          "source": "Fact sheet"
         }
       ],
       "data_gap": false
     },
-    "TRENT.NS": {
-      "in_favor": [],
+    "HCLTECH.NS": {
+      "in_favor": [
+        {
+          "text": "Value (1/PE) is strong (p83).",
+          "source": "Fact sheet"
+        }
+      ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p0"
+          "text": "Momentum (12-1) is weak (p0).",
+          "source": "Fact sheet"
         },
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p14"
+          "text": "Lowvol is weak (p33).",
+          "source": "Fact sheet"
+        }
+      ],
+      "data_gap": false
+    },
+    "BHARTIARTL.NS": {
+      "in_favor": [
+        {
+          "text": "Lowvol is strong (p83).",
+          "source": "Fact sheet"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak (p17).",
+          "source": "Fact sheet"
         },
         {
-          "text": "Value (1/PE) is weak.",
-          "source": "p14"
+          "text": "Analyst dispersion is weak (p33).",
+          "source": "Fact sheet"
         },
         {
-          "text": "Low volatility is weak.",
-          "source": "p0"
+          "text": "Value (1/PE) is weak (p17).",
+          "source": "Fact sheet"
         }
       ],
       "data_gap": false
@@ -135,20 +130,20 @@
       "in_favor": [],
       "to_watch": [
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p0"
+          "text": "Analyst dispersion is weak (p0).",
+          "source": "Fact sheet"
         },
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p0"
+          "text": "Quality (ROE/margin) is weak (p0).",
+          "source": "Fact sheet"
         },
         {
-          "text": "Value (1/PE) is weak.",
-          "source": "p0"
+          "text": "Value (1/PE) is weak (p0).",
+          "source": "Fact sheet"
         },
         {
-          "text": "Low volatility is weak.",
-          "source": "p14"
+          "text": "Lowvol is weak (p0).",
+          "source": "Fact sheet"
         }
       ],
       "data_gap": false
