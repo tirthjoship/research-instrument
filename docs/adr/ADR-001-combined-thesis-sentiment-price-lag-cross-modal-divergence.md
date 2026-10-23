@@ -17,7 +17,7 @@ Combined sentiment-price lag (A) with cross-modal divergence (B). A feeds into B
 
 ## Consequences
 **Positive:**
-- Single coherent interview story.
+- Single coherent thesis.
 - Contrarian signals are what hedge funds trade.
 - If no signal found, negative result is still publishable.
 

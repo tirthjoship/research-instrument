@@ -11,7 +11,7 @@
 Use Google Gemini API free tier (15 RPM, 1.5M tokens/day, zero cost) for structured event classification of news headlines. Temperature=0 for determinism. `google-generativeai` package.
 
 **Rejected alternatives:**
-- Local LLM (Ollama) — heavy dependency, mediocre quality at 7-8B, not reproducible for recruiters
+- Local LLM (Ollama) — heavy dependency, mediocre quality at 7-8B, not reproducible without a local GPU setup
 - Claude API — costs money, no free tier at sufficient volume
 - Google AI Mode (search bar) — consumer feature, not an API, can't call programmatically
 - Rule-based only — less impressive for portfolio, misses ambiguous events

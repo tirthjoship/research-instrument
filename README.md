@@ -312,12 +312,11 @@ test of whether the discipline tool improves adherence, resolving mid-July 2026.
 thresholds were locked before any live data accrued. The result will be reported
 honestly, whatever it is.
 
-For a recruiter: this project demonstrates pre-registered hypothesis testing, rigorous
-negative-result reporting, point-in-time enforcement as a code invariant, hexagonal
-architecture applied to a real data pipeline, and 3,226+ tests covering domain logic,
-adapters, use cases, and integration paths. The negative findings are the portfolio
-piece: a system that falsified its own thesis honestly is more credible than one that
-never tested it.
+The project is built around pre-registered hypothesis testing, honest negative-result
+reporting, point-in-time enforcement as a code invariant, and hexagonal architecture
+applied to a real data pipeline, with 3,226+ tests covering domain logic, adapters, use
+cases, and integration paths. A system that falsified its own thesis honestly is more
+credible than one that never tested it.
 
 ---
 

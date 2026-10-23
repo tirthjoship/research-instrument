@@ -50,7 +50,7 @@ Even though it's internal computation, the graph could come from different sourc
 ## Consequences
 
 **Positive:**
-- 8 novel features not in standard financial ML (interview differentiator)
+- 8 novel features not in standard financial ML
 - Granger causality may reveal real lead-lag structure (testable hypothesis)
 - 10 supply chain groups show domain knowledge
 - Clean hexagonal architecture (port + adapter separation)

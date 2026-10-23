@@ -35,13 +35,12 @@ Track: max drawdown, recovery time (days), worst single week. These determine re
 
 ## Alternatives Considered
 - **Simple accuracy + Sharpe only** — insufficient for thesis validation and real-money decisions. Rejected.
-- **Bayesian evaluation** — more sophisticated but harder to explain in interviews. Deferred.
+- **Bayesian evaluation** — more sophisticated but harder to communicate to non-specialists. Deferred.
 
 ## Consequences
 **Positive:**
 - Every result is quantified with confidence level.
 - Can definitively say "model has edge" or "model got lucky."
-- Interview story: "58.3% accuracy, p=0.007, cost-adjusted Sharpe 0.8 vs SPY 0.6."
 - Required foundation for Phase 5-6 real-money deployment decision.
 
 **Negative:**

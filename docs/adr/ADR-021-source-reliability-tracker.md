@@ -82,7 +82,6 @@ source_reliability (
 - Every sentiment signal has provenance — can explain "why this recommendation"
 - Source quality improves over time as tracker accumulates data
 - Differentiator from naive buzz ETFs that treat all mentions equally
-- Interview story: "Our system learns which sources to trust"
 
 **Negative:**
 - Needs 10+ outcomes per source before accuracy is meaningful (~2-3 months)

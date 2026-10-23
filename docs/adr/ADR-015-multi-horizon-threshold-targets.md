@@ -70,7 +70,6 @@ This replaces the need for a separate hold-duration prediction model (was planne
 - Noise-filtered: sub-threshold predictions are explicitly "no signal," not forced into buy/sell
 - Hold duration emerges naturally from multi-horizon disagreement
 - Each horizon is independently evaluable (which timeframe does model predict best?)
-- Interview story: "I predict magnitude across three horizons and only act on statistically significant moves"
 
 **Negative:**
 - 3x models to train (one per horizon) — more compute

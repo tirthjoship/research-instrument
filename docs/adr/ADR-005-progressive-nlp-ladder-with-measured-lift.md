@@ -17,7 +17,6 @@ Three-step ladder: (1) Keyword baseline → (2) Flan-T5 fine-tuned → (3) Claud
 ## Consequences
 **Positive:**
 - Each step is a measurable A/B test.
-- Interview story: "I measured marginal lift at each sophistication level."
 - Cheapest approach first.
 
 **Negative:**
