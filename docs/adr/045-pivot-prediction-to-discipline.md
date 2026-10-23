@@ -14,7 +14,7 @@ Three independent, pre-registered falsification tests have now killed the projec
 
 This is a convergent negative: retail-accessible public attention/sentiment contains no detectable tradeable alpha (consistent with semi-strong efficiency). Continuing to bolt on signals would be the gambler's lever and risks p-hacking a spurious positive: the exact failure the pre-registration discipline exists to prevent.
 
-Separately, the user's real trading history reframed the problem. His stock *selection* is excellent (MU +863%, PLTR +447%, AMD +195%); his losses come from *process*: holding broken-trend names down 30-57% (RIVN, NKE, SOUN, LSPD, FIGS), and mistiming exits (LULU: +27% round-tripped to −31%, anchored on an old price; MU: sold a winner too early). The documented behavior gap (avg equity investor lags the S&P ~848 bps/yr from the disposition effect, Barclays/DALBAR 2024) is the actual leak.
+Separately, a review of real retail trading behavior reframed the problem. Stock *selection* was not the weak point; the losses came from *process*: holding broken-trend names far below entry, and mistiming exits (round-tripping gains, anchoring on an old price, selling winners too early). The documented behavior gap (avg equity investor lags the S&P ~848 bps/yr from the disposition effect, Barclays/DALBAR 2024) is the actual leak.
 
 A June-2026 evidence review separated what is achievable from what is hype (sources in the spec): trend-following/time-series momentum (AQR; Antonacci dual momentum 17.4%/yr vs 8.85%, half the drawdown), regime detection, and behavior-gap closure have decades of out-of-sample support; LLM stock-pickers underperform and are regime-brittle (StockBench/KDD-2026); published anomalies decay ~58% post-publication (McLean & Pontiff 2016).
 
@@ -22,7 +22,7 @@ A June-2026 evidence review separated what is achievable from what is hype (sour
 
 **Pivot the engine from predicting winners to enforcing process**, with ambition bounded by an explicit evidence hierarchy.
 
-1. **Core thesis: a retail edge is better PROCESS, not better PREDICTION.** The engine's primary job is disciplined entries/exits and risk management: trend filter (200-day) + volatility-scaled Chandelier trailing exit (rides MU-style runners, ejects LULU-style breaks) + relative-momentum selection.
+1. **Core thesis: a retail edge is better PROCESS, not better PREDICTION.** The engine's primary job is disciplined entries/exits and risk management: trend filter (200-day) + volatility-scaled Chandelier trailing exit (rides long-trend runners, ejects broken trends) + relative-momentum selection.
 
 2. **Evidence tiers bound what we will build:**
    - *Tier 1 (reliable, retail-accessible):* risk management, behavior-gap closure, factor premia (momentum/quality/value/low-vol).

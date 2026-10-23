@@ -23,7 +23,7 @@ The conviction backtest (ADR-039) failed OOS; forward-tracking is slow. A cross-
 
 ### Data integrity (the hard part: Phase 3.5)
 
-The first live attempt was invalid: Wikipedia attention covered only **1.5% (8/518)** of the universe: unmapped tickers queried the raw symbol as an article title and got noise stubs. Fixing this took five hardening passes (R1-R5): 429 backoff + `SourceThrottledError` (throttle ≠ empty), an OpenSearch article resolver with view-volume validation, a resolved-map merge, a throttle-≠-rejection fix, and yfinance legal-suffix normalization (raw-first/cleaned-fallback so "Apple Inc." stays the company, "AbbVie Inc." → "AbbVie"). Final coverage: **430/518 (83%)**, 1.4M attention rows. The remaining ~88 are delisted/acquired (ATVI, SIVB, PXD, SPLK…) or deep name-mismatches. The test ran on clean, broadly-covered data.
+The first live attempt was invalid: Wikipedia attention covered only **1.5% (8/518)** of the universe; unmapped tickers queried the raw symbol as an article title and got noise stubs. Fixing this took five hardening passes (R1-R5): 429 backoff + `SourceThrottledError` (throttle ≠ empty), an OpenSearch article resolver with view-volume validation, a resolved-map merge, a throttle-≠-rejection fix, and yfinance legal-suffix normalization (raw-first/cleaned-fallback so "Apple Inc." stays the company, "AbbVie Inc." → "AbbVie"). Final coverage: **430/518 (83%)**, 1.4M attention rows. The remaining ~88 are delisted/acquired (ATVI, SIVB, PXD, SPLK…) or deep name-mismatches. The test ran on clean, broadly-covered data.
 
 ## Decision
 

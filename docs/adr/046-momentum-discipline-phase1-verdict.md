@@ -46,7 +46,7 @@ Both caught in review; both would have produced a flattering, invalid verdict.
 ### What survives: and what we keep
 
 - **Drawdown reduction is real and cost-robust:** 38% → 23% max drawdown (a 40% cut), surviving transaction costs. Trend-following does exactly one thing reliably: it exits sustained declines.
-- The gate benchmark (disciplined buy-hold-*everything*) is **not the user's actual behavior** (holding individual losers to the bottom, RIVN −56%). Against his real behavior, exit discipline plausibly helps; the gate did not, and was not designed to, measure that.
+- The gate benchmark (disciplined buy-hold-*everything*) is **not the user's actual behavior** (holding individual losers to the bottom). Against real retail behavior, exit discipline plausibly helps; the gate did not, and was not designed to, measure that.
 - Therefore the honest product is a **discipline / decision-support tripwire** on the user's own holdings: `PortfolioVerdictUseCase` / `portfolio-verdict` CLI returning EXIT / TRIM / HOLD per position, framed explicitly as *"cuts drawdown; does not beat the market."* Not an automated alpha strategy. Consistent with the project's honest-evidence-aggregator-plus-abstention identity (ADR-039/041).
 - The **validation harness is kept as protected baseline:** `sharpe_difference_bootstrap`, the cost-aware `MomentumExitBacktestUseCase`, the locked verdict gate, and the TSX-extended universe, a reusable, honest, cost-and-significance-aware backtest rig for any future pre-registered candidate.
 
