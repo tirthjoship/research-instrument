@@ -11,9 +11,9 @@ Needed ML model for stock return prediction from 44 tabular features. Options in
 XGBoost + LightGBM simple average ensemble for Phase 3. LSTM-Transformer hybrid parked for Phase 4.
 
 ## Alternatives Considered
-- **LSTM** — captures temporal sequences but needs different data format, harder to explain, overfits easily.
-- **Transformer** — overkill for 15 stocks/week, heavy compute.
-- **Single model** — misses easy ensemble lift.
+- **LSTM**: captures temporal sequences but needs different data format, harder to explain, overfits easily.
+- **Transformer**: overkill for 15 stocks/week, heavy compute.
+- **Single model**: misses easy ensemble lift.
 
 ## Consequences
 **Positive:**
