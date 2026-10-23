@@ -6,7 +6,7 @@
 
 ## Context
 
-Phase 3B adds sentiment from multiple sources (RSS publishers, Reddit). Not all sources are equally reliable — a Reuters article and a Reddit shitpost carry different signal quality. Without tracking which sources are directionally accurate, the model treats all sentiment equally, diluting signal from reliable sources with noise from unreliable ones.
+Phase 3B adds sentiment from multiple sources (RSS publishers, Reddit). Not all sources are equally reliable: a Reuters article and a Reddit shitpost carry different signal quality. Without tracking which sources are directionally accurate, the model treats all sentiment equally, diluting signal from reliable sources with noise from unreliable ones.
 
 The BUZZ ETF failure (VanEck, see ADR-011 context) showed that raw buzz aggregation doesn't work. Source quality differentiation is a potential edge.
 
@@ -65,28 +65,27 @@ source_reliability (
 
 ### Key Design Choices
 
-- **Uninformative prior (0.5)** until 10+ calls recorded — prevents cold-start bias
-- **Per-ticker tracking** — Reuters may be reliable for tech but not energy
-- **Passive tracker** — records and reports, doesn't filter. ML model decides how much to weight.
-- **Rolling window** — 90 days (configurable). Old outcomes expire to adapt to source quality changes.
+- **Uninformative prior (0.5)** until 10+ calls recorded, prevents cold-start bias
+- **Per-ticker tracking**: Reuters may be reliable for tech but not energy
+- **Passive tracker**: records and reports, doesn't filter. ML model decides how much to weight.
+- **Rolling window**: 90 days (configurable). Old outcomes expire to adapt to source quality changes.
 
 ## Alternatives Considered
 
-- **No source tracking** — treat all sources equally. Rejected: dilutes signal from reliable sources.
-- **Hard source filtering** — drop sources below accuracy threshold. Rejected: too aggressive, loses data. Let ML decide.
-- **Bayesian reliability** — Beta distribution per source. Deferred: simpler frequency counting sufficient for Phase 3B.
+- **No source tracking**: treat all sources equally. Rejected: dilutes signal from reliable sources.
+- **Hard source filtering**: drop sources below accuracy threshold. Rejected: too aggressive, loses data. Let ML decide.
+- **Bayesian reliability**: Beta distribution per source. Deferred: simpler frequency counting sufficient for Phase 3B.
 
 ## Consequences
 
 **Positive:**
-- Every sentiment signal has provenance — can explain "why this recommendation"
+- Every sentiment signal has provenance, can explain "why this recommendation"
 - Source quality improves over time as tracker accumulates data
 - Differentiator from naive buzz ETFs that treat all mentions equally
-- Interview story: "Our system learns which sources to trust"
 
 **Negative:**
 - Needs 10+ outcomes per source before accuracy is meaningful (~2-3 months)
-- Initial period uses uninformative prior (0.5) — no benefit until data accumulates
+- Initial period uses uninformative prior (0.5): no benefit until data accumulates
 - Accepted: tracker is baked in from day one specifically to accumulate data early
 
 ## Superseded By

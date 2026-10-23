@@ -46,22 +46,22 @@ After filtering and feature engineering, before prediction:
 | Data freshness | All data >5 days old | Abort: stale predictions dangerous |
 
 ### Architecture placement
-- `domain/services.py`: validate_feature_matrix(), validate_data_freshness() — pure validation rules
-- `adapters/*`: each adapter validates its own output — data-specific checks
-- `application/use_cases.py`: pipeline-level gates — orchestration decisions
+- `domain/services.py`: validate_feature_matrix(), validate_data_freshness(), pure validation rules
+- `adapters/*`: each adapter validates its own output; data-specific checks
+- `application/use_cases.py`: pipeline-level gates; orchestration decisions
 - Domain stays pure: validation functions take dicts/lists, know nothing about adapters
 
 ### Key principles
 - **Impute** when missing data is one dimension of many
 - **Skip ticker** when core data is unreliable
 - **Abort pipeline** only when overall data quality is below minimum viable threshold
-- **Never hallucinate** data — imputation uses column median or neutral defaults, never synthetic values
-- **Always log** what was imputed, skipped, or flagged — audit trail for debugging
+- **Never hallucinate** data: imputation uses column median or neutral defaults, never synthetic values
+- **Always log** what was imputed, skipped, or flagged: audit trail for debugging
 
 ## Alternatives Considered
-- **No validation (status quo)** — corrupt data reaches model. Rejected.
-- **Strict validation (fail on any issue)** — too many aborted runs from minor data gaps. Rejected.
-- **Single validation layer** — can't distinguish adapter failures from pipeline failures. Rejected.
+- **No validation (status quo)**: corrupt data reaches model. Rejected.
+- **Strict validation (fail on any issue)**: too many aborted runs from minor data gaps. Rejected.
+- **Single validation layer**: can't distinguish adapter failures from pipeline failures. Rejected.
 
 ## Consequences
 **Positive:**
@@ -72,7 +72,7 @@ After filtering and feature engineering, before prediction:
 
 **Negative:**
 - More code to maintain (validation at three layers).
-- Accepted: data quality is the foundation — worth the investment.
+- Accepted: data quality is the foundation, worth the investment.
 - Imputation introduces small biases (median fill).
 - Accepted: better than NaN propagation or crashes.
 

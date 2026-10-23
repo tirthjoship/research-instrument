@@ -27,7 +27,7 @@ Predict return magnitude across three horizons. Classify predictions as actionab
 | Predicted magnitude vs threshold | Class |
 |----------------------------------|-------|
 | Above positive threshold | Bullish (actionable buy signal) |
-| Within ±threshold | Neutral (no action — signal is noise) |
+| Within ±threshold | Neutral (no action: signal is noise) |
 | Below negative threshold | Bearish (actionable sell/avoid signal) |
 
 ### Grading logic (combines horizons)
@@ -59,10 +59,10 @@ The multi-horizon predictions naturally suggest optimal hold duration:
 This replaces the need for a separate hold-duration prediction model (was planned for Phase 4). The multi-horizon approach gives it for free.
 
 ## Alternatives Considered
-- **Binary up/down at 5 days** — treats 0.01% move same as 15% move. Uninformative. Rejected.
-- **Single-horizon regression** — predicts magnitude but misses temporal dynamics. Rejected.
-- **5+ horizons (1d, 2d, 3d, 5d, 10d, 20d)** — too many models for Phase 3, diminishing returns. Deferred.
-- **Continuous confidence instead of threshold** — loses the "actionable vs noise" distinction. Rejected.
+- **Binary up/down at 5 days**: treats 0.01% move same as 15% move. Uninformative. Rejected.
+- **Single-horizon regression**: predicts magnitude but misses temporal dynamics. Rejected.
+- **5+ horizons (1d, 2d, 3d, 5d, 10d, 20d)**: too many models for Phase 3, diminishing returns. Deferred.
+- **Continuous confidence instead of threshold**: loses the "actionable vs noise" distinction. Rejected.
 
 ## Consequences
 **Positive:**
@@ -70,11 +70,10 @@ This replaces the need for a separate hold-duration prediction model (was planne
 - Noise-filtered: sub-threshold predictions are explicitly "no signal," not forced into buy/sell
 - Hold duration emerges naturally from multi-horizon disagreement
 - Each horizon is independently evaluable (which timeframe does model predict best?)
-- Interview story: "I predict magnitude across three horizons and only act on statistically significant moves"
 
 **Negative:**
-- 3x models to train (one per horizon) — more compute
-- Threshold selection is somewhat arbitrary (1.5%, 2%, 3%) — needs empirical tuning
+- 3x models to train (one per horizon), more compute
+- Threshold selection is somewhat arbitrary (1.5%, 2%, 3%), needs empirical tuning
 - Mitigated: thresholds are configurable, tune via walk-forward after data accumulates
 - Evaluation is more complex (precision/recall per horizon per threshold)
 - Accepted: complexity is warranted by information gain

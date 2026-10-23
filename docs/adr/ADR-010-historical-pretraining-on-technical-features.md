@@ -18,9 +18,9 @@ Pretrain models on 2-3 years of historical data using technical + regime feature
 When live sentiment data starts flowing in Phase 3B, measure marginal lift of adding sentiment features over this pretrained baseline.
 
 ## Alternatives Considered
-- **No pretraining, start from scratch** — insufficient data for 61 features. Rejected.
-- **Use sentiment proxies (VADER on historical headlines)** — distribution shift when switching to live keyword/Flan-T5 scorer would pollute results. Rejected.
-- **Reduce features to match available data** — loses valuable features. Rejected.
+- **No pretraining, start from scratch**: insufficient data for 61 features. Rejected.
+- **Use sentiment proxies (VADER on historical headlines)**: distribution shift when switching to live keyword/Flan-T5 scorer would pollute results. Rejected.
+- **Reduce features to match available data**: loses valuable features. Rejected.
 
 ## Consequences
 **Positive:**
