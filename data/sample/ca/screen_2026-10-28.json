@@ -1,0 +1,1147 @@
+{
+  "as_of": "2026-10-28",
+  "market": "ca",
+  "universe_size": 52,
+  "top_n": 10,
+  "regime": "NEUTRAL",
+  "abstained": false,
+  "diagnostics": {
+    "scanned": 52,
+    "had_history": 52,
+    "above_trend": 29,
+    "cleared": 29
+  },
+  "candidates": [
+    {
+      "ticker": "CNQ.TO",
+      "composite": 0.7678207675343243,
+      "trend_health": 6.971786847040679,
+      "label": "RESEARCH_ONLY",
+      "why": "CNQ.TO: RESEARCH_ONLY. Price is 7.0 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.174417177766397,
+          "percentile": 0.8571428571428571,
+          "contribution": 0.2348834355532794
+        },
+        {
+          "name": "revision",
+          "value": 0.3156134298775428,
+          "percentile": 0.6071428571428571,
+          "contribution": 0.06312268597550856
+        },
+        {
+          "name": "quality",
+          "value": 1.7454984418190953,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.34909968836381905
+        },
+        {
+          "name": "value",
+          "value": 1.2256962118782206,
+          "percentile": 0.8928571428571429,
+          "contribution": 0.24513924237564413
+        },
+        {
+          "name": "lowvol",
+          "value": -0.6221214236696349,
+          "percentile": 0.17857142857142858,
+          "contribution": -0.12442428473392697
+        }
+      ]
+    },
+    {
+      "ticker": "CVE.TO",
+      "composite": 0.7216483023096707,
+      "trend_health": 4.5026212201354605,
+      "label": "RESEARCH_ONLY",
+      "why": "CVE.TO: RESEARCH_ONLY. Price is 4.5 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.437286440423745,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.287457288084749
+        },
+        {
+          "name": "revision",
+          "value": 1.3034790799426743,
+          "percentile": 0.8928571428571429,
+          "contribution": 0.26069581598853486
+        },
+        {
+          "name": "quality",
+          "value": 0.8480186041056159,
+          "percentile": 0.7857142857142857,
+          "contribution": 0.16960372082112318
+        },
+        {
+          "name": "value",
+          "value": 1.5434765876798058,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.30869531753596113
+        },
+        {
+          "name": "lowvol",
+          "value": -1.5240192006034878,
+          "percentile": 0.10714285714285714,
+          "contribution": -0.30480384012069756
+        }
+      ]
+    },
+    {
+      "ticker": "QSR.TO",
+      "composite": 0.6602207240747656,
+      "trend_health": 0.6620356193801282,
+      "label": "RESEARCH_ONLY",
+      "why": "QSR.TO: RESEARCH_ONLY. Price is 0.7 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.3973673084737049,
+          "percentile": 0.39285714285714285,
+          "contribution": -0.07947346169474098
+        },
+        {
+          "name": "revision",
+          "value": 1.5242404414418464,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.3048480882883693
+        },
+        {
+          "name": "quality",
+          "value": 1.7454984418190953,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.34909968836381905
+        },
+        {
+          "name": "value",
+          "value": 0.19944939634073844,
+          "percentile": 0.5357142857142857,
+          "contribution": 0.03988987926814769
+        },
+        {
+          "name": "lowvol",
+          "value": 0.22928264924585323,
+          "percentile": 0.39285714285714285,
+          "contribution": 0.045856529849170644
+        }
+      ]
+    },
+    {
+      "ticker": "CM.TO",
+      "composite": 0.6095503053178655,
+      "trend_health": 4.997704043807677,
+      "label": "RESEARCH_ONLY",
+      "why": "CM.TO: RESEARCH_ONLY. Price is 5.0 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.6016443038756204,
+          "percentile": 0.6428571428571429,
+          "contribution": 0.12032886077512409
+        },
+        {
+          "name": "revision",
+          "value": 0.8434668919606149,
+          "percentile": 0.7857142857142857,
+          "contribution": 0.16869337839212298
+        },
+        {
+          "name": "quality",
+          "value": 0.012482350462416799,
+          "percentile": 0.5357142857142857,
+          "contribution": 0.0024964700924833597
+        },
+        {
+          "name": "value",
+          "value": 0.7209693904710471,
+          "percentile": 0.7857142857142857,
+          "contribution": 0.14419387809420942
+        },
+        {
+          "name": "lowvol",
+          "value": 0.8691885898196282,
+          "percentile": 0.8571428571428571,
+          "contribution": 0.17383771796392564
+        }
+      ]
+    },
+    {
+      "ticker": "RY.TO",
+      "composite": 0.5609565982910526,
+      "trend_health": 6.095419736798897,
+      "label": "RESEARCH_ONLY",
+      "why": "RY.TO: RESEARCH_ONLY. Price is 6.1 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.6567657553005136,
+          "percentile": 0.6785714285714286,
+          "contribution": 0.13135315106010273
+        },
+        {
+          "name": "revision",
+          "value": 0.66220844882159,
+          "percentile": 0.7142857142857143,
+          "contribution": 0.132441689764318
+        },
+        {
+          "name": "quality",
+          "value": 0.11093676242298815,
+          "percentile": 0.6071428571428571,
+          "contribution": 0.02218735248459763
+        },
+        {
+          "name": "value",
+          "value": 0.3293129532822147,
+          "percentile": 0.6071428571428571,
+          "contribution": 0.06586259065644294
+        },
+        {
+          "name": "lowvol",
+          "value": 1.0455590716279566,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.2091118143255913
+        }
+      ]
+    },
+    {
+      "ticker": "SU.TO",
+      "composite": 0.5511445943655783,
+      "trend_health": 7.01026014360067,
+      "label": "RESEARCH_ONLY",
+      "why": "SU.TO: RESEARCH_ONLY. Price is 7.0 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.437286440423745,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.287457288084749
+        },
+        {
+          "name": "revision",
+          "value": 0.039302233559431,
+          "percentile": 0.4642857142857143,
+          "contribution": 0.0078604467118862
+        },
+        {
+          "name": "quality",
+          "value": 0.5855775249967716,
+          "percentile": 0.75,
+          "contribution": 0.11711550499935433
+        },
+        {
+          "name": "value",
+          "value": 1.0267466527129314,
+          "percentile": 0.8214285714285714,
+          "contribution": 0.20534933054258628
+        },
+        {
+          "name": "lowvol",
+          "value": -0.3331898798649877,
+          "percentile": 0.25,
+          "contribution": -0.06663797597299755
+        }
+      ]
+    },
+    {
+      "ticker": "TD.TO",
+      "composite": 0.41624791122390814,
+      "trend_health": 8.664856967145152,
+      "label": "RESEARCH_ONLY",
+      "why": "TD.TO: RESEARCH_ONLY. Price is 8.7 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.0196860720887935,
+          "percentile": 0.8214285714285714,
+          "contribution": 0.2039372144177587
+        },
+        {
+          "name": "revision",
+          "value": 0.253374478330796,
+          "percentile": 0.5714285714285714,
+          "contribution": 0.0506748956661592
+        },
+        {
+          "name": "quality",
+          "value": -0.4165978918380123,
+          "percentile": 0.2857142857142857,
+          "contribution": -0.08331957836760247
+        },
+        {
+          "name": "value",
+          "value": 0.20077719043203043,
+          "percentile": 0.5714285714285714,
+          "contribution": 0.040155438086406085
+        },
+        {
+          "name": "lowvol",
+          "value": 1.0239997071059328,
+          "percentile": 0.8928571428571429,
+          "contribution": 0.20479994142118657
+        }
+      ]
+    },
+    {
+      "ticker": "CNR.TO",
+      "composite": 0.3995632913018814,
+      "trend_health": 5.513211881392109,
+      "label": "RESEARCH_ONLY",
+      "why": "CNR.TO: RESEARCH_ONLY. Price is 5.5 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.24464759548223344,
+          "percentile": 0.5,
+          "contribution": 0.04892951909644669
+        },
+        {
+          "name": "revision",
+          "value": 0.5065283358063831,
+          "percentile": 0.6785714285714286,
+          "contribution": 0.10130566716127662
+        },
+        {
+          "name": "quality",
+          "value": 1.0173101073113335,
+          "percentile": 0.8214285714285714,
+          "contribution": 0.20346202146226672
+        },
+        {
+          "name": "value",
+          "value": -0.22179274344129762,
+          "percentile": 0.32142857142857145,
+          "contribution": -0.04435854868825952
+        },
+        {
+          "name": "lowvol",
+          "value": 0.4511231613507545,
+          "percentile": 0.6071428571428571,
+          "contribution": 0.0902246322701509
+        }
+      ]
+    },
+    {
+      "ticker": "BNS.TO",
+      "composite": 0.38608695190454484,
+      "trend_health": 9.163552424290339,
+      "label": "RESEARCH_ONLY",
+      "why": "BNS.TO: RESEARCH_ONLY. Price is 9.2 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.8344351159001793,
+          "percentile": 0.75,
+          "contribution": 0.16688702318003584
+        },
+        {
+          "name": "revision",
+          "value": 0.23188571002851566,
+          "percentile": 0.5357142857142857,
+          "contribution": 0.04637714200570313
+        },
+        {
+          "name": "quality",
+          "value": -0.630201837914117,
+          "percentile": 0.21428571428571427,
+          "contribution": -0.1260403675828234
+        },
+        {
+          "name": "value",
+          "value": 0.44875669988018974,
+          "percentile": 0.6785714285714286,
+          "contribution": 0.08975133997603794
+        },
+        {
+          "name": "lowvol",
+          "value": 1.0455590716279566,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.2091118143255913
+        }
+      ]
+    },
+    {
+      "ticker": "SLF.TO",
+      "composite": 0.1900894608705297,
+      "trend_health": 7.027378525335487,
+      "label": "RESEARCH_ONLY",
+      "why": "SLF.TO: RESEARCH_ONLY. Price is 7.0 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.4074134742740203,
+          "percentile": 0.5714285714285714,
+          "contribution": 0.08148269485480406
+        },
+        {
+          "name": "revision",
+          "value": -0.00449212816061958,
+          "percentile": 0.42857142857142855,
+          "contribution": -0.0008984256321239159
+        },
+        {
+          "name": "quality",
+          "value": -0.3761863344722631,
+          "percentile": 0.32142857142857145,
+          "contribution": -0.07523726689445262
+        },
+        {
+          "name": "value",
+          "value": 0.184806213945439,
+          "percentile": 0.4642857142857143,
+          "contribution": 0.0369612427890878
+        },
+        {
+          "name": "lowvol",
+          "value": 0.7389060787660717,
+          "percentile": 0.6785714285714286,
+          "contribution": 0.14778121575321435
+        }
+      ]
+    },
+    {
+      "ticker": "BMO.TO",
+      "composite": 0.16724103474671198,
+      "trend_health": 5.618948836666144,
+      "label": "RESEARCH_ONLY",
+      "why": "BMO.TO: RESEARCH_ONLY. Price is 5.6 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.670391447477522,
+          "percentile": 0.7142857142857143,
+          "contribution": 0.1340782894955044
+        },
+        {
+          "name": "revision",
+          "value": 0.04429058444974017,
+          "percentile": 0.5,
+          "contribution": 0.008858116889948035
+        },
+        {
+          "name": "quality",
+          "value": -0.768287661345346,
+          "percentile": 0.17857142857142858,
+          "contribution": -0.1536575322690692
+        },
+        {
+          "name": "value",
+          "value": 0.09504542378593564,
+          "percentile": 0.42857142857142855,
+          "contribution": 0.019009084757187128
+        },
+        {
+          "name": "lowvol",
+          "value": 0.7947653793657081,
+          "percentile": 0.75,
+          "contribution": 0.1589530758731416
+        }
+      ]
+    },
+    {
+      "ticker": "GWO.TO",
+      "composite": 0.13931718966389645,
+      "trend_health": 7.133204136293895,
+      "label": "RESEARCH_ONLY",
+      "why": "GWO.TO: RESEARCH_ONLY. Price is 7.1 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.2537194681557602,
+          "percentile": 0.8928571428571429,
+          "contribution": 0.250743893631152
+        },
+        {
+          "name": "revision",
+          "value": -1.2934407162946167,
+          "percentile": 0.14285714285714285,
+          "contribution": -0.2586881432589233
+        },
+        {
+          "name": "quality",
+          "value": -0.2132920276062972,
+          "percentile": 0.39285714285714285,
+          "contribution": -0.04265840552125944
+        },
+        {
+          "name": "value",
+          "value": 0.19710163315874232,
+          "percentile": 0.5,
+          "contribution": 0.039420326631748465
+        },
+        {
+          "name": "lowvol",
+          "value": 0.7524975909058936,
+          "percentile": 0.7142857142857143,
+          "contribution": 0.15049951818117874
+        }
+      ]
+    },
+    {
+      "ticker": "NA.TO",
+      "composite": 0.12773320805266025,
+      "trend_health": 2.0955004569037445,
+      "label": "RESEARCH_ONLY",
+      "why": "NA.TO: RESEARCH_ONLY. Price is 2.1 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.39127465114479165,
+          "percentile": 0.5357142857142857,
+          "contribution": 0.07825493022895832
+        },
+        {
+          "name": "revision",
+          "value": -0.788199458150192,
+          "percentile": 0.25,
+          "contribution": -0.1576398916300384
+        },
+        {
+          "name": "quality",
+          "value": -0.19222808843882175,
+          "percentile": 0.4642857142857143,
+          "contribution": -0.03844561768776435
+        },
+        {
+          "name": "value",
+          "value": 0.39721169258865924,
+          "percentile": 0.6428571428571429,
+          "contribution": 0.07944233851773184
+        },
+        {
+          "name": "lowvol",
+          "value": 0.8306072431188642,
+          "percentile": 0.8214285714285714,
+          "contribution": 0.16612144862377284
+        }
+      ]
+    },
+    {
+      "ticker": "IMO.TO",
+      "composite": 0.0899650577426698,
+      "trend_health": 1.9989283435690026,
+      "label": "RESEARCH_ONLY",
+      "why": "IMO.TO: RESEARCH_ONLY. Price is 2.0 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.8502125498791583,
+          "percentile": 0.7857142857142857,
+          "contribution": 0.17004250997583165
+        },
+        {
+          "name": "revision",
+          "value": -0.0248962890854554,
+          "percentile": 0.39285714285714285,
+          "contribution": -0.0049792578170910805
+        },
+        {
+          "name": "quality",
+          "value": 0.20283794886478884,
+          "percentile": 0.6785714285714286,
+          "contribution": 0.04056758977295777
+        },
+        {
+          "name": "value",
+          "value": -0.0729292240268003,
+          "percentile": 0.39285714285714285,
+          "contribution": -0.01458584480536006
+        },
+        {
+          "name": "lowvol",
+          "value": -0.5053996969183424,
+          "percentile": 0.21428571428571427,
+          "contribution": -0.10107993938366848
+        }
+      ]
+    },
+    {
+      "ticker": "OTEX.TO",
+      "composite": 0.045386152565978444,
+      "trend_health": 4.730592634473184,
+      "label": "RESEARCH_ONLY",
+      "why": "OTEX.TO: RESEARCH_ONLY. Price is 4.7 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.6596997417013049,
+          "percentile": 0.0,
+          "contribution": -0.33193994834026097
+        },
+        {
+          "name": "revision",
+          "value": 1.5242404414418464,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.3048480882883693
+        },
+        {
+          "name": "quality",
+          "value": 0.10797220802163937,
+          "percentile": 0.5714285714285714,
+          "contribution": 0.021594441604327875
+        },
+        {
+          "name": "value",
+          "value": 1.5434765876798058,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.30869531753596113
+        },
+        {
+          "name": "lowvol",
+          "value": -1.2890587326120946,
+          "percentile": 0.14285714285714285,
+          "contribution": -0.2578117465224189
+        }
+      ]
+    },
+    {
+      "ticker": "MFC.TO",
+      "composite": 0.01776167094732643,
+      "trend_health": 7.826676881772489,
+      "label": "RESEARCH_ONLY",
+      "why": "MFC.TO: RESEARCH_ONLY. Price is 7.8 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.5507546662509291,
+          "percentile": 0.6071428571428571,
+          "contribution": 0.11015093325018581
+        },
+        {
+          "name": "revision",
+          "value": -0.8228734316310627,
+          "percentile": 0.21428571428571427,
+          "contribution": -0.16457468632621255
+        },
+        {
+          "name": "quality",
+          "value": -0.34092374001411857,
+          "percentile": 0.35714285714285715,
+          "contribution": -0.06818474800282372
+        },
+        {
+          "name": "value",
+          "value": 0.4657687866489409,
+          "percentile": 0.75,
+          "contribution": 0.09315375732978817
+        },
+        {
+          "name": "lowvol",
+          "value": 0.23608207348194357,
+          "percentile": 0.42857142857142855,
+          "contribution": 0.047216414696388716
+        }
+      ]
+    },
+    {
+      "ticker": "MRU.TO",
+      "composite": 0.004904063258236247,
+      "trend_health": 1.6009973844419387,
+      "label": "RESEARCH_ONLY",
+      "why": "MRU.TO: RESEARCH_ONLY. Price is 1.6 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.947016853435552,
+          "percentile": 0.17857142857142858,
+          "contribution": -0.18940337068711038
+        },
+        {
+          "name": "revision",
+          "value": 0.8004547735951717,
+          "percentile": 0.75,
+          "contribution": 0.16009095471903434
+        },
+        {
+          "name": "quality",
+          "value": -0.4275199343692961,
+          "percentile": 0.25,
+          "contribution": -0.08550398687385921
+        },
+        {
+          "name": "value",
+          "value": -0.22110373341596,
+          "percentile": 0.35714285714285715,
+          "contribution": -0.044220746683192
+        },
+        {
+          "name": "lowvol",
+          "value": 0.8197060639168176,
+          "percentile": 0.7857142857142857,
+          "contribution": 0.16394121278336352
+        }
+      ]
+    },
+    {
+      "ticker": "FTS.TO",
+      "composite": -0.03727523483393287,
+      "trend_health": 3.4400230169770234,
+      "label": "RESEARCH_ONLY",
+      "why": "FTS.TO: RESEARCH_ONLY. Price is 3.4 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.5299231314860944,
+          "percentile": 0.35714285714285715,
+          "contribution": -0.10598462629721887
+        },
+        {
+          "name": "revision",
+          "value": 0.879019196791641,
+          "percentile": 0.8571428571428571,
+          "contribution": 0.1758038393583282
+        },
+        {
+          "name": "quality",
+          "value": -1.2530703205553217,
+          "percentile": 0.07142857142857142,
+          "contribution": -0.25061406411106435
+        },
+        {
+          "name": "value",
+          "value": -0.32796099054784583,
+          "percentile": 0.2857142857142857,
+          "contribution": -0.06559219810956916
+        },
+        {
+          "name": "lowvol",
+          "value": 1.0455590716279566,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.2091118143255913
+        }
+      ]
+    },
+    {
+      "ticker": "FFH.TO",
+      "composite": -0.051298567333181465,
+      "trend_health": 2.9717598772140748,
+      "label": "RESEARCH_ONLY",
+      "why": "FFH.TO: RESEARCH_ONLY. Price is 3.0 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.8974143472012285,
+          "percentile": 0.25,
+          "contribution": -0.1794828694402457
+        },
+        {
+          "name": "revision",
+          "value": -1.3434147864200543,
+          "percentile": 0.10714285714285714,
+          "contribution": -0.26868295728401087
+        },
+        {
+          "name": "quality",
+          "value": 0.15384478665303067,
+          "percentile": 0.6428571428571429,
+          "contribution": 0.030768957330606132
+        },
+        {
+          "name": "value",
+          "value": 1.5434765876798058,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.30869531753596113
+        },
+        {
+          "name": "lowvol",
+          "value": 0.28701492262253897,
+          "percentile": 0.5357142857142857,
+          "contribution": 0.057402984524507795
+        }
+      ]
+    },
+    {
+      "ticker": "GIB-A.TO",
+      "composite": -0.16872720924313936,
+      "trend_health": 4.182893006818773,
+      "label": "RESEARCH_ONLY",
+      "why": "GIB-A.TO: RESEARCH_ONLY. Price is 4.2 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.626074344114774,
+          "percentile": 0.07142857142857142,
+          "contribution": -0.3252148688229548
+        },
+        {
+          "name": "revision",
+          "value": -0.2562941278154975,
+          "percentile": 0.35714285714285715,
+          "contribution": -0.0512588255630995
+        },
+        {
+          "name": "quality",
+          "value": 0.238880689218025,
+          "percentile": 0.7142857142857143,
+          "contribution": 0.047776137843605
+        },
+        {
+          "name": "value",
+          "value": 1.1129456845857948,
+          "percentile": 0.8571428571428571,
+          "contribution": 0.22258913691715895
+        },
+        {
+          "name": "lowvol",
+          "value": -0.31309394808924507,
+          "percentile": 0.2857142857142857,
+          "contribution": -0.06261878961784902
+        }
+      ]
+    },
+    {
+      "ticker": "L.TO",
+      "composite": -0.2393606522582247,
+      "trend_health": 3.3640399522645565,
+      "label": "RESEARCH_ONLY",
+      "why": "L.TO: RESEARCH_ONLY. Price is 3.4 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.33098755796635904,
+          "percentile": 0.42857142857142855,
+          "contribution": -0.06619751159327181
+        },
+        {
+          "name": "revision",
+          "value": -2.015684274743688,
+          "percentile": 0.0,
+          "contribution": -0.40313685494873763
+        },
+        {
+          "name": "quality",
+          "value": 1.4016102872918579,
+          "percentile": 0.8928571428571429,
+          "contribution": 0.2803220574583716
+        },
+        {
+          "name": "value",
+          "value": -0.7802513733810111,
+          "percentile": 0.21428571428571427,
+          "contribution": -0.15605027467620222
+        },
+        {
+          "name": "lowvol",
+          "value": 0.528509657508077,
+          "percentile": 0.6428571428571429,
+          "contribution": 0.1057019315016154
+        }
+      ]
+    },
+    {
+      "ticker": "WCN.TO",
+      "composite": -0.24389577005863639,
+      "trend_health": 5.20926462523545,
+      "label": "RESEARCH_ONLY",
+      "why": "WCN.TO: RESEARCH_ONLY. Price is 5.2 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.0702208781715306,
+          "percentile": 0.14285714285714285,
+          "contribution": -0.2140441756343061
+        },
+        {
+          "name": "revision",
+          "value": 0.8612320106629884,
+          "percentile": 0.8214285714285714,
+          "contribution": 0.17224640213259768
+        },
+        {
+          "name": "quality",
+          "value": -0.20439836440225173,
+          "percentile": 0.42857142857142855,
+          "contribution": -0.04087967288045034
+        },
+        {
+          "name": "value",
+          "value": -1.1849974673701695,
+          "percentile": 0.14285714285714285,
+          "contribution": -0.2369994934740339
+        },
+        {
+          "name": "lowvol",
+          "value": 0.3789058489877814,
+          "percentile": 0.5714285714285714,
+          "contribution": 0.07578116979755628
+        }
+      ]
+    },
+    {
+      "ticker": "DOL.TO",
+      "composite": -0.27189565284545514,
+      "trend_health": 5.37987266575351,
+      "label": "RESEARCH_ONLY",
+      "why": "DOL.TO: RESEARCH_ONLY. Price is 5.4 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.7581740242392635,
+          "percentile": 0.32142857142857145,
+          "contribution": -0.1516348048478527
+        },
+        {
+          "name": "revision",
+          "value": -1.42874402301866,
+          "percentile": 0.07142857142857142,
+          "contribution": -0.28574880460373203
+        },
+        {
+          "name": "quality",
+          "value": 1.7454984418190953,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.34909968836381905
+        },
+        {
+          "name": "value",
+          "value": -1.1748032865337408,
+          "percentile": 0.17857142857142858,
+          "contribution": -0.23496065730674814
+        },
+        {
+          "name": "lowvol",
+          "value": 0.2567446277452935,
+          "percentile": 0.4642857142857143,
+          "contribution": 0.0513489255490587
+        }
+      ]
+    },
+    {
+      "ticker": "CP.TO",
+      "composite": -0.49617489469112597,
+      "trend_health": 4.305924783158324,
+      "label": "RESEARCH_ONLY",
+      "why": "CP.TO: RESEARCH_ONLY. Price is 4.3 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 0.009306490569389612,
+          "percentile": 0.4642857142857143,
+          "contribution": 0.0018612981138779224
+        },
+        {
+          "name": "revision",
+          "value": -0.8887840633286749,
+          "percentile": 0.17857142857142858,
+          "contribution": -0.17775681266573498
+        },
+        {
+          "name": "quality",
+          "value": -1.1458782745697236,
+          "percentile": 0.10714285714285714,
+          "contribution": -0.2291756549139447
+        },
+        {
+          "name": "value",
+          "value": -0.7309541345408193,
+          "percentile": 0.25,
+          "contribution": -0.14619082690816385
+        },
+        {
+          "name": "lowvol",
+          "value": 0.27543550841419834,
+          "percentile": 0.5,
+          "contribution": 0.055087101682839666
+        }
+      ]
+    },
+    {
+      "ticker": "CSU.TO",
+      "composite": -0.6048147400775086,
+      "trend_health": 4.563841481122394,
+      "label": "RESEARCH_ONLY",
+      "why": "CSU.TO: RESEARCH_ONLY. Price is 4.6 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.6596997417013049,
+          "percentile": 0.0,
+          "contribution": -0.33193994834026097
+        },
+        {
+          "name": "revision",
+          "value": 0.4950301350893151,
+          "percentile": 0.6428571428571429,
+          "contribution": 0.09900602701786301
+        },
+        {
+          "name": "quality",
+          "value": 1.2143751164406733,
+          "percentile": 0.8571428571428571,
+          "contribution": 0.24287502328813465
+        },
+        {
+          "name": "value",
+          "value": -1.4372392914292649,
+          "percentile": 0.10714285714285714,
+          "contribution": -0.28744785828585295
+        },
+        {
+          "name": "lowvol",
+          "value": -1.6365399187869618,
+          "percentile": 0.07142857142857142,
+          "contribution": -0.32730798375739234
+        }
+      ]
+    },
+    {
+      "ticker": "TECK-B.TO",
+      "composite": -0.7300660940287204,
+      "trend_health": 1.1456635548426966,
+      "label": "RESEARCH_ONLY",
+      "why": "TECK-B.TO: RESEARCH_ONLY. Price is 1.1 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": 1.437286440423745,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.287457288084749
+        },
+        {
+          "name": "revision",
+          "value": -2.015684274743688,
+          "percentile": 0.0,
+          "contribution": -0.40313685494873763
+        },
+        {
+          "name": "quality",
+          "value": -1.0580338467823995,
+          "percentile": 0.14285714285714285,
+          "contribution": -0.2116067693564799
+        },
+        {
+          "name": "value",
+          "value": 0.45894121729694226,
+          "percentile": 0.7142857142857143,
+          "contribution": 0.09178824345938845
+        },
+        {
+          "name": "lowvol",
+          "value": -2.4728400063382017,
+          "percentile": 0.0,
+          "contribution": -0.49456800126764033
+        }
+      ]
+    },
+    {
+      "ticker": "SHOP.TO",
+      "composite": -0.8412048844683024,
+      "trend_health": 5.33707405554394,
+      "label": "RESEARCH_ONLY",
+      "why": "SHOP.TO: RESEARCH_ONLY. Price is 5.3 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -1.3364916968538882,
+          "percentile": 0.10714285714285714,
+          "contribution": -0.2672983393707776
+        },
+        {
+          "name": "revision",
+          "value": 1.5242404414418464,
+          "percentile": 0.9285714285714286,
+          "contribution": 0.3048480882883693
+        },
+        {
+          "name": "quality",
+          "value": 0.007021329196775141,
+          "percentile": 0.5,
+          "contribution": 0.0014042658393550282
+        },
+        {
+          "name": "value",
+          "value": -1.927954489788044,
+          "percentile": 0.0,
+          "contribution": -0.3855908979576088
+        },
+        {
+          "name": "lowvol",
+          "value": -2.4728400063382017,
+          "percentile": 0.0,
+          "contribution": -0.49456800126764033
+        }
+      ]
+    },
+    {
+      "ticker": "TOU.TO",
+      "composite": -1.0781609830341545,
+      "trend_health": 3.12432365978319,
+      "label": "RESEARCH_ONLY",
+      "why": "TOU.TO: RESEARCH_ONLY. Price is 3.1 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.8466193558882374,
+          "percentile": 0.2857142857142857,
+          "contribution": -0.1693238711776475
+        },
+        {
+          "name": "revision",
+          "value": -0.6563393579065795,
+          "percentile": 0.2857142857142857,
+          "contribution": -0.1312678715813159
+        },
+        {
+          "name": "quality",
+          "value": -2.0553723590676154,
+          "percentile": 0.0,
+          "contribution": -0.4110744718135231
+        },
+        {
+          "name": "value",
+          "value": -1.6860176857842477,
+          "percentile": 0.07142857142857142,
+          "contribution": -0.33720353715684953
+        },
+        {
+          "name": "lowvol",
+          "value": -0.1464561565240917,
+          "percentile": 0.35714285714285715,
+          "contribution": -0.029291231304818338
+        }
+      ]
+    },
+    {
+      "ticker": "GFL.TO",
+      "composite": -1.0927626012992158,
+      "trend_health": 4.0007472637923955,
+      "label": "RESEARCH_ONLY",
+      "why": "GFL.TO: RESEARCH_ONLY. Price is 4.0 ATRs above its 200-day trend.",
+      "factor_scores": [
+        {
+          "name": "momentum",
+          "value": -0.9168391082033027,
+          "percentile": 0.21428571428571427,
+          "contribution": -0.18336782164066054
+        },
+        {
+          "name": "revision",
+          "value": -0.26975970194314874,
+          "percentile": 0.32142857142857145,
+          "contribution": -0.05395194038862975
+        },
+        {
+          "name": "quality",
+          "value": -2.0553723590676154,
+          "percentile": 0.0,
+          "contribution": -0.4110744718135231
+        },
+        {
+          "name": "value",
+          "value": -1.927954489788044,
+          "percentile": 0.0,
+          "contribution": -0.3855908979576088
+        },
+        {
+          "name": "lowvol",
+          "value": -0.29388734749396755,
+          "percentile": 0.32142857142857145,
+          "contribution": -0.05877746949879351
+        }
+      ]
+    }
+  ]
+}

@@ -1,25 +1,29 @@
 {
-  "as_of": "2026-10-27",
+  "as_of": "2026-10-28",
   "cases": {
     "CNQ.TO": {
       "in_favor": [
         {
-          "text": "Exhibits strong Momentum (12-1).",
+          "text": "Momentum (12-1) is Strong",
           "source": "p86"
         },
         {
-          "text": "Shows exceptional Quality (ROE/margin).",
+          "text": "Analyst dispersion is Flat",
+          "source": "p61"
+        },
+        {
+          "text": "Quality (ROE/margin) is Exceptional",
           "source": "p93"
         },
         {
-          "text": "Has strong Value (1/PE).",
-          "source": "p90"
+          "text": "Value (1/PE) is Strong",
+          "source": "p89"
         }
       ],
       "to_watch": [
         {
-          "text": "Exhibits weak Lowvol characteristics.",
-          "source": "p17"
+          "text": "Lowvol is Weak",
+          "source": "p18"
         }
       ],
       "data_gap": false
@@ -27,26 +31,26 @@
     "CVE.TO": {
       "in_favor": [
         {
-          "text": "Exhibits exceptional Momentum (12-1).",
+          "text": "Momentum (12-1) is Exceptional",
           "source": "p93"
         },
         {
-          "text": "Shows strong Quality (ROE/margin).",
+          "text": "Quality (ROE/margin) is Strong",
           "source": "p79"
         },
         {
-          "text": "Has exceptional Value (1/PE).",
+          "text": "Value (1/PE) is Exceptional",
           "source": "p93"
         }
       ],
       "to_watch": [
         {
-          "text": "Shows strong Analyst dispersion.",
-          "source": "p86"
+          "text": "Analyst dispersion is Strong",
+          "source": "p89"
         },
         {
-          "text": "Exhibits weak Lowvol characteristics.",
-          "source": "p10"
+          "text": "Lowvol is Weak",
+          "source": "p11"
         }
       ],
       "data_gap": false
@@ -54,14 +58,26 @@
     "QSR.TO": {
       "in_favor": [
         {
-          "text": "Shows exceptional Quality (ROE/margin).",
+          "text": "Quality (ROE/margin) is Exceptional",
           "source": "p93"
         }
       ],
       "to_watch": [
         {
-          "text": "Shows exceptional Analyst dispersion.",
+          "text": "Momentum (12-1) is Weak",
+          "source": "p39"
+        },
+        {
+          "text": "Analyst dispersion is Exceptional",
           "source": "p93"
+        },
+        {
+          "text": "Value (1/PE) is Flat",
+          "source": "p54"
+        },
+        {
+          "text": "Lowvol is Weak",
+          "source": "p39"
         }
       ],
       "data_gap": false
@@ -69,18 +85,26 @@
     "CM.TO": {
       "in_favor": [
         {
-          "text": "Has strong Value (1/PE).",
+          "text": "Value (1/PE) is Strong",
           "source": "p79"
         },
         {
-          "text": "Exhibits strong Lowvol characteristics.",
+          "text": "Lowvol is Strong",
           "source": "p86"
         }
       ],
       "to_watch": [
         {
-          "text": "Shows strong Analyst dispersion.",
-          "source": "p76"
+          "text": "Momentum (12-1) is Flat",
+          "source": "p64"
+        },
+        {
+          "text": "Analyst dispersion is Strong",
+          "source": "p79"
+        },
+        {
+          "text": "Quality (ROE/margin) is Flat",
+          "source": "p54"
         }
       ],
       "data_gap": false
@@ -88,28 +112,53 @@
     "RY.TO": {
       "in_favor": [
         {
-          "text": "Exhibits exceptional Lowvol characteristics.",
+          "text": "Analyst dispersion is Flat",
+          "source": "p71"
+        },
+        {
+          "text": "Lowvol is Exceptional",
           "source": "p93"
         }
       ],
-      "to_watch": [],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is Flat",
+          "source": "p68"
+        },
+        {
+          "text": "Quality (ROE/margin) is Flat",
+          "source": "p61"
+        },
+        {
+          "text": "Value (1/PE) is Flat",
+          "source": "p61"
+        }
+      ],
       "data_gap": false
     },
     "SU.TO": {
       "in_favor": [
         {
-          "text": "Exhibits exceptional Momentum (12-1).",
+          "text": "Momentum (12-1) is Exceptional",
           "source": "p93"
         },
         {
-          "text": "Has strong Value (1/PE).",
-          "source": "p83"
+          "text": "Analyst dispersion is Flat",
+          "source": "p46"
+        },
+        {
+          "text": "Quality (ROE/margin) is Strong",
+          "source": "p75"
+        },
+        {
+          "text": "Value (1/PE) is Strong",
+          "source": "p82"
         }
       ],
       "to_watch": [
         {
-          "text": "Exhibits weak Lowvol characteristics.",
-          "source": "p24"
+          "text": "Lowvol is Weak",
+          "source": "p25"
         }
       ],
       "data_gap": false
@@ -117,18 +166,26 @@
     "TD.TO": {
       "in_favor": [
         {
-          "text": "Exhibits strong Momentum (12-1).",
-          "source": "p83"
+          "text": "Momentum (12-1) is Strong",
+          "source": "p82"
         },
         {
-          "text": "Exhibits strong Lowvol characteristics.",
-          "source": "p90"
+          "text": "Analyst dispersion is Flat",
+          "source": "p57"
+        },
+        {
+          "text": "Lowvol is Strong",
+          "source": "p89"
         }
       ],
       "to_watch": [
         {
-          "text": "Shows weak Quality (ROE/margin).",
-          "source": "p28"
+          "text": "Quality (ROE/margin) is Weak",
+          "source": "p29"
+        },
+        {
+          "text": "Value (1/PE) is Flat",
+          "source": "p57"
         }
       ],
       "data_gap": false
@@ -136,14 +193,26 @@
     "CNR.TO": {
       "in_favor": [
         {
-          "text": "Shows strong Quality (ROE/margin).",
-          "source": "p83"
+          "text": "Analyst dispersion is Flat",
+          "source": "p68"
+        },
+        {
+          "text": "Quality (ROE/margin) is Strong",
+          "source": "p82"
         }
       ],
       "to_watch": [
         {
-          "text": "Has weak Value (1/PE).",
-          "source": "p34"
+          "text": "Momentum (12-1) is Flat",
+          "source": "p50"
+        },
+        {
+          "text": "Value (1/PE) is Weak",
+          "source": "p32"
+        },
+        {
+          "text": "Lowvol is Flat",
+          "source": "p61"
         }
       ],
       "data_gap": false
@@ -151,41 +220,53 @@
     "BNS.TO": {
       "in_favor": [
         {
-          "text": "Exhibits strong Momentum (12-1).",
-          "source": "p76"
+          "text": "Momentum (12-1) is Strong",
+          "source": "p75"
         },
         {
-          "text": "Exhibits exceptional Lowvol characteristics.",
+          "text": "Analyst dispersion is Flat",
+          "source": "p54"
+        },
+        {
+          "text": "Lowvol is Exceptional",
           "source": "p93"
         }
       ],
       "to_watch": [
         {
-          "text": "Shows weak Quality (ROE/margin).",
+          "text": "Quality (ROE/margin) is Weak",
           "source": "p21"
+        },
+        {
+          "text": "Value (1/PE) is Flat",
+          "source": "p68"
         }
       ],
       "data_gap": false
     },
-    "ATD.TO": {
+    "SLF.TO": {
       "in_favor": [
         {
-          "text": "Shows strong Quality (ROE/margin).",
-          "source": "p76"
+          "text": "Analyst dispersion is Flat",
+          "source": "p43"
         }
       ],
       "to_watch": [
         {
-          "text": "Exhibits weak Momentum (12-1).",
-          "source": "p38"
+          "text": "Momentum (12-1) is Flat",
+          "source": "p57"
         },
         {
-          "text": "Shows strong Analyst dispersion.",
-          "source": "p90"
+          "text": "Quality (ROE/margin) is Weak",
+          "source": "p32"
         },
         {
-          "text": "Exhibits weak Lowvol characteristics.",
-          "source": "p38"
+          "text": "Value (1/PE) is Flat",
+          "source": "p46"
+        },
+        {
+          "text": "Lowvol is Flat",
+          "source": "p68"
         }
       ],
       "data_gap": false
