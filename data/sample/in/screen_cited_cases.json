@@ -1,29 +1,56 @@
 {
-  "as_of": "2026-10-29",
+  "as_of": "2026-10-31",
   "cases": {
     "ICICIBANK.NS": {
       "in_favor": [
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p89"
+          "text": "The security demonstrates strong value based on its 1/PE ratio.",
+          "source": "p85"
         },
         {
-          "text": "Lowvol is strong.",
-          "source": "p89"
+          "text": "The security exhibits exceptional low volatility characteristics.",
+          "source": "p92"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p44"
+          "text": "The security's 12-1 momentum is flat.",
+          "source": "p54"
         },
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "p89"
+          "text": "Analyst dispersion is exceptionally high.",
+          "source": "p92"
         },
         {
-          "text": "Quality (ROE/margin) is flat.",
-          "source": "p44"
+          "text": "The security's quality, based on ROE/margin, is flat.",
+          "source": "p54"
+        }
+      ],
+      "data_gap": false
+    },
+    "JSWSTEEL.NS": {
+      "in_favor": [
+        {
+          "text": "The security demonstrates strong 12-1 momentum.",
+          "source": "p85"
+        },
+        {
+          "text": "Analyst dispersion is flat, indicating lower disagreement.",
+          "source": "p69"
+        },
+        {
+          "text": "The security exhibits exceptional quality based on ROE/margin.",
+          "source": "p92"
+        },
+        {
+          "text": "The security shows exceptional value based on its 1/PE ratio.",
+          "source": "p92"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "The security's low volatility characteristics are flat.",
+          "source": "p62"
         }
       ],
       "data_gap": false
@@ -31,53 +58,53 @@
     "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p89"
-        },
-        {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p89"
+          "text": "The security demonstrates exceptional 12-1 momentum.",
+          "source": "p92"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is strong.",
-          "source": "p89"
+          "text": "Analyst dispersion is exceptionally high.",
+          "source": "p92"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p56"
+          "text": "The security's quality, based on ROE/margin, is weak.",
+          "source": "p38"
         },
         {
-          "text": "Lowvol is weak.",
-          "source": "p22"
+          "text": "The security's value, based on its 1/PE ratio, is flat.",
+          "source": "p46"
+        },
+        {
+          "text": "The security exhibits weak low volatility characteristics.",
+          "source": "p15"
         }
       ],
       "data_gap": false
     },
-    "TCS.NS": {
+    "KOTAKBANK.NS": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p89"
+          "text": "Analyst dispersion is flat, indicating lower disagreement.",
+          "source": "p54"
         },
         {
-          "text": "Value (1/PE) is strong.",
-          "source": "p89"
+          "text": "The security demonstrates strong low volatility characteristics.",
+          "source": "p77"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p11"
+          "text": "The security's 12-1 momentum is flat.",
+          "source": "p62"
         },
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p44"
+          "text": "The security's quality, based on ROE/margin, is weak.",
+          "source": "p31"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p56"
+          "text": "The security's value, based on its 1/PE ratio, is flat.",
+          "source": "p62"
         }
       ],
       "data_gap": false
@@ -85,80 +112,80 @@
     "HCLTECH.NS": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is strong.",
-          "source": "p78"
-        },
-        {
-          "text": "Value (1/PE) is strong.",
-          "source": "p78"
+          "text": "The security exhibits strong quality based on ROE/margin.",
+          "source": "p77"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p22"
+          "text": "The security's 12-1 momentum is weak.",
+          "source": "p23"
         },
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p67"
+          "text": "Analyst dispersion is strong, indicating higher disagreement.",
+          "source": "p77"
         },
         {
-          "text": "Lowvol is weak.",
-          "source": "p33"
+          "text": "The security's value, based on its 1/PE ratio, is flat.",
+          "source": "p69"
+        },
+        {
+          "text": "The security exhibits weak low volatility characteristics.",
+          "source": "p31"
         }
       ],
       "data_gap": false
     },
-    "TECHM.NS": {
+    "CIPLA.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p89"
+          "text": "Analyst dispersion is flat, indicating lower disagreement.",
+          "source": "p62"
         },
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p22"
+          "text": "The security exhibits exceptional low volatility characteristics.",
+          "source": "p92"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is flat.",
-          "source": "p56"
+          "text": "The security's 12-1 momentum is flat.",
+          "source": "p46"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p67"
+          "text": "The security's quality, based on ROE/margin, is weak.",
+          "source": "p23"
         },
         {
-          "text": "Lowvol is flat.",
-          "source": "p44"
+          "text": "The security's value, based on its 1/PE ratio, is weak.",
+          "source": "p38"
         }
       ],
       "data_gap": false
     },
-    "BHARTIARTL.NS": {
+    "TCS.NS": {
       "in_favor": [
         {
-          "text": "Lowvol is strong.",
-          "source": "p89"
+          "text": "Analyst dispersion is weak, indicating lower disagreement.",
+          "source": "p31"
+        },
+        {
+          "text": "The security exhibits exceptional quality based on ROE/margin.",
+          "source": "p92"
+        },
+        {
+          "text": "The security shows strong value based on its 1/PE ratio.",
+          "source": "p77"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p33"
+          "text": "The security's 12-1 momentum is weak.",
+          "source": "p15"
         },
         {
-          "text": "Analyst dispersion is flat.",
-          "source": "p56"
-        },
-        {
-          "text": "Quality (ROE/margin) is flat.",
-          "source": "p67"
-        },
-        {
-          "text": "Value (1/PE) is weak.",
-          "source": "p33"
+          "text": "The security's low volatility characteristics are flat.",
+          "source": "p54"
         }
       ],
       "data_gap": false
@@ -166,106 +193,80 @@
     "DRREDDY.NS": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p33"
+          "text": "The security demonstrates strong 12-1 momentum.",
+          "source": "p77"
+        },
+        {
+          "text": "Analyst dispersion is weak, indicating lower disagreement.",
+          "source": "p23"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p67"
+          "text": "The security's quality, based on ROE/margin, is weak.",
+          "source": "p15"
         },
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p11"
+          "text": "The security's value, based on its 1/PE ratio, is weak.",
+          "source": "p31"
         },
         {
-          "text": "Value (1/PE) is flat.",
-          "source": "p44"
-        },
-        {
-          "text": "Lowvol is flat.",
-          "source": "p67"
+          "text": "The security's low volatility characteristics are flat.",
+          "source": "p69"
         }
       ],
       "data_gap": false
     },
-    "APOLLOHOSP.NS": {
+    "BHARTIARTL.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is strong.",
-          "source": "p78"
+          "text": "Analyst dispersion is weak, indicating lower disagreement.",
+          "source": "p38"
         },
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p11"
-        },
-        {
-          "text": "Lowvol is strong.",
-          "source": "p78"
+          "text": "The security demonstrates strong low volatility characteristics.",
+          "source": "p85"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p22"
+          "text": "The security's 12-1 momentum is weak.",
+          "source": "p31"
         },
         {
-          "text": "Value (1/PE) is weak.",
-          "source": "p22"
+          "text": "The security's quality, based on ROE/margin, is flat.",
+          "source": "p69"
+        },
+        {
+          "text": "The security's value, based on its 1/PE ratio, is weak.",
+          "source": "p23"
         }
       ],
       "data_gap": false
     },
-    "TRENT.NS": {
-      "in_favor": [],
-      "to_watch": [
-        {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p0"
-        },
-        {
-          "text": "Analyst dispersion is strong.",
-          "source": "p78"
-        },
-        {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p33"
-        },
-        {
-          "text": "Value (1/PE) is weak.",
-          "source": "p11"
-        },
-        {
-          "text": "Lowvol is weak.",
-          "source": "p0"
-        }
-      ],
-      "data_gap": false
-    },
-    "ETERNAL.NS": {
+    "TECHM.NS": {
       "in_favor": [
         {
-          "text": "Analyst dispersion is weak.",
-          "source": "p0"
+          "text": "The security demonstrates exceptional 12-1 momentum.",
+          "source": "p92"
+        },
+        {
+          "text": "Analyst dispersion is weak, indicating lower disagreement.",
+          "source": "p8"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is flat.",
-          "source": "p56"
+          "text": "The security's quality, based on ROE/margin, is flat.",
+          "source": "p62"
         },
         {
-          "text": "Quality (ROE/margin) is weak.",
-          "source": "p0"
+          "text": "The security's value, based on its 1/PE ratio, is flat.",
+          "source": "p54"
         },
         {
-          "text": "Value (1/PE) is weak.",
-          "source": "p0"
-        },
-        {
-          "text": "Lowvol is weak.",
-          "source": "p11"
+          "text": "The security exhibits weak low volatility characteristics.",
+          "source": "p38"
         }
       ],
       "data_gap": false
