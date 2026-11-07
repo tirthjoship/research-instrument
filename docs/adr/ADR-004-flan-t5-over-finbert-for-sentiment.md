@@ -11,9 +11,9 @@ Need NLP model for financial text sentiment scoring. Original plan used FinBERT.
 Replace FinBERT with fine-tuned Flan-T5 as Step 2 in NLP ladder.
 
 ## Alternatives Considered
-- **FinBERT (110M params)** — insensitive to numerical values, accuracy drops on complex sentences, trained on pre-2020 text.
-- **FinGPT/FinLlama** — larger, harder to run on GitHub Actions free tier.
-- **Claude/Gemini API** — costs money per call.
+- **FinBERT (110M params)**: insensitive to numerical values, accuracy drops on complex sentences, trained on pre-2020 text.
+- **FinGPT/FinLlama**: larger, harder to run on GitHub Actions free tier.
+- **Claude/Gemini API**: costs money per call.
 
 ## Consequences
 **Positive:**
@@ -30,7 +30,7 @@ Replace FinBERT with fine-tuned Flan-T5 as Step 2 in NLP ladder.
 
 **Deployment decision:** Run Flan-T5-base (250M params) locally on M2 MacBook Air via MPS (Metal Performance Shaders) backend. ~0.3s/article on Apple Silicon.
 
-- **No fine-tuning for Phase 3B** — zero-shot classification only. Prompt: "Classify the sentiment of this financial news about {ticker} as positive, negative, or neutral: {text}"
+- **No fine-tuning for Phase 3B**: zero-shot classification only. Prompt: "Classify the sentiment of this financial news about {ticker} as positive, negative, or neutral: {text}"
 - ~500 articles/day × 0.3s = ~2.5 minutes for daily scan. Acceptable.
 - Model downloaded once (~1GB), cached locally. No API costs.
 - If MPS unavailable, falls back to CPU (~1s/article, still viable).

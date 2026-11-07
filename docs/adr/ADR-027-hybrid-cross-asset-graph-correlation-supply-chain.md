@@ -1,4 +1,4 @@
-# ADR-027: Hybrid Cross-Asset Graph — Auto-Correlation + Manual Supply Chain
+# ADR-027: Hybrid Cross-Asset Graph: Auto-Correlation + Manual Supply Chain
 
 **Date:** 2026-06-01
 **Status:** Accepted
@@ -11,8 +11,8 @@ Markets move in clusters. Semiconductor equipment makers (AMAT, LRCX, KLAC) move
 The current feature matrix treats each ticker as independent. There is no mechanism to propagate a signal from a supply-chain leader to its downstream dependents, or to flag that a correlated cluster is breaking down.
 
 Two approaches exist to model relationships:
-- **Statistical**: rolling correlation matrix over price returns — discovers co-movement automatically
-- **Domain knowledge**: hand-coded supply chain graphs — encodes relationships that may not yet appear in price data (new contracts, emerging sectors)
+- **Statistical**: rolling correlation matrix over price returns: discovers co-movement automatically
+- **Domain knowledge**: hand-coded supply chain graphs; encodes relationships that may not yet appear in price data (new contracts, emerging sectors)
 
 Neither alone is sufficient. Pure statistics finds spurious correlations without domain knowledge to filter them. Pure manual encoding misses unknown or newly forming relationships.
 
@@ -28,7 +28,7 @@ Hybrid approach combining auto-discovered correlation clusters with human-review
 - Pairs with statistically significant lead-lag (p < 0.05) get a directed edge in the graph with the lag offset stored
 
 ### Manual overrides (domain knowledge layer)
-- `config/relationships/supply_chain.yaml` — structured YAML:
+- `config/relationships/supply_chain.yaml`: structured YAML:
   ```yaml
   relationships:
     - leader: AMAT
@@ -46,7 +46,7 @@ Hybrid approach combining auto-discovered correlation clusters with human-review
 - Manual entries require human review and comment explaining the business rationale
 
 ### Graph structure
-- `adapters/ml/cross_asset_graph.py` — builds and queries the graph
+- `adapters/ml/cross_asset_graph.py`: builds and queries the graph
 - NetworkX DiGraph: nodes = tickers, edges = (leader, follower) with weight = correlation, lag = days
 - Query: `get_upstream_signals(ticker)` returns signals from all leaders of a given ticker
 - Query: `get_contagion_risk(ticker)` returns followers at risk if this ticker breaks down
@@ -61,10 +61,10 @@ Hybrid approach combining auto-discovered correlation clusters with human-review
 
 ## Alternatives Considered
 
-- **Pure manual supply chain graph** — captures known relationships well, but misses novel clusters forming around emerging themes (space tech, AI infrastructure, GLP-1 drugs). Requires constant manual updates. Rejected as sole approach.
-- **Pure auto-correlation** — fast to build, no maintenance. But finds spurious correlations (two unrelated stocks that happened to both rise in 2024 bull run). Without domain filter, generates false contagion signals. Rejected as sole approach.
-- **Graph Neural Network (GNN)** — most sophisticated approach. Learns relationship weights end-to-end. Too complex for current phase, requires significant training data. Deferred to Phase 6. Rejected now.
-- **Sector ETF proxy** — use ETF returns as sector proxies instead of building an explicit graph. Simpler, already partially implemented via `sector_relative_strength_6m`. Does not capture intra-sector supply chain directionality. Rejected as primary graph mechanism.
+- **Pure manual supply chain graph**: captures known relationships well, but misses novel clusters forming around emerging themes (space tech, AI infrastructure, GLP-1 drugs). Requires constant manual updates. Rejected as sole approach.
+- **Pure auto-correlation**: fast to build, no maintenance. But finds spurious correlations (two unrelated stocks that happened to both rise in 2024 bull run). Without domain filter, generates false contagion signals. Rejected as sole approach.
+- **Graph Neural Network (GNN)**: most sophisticated approach. Learns relationship weights end-to-end. Too complex for current phase, requires significant training data. Deferred to Phase 6. Rejected now.
+- **Sector ETF proxy**: use ETF returns as sector proxies instead of building an explicit graph. Simpler, already partially implemented via `sector_relative_strength_6m`. Does not capture intra-sector supply chain directionality. Rejected as primary graph mechanism.
 
 ## Consequences
 
@@ -76,9 +76,9 @@ Hybrid approach combining auto-discovered correlation clusters with human-review
 
 **Negative:**
 - 60-day rolling correlation matrix for 350 tickers = 350x350 matrix computed weekly. Computationally manageable (~seconds) but adds to weekly tournament runtime
-- Granger causality testing at scale (all pairs) requires multiple testing correction (Bonferroni or BH) to avoid false positives — must be implemented carefully
-- `supply_chain.yaml` maintenance is a permanent ongoing responsibility — stale entries (companies that changed business models) can create wrong signals
-- Lead-lag features are derived from the same price history used for technical features — correlation is not causation, and these features may reflect regime-specific patterns that don't generalize
+- Granger causality testing at scale (all pairs) requires multiple testing correction (Bonferroni or BH) to avoid false positives, must be implemented carefully
+- `supply_chain.yaml` maintenance is a permanent ongoing responsibility: stale entries (companies that changed business models) can create wrong signals
+- Lead-lag features are derived from the same price history used for technical features: correlation is not causation, and these features may reflect regime-specific patterns that don't generalize
 
 ## Superseded By
 None
