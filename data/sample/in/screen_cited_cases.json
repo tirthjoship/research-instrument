@@ -1,56 +1,83 @@
 {
-  "as_of": "2026-11-19",
+  "as_of": "2026-11-20",
   "cases": {
-    "JSWSTEEL.NS": {
+    "ICICIBANK.NS": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is Exceptional.",
-          "source": "p92"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Value (1/PE) is Exceptional.",
-          "source": "p92"
+          "text": "The value factor (1/PE) is strong.",
+          "source": "p83"
+        },
+        {
+          "text": "Low volatility is exceptional.",
+          "source": "p91"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p72"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p70"
         },
         {
-          "text": "Analyst dispersion is Flat.",
+          "text": "Quality (ROE/margin) is flat.",
           "source": "p52"
-        },
-        {
-          "text": "Lowvol is Weak.",
-          "source": "p36"
         }
       ],
       "data_gap": false
     },
-    "ICICIBANK.NS": {
+    "BAJAJ-AUTO.NS": {
       "in_favor": [
         {
-          "text": "Value (1/PE) is Strong.",
-          "source": "p80"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p83"
         },
         {
-          "text": "Lowvol is Exceptional.",
-          "source": "p92"
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p91"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p68"
+          "text": "Analyst dispersion is weak.",
+          "source": "p39"
         },
         {
-          "text": "Analyst dispersion is Exceptional.",
-          "source": "p92"
+          "text": "The value factor (1/PE) is flat.",
+          "source": "p65"
         },
         {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p56"
+          "text": "Low volatility is flat.",
+          "source": "p43"
+        }
+      ],
+      "data_gap": false
+    },
+    "ITC.NS": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong.",
+          "source": "p87"
+        },
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "The value factor (1/PE) is strong.",
+          "source": "p78"
+        },
+        {
+          "text": "Low volatility is strong.",
+          "source": "p87"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p0"
         }
       ],
       "data_gap": false
@@ -58,25 +85,25 @@
     "AXISBANK.NS": {
       "in_favor": [
         {
-          "text": "Value (1/PE) is Exceptional.",
-          "source": "p92"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "The value factor (1/PE) is exceptional.",
+          "source": "p91"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p52"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p48"
         },
         {
-          "text": "Analyst dispersion is Strong.",
-          "source": "p88"
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p35"
         },
         {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p44"
-        },
-        {
-          "text": "Lowvol is Flat.",
+          "text": "Low volatility is flat.",
           "source": "p52"
         }
       ],
@@ -85,53 +112,26 @@
     "TITAN.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Strong.",
-          "source": "p88"
+          "text": "Momentum (12-1) is strong.",
+          "source": "p78"
         },
         {
-          "text": "Quality (ROE/margin) is Exceptional.",
-          "source": "p92"
+          "text": "Analyst dispersion is strong.",
+          "source": "p78"
+        },
+        {
+          "text": "Quality (ROE/margin) is exceptional.",
+          "source": "p91"
         }
       ],
       "to_watch": [
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p72"
+          "text": "The value factor (1/PE) is weak.",
+          "source": "p9"
         },
         {
-          "text": "Value (1/PE) is Weak.",
-          "source": "p20"
-        },
-        {
-          "text": "Lowvol is Flat.",
-          "source": "p56"
-        }
-      ],
-      "data_gap": false
-    },
-    "BAJAJ-AUTO.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Exceptional.",
-          "source": "p92"
-        },
-        {
-          "text": "Analyst dispersion is Weak.",
-          "source": "p32"
-        },
-        {
-          "text": "Quality (ROE/margin) is Exceptional.",
-          "source": "p92"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p64"
-        },
-        {
-          "text": "Lowvol is Flat.",
-          "source": "p44"
+          "text": "Low volatility is flat.",
+          "source": "p57"
         }
       ],
       "data_gap": false
@@ -139,80 +139,53 @@
     "SBIN.NS": {
       "in_favor": [
         {
-          "text": "Value (1/PE) is Exceptional.",
-          "source": "p92"
-        },
-        {
-          "text": "Lowvol is Strong.",
-          "source": "p76"
+          "text": "The value factor (1/PE) is exceptional.",
+          "source": "p91"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Flat.",
-          "source": "p64"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p65"
         },
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p60"
+          "text": "Analyst dispersion is flat.",
+          "source": "p65"
         },
         {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p48"
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p39"
+        },
+        {
+          "text": "Low volatility is flat.",
+          "source": "p70"
         }
       ],
       "data_gap": false
     },
-    "ITC.NS": {
+    "EICHERMOT.NS": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is Strong.",
-          "source": "p84"
-        },
-        {
-          "text": "Value (1/PE) is Strong.",
-          "source": "p76"
-        },
-        {
-          "text": "Lowvol is Strong.",
-          "source": "p88"
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p87"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Weak.",
-          "source": "p0"
+          "text": "Momentum (12-1) is flat.",
+          "source": "p74"
         },
         {
-          "text": "Analyst dispersion is Strong.",
-          "source": "p84"
-        }
-      ],
-      "data_gap": false
-    },
-    "ADANIPORTS.NS": {
-      "in_favor": [
-        {
-          "text": "Momentum (12-1) is Exceptional.",
-          "source": "p92"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Analyst dispersion is Exceptional.",
-          "source": "p92"
+          "text": "Analyst dispersion is flat.",
+          "source": "p61"
         },
         {
-          "text": "Quality (ROE/margin) is Flat.",
-          "source": "p52"
+          "text": "The value factor (1/PE) is weak.",
+          "source": "p35"
         },
         {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p52"
-        },
-        {
-          "text": "Lowvol is Weak.",
-          "source": "p20"
+          "text": "Low volatility is weak.",
+          "source": "p30"
         }
       ],
       "data_gap": false
@@ -220,53 +193,80 @@
     "HCLTECH.NS": {
       "in_favor": [
         {
-          "text": "Quality (ROE/margin) is Strong.",
-          "source": "p80"
+          "text": "Quality (ROE/margin) is strong.",
+          "source": "p83"
+        },
+        {
+          "text": "The value factor (1/PE) is strong.",
+          "source": "p87"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is Weak.",
-          "source": "p36"
+          "text": "Momentum (12-1) is weak.",
+          "source": "p30"
         },
         {
-          "text": "Analyst dispersion is Flat.",
-          "source": "p64"
+          "text": "Analyst dispersion is flat.",
+          "source": "p70"
         },
         {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p72"
-        },
-        {
-          "text": "Lowvol is Weak.",
-          "source": "p28"
+          "text": "Low volatility is weak.",
+          "source": "p17"
         }
       ],
       "data_gap": false
     },
-    "KOTAKBANK.NS": {
+    "ADANIPORTS.NS": {
       "in_favor": [
         {
-          "text": "Momentum (12-1) is Strong.",
-          "source": "p80"
+          "text": "Momentum (12-1) is exceptional.",
+          "source": "p91"
         },
         {
-          "text": "Analyst dispersion is Weak.",
-          "source": "p36"
+          "text": "Analyst dispersion is exceptional.",
+          "source": "p91"
         }
       ],
       "to_watch": [
         {
-          "text": "Quality (ROE/margin) is Weak.",
-          "source": "p32"
+          "text": "Quality (ROE/margin) is flat.",
+          "source": "p48"
         },
         {
-          "text": "Value (1/PE) is Flat.",
-          "source": "p60"
+          "text": "The value factor (1/PE) is flat.",
+          "source": "p43"
         },
         {
-          "text": "Lowvol is Flat.",
-          "source": "p64"
+          "text": "Low volatility is weak.",
+          "source": "p13"
+        }
+      ],
+      "data_gap": false
+    },
+    "HDFCBANK.NS": {
+      "in_favor": [
+        {
+          "text": "Analyst dispersion is strong.",
+          "source": "p83"
+        },
+        {
+          "text": "The value factor (1/PE) is exceptional.",
+          "source": "p91"
+        },
+        {
+          "text": "Low volatility is exceptional.",
+          "source": "p91"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1) is weak.",
+          "source": "p0"
+        },
+        {
+          "text": "Quality (ROE/margin) is weak.",
+          "source": "p17"
         }
       ],
       "data_gap": false
