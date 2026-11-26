@@ -1,25 +1,29 @@
 {
-  "as_of": "2026-11-25",
+  "as_of": "2026-11-26",
   "cases": {
     "TRGP": {
       "in_favor": [
         {
-          "text": "Exceptional momentum (12-1) is noted.",
+          "text": "Momentum (12-1): Exceptional",
           "source": "p95"
         },
         {
-          "text": "Exceptional analyst dispersion is observed.",
-          "source": "p90"
+          "text": "Quality (ROE/margin): Exceptional",
+          "source": "p93"
         },
         {
-          "text": "Quality metrics, including ROE/margin, are exceptional.",
-          "source": "p93"
+          "text": "Analyst dispersion: Strong",
+          "source": "p89"
         }
       ],
       "to_watch": [
         {
-          "text": "Low volatility measures are weak.",
-          "source": "p35"
+          "text": "Value (1/PE): Flat",
+          "source": "p49"
+        },
+        {
+          "text": "Lowvol: Weak",
+          "source": "p34"
         }
       ],
       "data_gap": false
@@ -27,62 +31,80 @@
     "SPG": {
       "in_favor": [
         {
-          "text": "Strong analyst dispersion is observed.",
-          "source": "p89"
-        },
-        {
-          "text": "Quality metrics, including ROE/margin, are exceptional.",
+          "text": "Quality (ROE/margin): Exceptional",
           "source": "p95"
         },
         {
-          "text": "Strong value is indicated by the 1/PE ratio.",
+          "text": "Value (1/PE): Strong",
+          "source": "p81"
+        },
+        {
+          "text": "Lowvol: Strong",
           "source": "p83"
         },
         {
-          "text": "Strong low volatility measures are noted.",
-          "source": "p84"
+          "text": "Analyst dispersion: Strong",
+          "source": "p88"
         }
       ],
-      "to_watch": [],
-      "data_gap": false
-    },
-    "EOG": {
-      "in_favor": [
+      "to_watch": [
         {
-          "text": "Exceptional momentum (12-1) is noted.",
-          "source": "p91"
-        },
-        {
-          "text": "Strong analyst dispersion is observed.",
-          "source": "p87"
-        },
-        {
-          "text": "Exceptional value is indicated by the 1/PE ratio.",
-          "source": "p95"
+          "text": "Momentum (12-1): Flat",
+          "source": "p55"
         }
       ],
-      "to_watch": [],
       "data_gap": false
     },
     "HAS": {
       "in_favor": [
         {
-          "text": "Strong momentum (12-1) is noted.",
+          "text": "Momentum (12-1): Strong",
           "source": "p89"
         },
         {
-          "text": "Quality metrics, including ROE/margin, are exceptional.",
+          "text": "Quality (ROE/margin): Exceptional",
           "source": "p95"
         },
         {
-          "text": "Strong value is indicated by the 1/PE ratio.",
+          "text": "Value (1/PE): Strong",
           "source": "p82"
+        },
+        {
+          "text": "Analyst dispersion: Strong",
+          "source": "p76"
         }
       ],
       "to_watch": [
         {
-          "text": "Low volatility measures are weak.",
-          "source": "p32"
+          "text": "Lowvol: Weak",
+          "source": "p31"
+        }
+      ],
+      "data_gap": false
+    },
+    "EOG": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1): Exceptional",
+          "source": "p91"
+        },
+        {
+          "text": "Value (1/PE): Exceptional",
+          "source": "p95"
+        },
+        {
+          "text": "Analyst dispersion: Strong",
+          "source": "p85"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality (ROE/margin): Flat",
+          "source": "p69"
+        },
+        {
+          "text": "Lowvol: Flat",
+          "source": "p47"
         }
       ],
       "data_gap": false
@@ -90,18 +112,26 @@
     "AMP": {
       "in_favor": [
         {
-          "text": "Quality metrics, including ROE/margin, are exceptional.",
+          "text": "Quality (ROE/margin): Exceptional",
           "source": "p92"
         },
         {
-          "text": "Exceptional value is indicated by the 1/PE ratio.",
-          "source": "p94"
+          "text": "Value (1/PE): Exceptional",
+          "source": "p95"
         }
       ],
       "to_watch": [
         {
-          "text": "Momentum (12-1) is weak.",
-          "source": "p38"
+          "text": "Momentum (12-1): Weak",
+          "source": "p37"
+        },
+        {
+          "text": "Analyst dispersion: Flat",
+          "source": "p56"
+        },
+        {
+          "text": "Lowvol: Flat",
+          "source": "p59"
         }
       ],
       "data_gap": false
@@ -109,89 +139,53 @@
     "ITW": {
       "in_favor": [
         {
-          "text": "Strong analyst dispersion is observed.",
-          "source": "p78"
-        },
-        {
-          "text": "Quality metrics, including ROE/margin, are exceptional.",
+          "text": "Quality (ROE/margin): Exceptional",
           "source": "p95"
         },
         {
-          "text": "Exceptional low volatility measures are noted.",
-          "source": "p90"
+          "text": "Lowvol: Strong",
+          "source": "p89"
+        },
+        {
+          "text": "Analyst dispersion: Strong",
+          "source": "p77"
         }
       ],
-      "to_watch": [],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1): Flat",
+          "source": "p44"
+        },
+        {
+          "text": "Value (1/PE): Flat",
+          "source": "p48"
+        }
+      ],
       "data_gap": false
     },
     "MSI": {
       "in_favor": [
         {
-          "text": "Strong momentum (12-1) is noted.",
-          "source": "p80"
+          "text": "Momentum (12-1): Strong",
+          "source": "p79"
         },
         {
-          "text": "Strong analyst dispersion is observed.",
-          "source": "p83"
-        },
-        {
-          "text": "Quality metrics, including ROE/margin, are exceptional.",
+          "text": "Quality (ROE/margin): Exceptional",
           "source": "p94"
         },
         {
-          "text": "Strong low volatility measures are noted.",
-          "source": "p80"
+          "text": "Lowvol: Strong",
+          "source": "p79"
+        },
+        {
+          "text": "Analyst dispersion: Strong",
+          "source": "p82"
         }
       ],
       "to_watch": [
         {
-          "text": "Value, as indicated by the 1/PE ratio, is weak.",
+          "text": "Value (1/PE): Weak",
           "source": "p19"
-        }
-      ],
-      "data_gap": false
-    },
-    "XOM": {
-      "in_favor": [
-        {
-          "text": "Exceptional momentum (12-1) is noted.",
-          "source": "p92"
-        },
-        {
-          "text": "Strong analyst dispersion is observed.",
-          "source": "p84"
-        },
-        {
-          "text": "Strong value is indicated by the 1/PE ratio.",
-          "source": "p84"
-        },
-        {
-          "text": "Recent market sentiment shows a mildly positive trend (0.19), with 160 mentions in the last 30 days.",
-          "source": "Fact data"
-        }
-      ],
-      "to_watch": [],
-      "data_gap": false
-    },
-    "CL": {
-      "in_favor": [
-        {
-          "text": "Strong analyst dispersion is observed.",
-          "source": "p81"
-        },
-        {
-          "text": "Quality metrics, including ROE/margin, are exceptional.",
-          "source": "p95"
-        },
-        {
-          "text": "Strong low volatility measures are noted.",
-          "source": "p89"
-        }
-      ],
-      "to_watch": [
-        {
-          "text": "Value, as indicated by the 1/PE ratio, is weak.",
-          "source": "p23"
         }
       ],
       "data_gap": false
@@ -199,18 +193,84 @@
     "NTAP": {
       "in_favor": [
         {
-          "text": "Exceptional momentum (12-1) is noted.",
+          "text": "Momentum (12-1): Exceptional",
           "source": "p95"
         },
         {
-          "text": "Quality metrics, including ROE/margin, are exceptional.",
+          "text": "Quality (ROE/margin): Exceptional",
           "source": "p95"
         }
       ],
       "to_watch": [
         {
-          "text": "Low volatility measures are weak.",
-          "source": "p12"
+          "text": "Analyst dispersion: Flat",
+          "source": "p55"
+        },
+        {
+          "text": "Value (1/PE): Flat",
+          "source": "p56"
+        },
+        {
+          "text": "Lowvol: Weak",
+          "source": "p11"
+        }
+      ],
+      "data_gap": false
+    },
+    "XOM": {
+      "in_favor": [
+        {
+          "text": "Momentum (12-1): Exceptional",
+          "source": "p92"
+        },
+        {
+          "text": "Value (1/PE): Strong",
+          "source": "p83"
+        },
+        {
+          "text": "Analyst dispersion: Strong",
+          "source": "p82"
+        },
+        {
+          "text": "Market sentiment: Recent buzz: mildly positive sentiment (0.21), 160 mentions in the last 30d",
+          "source": "Market sentiment"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Quality (ROE/margin): Flat",
+          "source": "p46"
+        },
+        {
+          "text": "Lowvol: Flat",
+          "source": "p72"
+        }
+      ],
+      "data_gap": false
+    },
+    "CL": {
+      "in_favor": [
+        {
+          "text": "Quality (ROE/margin): Exceptional",
+          "source": "p95"
+        },
+        {
+          "text": "Lowvol: Strong",
+          "source": "p88"
+        },
+        {
+          "text": "Analyst dispersion: Strong",
+          "source": "p79"
+        }
+      ],
+      "to_watch": [
+        {
+          "text": "Momentum (12-1): Flat",
+          "source": "p58"
+        },
+        {
+          "text": "Value (1/PE): Weak",
+          "source": "p23"
         }
       ],
       "data_gap": false
